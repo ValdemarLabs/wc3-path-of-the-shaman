@@ -53,7 +53,7 @@
     non-Hold controlled units and emit COMMAND_MOVE or COMMAND_ATTACK events.
 
 **/
-library Companions initializer Init requires QuestGiver, FollowSystem, IconQuery, Table, Events, UnitDeathEvent, SpeciFX, Reputation, DialogSystem, FallenHeroState
+library Companions initializer Init requires QuestGiver, FollowSystem, IconQuery, Table, Events, UnitDeathEvent, SpeciFX, Reputation, DialogSystem, FallenHeroState, optional HintsUI
 
 globals
     constant integer COMPANION_MODE_DEFEND = 1
@@ -1278,6 +1278,9 @@ private function AddInternal takes unit companionUnit, string companionIcon, uni
     if IconQuery_GetCategoryMode(ICONQUERY_CATEGORY_COMPANIONS_AND_FOLLOWERS) == ICONQUERY_CATEGORY_MODE_ALWAYS then
         call EnsureCompanionFarIcon(companionUnit)
     endif
+    static if LIBRARY_HintsUI then
+        call HintsUI_PublishForUnit(HintsUI_HINT_COMPANION_CONTROLS, companionUnit)
+    endif
     call DebugMsg("Add " + GetUnitName(companionUnit))
 endfunction
 
@@ -2160,6 +2163,9 @@ private function HandleInvite takes unit caster, unit target returns nothing
 
     if IsCompanionPartyFull() then
         call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, "Companions: party is full.")
+        static if LIBRARY_HintsUI then
+            call HintsUI_PublishForUnit(HintsUI_HINT_COMPANION_PARTY_SIZE, caster)
+        endif
         return
     endif
 
@@ -2720,6 +2726,9 @@ private function HandleSoldUnit takes nothing returns nothing
 
     if IsCompanionPartyFull() then
         call RejectTemporaryCompanion(soldUnit, "Companions: party is full.")
+        static if LIBRARY_HintsUI then
+            call HintsUI_PublishForUnit(HintsUI_HINT_COMPANION_PARTY_SIZE, buyer)
+        endif
         set soldUnit = null
         set buyer = null
         return

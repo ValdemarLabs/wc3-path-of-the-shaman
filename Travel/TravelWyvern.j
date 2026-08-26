@@ -30,7 +30,7 @@
     - call TravelWyvern_DiscoverVerdantPlains(...)
 
 **/
-library TravelWyvern initializer Init requires TravelSystem, TravelUI
+library TravelWyvern initializer Init requires TravelSystem, TravelUI, optional HintsUI
     globals
         private constant integer TW_ZONE_HORDE_SCOUT_BASE = 8810
         private constant integer TW_ZONE_VERDANT_PLAINS = 17
@@ -122,6 +122,16 @@ library TravelWyvern initializer Init requires TravelSystem, TravelUI
         else
             set TW_DiscoverVerdantOnInit = true
             set TW_ShowVerdantDiscoveryOnInit = TW_ShowVerdantDiscoveryOnInit or showMessage
+        endif
+    endfunction
+
+    private function TW_OnMasterSelected takes nothing returns nothing
+        local integer stopId = TravelSystem_GetSelectedStop()
+
+        if stopId > 0 and stopId != TW_ScoutBaseStop and TravelSystem_GetStopMethod(stopId) == TRAVEL_METHOD_WYVERN then
+            static if LIBRARY_HintsUI then
+                call HintsUI_Publish(HintsUI_HINT_FREE_FLY_BACK)
+            endif
         endif
     endfunction
 
@@ -327,6 +337,7 @@ library TravelWyvern initializer Init requires TravelSystem, TravelUI
 
     private function Init takes nothing returns nothing
         set TW_InitTimer = CreateTimer()
+        call TravelSystem_RegisterMasterSelectedHandler(function TW_OnMasterSelected)
         call TimerStart(TW_InitTimer, 0.10, false, function TW_TryInitialize)
     endfunction
 endlibrary

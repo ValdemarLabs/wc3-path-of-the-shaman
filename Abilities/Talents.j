@@ -42,7 +42,7 @@
     - set talent = Talents_RegisterTalent(...)
 
 **/
-library Talents initializer Init requires ExSound, AbilitiesPlayer, optional AbilityPoints, optional Events
+library Talents initializer Init requires ExSound, AbilitiesPlayer, optional AbilityPoints, optional Events, optional HintsUI
     globals
         public constant integer RESULT_OK = 1
         public constant integer RESULT_INVALID = 2
@@ -1240,6 +1240,9 @@ library Talents initializer Init requires ExSound, AbilitiesPlayer, optional Abi
 
         if GetHeroLevel(hero) >= TLT_FIRST_TALENT_LEVEL then
             call TLT_AwardLevelPoints(hero, TLT_POINTS_PER_LEVEL, true)
+            static if LIBRARY_HintsUI then
+                call HintsUI_PublishForUnit(HintsUI_HINT_TALENT_POINTS, hero)
+            endif
         endif
 
         set hero = null

@@ -26,7 +26,7 @@
     - QuestMaster_ResetDailyQuests() manually resets completed daily quests.
 
 **/
-library QuestMaster initializer Init requires Table, SpeciFX, Reputation, IconQuery, optional GameMode
+library QuestMaster initializer Init requires Table, SpeciFX, Reputation, IconQuery, optional GameMode, optional HintsUI
 //===========================================================================
 // QuestMaster
 // Core quest data and API scaffolding. Implementation will be expanded.
@@ -217,6 +217,9 @@ private function ShowDelayedQuestDiscovered takes nothing returns nothing
 		call ClearTextMessages()
 		call QuestMessageBJ(bj_FORCE_ALL_PLAYERS, bj_QUESTMESSAGE_DISCOVERED, msg)
 		call FlashQuestLogButton()
+		static if LIBRARY_HintsUI then
+			call HintsUI_Publish(HintsUI_HINT_QUESTS)
+		endif
 		call FireDelayedQuestDiscovered(q.id, q.state)
 	endif
 	

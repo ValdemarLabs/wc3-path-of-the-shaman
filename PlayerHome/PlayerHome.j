@@ -28,7 +28,7 @@
     - PlayerHome_PingHome()
 
 **/
-library PlayerHome initializer Init requires Table, Events, DamageEngine, DialogInteraction, DialogSystem, HeroItemCheck, SharedDInvLib, Companions, Pet, ZonesCore, ZoneEvent, ExSound, FallenHeroState
+library PlayerHome initializer Init requires Table, Events, DamageEngine, DialogInteraction, DialogSystem, HeroItemCheck, SharedDInvLib, Companions, Pet, ZonesCore, ZoneEvent, ExSound, FallenHeroState, optional HintsUI
     globals
         // Configuration
         private constant boolean PH_DEBUG = false
@@ -204,6 +204,9 @@ library PlayerHome initializer Init requires Table, Events, DamageEngine, Dialog
             set added = UnitAddItem(hero, journal)
             if added then
                 call ExSound_PlayLabel("ItemReceived", false)
+                static if LIBRARY_HintsUI then
+                    call HintsUI_PublishForUnit(HintsUI_HINT_TRAVELERS_JOURNAL_RETURN, hero)
+                endif
             else
                 call SetItemVisible(journal, true)
                 call SetItemPosition(journal, x, y)
@@ -411,6 +414,9 @@ library PlayerHome initializer Init requires Table, Events, DamageEngine, Dialog
         endif
         call PH_Display("Returning home failed" + reason + ".")
         call PH_PlayError()
+        static if LIBRARY_HintsUI then
+            call HintsUI_PublishForUnit(HintsUI_HINT_TRAVELERS_JOURNAL_CANCEL, PH_ActiveCaster)
+        endif
         call PH_ClearPassengers()
         call PH_ClearActiveReturn()
     endfunction
@@ -729,6 +735,11 @@ library PlayerHome initializer Init requires Table, Events, DamageEngine, Dialog
         endif
         if homeId == PH_CurrentHomeId then
             call PH_Display("This is your current home location: |cffffcc00" + PH_HomeName[homeId] + "|r|cffffffff.")
+            if not HeroHasJournal(hero) then
+                static if LIBRARY_HintsUI then
+                    call HintsUI_PublishForUnit(HintsUI_HINT_TRAVELERS_JOURNAL_LOST, hero)
+                endif
+            endif
             set journal = null
             set hero = null
             set factionOwner = null

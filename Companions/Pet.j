@@ -21,7 +21,7 @@
     Pet_GetClassInfoText, Pet_GetTypeInfoText, and Pet_GetAbilityInfoText.
 
 **/
-library Pet initializer Init requires Table, Companions, UnitExperience, DamageEngine, FloatingTextSimple, PetDefinitions, Events, FallenHeroState
+library Pet initializer Init requires Table, Companions, UnitExperience, DamageEngine, FloatingTextSimple, PetDefinitions, Events, FallenHeroState, optional HintsUI
 
 globals
     private constant boolean DEBUG = false
@@ -442,6 +442,9 @@ private function FatiguePet takes unit pet returns nothing
     set textPlayer = Player(0)
     call FloatingTextTag.create(GetUnitName(pet) + " is fatigued!", pet, PET_REVIVE_DURATION, 1.20, textPlayer, 1.00, 0.05, 0.10, false, true)
     call StartFreezeTimer(pet)
+    static if LIBRARY_HintsUI then
+        call HintsUI_PublishForUnit(HintsUI_HINT_PET_FATIGUE, pet)
+    endif
 
     if udg_ReviveTimerPet == null then
         set udg_ReviveTimerPet = CreateTimer()

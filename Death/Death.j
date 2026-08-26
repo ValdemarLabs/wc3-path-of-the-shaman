@@ -96,7 +96,7 @@ endlibrary
     call Death_RegisterReviveCallback(callback)
 
 **/
-library Death initializer Init requires Table, Companions, Pet, AI, DInventory, DamageEngine, Events, FallenHeroState, UnitDeathEvent
+library Death initializer Init requires Table, Companions, Pet, AI, DInventory, DamageEngine, Events, FallenHeroState, UnitDeathEvent, optional HintsUI
 
 globals
     // Object data and tuning
@@ -640,6 +640,9 @@ private function Death_RetainUnit takes unit whichHero, boolean managed returns 
         if Death_IsHiredUnit(whichHero) then
             call GroupAddUnit(Death_ExpiringHiredCorpses, whichHero)
             call Death_StartRetainedExpiryTimer(whichHero)
+            static if LIBRARY_HintsUI then
+                call HintsUI_PublishForUnit(HintsUI_HINT_FALLEN_COMPANIONS, whichHero)
+            endif
         endif
     else
         call Death_StartRetainedExpiryTimer(whichHero)
@@ -777,6 +780,20 @@ private function Death_OnReviveEndcast takes nothing returns nothing
     set caster = null
 endfunction
 
+private function Death_OnItemPickup takes nothing returns nothing
+    local unit whichUnit = GetTriggerUnit()
+    local item pickedItem = GetManipulatedItem()
+
+    if whichUnit != null and pickedItem != null and GetOwningPlayer(whichUnit) == Player(0) and GetItemTypeId(pickedItem) == DEATH_REVIVE_ITEM_ID then
+        static if LIBRARY_HintsUI then
+            call HintsUI_PublishForUnit(HintsUI_HINT_SPIRIT_SHARDS, whichUnit)
+        endif
+    endif
+
+    set pickedItem = null
+    set whichUnit = null
+endfunction
+
 public function RegisterHero takes unit whichHero returns nothing
     if whichHero != null and IsUnitType(whichHero, UNIT_TYPE_HERO) then
         call GroupAddUnit(Death_RegisteredHeroes, whichHero)
@@ -834,6 +851,7 @@ private function Init takes nothing returns nothing
     call Events_RegisterPlayerUnitEvent(function Death_OnReviveChannel, EVENT_PLAYER_UNIT_SPELL_CHANNEL)
     call Events_RegisterPlayerUnitEvent(function Death_OnReviveEffect, EVENT_PLAYER_UNIT_SPELL_EFFECT)
     call Events_RegisterPlayerUnitEvent(function Death_OnReviveEndcast, EVENT_PLAYER_UNIT_SPELL_ENDCAST)
+    call Events_RegisterPlayerUnitEvent(function Death_OnItemPickup, EVENT_PLAYER_UNIT_PICKUP_ITEM)
 endfunction
 
 endlibrary

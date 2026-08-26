@@ -28,7 +28,7 @@
     - Debug: /debug ap add
 
 **/
-library AbilityPoints initializer Init requires optional RegionTitles, optional DItemTransfer, optional DInventory, optional DEquipment
+library AbilityPoints initializer Init requires optional RegionTitles, optional DItemTransfer, optional DInventory, optional DEquipment, optional HintsUI
     globals
         public constant integer HERO_NAZGREK = 1
         public constant integer HERO_ZULKIS = 2
@@ -249,6 +249,9 @@ library AbilityPoints initializer Init requires optional RegionTitles, optional 
             call AP_SetBySlot(heroSlot, AP_Points[heroSlot] + 1)
             call AP_ShowPointGainText(levelingHero, 1)
             call AP_SyncCompanionGroupSize()
+            static if LIBRARY_HintsUI then
+                call HintsUI_PublishForUnit(HintsUI_HINT_ABILITY_POINTS, levelingHero)
+            endif
         endif
 
         set levelingHero = null

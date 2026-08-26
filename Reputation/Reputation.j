@@ -127,7 +127,7 @@
 
 **/
 
-library Reputation initializer InitReputations requires Table, Events, UnitDeathEvent
+library Reputation initializer InitReputations requires Table, Events, UnitDeathEvent, optional HintsUI
 
 //===================================================
 // CONFIGURATION
@@ -345,6 +345,9 @@ struct Reputation
         call .setRep(p, f, newVal)
         if p == Player(0) and adjustedDelta != 0 then
             call ExecuteFunc("QuestMaster_RefreshAvailability")
+            static if LIBRARY_HintsUI then
+                call HintsUI_Publish(HintsUI_HINT_REPUTATION)
+            endif
         endif
         
         // Only show messages if faction is visible

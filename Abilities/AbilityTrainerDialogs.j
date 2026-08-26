@@ -24,7 +24,7 @@
     - set treeId = AbilityTrainerDialogs_GetSelectedTree()
 
 **/
-library AbilityTrainerDialogs initializer Init requires Table, DialogInteraction, DialogSystem, DialogSystemPlayer, AbilitiesPlayer, AbilitiesUI, AbilityTrainerLines, Interface, optional Events
+library AbilityTrainerDialogs initializer Init requires Table, DialogInteraction, DialogSystem, DialogSystemPlayer, AbilitiesPlayer, AbilitiesUI, AbilityTrainerLines, Interface, optional Events, optional HintsUI
     globals
         private constant real ATD_DIALOG_RANGE = 900.00
         private constant real ATD_DIALOG_COOLDOWN = 3.00
@@ -224,6 +224,9 @@ library AbilityTrainerDialogs initializer Init requires Table, DialogInteraction
 
         if trainer != null and hero != null then
             call ShowUnit(hero, true)
+            static if LIBRARY_HintsUI then
+                call HintsUI_PublishForUnit(HintsUI_HINT_SPECIALIZATIONS, hero)
+            endif
             call AbilitiesUI_ShowForTrainer(trainer, hero)
         endif
 

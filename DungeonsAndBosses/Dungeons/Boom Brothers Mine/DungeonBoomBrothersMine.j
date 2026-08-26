@@ -22,7 +22,7 @@
     - DungeonBoomBrothersMine_GetDungeonId() returns integer
 
 **/
-library DungeonBoomBrothersMine initializer Init requires Dungeon, ZoneEvent, Events, UnitDeathEvent, CreepRespawn
+library DungeonBoomBrothersMine initializer Init requires Dungeon, ZoneEvent, Events, UnitDeathEvent, CreepRespawn, optional HintsUI
     globals
         private constant integer ZONE_ID = 104
         private constant integer UNIT_GOBLIN_MINER = 'n019'
@@ -325,6 +325,9 @@ library DungeonBoomBrothersMine initializer Init requires Dungeon, ZoneEvent, Ev
                 set ActiveRock = rockId
                 call TimerStart(RockTimer, 15.00, false, function OnRockTimer)
                 call TimerStart(CountdownTimer, 1.00, true, function OnCountdownTick)
+                static if LIBRARY_HintsUI then
+                    call HintsUI_Publish(HintsUI_HINT_BARRELS_OF_EXPLOSIVES)
+                endif
             endif
         endif
         set pickedItem = null

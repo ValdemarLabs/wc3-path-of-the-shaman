@@ -8,8 +8,9 @@ library HintsUI initializer AutoInit requires Table, MasterUI, Interface
     Purpose:
     - Stores predefined hints in one JASS library.
     - External systems publish hints with a simple API call.
-    - When published, the hint is shown as a chat-style message immediately.
+    - Published hints enter a short, spaced queue before their heading is shown.
     - Published hints are also collected into this UI for later reading.
+    - Unread hints mark both the Game button and the Hints menu button.
 
     Public API:
     - call HintsUI_Publish(HintsUI_HINT_QUESTS)
@@ -48,9 +49,20 @@ globals
     public integer HINT_CAMP_FIRE_OR_TENT = 0
     public integer HINT_TENT_LIMITATION = 0
     public integer HINT_BARRELS_OF_EXPLOSIVES = 0
+    public integer HINT_ABILITY_POINTS = 0
+    public integer HINT_TALENT_POINTS = 0
+    public integer HINT_SPECIALIZATIONS = 0
+    public integer HINT_SPIRIT_SHARDS = 0
+    public integer HINT_COMPANION_CONTROLS = 0
+    public integer HINT_COMPANION_PARTY_SIZE = 0
+    public integer HINT_FALLEN_COMPANIONS = 0
+    public integer HINT_PET_FATIGUE = 0
+    public integer HINT_REPUTATION = 0
 
     private constant integer HUI_BUTTON_COUNT = 8
     private constant integer HUI_FRAME_CONTEXT = 1
+    private constant real HUI_INITIAL_DELAY = 3.00
+    private constant real HUI_QUEUE_DELAY = 6.00
 
     private boolean HUI_Initialized = false
     private boolean HUI_SyncingSlider = false
@@ -58,6 +70,9 @@ globals
     private integer HUI_DefinitionCount = 0
     private integer HUI_SliderMaxCache = -1
     private integer HUI_SliderValueCache = -1
+    private integer HUI_QueueHead = 0
+    private integer HUI_QueueTail = 0
+    private boolean HUI_QueueActive = false
 
     private string HUI_TocPath = "war3mapImported/TasQuestBox.toc"
     private string HUI_Title = "Hints"
@@ -68,11 +83,14 @@ globals
     private integer array HUI_SelectedHintId
 
     private boolean array HUI_Published
+    private boolean array HUI_Queued
     private boolean array HUI_IsWarning
     private string array HUI_HintTitle
     private string array HUI_HintType
     private string array HUI_HintIcon
     private string array HUI_HintText
+    private integer array HUI_QueuedHintId
+    private unit array HUI_QueuedUnit
 
     private framehandle HUI_Parent = null
     private framehandle HUI_ReturnButton = null
@@ -89,6 +107,7 @@ globals
     private trigger HUI_WheelTrigger = null
     private trigger HUI_SliderTrigger = null
     private trigger HUI_ButtonTrigger = null
+    private timer HUI_PublishTimer = null
 
     private Table HUI_ButtonRow = 0
 endglobals
@@ -153,25 +172,6 @@ private function HUI_SetHintText takes integer hintId, string text returns nothi
     endif
 endfunction
 
-private function HUI_FrameTextToChatText takes string text returns string
-    local integer i = 0
-    local integer length = StringLength(text)
-    local string result = ""
-
-    loop
-        exitwhen i >= length
-        if i + 1 < length and SubString(text, i, i + 2) == "|n" then
-            set result = result + "\n"
-            set i = i + 2
-        else
-            set result = result + SubString(text, i, i + 1)
-            set i = i + 1
-        endif
-    endloop
-
-    return result
-endfunction
-
 private function HUI_InitDefinitions takes nothing returns nothing
     set HINT_GRAVEYARDS = HUI_RegisterHint("Graveyards", "Hint", "ReplaceableTextures\\CommandButtons\\BTNResurrection.blp", false)
     call HUI_SetHintText(HINT_GRAVEYARDS, "Fallen heroes will be revived at the active graveyard.")
@@ -193,8 +193,8 @@ private function HUI_InitDefinitions takes nothing returns nothing
     set HINT_TRAVELERS_JOURNAL_LOST = HUI_RegisterHint("Traveler's Journal: Lost Journal", "Hint", "ReplaceableTextures\\CommandButtons\\BTNScrollOfTownPortal.blp", false)
     call HUI_SetHintText(HINT_TRAVELERS_JOURNAL_LOST, "If you lose your Traveler's Journal, you must select a different journal than the one where your home was previously set.")
 
-    set HINT_TRAVELERS_JOURNAL_UNIQUE = HUI_RegisterHint("Traveler's Journal: Unique Item", "Hint", "ReplaceableTextures\\CommandButtons\\BTNScrollOfTownPortal.blp", false)
-    call HUI_SetHintText(HINT_TRAVELERS_JOURNAL_UNIQUE, "Traveler's Journal is a unique item that can be carried and used only by Nazgrek or Zul'kis, but not by both at the same time.")
+    set HINT_TRAVELERS_JOURNAL_UNIQUE = HUI_RegisterHint("Traveler's Journal: Hero Item", "Hint", "ReplaceableTextures\\CommandButtons\\BTNScrollOfTownPortal.blp", false)
+    call HUI_SetHintText(HINT_TRAVELERS_JOURNAL_UNIQUE, "Nazgrek and Zul'kis may each carry a Traveler's Journal, but companions cannot use one.")
 
     set HINT_TRAVELERS_JOURNAL_CANCEL = HUI_RegisterHint("Traveler's Journal: Cancel Return", "Hint", "ReplaceableTextures\\CommandButtons\\BTNScrollOfTownPortal.blp", false)
     call HUI_SetHintText(HINT_TRAVELERS_JOURNAL_CANCEL, "You may cancel the return-home cast by using Stop or Hold Position on the hero.")
@@ -207,7 +207,34 @@ private function HUI_InitDefinitions takes nothing returns nothing
     call HUI_SetHintText(HINT_TENT_LIMITATION, "Use the tent's Dismantle ability and, once finished, you can place a new tent.")
 
     set HINT_BARRELS_OF_EXPLOSIVES = HUI_RegisterHint("Barrels of Explosives", "Warning", "ReplaceableTextures\\CommandButtons\\BTNGoblinLandMine.blp", true)
-    call HUI_SetHintText(HINT_BARRELS_OF_EXPLOSIVES, "Take care. The explosives are highly unstable and might explode immediately if attacked while carrying one or more in inventory.")
+    call HUI_SetHintText(HINT_BARRELS_OF_EXPLOSIVES, "Placed explosive barrels detonate when their countdown ends and explode immediately if destroyed. Keep the party clear.")
+
+    set HINT_ABILITY_POINTS = HUI_RegisterHint("Ability Points", "Hint", "ReplaceableTextures\\CommandButtons\\BTNBook_07.blp", false)
+    call HUI_SetHintText(HINT_ABILITY_POINTS, "Each hero gains separate Ability Points when leveling. Visit Elemental, Enhancement, Restoration, or Totemic trainers to learn and improve abilities.")
+
+    set HINT_TALENT_POINTS = HUI_RegisterHint("Talent Points", "Hint", "ReplaceableTextures\\CommandButtons\\BTNSelectHeroOn.blp", false)
+    call HUI_SetHintText(HINT_TALENT_POINTS, "From level 2 onward, each hero gains separate Talent Points. Open Game > Abilities > Talents, preview choices, then Confirm to apply them.")
+
+    set HINT_SPECIALIZATIONS = HUI_RegisterHint("Specializations", "Hint", "ReplaceableTextures\\CommandButtons\\BTNEngineeringUpgrade.blp", false)
+    call HUI_SetHintText(HINT_SPECIALIZATIONS, "Each hero may learn one free specialization from a shaman trainer. Choosing one locks the other specializations until that hero's specialization is reset.")
+
+    set HINT_SPIRIT_SHARDS = HUI_RegisterHint("Spirit Shards", "Hint", "ReplaceableTextures\\CommandButtons\\BTNResurrection.blp", false)
+    call HUI_SetHintText(HINT_SPIRIT_SHARDS, "Use a Spirit Shard near a fallen ally. Its three-second cast revives the nearest eligible unit within 250 range at half life and mana.")
+
+    set HINT_COMPANION_CONTROLS = HUI_RegisterHint("Companion Controls", "Hint", "ReplaceableTextures\\CommandButtons\\BTNSelectHeroOn.blp", false)
+    call HUI_SetHintText(HINT_COMPANION_CONTROLS, "Companion commands set Passive, Normal, Aggressive, or Hold behavior and can focus companions on Nazgrek or Zul'kis.")
+
+    set HINT_COMPANION_PARTY_SIZE = HUI_RegisterHint("Companion Party Size", "Hint", "ReplaceableTextures\\CommandButtons\\BTNSelectHeroOn.blp", false)
+    call HUI_SetHintText(HINT_COMPANION_PARTY_SIZE, "Companion capacity is based on the party's highest-level hero. It increases at levels 5, 10, 15, 20, and 25.")
+
+    set HINT_FALLEN_COMPANIONS = HUI_RegisterHint("Fallen Companions", "Hint", "ReplaceableTextures\\CommandButtons\\BTNResurrection.blp", false)
+    call HUI_SetHintText(HINT_FALLEN_COMPANIONS, "Spirit Shards can revive fallen companions. Hired non-hero companions remain revivable for 60 seconds before dying permanently.")
+
+    set HINT_PET_FATIGUE = HUI_RegisterHint("Pet Fatigue", "Hint", "ReplaceableTextures\\CommandButtons\\BTNSelectHeroOn.blp", false)
+    call HUI_SetHintText(HINT_PET_FATIGUE, "A defeated pet becomes fatigued and recovers automatically after 20 seconds. A Spirit Shard can restore it sooner.")
+
+    set HINT_REPUTATION = HUI_RegisterHint("Reputation", "Hint", "ReplaceableTextures\\PassiveButtons\\PASFactionHorde.blp", false)
+    call HUI_SetHintText(HINT_REPUTATION, "Faction reputation affects hostility, NPC interaction, vendors, quests, and companion hiring. Review standings under Game > Reputations.")
 endfunction
 
 private function HUI_GetPublishedCount takes nothing returns integer
@@ -253,10 +280,10 @@ private function HUI_GetSelectedHintId takes player whichPlayer returns integer
 endfunction
 
 private function HUI_GetFormattedMessage takes integer hintId, unit whichUnit returns string
-    if HUI_HintText[hintId] == null or HUI_HintText[hintId] == "" then
-        return ""
+    if HUI_IsWarning[hintId] then
+        return "|cffff4040New Warning:|r " + HUI_HintTitle[hintId]
     endif
-    return HUI_GetHintHeader(hintId) + " - " + HUI_HintTitle[hintId] + "\n" + HUI_FrameTextToChatText(HUI_HintText[hintId])
+    return "|cffffcc00New Hint:|r " + HUI_HintTitle[hintId]
 endfunction
 
 private function HUI_DisplayMessage takes string messageText returns nothing
@@ -341,6 +368,51 @@ private function HUI_UpdateUI takes nothing returns nothing
     call BlzFrameSetText(HUI_TextArea, detailText)
 endfunction
 
+private function HUI_ProcessQueuedHint takes nothing returns nothing
+    local integer hintId
+    local integer pid
+    local boolean panelVisible
+    local unit whichUnit
+
+    if HUI_QueueHead >= HUI_QueueTail then
+        set HUI_QueueHead = 0
+        set HUI_QueueTail = 0
+        set HUI_QueueActive = false
+        set whichUnit = null
+        return
+    endif
+
+    set HUI_QueueHead = HUI_QueueHead + 1
+    set hintId = HUI_QueuedHintId[HUI_QueueHead]
+    set whichUnit = HUI_QueuedUnit[HUI_QueueHead]
+    set HUI_QueuedHintId[HUI_QueueHead] = 0
+    set HUI_QueuedUnit[HUI_QueueHead] = null
+    set HUI_Queued[hintId] = false
+    set HUI_Published[hintId] = true
+
+    set pid = GetPlayerId(HUI_GetDisplayPlayer())
+    set panelVisible = HUI_Parent != null and BlzFrameIsVisible(HUI_Parent)
+    if HUI_SelectedHintId[pid] <= 0 or not panelVisible then
+        set HUI_SelectedHintId[pid] = hintId
+    endif
+
+    call HUI_DisplayHintMessages(hintId, whichUnit)
+    if not panelVisible then
+        call MasterUI_SetHintsUnread(true)
+    endif
+    call HUI_UpdateUI()
+
+    if HUI_QueueHead < HUI_QueueTail then
+        call TimerStart(HUI_PublishTimer, HUI_QUEUE_DELAY, false, function HUI_ProcessQueuedHint)
+    else
+        set HUI_QueueHead = 0
+        set HUI_QueueTail = 0
+        set HUI_QueueActive = false
+    endif
+
+    set whichUnit = null
+endfunction
+
 public function ForceUpdate takes nothing returns nothing
     call HUI_UpdateUI()
 endfunction
@@ -356,6 +428,7 @@ endfunction
 
 public function Show takes nothing returns nothing
     set HUI_SliderValueCache = -1
+    call MasterUI_SetHintsUnread(false)
     if HUI_Parent != null and not BlzFrameIsVisible(HUI_Parent) then
         call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_OPEN, Player(0))
     endif
@@ -532,6 +605,8 @@ public function Init takes nothing returns nothing
     set HUI_WheelTrigger = CreateTrigger()
     call TriggerAddAction(HUI_WheelTrigger, function HUI_WheelAction)
 
+    set HUI_PublishTimer = CreateTimer()
+
     call HUI_InitFrames()
 endfunction
 
@@ -539,23 +614,22 @@ public function IsPublished takes integer hintId returns boolean
     if not HUI_IsHintIdValid(hintId) then
         return false
     endif
-    return HUI_Published[hintId]
+    return HUI_Published[hintId] or HUI_Queued[hintId]
 endfunction
 
 public function PublishForUnit takes integer hintId, unit whichUnit returns nothing
-    local integer pid
-    if not HUI_IsHintIdValid(hintId) or HUI_Published[hintId] then
+    if not HUI_IsHintIdValid(hintId) or HUI_Published[hintId] or HUI_Queued[hintId] then
         return
     endif
 
-    set HUI_Published[hintId] = true
-    set pid = GetPlayerId(HUI_GetDisplayPlayer())
-    if HUI_SelectedHintId[pid] <= 0 then
-        set HUI_SelectedHintId[pid] = hintId
+    set HUI_QueueTail = HUI_QueueTail + 1
+    set HUI_QueuedHintId[HUI_QueueTail] = hintId
+    set HUI_QueuedUnit[HUI_QueueTail] = whichUnit
+    set HUI_Queued[hintId] = true
+    if not HUI_QueueActive then
+        set HUI_QueueActive = true
+        call TimerStart(HUI_PublishTimer, HUI_INITIAL_DELAY, false, function HUI_ProcessQueuedHint)
     endif
-
-    call HUI_DisplayHintMessages(hintId, whichUnit)
-    call HUI_UpdateUI()
 endfunction
 
 public function Publish takes integer hintId returns nothing

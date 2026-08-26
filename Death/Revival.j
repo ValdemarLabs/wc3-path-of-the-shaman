@@ -29,7 +29,7 @@
     call Revival_GetSelectedGraveyard() returns integer
 
 **/
-library Revival initializer Init requires Death, Table, Events, UnitDeathEvent, ExSound, CameraControl, DEquipment, DialogInteraction, DialogSystem
+library Revival initializer Init requires Death, Table, Events, UnitDeathEvent, ExSound, CameraControl, DEquipment, DialogInteraction, DialogSystem, optional HintsUI
 
 globals
     // Configuration
@@ -525,6 +525,9 @@ private function Revival_OnHeroDeath takes nothing returns nothing
     endif
     call Revival_StartPlayerTimer(whichHero)
     call Revival_StartDeathCamera(whichHero, x, y)
+    static if LIBRARY_HintsUI then
+        call HintsUI_PublishForUnit(HintsUI_HINT_GRAVEYARDS, whichHero)
+    endif
 
     if whichHero == udg_Nazgrek then
         set udg_NazgrekDead = true
@@ -554,6 +557,9 @@ private function Revival_OnGraveyardEnter takes nothing returns nothing
     if graveyardId <= 9 and graveyardId != Revival_GetSelectedGraveyardId() then
         call Revival_UpdateGraveyardLegacyState(graveyardId)
         call DisplayTimedTextToPlayer(GetOwningPlayer(entering), 0.00, 0.00, 3.00, "|cff80ff80Graveyard " + I2S(graveyardId) + " is now your revival point.|r")
+        static if LIBRARY_HintsUI then
+            call HintsUI_PublishForUnit(HintsUI_HINT_GRAVEYARDS_CHANGE, entering)
+        endif
     endif
     set sourceTrigger = null
     set entering = null
