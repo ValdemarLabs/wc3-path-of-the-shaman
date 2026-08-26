@@ -119,6 +119,8 @@ The following production systems are original Path of the Shaman systems develop
     - `FollowSystem`
     - `PatrolGroupSystem`
     - `PatrolSystem`
+- `Player Home`
+    - `PlayerHome`
 - `Preload / Initialization`
     - `PreloadAbilities`
     - `Preloader`
@@ -162,7 +164,6 @@ The following production systems are original Path of the Shaman systems develop
     - `AchievementsUI`
     - `CameraControl`
     - `CameraUI`
-    - `CheatsUI`
     - `CommandsUI`
     - `CraftingUI`
     - `Difficulty`
@@ -170,6 +171,7 @@ The following production systems are original Path of the Shaman systems develop
     - `IconQuery`
     - `Interface`
     - `MasterUI`
+    - `PlayerHomeUI`
     - `ProfessionsUI`
     - `ReputationUI`
     - `SecretsUI`

@@ -20,6 +20,8 @@
 ### Player-Facing Updates
 
 - Added Gar as a quest/event-spawned Deadwoods boss with a slow six-point patrol and a faster-attacking frenzy below half health.
+- Added the Traveler's Journal home system and dashboard: bind a shared home at world Journals, inspect each hero's Journal and cooldown state, ping home, and channel a nearby-party return from either hero.
+- Moved the legacy cheat/debug command reference into the Commands screen and replaced the old Cheats menu entry with Traveler's Journal.
 
 ### Technical Updates
 
@@ -27,10 +29,15 @@
 - Removed the old `Revive System Player` GUI trigger folder.
 - Added `DungeonsAndBosses/OpenWorld/Gar/BossGar.j` with the `BossGar_Spawn()` hook, `udg_BossGar` assignment, event-owned respawning, patrol/reset handling, and two-phase boss registration.
 - Updated `_developer/Design Plans/Story and Quest Design.md` with Gar's implemented spawn rect, patrol, phase scope, and remaining quest/outcome decisions.
+- Added `PlayerHome/PlayerHome.j` with registered home destinations, shared binding, per-hero cooldowns, one guarded return channel, nearby-party snapshots, pathing-aware placement, state restoration, and zone refresh handling.
+- Added `UI/PlayerHomeUI.j` and updated `UI/MasterUI.j`, `UI/AbilitiesUI.j`, and `UI/TalentsUI.j` with live Journal controls and centralized panel cleanup.
+- Updated `UI/CommandsUI.j` with the complete legacy cheat reference, removed `UI/CheatsUI.j`, and refreshed `_Credits/PotS Credits.md` for the replacement libraries.
 
 ### Actions Remaining
 
 - Import `BossGar.j` after Boss and PatrolSystem, create/verify `gg_rct_GarWP01` through `gg_rct_GarWP06` and `udg_BossGar` in World Editor, keep Gar unplaced, then call `BossGar_Spawn()` from the owning quest/event and runtime-test patrol, reset, frenzy, death, and explicit re-spawn.
+- Import `PlayerHome.j` and `PlayerHomeUI.j` in dependency order, remove `CheatsUI.j` from the map import list, disable the legacy Player Home GUI triggers, and remove the old Traveler's Journal optional quest creation from Game Guide.
+- In World Editor, verify `gg_rct_PlayerHome1`, `gg_rct_PlayerHome2`, both placed `n65G` Journals, rawcodes `I6CL` and `A6DU`, and the Journal item's reusable/non-consumable behavior; then compile and runtime-test binding, interruption, personal cooldowns, inventory staging, party exclusions, state restoration, zone refresh, and all Journal UI navigation paths.
 
 ## [25.8.2026]
 

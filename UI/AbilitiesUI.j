@@ -363,7 +363,7 @@ library AbilitiesUI initializer AutoInit requires Table, MasterUI, Abilities, Ab
         call ExecuteFunc("AchievementsUI_Hide")
         call ExecuteFunc("SecretsUI_Hide")
         call ExecuteFunc("CommandsUI_Hide")
-        call ExecuteFunc("CheatsUI_Hide")
+        call ExecuteFunc("PlayerHomeUI_Hide")
         call ExecuteFunc("SettingsUI_Hide")
     endfunction
 

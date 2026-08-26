@@ -1,21 +1,26 @@
-library CommandsUI initializer AutoInit requires Table, MasterUI, Interface
 /**
     CommandsUI
 
-    Author: [Valdemar]
-    Version: 1.0
+    Author: Valdemar
+    Version: 1.1.0
 
-    Purpose:
-    - Shows a predefined list of gameplay commands.
-    - All commands are available in the UI at once.
-    - Categories are stored per command to keep the list organized.
+    Description:
+    Shows a categorized, reference-only list of gameplay commands and legacy
+    cheat/debug commands. Rows describe commands but do not execute them.
 
-    Public API:
-    - call CommandsUI_Show()
-    - call CommandsUI_Hide()
+    Credits:
+    - Tasyen for TasQuestBox
 
-    Credits: Tasyen (TasQuestBox as inspiration)
-*/
+    How to install:
+    Import after Table, MasterUI, Interface, and the TasQuestBox TOC.
+
+    API:
+    - CommandsUI_Show()
+    - CommandsUI_Hide()
+    - CommandsUI_ForceUpdate()
+
+**/
+library CommandsUI initializer AutoInit requires Table, MasterUI, Interface
 
 globals
     private constant integer CUI_BUTTON_COUNT = 8
@@ -82,10 +87,30 @@ private function CUI_RegisterCommand takes string commandName, string category, 
 endfunction
 
 private function CUI_InitDefinitions takes nothing returns nothing
-    call CUI_RegisterCommand("/help", "General", "ReplaceableTextures\\CommandButtons\\BTNScroll.blp", "Category: General|n|nDisplays the general help text or command overview when implemented in gameplay logic.")
-    call CUI_RegisterCommand("/skills", "Professions", "ReplaceableTextures\\CommandButtons\\BTNChestOfGold.blp", "Category: Professions|n|nShows the current tracked gather/profession skill values for the selected supported hero.")
-    call CUI_RegisterCommand("/leave arena", "Arena", "ReplaceableTextures\\CommandButtons\\BTNBootsOfSpeed.blp", "Category: Arena|n|nLeaves the arena map section when arena gameplay is active.")
-    call CUI_RegisterCommand("/gathernodes refresh", "Gather Debug", "ReplaceableTextures\\CommandButtons\\BTNSelectHeroOn.blp", "Category: Gather Debug|n|nRefreshes gather nodes for debugging. Intended for testing only.")
+    call CUI_RegisterCommand("/help", "General", "ReplaceableTextures\\CommandButtons\\BTNScroll.blp", "Displays the general help text or command overview when implemented in gameplay logic.")
+    call CUI_RegisterCommand("/skills", "Professions", "ReplaceableTextures\\CommandButtons\\BTNChestOfGold.blp", "Shows the current tracked gather/profession skill values for the selected supported hero.")
+    call CUI_RegisterCommand("/leave arena", "Arena", "ReplaceableTextures\\CommandButtons\\BTNBootsOfSpeed.blp", "Leaves the arena map section when arena gameplay is active.")
+    call CUI_RegisterCommand("/gathernodes refresh", "Gather Debug", "ReplaceableTextures\\CommandButtons\\BTNSelectHeroOn.blp", "Refreshes gather nodes for debugging. Intended for testing only.")
+
+    call CUI_RegisterCommand("Cheats", "Warning", "ReplaceableTextures\\CommandButtons\\btncage.blp", "Warning disclaimer!|n|nCheats can and will break the normal intended gameplay. The cheats are legacy of testing the map's intense features and to speed up testing. The cheats can however add additional layer of fun and thus they remain.|n|nTip:|nRemember to save before using any cheats to easily return to \"unbroken\" game state.")
+    call CUI_RegisterCommand("/tele", "Movement", "ReplaceableTextures\\CommandButtons\\BTNMassTeleport.blp", "Teleports all Player's units to the current camera view.")
+    call CUI_RegisterCommand("/levelup", "Heroes", "ReplaceableTextures\\CommandButtons\\BTNPackBeast.blp", "Levels up all Player's Heroes to level 15.")
+    call CUI_RegisterCommand("/levelupone", "Heroes", "ReplaceableTextures\\CommandButtons\\BTNPackBeast.blp", "Levels up all Player's Heroes once.")
+    call CUI_RegisterCommand("/speedfreak", "Movement", "ReplaceableTextures\\CommandButtons\\BTNBootsOfSpeed.blp", "Highly increased movement speed for the selected units.|n|nDisabled by selecting the units and using the command again.")
+    call CUI_RegisterCommand("/powerupmyheroes", "Heroes", "ReplaceableTextures\\CommandButtons\\BTNManual3.blp", "Modifies Strength, Intelligence and Agility of Player's Heroes by +50.")
+    call CUI_RegisterCommand("/cinemaon", "Cinematic", "ReplaceableTextures\\CommandButtons\\BTNScroll.blp", "Turns cinematic mode on.|n|nDisabled upon pressing ESC key.")
+    call CUI_RegisterCommand("/wood", "Items", "ReplaceableTextures\\CommandButtons\\BTNHumanLumberUpgrade2.blp", "Create item Pile of Wood to Nazgrek.")
+    call CUI_RegisterCommand("/campfire", "Items", "ReplaceableTextures\\CommandButtons\\BTNHumanLumberUpgrade2.blp", "Create item Camp Fire to Nazgrek.")
+    call CUI_RegisterCommand("/torch", "Items", "ReplaceableTextures\\CommandButtons\\BTNINV_Torch_Lit.blp", "Create item Torch to Nazgrek.")
+    call CUI_RegisterCommand("/tent", "Items", "ReplaceableTextures\\CommandButtons\\BTNINV_Misc_LeatherScrap_04.blp", "Create item Tent to Nazgrek.")
+    call CUI_RegisterCommand("/nazgreksflask", "Items", "ReplaceableTextures\\CommandButtons\\BTNScroll.blp", "Create item Nazgrek's Flask to Nazgrek.")
+    call CUI_RegisterCommand("/cannon", "Spawning", "ReplaceableTextures\\CommandButtons\\BTNHumanMissileUpThree.blp", "Spawns cannon.")
+    call CUI_RegisterCommand("/everyoneisdead", "World", "ReplaceableTextures\\CommandButtons\\BTNAnimateDead.blp", "Kills every unit on the map.")
+    call CUI_RegisterCommand("/hordeiseverywhere", "Faction", "ReplaceableTextures\\CommandButtons\\BTNGrunt.blp", "Changes all units ownership to Horde.")
+    call CUI_RegisterCommand("/ihavenoallies", "Faction", "ReplaceableTextures\\CommandButtons\\BTNUnsummonBuilding.blp", "Horde is hostile against Player.")
+    call CUI_RegisterCommand("/reunion", "Faction", "ReplaceableTextures\\CommandButtons\\BTNSpiritLink.blp", "Horde is again friendly to Player.")
+    call CUI_RegisterCommand("/iamnazgrek", "Fun", "ReplaceableTextures\\CommandButtons\\BTNSelectHeroOn.blp", "Use unit model Nazgrek.")
+    call CUI_RegisterCommand("/animalslaughter", "Fun", "ReplaceableTextures\\CommandButtons\\BTNBeastMaster.blp", "What are you doing with the pigs?!")
 endfunction
 
 private function CUI_GetSelectedCommandId takes player whichPlayer returns integer
@@ -163,7 +188,7 @@ private function CUI_UpdateUI takes nothing returns nothing
 
     set CUI_SelectedCommandId[pid] = selectedCommandId
     call BlzFrameSetText(CUI_TitleFrame, CUI_Title + " - " + CUI_CommandName[selectedCommandId])
-    call BlzFrameSetText(CUI_TextArea, CUI_CommandBody[selectedCommandId])
+    call BlzFrameSetText(CUI_TextArea, "|cffffcc00Category:|r " + CUI_CommandCategory[selectedCommandId] + "|n|n" + CUI_CommandBody[selectedCommandId])
 endfunction
 
 public function ForceUpdate takes nothing returns nothing
