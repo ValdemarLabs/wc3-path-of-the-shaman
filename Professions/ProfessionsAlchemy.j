@@ -198,7 +198,7 @@ private function PA_RegisterRecipes takes nothing returns nothing
     call PA_Add(recipeId, PA_ITEM_BLINDWEED, 2, "Blindweed")
     call PA_Add(recipeId, PA_ITEM_GROMSBLOOD, 1, "Gromsblood")
 
-    set recipeId = PA_Register(PA_CATEGORY_FLASKS, "Nazgrek's Flask", "A long-lasting flask using gathered herbs and creature reagents.", PA_ICON_FLASK, PA_ITEM_NAZGREKS_FLASK, 35, 5.00)
+    set recipeId = PA_Register(PA_CATEGORY_FLASKS, "Nazgrek's Flask", "A long-lasting flask using gathered herbs and creature reagents.", PA_ICON_FLASK, PA_ITEM_NAZGREKS_FLASK, 0, 5.00)
     call PA_Add(recipeId, PA_ITEM_FOREST_FLOWER, 6, "Forest Flower")
     call PA_Add(recipeId, PA_ITEM_AGAVE, 3, "Agave")
     call PA_Add(recipeId, PA_ITEM_EARTH_ROOTS, 2, "Earth Roots")
