@@ -41,6 +41,7 @@ globals
     private constant integer ITEM_GNOLL_PILLAGE = 'I6A4'
     private constant integer ITEM_ORB_OF_LIFESTEAL = 'I6A5'
     private constant integer ABILITY_LIFE_DRAIN = 'A696'
+    private constant integer ABILITY_CHARM_AURA = 'S01P'
     private constant integer HORDE_OWNER = 5
     private constant integer TEMPORARY_GUARD_OWNER = 1
 
@@ -200,6 +201,12 @@ private function StopCharmRuntime takes nothing returns nothing
     call PauseTimer(ConfinementTimer)
 endfunction
 
+private function RemoveCharmAura takes unit hero returns nothing
+    if hero != null then
+        call UnitRemoveAbility(hero, ABILITY_CHARM_AURA)
+    endif
+endfunction
+
 private function CompleteChainsInternal takes nothing returns nothing
     local QuestData q = GetChainsQuest()
     if q == 0 or q.completed then
@@ -210,6 +217,7 @@ private function CompleteChainsInternal takes nothing returns nothing
     set udg_SuccubusSeduced = false
     set ActiveTask = TASK_NONE
     call StopCharmRuntime()
+    call RemoveCharmAura(CharmedHero)
     call RemoveTaskObjects()
     call MarkAllRequirementsCompleted()
     if Velyssara != null then
@@ -293,6 +301,7 @@ private function StartCharmRuntime takes unit hero returns nothing
     set CharmDispelled = false
     set udg_SuccubusSeduced = true
     set udg_QuestChainsOfSeductionDispelld = false
+    call UnitAddAbility(hero, ABILITY_CHARM_AURA)
     if IsInsideSereneglade(hero) then
         set LastSafeX = GetUnitX(hero)
         set LastSafeY = GetUnitY(hero)
@@ -909,6 +918,7 @@ public function DispelCharm takes unit hero returns boolean
     set udg_SuccubusSeduced = false
     set ActiveTask = TASK_NONE
     call StopCharmRuntime()
+    call RemoveCharmAura(hero)
     call RemoveTaskObjects()
     if q != 0 then
         call QuestGiver_SetRequirementCompleted(q.id, 2, true)
