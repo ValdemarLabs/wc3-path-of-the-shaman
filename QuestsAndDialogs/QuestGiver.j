@@ -2,7 +2,7 @@
     QuestGiver
 
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.2.0
 
     Description:
     Provides PotS quest creation helpers, objective tracking, quest-item
@@ -20,6 +20,8 @@
     - QuestGiver_RegisterUnitKillRequirement(...) tracks unit kills.
     - QuestGiver_RegisterTalkToRequirement(...) tracks manual conversations.
     - QuestGiver_SetObjectiveTarget(...) updates the current marked target.
+    - QuestGiver_SetQuestUnitSpecificHero(...) binds availability and markers
+      to an owned/companion hero.
     - QuestGiver_SetQuestCategory(...) assigns story/content grouping.
     - QuestGiver_ResetRequirements(questId) clears objective progress.
 
@@ -975,6 +977,12 @@ endfunction
 
 public function SetAllowedHeroesForLevelCheckByNameAndGiver takes string questName, unit questGiver, boolean allowNazgrek, boolean allowZulkis returns nothing
 	call QuestMaster_SetAllowedHeroesForLevelCheckByNameAndGiver(questName, questGiver, allowNazgrek, allowZulkis)
+endfunction
+
+public function SetQuestUnitSpecificHero takes QuestData q, unit hero returns nothing
+	if q != 0 then
+		call QuestMaster_SetUnitSpecificHero(q.id, hero)
+	endif
 endfunction
 
 public function AddRequiredCompletedQuest takes integer questId, string prereqQuestName, unit prereqQuestGiver returns nothing

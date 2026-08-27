@@ -2,7 +2,7 @@
     QuestMaster
 
     Author: Valdemar
-    Version: 1.2.1
+    Version: 1.3.1
 
     Description:
     Owns PotS quest data, state transitions, rewards, availability, custom
@@ -24,6 +24,8 @@
     - QuestMaster_IconRegisterObjective(...) tracks current unit objectives.
     - QuestMaster_SetGiverIconsSuppressed(unit, flag) hides/restores a unit's
       quest-giver overhead and minimap markers without changing quest state.
+    - QuestMaster_SetUnitSpecificHero(questId, hero) limits quest availability
+      and quest markers to times when that hero is owned or a companion.
     - QuestMaster_AddDailyResetAction(handler) listens for daily resets.
     - QuestMaster_ResetDailyQuests() manually resets completed daily quests.
 
@@ -68,11 +70,14 @@ globals
 	private Table QuestGiverTable = 0
 	private Table QuestIconTable = 0
 	private Table QuestIconSuppressedUnit = 0
+	private Table QuestIconSuppressionConfigured = 0
 	private Table QuestGiverByType = 0  // Maps unit type ID to last registered unit handle ID
 
 	// Quest registry
 	private integer QuestCount = 0
 	private integer array QuestIdList
+	private integer UnitSpecificQuestCount = 0
+	private integer array UnitSpecificQuestId
 
 	// Quest giver registry and quest lists
 	private integer QuestGiverCount = 0
@@ -643,6 +648,39 @@ private function IconTypePriority takes string questType returns integer
 	return 1
 endfunction
 
+private function IsGiverIconSuppressed takes unit u returns boolean
+	local integer id
+	if u == null then
+		return false
+	endif
+	set id = GetHandleId(u)
+	if QuestIconSuppressionConfigured.boolean[id] then
+		return QuestIconSuppressedUnit.boolean[id]
+	endif
+	return u == udg_Nazgrek or u == udg_Zulkis
+endfunction
+
+private function IsQuestUnitAvailable takes QuestData q returns boolean
+	local unit hero
+	local boolean available
+	if q == 0 or not q.unitSpecific then
+		return true
+	endif
+	set hero = q.questUnit
+	set available = hero != null and GetUnitTypeId(hero) != 0 and not IsUnitHidden(hero) and (GetOwningPlayer(hero) == Player(0) or (udg_Companion_Group != null and IsUnitInGroup(hero, udg_Companion_Group)))
+	set hero = null
+	return available
+endfunction
+
+private function GetIconQuestData takes integer iconQuestId returns QuestData
+	if iconQuestId > 0 and iconQuestId < QUEST_DUMMY_OFFSET then
+		return GetById(iconQuestId)
+	elseif iconQuestId < 0 then
+		return GetById((-iconQuestId)/10)
+	endif
+	return 0
+endfunction
+
 public function IconUpdateForNPC takes unit u returns nothing
 	local integer questID
 	local integer questCount
@@ -658,11 +696,12 @@ public function IconUpdateForNPC takes unit u returns nothing
 	local string curType = ""
 	local Table iconTable
 	local QuestData q
+	local boolean includeIcon
 	if u == null then
 		return
 	endif
 	set id = GetHandleId(u)
-	if QuestIconSuppressedUnit.boolean[id] then
+	if IsGiverIconSuppressed(u) then
 		call RemoveOldEffect(u)
 		call RemoveOldMapPing(u)
 		return
@@ -675,22 +714,23 @@ public function IconUpdateForNPC takes unit u returns nothing
 			set questID = iconTable.integer[i*100 + QUEST_ID_KEY]
 			set curState = iconTable.integer[i*100 + QUEST_STATE_KEY]
 			set curType = iconTable.string[i*100 + QUEST_TYPE_KEY]
-			if questID > 0 and questID < QUEST_DUMMY_OFFSET then
-				set q = GetById(questID)
-				if q != 0 then
-					set curState = q.state
-					set curType = q.questType
-					set iconTable.integer[i*100 + QUEST_STATE_KEY] = curState
-					set iconTable.string[i*100 + QUEST_TYPE_KEY] = curType
-				endif
+			set q = GetIconQuestData(questID)
+			set includeIcon = q == 0 or IsQuestUnitAvailable(q)
+			if q != 0 then
+				set curState = q.state
+				set curType = q.questType
+				set iconTable.integer[i*100 + QUEST_STATE_KEY] = curState
+				set iconTable.string[i*100 + QUEST_TYPE_KEY] = curType
 			endif
-			set statePriority = IconStatePriority(curState)
-			set typePriority = IconTypePriority(curType)
-			if statePriority > bestStatePriority or (statePriority == bestStatePriority and typePriority > bestTypePriority) then
-				set bestStatePriority = statePriority
-				set bestTypePriority = typePriority
-				set bestState = curState
-				set bestType = curType
+			if includeIcon then
+				set statePriority = IconStatePriority(curState)
+				set typePriority = IconTypePriority(curType)
+				if statePriority > bestStatePriority or (statePriority == bestStatePriority and typePriority > bestTypePriority) then
+					set bestStatePriority = statePriority
+					set bestTypePriority = typePriority
+					set bestState = curState
+					set bestType = curType
+				endif
 			endif
 			set i = i + 1
 		endloop
@@ -706,7 +746,7 @@ public function IconUpdateForNPC takes unit u returns nothing
 			set questID = GetGiverQuestIdByIndexInternal(u, i)
 			if questID != 0 then
 				set q = GetById(questID)
-				if q != 0 then
+				if q != 0 and IsQuestUnitAvailable(q) then
 					set curState = q.state
 					set curType = q.questType
 				set statePriority = IconStatePriority(curState)
@@ -826,11 +866,8 @@ public function SetGiverIconsSuppressed takes unit u, boolean flag returns nothi
 		return
 	endif
 	set id = GetHandleId(u)
-	if flag then
-		set QuestIconSuppressedUnit.boolean[id] = true
-	else
-		call QuestIconSuppressedUnit.boolean.remove(id)
-	endif
+	set QuestIconSuppressionConfigured.boolean[id] = true
+	set QuestIconSuppressedUnit.boolean[id] = flag
 	call IconUpdateForNPC(u)
 endfunction
 
@@ -922,6 +959,9 @@ struct QuestData
 	boolean useAllowedHeroesForLevelCheck
 	boolean levelCheckAllowNazgrek
 	boolean levelCheckAllowZulkis
+	boolean unitSpecific
+	boolean unitSpecificRegistered
+	unit questUnit
 	string faction
 	integer requiredReputation
 	trigger customCondition
@@ -1147,6 +1187,9 @@ struct QuestData
 		set this.useAllowedHeroesForLevelCheck = false
 		set this.levelCheckAllowNazgrek = true
 		set this.levelCheckAllowZulkis = true
+		set this.unitSpecific = false
+		set this.unitSpecificRegistered = false
+		set this.questUnit = null
 		set this.faction = ""
 		set this.requiredReputation = 0
 		set this.customCondition = null
@@ -1903,6 +1946,18 @@ struct QuestData
 		set this.levelCheckAllowZulkis = allowZulkis
 	endmethod
 
+	method setUnitSpecificHero takes unit hero returns nothing
+		set this.questUnit = hero
+		set this.unitSpecific = hero != null
+		if this.unitSpecific and not this.unitSpecificRegistered then
+			set UnitSpecificQuestCount = UnitSpecificQuestCount + 1
+			set UnitSpecificQuestId[UnitSpecificQuestCount] = this.id
+			set this.unitSpecificRegistered = true
+		endif
+		call this.updateIcons()
+		call NotifyDataChanged(this.id)
+	endmethod
+
 	method setFaction takes string factionName returns nothing
 		set this.faction = factionName
 	endmethod
@@ -2454,6 +2509,36 @@ public function UnregisterGiver takes unit u returns nothing
 	call UnregisterGiverInternal(u)
 endfunction
 
+private function UpdatePrerequisiteGiverReference takes QuestData q, unit oldUnit, unit newUnit returns nothing
+	if q.requiredCompletedQuestGiver1 == oldUnit then
+		set q.requiredCompletedQuestGiver1 = newUnit
+	endif
+	if q.requiredCompletedQuestGiver2 == oldUnit then
+		set q.requiredCompletedQuestGiver2 = newUnit
+	endif
+	if q.requiredCompletedQuestGiver3 == oldUnit then
+		set q.requiredCompletedQuestGiver3 = newUnit
+	endif
+	if q.requiredCompletedQuestGiver4 == oldUnit then
+		set q.requiredCompletedQuestGiver4 = newUnit
+	endif
+endfunction
+
+private function UpdatePrerequisiteGiverReferenceByHandleId takes QuestData q, integer oldId, unit newUnit returns nothing
+	if q.requiredCompletedQuestGiver1 != null and GetHandleId(q.requiredCompletedQuestGiver1) == oldId then
+		set q.requiredCompletedQuestGiver1 = newUnit
+	endif
+	if q.requiredCompletedQuestGiver2 != null and GetHandleId(q.requiredCompletedQuestGiver2) == oldId then
+		set q.requiredCompletedQuestGiver2 = newUnit
+	endif
+	if q.requiredCompletedQuestGiver3 != null and GetHandleId(q.requiredCompletedQuestGiver3) == oldId then
+		set q.requiredCompletedQuestGiver3 = newUnit
+	endif
+	if q.requiredCompletedQuestGiver4 != null and GetHandleId(q.requiredCompletedQuestGiver4) == oldId then
+		set q.requiredCompletedQuestGiver4 = newUnit
+	endif
+endfunction
+
 public function UpdateGiverUnitReference takes unit oldUnit, unit newUnit returns nothing
 	local integer oldId
 	local integer newId
@@ -2502,6 +2587,10 @@ public function UpdateGiverUnitReference takes unit oldUnit, unit newUnit return
 			if q.receiver == oldUnit then
 				set q.receiver = newUnit
 			endif
+			if q.questUnit == oldUnit then
+				set q.questUnit = newUnit
+			endif
+			call UpdatePrerequisiteGiverReference(q, oldUnit, newUnit)
 		endif
 		set i = i + 1
 	endloop
@@ -2569,6 +2658,10 @@ private function UpdateGiverUnitReferenceByHandleId takes integer oldId, unit ne
 			if GetHandleId(q.receiver) == oldId then
 				set q.receiver = newUnit
 			endif
+			if q.questUnit != null and GetHandleId(q.questUnit) == oldId then
+				set q.questUnit = newUnit
+			endif
+			call UpdatePrerequisiteGiverReferenceByHandleId(q, oldId, newUnit)
 		endif
 		set i = i + 1
 	endloop
@@ -2766,6 +2859,13 @@ public function SetAllowedHeroesForLevelCheckByNameAndGiver takes string questNa
 	local QuestData q = GetByNameAndGiver(questName, questGiver)
 	if q != 0 then
 		call q.setAllowedHeroesForLevelCheck(allowNazgrek, allowZulkis)
+	endif
+endfunction
+
+public function SetUnitSpecificHero takes integer questId, unit hero returns nothing
+	local QuestData q = GetById(questId)
+	if q != 0 then
+		call q.setUnitSpecificHero(hero)
 	endif
 endfunction
 
@@ -3025,6 +3125,10 @@ private function PassesRequirements takes QuestData q returns boolean
 	local integer heroLevel
 	local Faction f
 
+	if not IsQuestUnitAvailable(q) then
+		return false
+	endif
+
 	if AreModeAllQuestsAvailableOnStart() or not AreModeQuestRequirementsEnabled() then
 		return true
 	endif
@@ -3114,6 +3218,21 @@ private function EvaluateQuest takes QuestData q, boolean updateIcons returns no
 			call q.setStateNoIcons(QUEST_STATE_UNAVAILABLE)
 		endif
 	endif
+endfunction
+
+public function RefreshUnitSpecificQuests takes nothing returns nothing
+	local integer i = 1
+	local QuestData q
+
+	loop
+		exitwhen i > UnitSpecificQuestCount
+		set q = GetById(UnitSpecificQuestId[i])
+		if q != 0 then
+			call EvaluateQuest(q, false)
+			call q.updateIcons()
+		endif
+		set i = i + 1
+	endloop
 endfunction
 
 private function ResetDailyQuest takes QuestData q returns nothing
@@ -3218,6 +3337,7 @@ private function EvalTimerTick takes nothing returns nothing
 		set i = i + QUEST_EVAL_BATCH_COUNT
 	endloop
 	set QuestEvalBatchIndex = ModuloInteger(QuestEvalBatchIndex + 1, QUEST_EVAL_BATCH_COUNT)
+	call RefreshUnitSpecificQuests()
 	set u = null
 endfunction
 
@@ -3238,6 +3358,7 @@ private function Init takes nothing returns nothing
 	set QuestGiverByType = Table.create()
 	set QuestIconTable = Table.create()
 	set QuestIconSuppressedUnit = Table.create()
+	set QuestIconSuppressionConfigured = Table.create()
 	set QuestDiscoveredTimerData = Table.create()
 	set QuestCompletedTimerData = Table.create()
 	set QuestMaster_OnStateChanged = CreateTrigger()
