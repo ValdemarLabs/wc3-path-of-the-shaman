@@ -39,6 +39,7 @@ globals
     private framehandle MUI_CloseButton = null
     private framehandle MUI_Title = null
     private framehandle array MUI_MenuButton
+    private framehandle array MUI_MenuButtonIcon
     private Table MUI_ButtonAction = 0
 
     private trigger MUI_OpenTrigger = null
@@ -155,6 +156,7 @@ endfunction
 
 private function MUI_FlashHintOpenButton takes nothing returns nothing
     if MUI_OpenButtonHintAlert != null and MUI_HintFlashTimer != null then
+        call BlzFrameSetSpriteAnimate(MUI_OpenButtonHintAlert, 0, 0)
         call BlzFrameSetVisible(MUI_OpenButtonHintAlert, true)
         call TimerStart(MUI_HintFlashTimer, MUI_HINT_FLASH_DURATION, false, function MUI_HideHintOpenButtonAlert)
     endif
@@ -362,6 +364,7 @@ private function MUI_CreateMenuButton takes integer index, string label, string 
         call BlzFrameSetPoint(iconFrame, FRAMEPOINT_LEFT, MUI_MenuButton[index], FRAMEPOINT_LEFT, MUI_MENU_ICON_OFFSET_X, 0.0)
         call BlzFrameSetSize(iconFrame, MUI_MENU_ICON_SIZE, MUI_MENU_ICON_SIZE)
         call BlzFrameSetTexture(iconFrame, iconPath, 0, true)
+        set MUI_MenuButtonIcon[index] = iconFrame
         set textLeftOffset = MUI_MENU_TEXT_OFFSET_X
     endif
 
@@ -380,13 +383,12 @@ private function MUI_CreateMenuButton takes integer index, string label, string 
     set iconFrame = null
 endfunction
 
-private function MUI_CreateHintAlert takes framehandle parent, string frameName returns framehandle
+private function MUI_CreateHintAlert takes framehandle parent, string frameName, real modelScale returns framehandle
     local framehandle alertFrame = BlzCreateFrameByType("SPRITE", frameName, parent, "", 0)
 
-    call BlzFrameSetPoint(alertFrame, FRAMEPOINT_CENTER, parent, FRAMEPOINT_CENTER, 0.0, 0.0)
-    call BlzFrameSetSize(alertFrame, 0.036, 0.036)
+    call BlzFrameSetAllPoints(alertFrame, parent)
     call BlzFrameSetModel(alertFrame, MUI_HINT_ALERT_MODEL, 0)
-    call BlzFrameSetScale(alertFrame, 0.76)
+    call BlzFrameSetScale(alertFrame, modelScale)
     call BlzFrameSetLevel(alertFrame, 7)
     call BlzFrameSetEnable(alertFrame, false)
     call BlzFrameSetVisible(alertFrame, false)
@@ -428,7 +430,7 @@ private function MUI_CreateFrames takes nothing returns nothing
     call MUI_CreateMenuButton(11, "Traveler's Journal", MUI_ICON_PLAYER_HOME, MUI_ACTION_PLAYER_HOME, 0.300, -0.144)
     call MUI_CreateMenuButton(12, "Settings", MUI_ICON_SETTINGS, MUI_ACTION_SETTINGS, 0.300, -0.186)
 
-    set MUI_HintsButtonAlert = MUI_CreateHintAlert(MUI_MenuButton[6], "MasterUIHintsButtonAlert")
+    set MUI_HintsButtonAlert = MUI_CreateHintAlert(MUI_MenuButtonIcon[6], "MasterUIHintsButtonAlert", 0.56)
 
     set MUI_OpenButton = BlzCreateFrameByType("GLUETEXTBUTTON", "MasterUIOpenButton", BlzGetOriginFrame(ORIGIN_FRAME_GAME_UI, 0), "ScriptDialogButton", 0)
     call MUI_PosOpenButton(MUI_OpenButton)
@@ -436,7 +438,7 @@ private function MUI_CreateFrames takes nothing returns nothing
     call BlzTriggerRegisterFrameEvent(MUI_OpenTrigger, MUI_OpenButton, FRAMEEVENT_CONTROL_CLICK)
     call BlzTriggerRegisterFrameEvent(MUI_ClearFocusTrigger, MUI_OpenButton, FRAMEEVENT_CONTROL_CLICK)
     call MUI_ApplyOpenButtonVisibility()
-    set MUI_OpenButtonHintAlert = MUI_CreateHintAlert(MUI_OpenButton, "MasterUIOpenButtonHintAlert")
+    set MUI_OpenButtonHintAlert = MUI_CreateHintAlert(MUI_OpenButton, "MasterUIOpenButtonHintAlert", 0.76)
     call MUI_ApplyHintsUnreadState()
     if MUI_HintsUnread then
         call MUI_FlashHintOpenButton()
