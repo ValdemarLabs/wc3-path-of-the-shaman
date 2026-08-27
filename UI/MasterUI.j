@@ -430,7 +430,7 @@ private function MUI_CreateFrames takes nothing returns nothing
     call MUI_CreateMenuButton(11, "Traveler's Journal", MUI_ICON_PLAYER_HOME, MUI_ACTION_PLAYER_HOME, 0.300, -0.144)
     call MUI_CreateMenuButton(12, "Settings", MUI_ICON_SETTINGS, MUI_ACTION_SETTINGS, 0.300, -0.186)
 
-    set MUI_HintsButtonAlert = MUI_CreateHintAlert(MUI_MenuButtonIcon[6], "MasterUIHintsButtonAlert", 0.56)
+    set MUI_HintsButtonAlert = MUI_CreateHintAlert(MUI_MenuButton[6], "MasterUIHintsButtonAlert", 0.76)
 
     set MUI_OpenButton = BlzCreateFrameByType("GLUETEXTBUTTON", "MasterUIOpenButton", BlzGetOriginFrame(ORIGIN_FRAME_GAME_UI, 0), "ScriptDialogButton", 0)
     call MUI_PosOpenButton(MUI_OpenButton)
