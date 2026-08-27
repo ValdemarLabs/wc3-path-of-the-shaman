@@ -12,14 +12,15 @@
     Converted from the original Ragno GUI triggers.
 
     How to install:
-    Import after the required quest, dialogue, cinematic, follow, loot,
-    reputation, death-event, hero-item, fallen-hero, and voiceline libraries.
+    Import after qZulkis and the required quest, dialogue, cinematic, follow,
+    loot, reputation, death-event, hero-item, fallen-hero, and voiceline
+    libraries.
 
     API:
     Public quest-state hooks are declared at the end of this library.
 
 **/
-library qRagno initializer Init requires QuestGiver, QuestMaster, DialogInteraction, DialogSystem, CinematicMover, FollowSystem, HeroItemCheck, ItemLootSystem, Reputation, UnitDeathEvent, VoicelinesNazgrek, VoicelinesOrcPeon, FallenHeroState
+library qRagno initializer Init requires qZulkis, QuestGiver, QuestMaster, DialogInteraction, DialogSystem, CinematicMover, FollowSystem, HeroItemCheck, ItemLootSystem, Reputation, UnitDeathEvent, VoicelinesNazgrek, VoicelinesOrcPeon, FallenHeroState
 
 globals
     private constant boolean DEBUG = false
@@ -143,6 +144,7 @@ globals
     private boolean GivingLetterUnlocked = false
     private boolean MountainDefenseActive = false
     private boolean ProtectOutpostStarted = false
+    private boolean ProtectOutpostIntroFinished = false
     private boolean ProtectOutpostCompleted = false
     private boolean ProtectOutpostSecondWaveSpawned = false
     private boolean ProtectOutpostRagnoRespawnPending = false
@@ -1149,15 +1151,27 @@ private function StageProtectOutpostIntroCinematic takes nothing returns nothing
 endfunction
 
 private function OnProtectOutpostIntroCinematicEnd takes nothing returns nothing
+    local QuestData q
+
     call PauseTimer(ProtectOutpostIntroCameraAssistTimer)
     call PauseTimer(ProtectOutpostIntroCameraReturnTimer)
     call CameraSetupApplyForPlayer(true, gg_cam_ProtectOutpostSkipped, Player(0), 0.00)
     call ReturnPlayerUnitsFromProtectOutpostCinematic()
     call CinematicFadeBJ(bj_CINEFADETYPE_FADEIN, OUTPOST_CINEMATIC_END_FADE_DURATION, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
     call DialogInteraction_EndCinematicSequence(CINEMATIC)
+    set ProtectOutpostIntroFinished = true
+
+    call QuestGiver_AcceptQuestByNameAndGiver(QUEST_PROTECT_OUTPOST, Ragno)
+    set q = GetRagnoQuest(QUEST_PROTECT_OUTPOST)
+    if q != 0 then
+        call q.updateRequirementText(1, "Defeat the attacking gnolls")
+        call q.refreshQuestLog()
+    endif
+
     if DialogInteraction_IsUnitAlive(Nazgrek) then
         call IssuePointOrder(Nazgrek, "attack", GetRectCenterX(gg_rct_GnollAttackRegion2), GetRectCenterY(gg_rct_GnollAttackRegion2))
     endif
+    set q = 0
 endfunction
 
 private function PlayProtectOutpostIntroCinematic takes nothing returns nothing
@@ -1252,17 +1266,21 @@ private function StageProtectOutpostCompletionCinematic takes nothing returns no
 endfunction
 
 private function OnProtectOutpostCompletionCinematicEnd takes nothing returns nothing
-    call CameraSetupApplyForPlayer(true, gg_cam_ProtectOutpostSkipped02, Player(0), 0.00)
-    call ResetToGameCameraForPlayer(Player(0), 0.00)
     call ReturnPlayerUnitsFromProtectOutpostCinematic()
-    call CinematicFadeBJ(bj_CINEFADETYPE_FADEIN, OUTPOST_CINEMATIC_END_FADE_DURATION, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
-    call DialogInteraction_EndCinematicSequence(CINEMATIC)
     set MountainDefenseActive = false
     call UnhideProtectOutpostPreplacedGnolls()
     if DialogInteraction_IsUnitAlive(Ragno) then
         call IssuePointOrder(Ragno, "move", GetRectCenterX(gg_rct_RagnoIntroRagno2), GetRectCenterY(gg_rct_RagnoIntroRagno2))
     endif
     call TimerStart(ProtectOutpostLetterDelayTimer, 2.00, false, function OnProtectOutpostLetterDelay)
+    if qZulkis_IsPrologueCompleted() then
+        call CameraSetupApplyForPlayer(true, gg_cam_ProtectOutpostSkipped02, Player(0), 0.00)
+        call DialogInteraction_EndCinematicSequence(CINEMATIC)
+        call ResetToGameCameraForPlayer(Player(0), 0.00)
+        call CinematicFadeBJ(bj_CINEFADETYPE_FADEIN, OUTPOST_CINEMATIC_END_FADE_DURATION, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
+    else
+        call qZulkis_StartPrologue()
+    endif
 endfunction
 
 private function MoveRagnoToProtectOutpostConversation takes nothing returns nothing
@@ -1374,6 +1392,9 @@ private function OnProtectOutpostSecondWaveTimer takes nothing returns nothing
         call PauseTimer(ProtectOutpostSecondWaveTimer)
         return
     endif
+    if not ProtectOutpostIntroFinished then
+        return
+    endif
     if not ProtectOutpostSecondWaveSpawned and GetLivingProtectOutpostGnollCount() <= OUTPOST_SECOND_WAVE_LIVING_THRESHOLD then
         call PauseTimer(ProtectOutpostSecondWaveTimer)
         call SpawnProtectOutpostSecondWave()
@@ -1384,8 +1405,6 @@ private function OnProtectOutpostSecondWaveTimer takes nothing returns nothing
 endfunction
 
 private function StartProtectOutpostEncounter takes nothing returns nothing
-    local QuestData q
-
     call SyncUnitReferences()
     if ProtectOutpostStarted or ProtectOutpostCompleted or GivingLetterUnlocked or not IsProtectOutpostQuestOpen() then
         return
@@ -1396,22 +1415,14 @@ private function StartProtectOutpostEncounter takes nothing returns nothing
     call HideProtectOutpostPreplacedGnolls()
     call SelectProtectOutpostGrunts()
     set ProtectOutpostStarted = true
+    set ProtectOutpostIntroFinished = false
     set ProtectOutpostSecondWaveSpawned = false
     set MountainDefenseActive = true
     call DialogInteraction_CancelActiveTransition()
 
-    call QuestGiver_AcceptQuestByNameAndGiver(QUEST_PROTECT_OUTPOST, Ragno)
-    set q = GetRagnoQuest(QUEST_PROTECT_OUTPOST)
-    if q != 0 then
-        call q.updateRequirementText(1, "Defeat the attacking gnolls")
-        call q.refreshQuestLog()
-    endif
-
     call SpawnProtectOutpostFirstWave()
     call PlayProtectOutpostIntroCinematic()
     call TimerStart(ProtectOutpostSecondWaveTimer, OUTPOST_WAVE_CHECK_PERIOD, true, function OnProtectOutpostSecondWaveTimer)
-
-    set q = 0
 endfunction
 
 private function OnProtectOutpostRegionEnter takes nothing returns nothing
