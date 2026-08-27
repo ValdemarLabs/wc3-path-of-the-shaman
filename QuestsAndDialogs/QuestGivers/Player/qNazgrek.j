@@ -2,7 +2,7 @@
     qNazgrek
 
     Author: Valdemar
-    Version:
+    Version: 1.1.0
 
     Description:
 
@@ -20,8 +20,8 @@
 
     Import after QuestGiver, QuestMaster, DialogSystem, SharedDInvLib,
     UnitDeathEvent, and VoicelinesNazgrek. Call
-    qNazgrek_StartIntroQuestChain() when Nazgrek's opening gameplay begins,
-    then disable the legacy Nazgrek's Flask GUI trigger folder.
+    qNazgrek_StartIntroQuestChain() when Nazgrek's intro cinematic ends, then
+    disable the legacy Nazgrek's Flask GUI trigger folder.
 
     API:
 
@@ -344,6 +344,7 @@ private function CreateQuests takes nothing returns nothing
     else
         set WolfHuntIQuest = QuestGiver_GetByNameAndGiver(QUEST_WOLF_HUNT_I, Nazgrek)
     endif
+    call QuestGiver_SetQuestUnitSpecificHero(WolfHuntIQuest, Nazgrek)
 
     if not QuestGiver_QuestExistsByNameAndGiver(QUEST_NAZGREKS_FLASK, Nazgrek) then
         set NazgreksFlaskQuest = QuestGiver_CreateConfiguredQuest(QUEST_NAZGREKS_FLASK, Nazgrek, "normal", 1, null, QUEST_NAZGREKS_FLASK, "ReplaceableTextures\\CommandButtons\\BTNVialFull.blp", "Gather the legacy reagents and use an alchemy cauldron to create Nazgrek's Flask before confronting the Wolf Mother.\n\n", infoText, "|cffffcc00Recommended level:|r 1\n\n", 1, true, true, false, "", "")
@@ -358,6 +359,7 @@ private function CreateQuests takes nothing returns nothing
     else
         set NazgreksFlaskQuest = QuestGiver_GetByNameAndGiver(QUEST_NAZGREKS_FLASK, Nazgrek)
     endif
+    call QuestGiver_SetQuestUnitSpecificHero(NazgreksFlaskQuest, Nazgrek)
     set availabilityCondition = null
 endfunction
 
@@ -375,8 +377,8 @@ private function InitDelayed takes nothing returns nothing
         return
     endif
 
-    call CreateQuests()
     call QuestMaster_SetGiverIconsSuppressed(Nazgrek, true)
+    call CreateQuests()
     call UnitDeathEvent_Register(function OnAnyUnitDeath)
     set Initialized = true
     call TimerStart(ProgressTimer, PROGRESS_INTERVAL, true, function OnProgressTimer)

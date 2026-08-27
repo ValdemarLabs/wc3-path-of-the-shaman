@@ -2,7 +2,7 @@
     qZulkis
 
     Author: Valdemar
-    Version:
+    Version: 1.1.0
 
     Description:
 
@@ -33,7 +33,7 @@
     qZulkis_IsPrologueCompleted() gates Call of the Horde convergence.
 
 **/
-library qZulkis initializer Init requires QuestGiver, QuestMaster, DialogInteraction, DialogSystem, DInventory, DEquipment, VoicelinesZulkis, VoicelinesThork, VoicelinesZulkarak, VoicelinesGenericTroll
+library qZulkis initializer Init requires QuestGiver, QuestMaster, DialogInteraction, DialogSystem, DInventory, DEquipment, VoicelinesZulkis, VoicelinesThork, VoicelinesZulkarak, VoicelinesGenericTroll, optional Pet
     globals
         // Quest and staging configuration
         public constant string QUEST_MEET_CHIEFTAIN_THORK = "Meet with Chieftain Thork"
@@ -60,6 +60,9 @@ library qZulkis initializer Init requires QuestGiver, QuestMaster, DialogInterac
         private constant real THORK_INTERACTION_RANGE = 600.00
         private constant real ZULKARAK_RESCUE_RANGE = 350.00
         private constant real FADE_DURATION = 1.00
+        private constant real WOUNDED_BLOOD_MIN_DELAY = 2.00
+        private constant real WOUNDED_BLOOD_MAX_DELAY = 4.00
+        private constant string WOUNDED_BLOOD_EFFECT = "Objects\\Spawnmodels\\Orc\\OrcBlood\\OrcBloodGrunt.mdl"
         private constant boolean DEBUG = false
 
         // Runtime state
@@ -75,17 +78,22 @@ library qZulkis initializer Init requires QuestGiver, QuestMaster, DialogInterac
         private timer InitTimer = null
         private timer ProgressTimer = null
         private timer TransitionTimer = null
+        private timer WoundedBloodTimer = null
         private integer PrologueState = STATE_DORMANT
         private real ShipTravelElapsed = 0.00
         private real NazgrekSavedX = 0.00
         private real NazgrekSavedY = 0.00
         private real NazgrekSavedFacing = 0.00
+        private player NazgrekSavedOwner = null
+        private boolean NazgrekSavedInvulnerable = false
+        private boolean NazgrekWasUnitHiderReference = false
         private boolean Initialized = false
         private boolean StartRequested = false
         private boolean PrologueStarted = false
         private boolean PrologueCompleted = false
         private boolean ScenePlaying = false
         private boolean BrokenLandingStaged = false
+        private boolean BrokenLandingViewStaged = false
         private boolean InitWaitingLogged = false
     endglobals
 
@@ -319,10 +327,24 @@ private function StartRescueBrotherQuest takes nothing returns nothing
     call DebugMsg("Started Rescue the Brother.")
 endfunction
 
+private function OnWoundedBlood takes nothing returns nothing
+    local effect blood
+
+    if BrokenLandingStaged and LandingTroll[3] != null and GetUnitTypeId(LandingTroll[3]) != 0 then
+        set blood = AddSpecialEffectTarget(WOUNDED_BLOOD_EFFECT, LandingTroll[3], "chest")
+        call DestroyEffect(blood)
+        call TimerStart(WoundedBloodTimer, GetRandomReal(WOUNDED_BLOOD_MIN_DELAY, WOUNDED_BLOOD_MAX_DELAY), false, function OnWoundedBlood)
+    endif
+    set blood = null
+endfunction
+
 private function StageBrokenLanding takes nothing returns nothing
     local real shipX = GetRectCenterX(gg_rct_ZulkisShipWP2)
     local real shipY = GetRectCenterY(gg_rct_ZulkisShipWP2)
 
+    if BrokenLandingStaged then
+        return
+    endif
     set BrokenLandingStaged = true
     call ReplaceLandingTrollWithCorpse(1, UNIT_DARKSPEAR_HEADHUNTER, gg_rct_CorpseTroll01)
     call ReplaceLandingTrollWithCorpse(2, UNIT_DARKSPEAR_HEADHUNTER, gg_rct_CorpseTroll02)
@@ -331,8 +353,13 @@ private function StageBrokenLanding takes nothing returns nothing
     call ReplaceLandingTrollWithCorpse(6, UNIT_DARKSPEAR_HEADHUNTER, gg_rct_CorpseTroll06)
     if LandingTroll[3] != null then
         call SetWidgetLife(LandingTroll[3], RMaxBJ(1.00, GetUnitState(LandingTroll[3], UNIT_STATE_MAX_LIFE) * 0.10))
+        call SetUnitOwner(LandingTroll[3], Player(PLAYER_NEUTRAL_PASSIVE), true)
         call SetUnitInvulnerable(LandingTroll[3], true)
-        call PauseUnit(LandingTroll[3], true)
+        call PauseUnit(LandingTroll[3], false)
+        call IssueImmediateOrder(LandingTroll[3], "stop")
+        call SetUnitAnimation(LandingTroll[3], "death")
+        call SetUnitTimeScale(LandingTroll[3], 0.20)
+        call TimerStart(WoundedBloodTimer, 0.50, false, function OnWoundedBlood)
     endif
 
     call SetUnitOwner(Zulkarak, Player(PLAYER_NEUTRAL_PASSIVE), true)
@@ -344,15 +371,21 @@ private function StageBrokenLanding takes nothing returns nothing
     call CleanupShoreFire()
     set ShoreFire[1] = AddSpecialEffect("Doodads\\Cinematic\\TownBurningFireEmitter\\TownBurningFireEmitter.mdl", shipX - 96.00, shipY)
     set ShoreFire[2] = AddSpecialEffect("Doodads\\Cinematic\\TownBurningFireEmitter\\TownBurningFireEmitter.mdl", shipX + 96.00, shipY)
+endfunction
+
+private function StageBrokenLandingView takes nothing returns nothing
+    call StageBrokenLanding()
+    set BrokenLandingViewStaged = true
     call CameraSetupApplyForPlayer(true, gg_cam_IntroZulkisCam4, Player(0), 0.00)
 endfunction
 
 private function FinishBrokenLanding takes nothing returns nothing
-    local boolean skippedBeforeStaging = not BrokenLandingStaged
+    local boolean skippedBeforeStaging = not BrokenLandingViewStaged
 
     if skippedBeforeStaging then
-        call StageBrokenLanding()
+        call StageBrokenLandingView()
     endif
+    call PauseTimer(WoundedBloodTimer)
     call ReplaceLandingTrollWithCorpse(3, UNIT_DARKSPEAR_WITCH_DOCTOR, gg_rct_CorpseTroll03)
     if MeetThorkQuest != 0 and MeetThorkQuest.active and not MeetThorkQuest.completed then
         call QuestGiver_SetRequirementCompleted(MeetThorkQuest.id, 2, true)
@@ -381,9 +414,9 @@ endfunction
 private function PlayBrokenLandingSequence takes nothing returns nothing
     local integer seq = DialogInteraction_CreateBaseSequence(LandingTroll[3], "Darkspear Witch Doctor")
 
-    set BrokenLandingStaged = false
+    set BrokenLandingViewStaged = false
     call DialogSystem_SetSequenceCallbacks(seq, function OnBrokenLandingSequenceStart, function OnBrokenLandingSequenceEnd)
-    call DialogSystem_AddFadeTransition(seq, FADE_DURATION, FADE_DURATION, function StageBrokenLanding)
+    call DialogSystem_AddFadeTransition(seq, FADE_DURATION, FADE_DURATION, function StageBrokenLandingView)
     call DialogSystem_AddDelay(seq, 0.50)
     call DialogSystem_AddLine(seq, LandingTroll[3], "Darkspear Witch Doctor", VL_GENERICTROLL_0001_TEXT, VL_GENERICTROLL_0001_KEY, true)
     call DialogSystem_AddLine(seq, LandingTroll[3], "Darkspear Witch Doctor", VL_GENERICTROLL_0002_TEXT, VL_GENERICTROLL_0002_KEY, true)
@@ -399,6 +432,7 @@ private function CompletePrologue takes nothing returns nothing
 
     call CleanupShoreFire()
     call RemoveIntroShip()
+    call PauseTimer(WoundedBloodTimer)
     call DialogSystem_ClearEscapeAction()
     set PrologueState = STATE_COMPLETE
     set PrologueCompleted = true
@@ -419,15 +453,26 @@ private function CompletePrologue takes nothing returns nothing
 
     call SetUnitPosition(Nazgrek, NazgrekSavedX, NazgrekSavedY)
     call SetUnitFacing(Nazgrek, NazgrekSavedFacing)
-    call SetUnitOwner(Nazgrek, Player(0), true)
+    if NazgrekSavedOwner == null then
+        set NazgrekSavedOwner = Player(0)
+    endif
+    call SetUnitOwner(Nazgrek, NazgrekSavedOwner, true)
+    call SetUnitInvulnerable(Nazgrek, NazgrekSavedInvulnerable)
     call ShowUnit(Nazgrek, true)
     call PauseUnit(Nazgrek, false)
+    if NazgrekWasUnitHiderReference and udg_UnitHider_ReferenceGroup != null then
+        call GroupAddUnit(udg_UnitHider_ReferenceGroup, Nazgrek)
+    endif
+    static if LIBRARY_Pet then
+        call Pet_RestoreShadowclawAfterStory()
+    endif
     call ResetToGameCameraForPlayer(Player(0), 0.00)
     call CinematicFadeBJ(bj_CINEFADETYPE_FADEIN, FADE_DURATION, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
     call DialogInteraction_EndCinematicSequence(true)
     call SelectUnitForPlayerSingle(Nazgrek, Player(0))
     call ExecuteFunc("qChieftainThork_RefreshAvailability")
     call ExecuteFunc("qRagno_RefreshAvailability")
+    call QuestMaster_RefreshUnitSpecificQuests()
     call DebugMsg("Completed Zul'kis prologue.")
 endfunction
 
@@ -461,9 +506,14 @@ private function OnProgress takes nothing returns nothing
         if IntroShip == null or IsUnitNearPoint(IntroShip, GetRectCenterX(gg_rct_ZulkisShipWP2), GetRectCenterY(gg_rct_ZulkisShipWP2), SHIP_ARRIVAL_RANGE) or ShipTravelElapsed >= SHIP_ARRIVAL_TIMEOUT then
             call HandleShipArrival()
         endif
-    elseif PrologueState == STATE_RETURN_TO_SHORE and not ScenePlaying and IsUnitNearPoint(Zulkis, GetRectCenterX(gg_rct_ZulkisStart), GetRectCenterY(gg_rct_ZulkisStart), SHORE_RETURN_RANGE) then
-        set ScenePlaying = true
-        call PlayBrokenLandingSequence()
+    elseif PrologueState == STATE_RETURN_TO_SHORE then
+        if not BrokenLandingStaged then
+            call StageBrokenLanding()
+        endif
+        if not ScenePlaying and IsUnitNearPoint(Zulkis, GetRectCenterX(gg_rct_ZulkisStart), GetRectCenterY(gg_rct_ZulkisStart), SHORE_RETURN_RANGE) then
+            set ScenePlaying = true
+            call PlayBrokenLandingSequence()
+        endif
     elseif PrologueState == STATE_RESCUE_BROTHER and not ScenePlaying and RectContainsUnit(gg_rct_BramblehideVillage, Zulkis) and IsUnitNearUnit(Zulkis, Zulkarak, ZULKARAK_RESCUE_RANGE) then
         set ScenePlaying = true
         call PlayRescueSequence()
@@ -493,8 +543,19 @@ private function StartPrologueInternal takes nothing returns nothing
     set NazgrekSavedX = GetUnitX(Nazgrek)
     set NazgrekSavedY = GetUnitY(Nazgrek)
     set NazgrekSavedFacing = GetUnitFacing(Nazgrek)
+    set NazgrekSavedOwner = GetOwningPlayer(Nazgrek)
+    set NazgrekSavedInvulnerable = BlzIsUnitInvulnerable(Nazgrek)
+    set NazgrekWasUnitHiderReference = udg_UnitHider_ReferenceGroup != null and IsUnitInGroup(Nazgrek, udg_UnitHider_ReferenceGroup)
     call PauseUnit(Nazgrek, true)
+    call SetUnitInvulnerable(Nazgrek, true)
+    call SetUnitOwner(Nazgrek, Player(PLAYER_NEUTRAL_PASSIVE), true)
+    if udg_UnitHider_ReferenceGroup != null then
+        call GroupRemoveUnit(udg_UnitHider_ReferenceGroup, Nazgrek)
+    endif
     call ShowUnit(Nazgrek, false)
+    static if LIBRARY_Pet then
+        call Pet_HideShadowclawForStory()
+    endif
 
     call SetUnitOwner(Zulkis, Player(0), true)
     call SetUnitInvulnerable(Zulkis, false)
@@ -512,6 +573,7 @@ private function StartPrologueInternal takes nothing returns nothing
     call DialogSystem_SetEscapeAction(function SkipShipArrival)
     call CinematicFadeBJ(bj_CINEFADETYPE_FADEOUT, FADE_DURATION, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
     call TimerStart(TransitionTimer, FADE_DURATION, false, function StartShipArrival)
+    call QuestMaster_RefreshUnitSpecificQuests()
     call DebugMsg("Started Zul'kis prologue.")
 endfunction
 
@@ -539,6 +601,7 @@ private function CreateQuests takes nothing returns nothing
     else
         set MeetThorkQuest = QuestGiver_GetByNameAndGiver(QUEST_MEET_CHIEFTAIN_THORK, Zulkis)
     endif
+    call QuestGiver_SetQuestUnitSpecificHero(MeetThorkQuest, Zulkis)
 
     if not QuestGiver_QuestExistsByNameAndGiver(QUEST_RESCUE_BROTHER, Zulkis) then
         set RescueBrotherQuest = QuestGiver_CreateConfiguredQuest(QUEST_RESCUE_BROTHER, Zulkis, "normal", 1, null, QUEST_RESCUE_BROTHER, "ReplaceableTextures\\CommandButtons\\BTNBerserkForTrolls.blp", "Find and rescue Zul'karak from Bramblehide Village in Havenwoods.\n\n", infoText, "|cffffcc00Objective area:|r Bramblehide Village (701)\n\n", 1, true, false, true, "Darkspear Tribe", "")
@@ -552,6 +615,7 @@ private function CreateQuests takes nothing returns nothing
     else
         set RescueBrotherQuest = QuestGiver_GetByNameAndGiver(QUEST_RESCUE_BROTHER, Zulkis)
     endif
+    call QuestGiver_SetQuestUnitSpecificHero(RescueBrotherQuest, Zulkis)
 
     set availabilityCondition = null
 endfunction
@@ -570,8 +634,8 @@ private function InitDelayed takes nothing returns nothing
         return
     endif
 
-    call CreateQuests()
     call QuestMaster_SetGiverIconsSuppressed(Zulkis, true)
+    call CreateQuests()
     set PrologueCompleted = RescueBrotherQuest != 0 and RescueBrotherQuest.completed
     if PrologueCompleted then
         set PrologueState = STATE_COMPLETE
@@ -595,6 +659,7 @@ private function Init takes nothing returns nothing
     set InitTimer = CreateTimer()
     set ProgressTimer = CreateTimer()
     set TransitionTimer = CreateTimer()
+    set WoundedBloodTimer = CreateTimer()
     call TimerStart(InitTimer, 0.00, false, function InitDelayed)
 endfunction
 

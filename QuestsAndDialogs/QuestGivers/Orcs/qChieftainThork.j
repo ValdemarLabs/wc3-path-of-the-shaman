@@ -2,7 +2,7 @@
     qChieftainThork
 
     Author: Valdemar
-    Version:
+    Version: 1.1.0
 
     Description:
     Handles Ragno's Call of the Horde handoff and Chieftain Thork's Duty For
@@ -230,6 +230,7 @@ private function EnableZulkisCompanion takes nothing returns nothing
     call ShowUnit(Zulkis, true)
     call InitializeDInventoryForUnit(Zulkis)
     call InitializeDEquipmentForUnit(Zulkis)
+    call QuestMaster_RefreshUnitSpecificQuests()
 
     set it = UnitAddItemById(Zulkis, ITEM_LESSER_CLARITY)
     set it = UnitAddItemById(Zulkis, ITEM_HEALING_WARDS)

@@ -2,7 +2,7 @@
     qRagno
 
     Author: Valdemar
-    Version:
+    Version: 1.1.0
 
     Description:
     Implements Ragno's quest dialogue, daily outpost tasks, Protect the
@@ -96,6 +96,7 @@ globals
     private constant real OUTPOST_CINEMATIC_FADE_DURATION = 1.00
     private constant real OUTPOST_CINEMATIC_END_FADE_DURATION = 0.50
     private constant real OUTPOST_RAGNO_CONVERSATION_DISTANCE = 140.00
+    private constant real OUTPOST_RAGNO_CONVERSATION_MOVE_WAIT = 5.00
     private constant real OUTPOST_COMPLETION_PERIOD = 2.00
     private constant real OUTPOST_COMPLETION_RESPAWN_REVEAL_DELAY = 2.05
     private constant real OUTPOST_COMPLETION_RESPAWN_DIALOG_DELAY = 2.25
@@ -1334,7 +1335,7 @@ private function PlayProtectOutpostCompletionCinematic takes nothing returns not
     endif
     call DialogSystem_AddMakeFaceEachOther(seq, Ragno, Nazgrek, 1.00, 0.00)
     call DialogSystem_AddLine(seq, Ragno, "Ragno", "Hey you! You must be that shaman from the forest nearby...", "OrcGrunt_0015", true)
-    set moveLine = DialogSystem_AddDelay(seq, 2.50)
+    set moveLine = DialogSystem_AddDelay(seq, OUTPOST_RAGNO_CONVERSATION_MOVE_WAIT)
     call DialogSystem_BindLineAction(seq, moveLine, function MoveRagnoToProtectOutpostConversation)
     set faceLine = DialogSystem_AddMakeFaceEachOther(seq, Ragno, Nazgrek, 1.00, 1.00)
     call DialogSystem_BindLineAction(seq, faceLine, function FinishRagnoProtectOutpostConversationMove)
@@ -1830,6 +1831,7 @@ private function CreateQuests takes nothing returns nothing
         set q = QuestGiver_CreateConfiguredQuest(QUEST_GNOLL_HEADCOUNT, Ragno, "daily", 1, null, QUEST_GNOLL_HEADCOUNT, "ReplaceableTextures\\CommandButtons\\BTNGnoll.blp", "Ragno wants you to thin out the gnolls threatening the mountain outpost.\n\n", infoText, info2DailyText, 1, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Horde", giverName)
         call QuestGiver_SetQuestRequiredReputation(q, Reputation_REP_NEUTRAL)
         call QuestGiver_SetQuestRewards(q, true, 0, true, 200, false, 0, true, 0, false)
+        call QuestGiver_AddQuestPrerequisite(q, QUEST_PROTECT_OUTPOST, Ragno)
         call QuestGiver_SetRequirements(q.id, "", "Bring 20 Gnoll Heads to Ragno", "", "", "", "", "", "", "")
         call QuestGiver_RegisterItemRequirement(q.id, Ragno, 1, ITEM_GNOLL_HEAD, GNOLL_HEAD_REQUIRED)
     endif
@@ -1838,6 +1840,7 @@ private function CreateQuests takes nothing returns nothing
         set q = QuestGiver_CreateConfiguredQuest(QUEST_LUMBERJACK_DUTIES, Ragno, "daily", 1, null, QUEST_LUMBERJACK_DUTIES, "ReplaceableTextures\\CommandButtons\\BTNBundleOfLumber.blp", "Harvest 10 Pile Of Wood for the mountain outpost. A peon will help, but he must survive.\n\n", infoText, info2DailyText, 1, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Horde", giverName)
         call QuestGiver_SetQuestRequiredReputation(q, Reputation_REP_NEUTRAL)
         call QuestGiver_SetQuestRewards(q, true, 0, true, 200, false, 0, true, 0, false)
+        call QuestGiver_AddQuestPrerequisite(q, QUEST_PROTECT_OUTPOST, Ragno)
         call QuestGiver_SetRequirements(q.id, "", "Harvest 10 Pile Of Wood", "Peon must survive", "", "", "", "", "", "")
         call QuestGiver_RegisterItemRequirement(q.id, Ragno, 1, ITEM_PILE_WOOD, PILE_WOOD_REQUIRED)
     endif
@@ -1846,6 +1849,7 @@ private function CreateQuests takes nothing returns nothing
         set q = QuestGiver_CreateConfiguredQuest(QUEST_KOBOLD_THIEVES, Ragno, "daily", 1, null, QUEST_KOBOLD_THIEVES, "ReplaceableTextures\\CommandButtons\\BTNKobold.blp", "Kill the kobold leader and recover the stolen goods taken from the Horde.\n\n", infoText, info2DailyText, 1, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Horde", giverName)
         call QuestGiver_SetQuestRequiredReputation(q, Reputation_REP_NEUTRAL)
         call QuestGiver_SetQuestRewards(q, true, 0, true, 200, false, 0, true, 0, false)
+        call QuestGiver_AddQuestPrerequisite(q, QUEST_PROTECT_OUTPOST, Ragno)
         call QuestGiver_SetRequirements(q.id, "", "Kill Razzlewhip Mudgrubber", "Retrieve 6 Stolen Goods", "", "", "", "", "", "")
         call QuestGiver_RegisterItemRequirement(q.id, Ragno, 2, ITEM_STOLEN_GOODS, STOLEN_GOODS_REQUIRED)
     endif
@@ -1854,6 +1858,7 @@ private function CreateQuests takes nothing returns nothing
         set q = QuestGiver_CreateConfiguredQuest(QUEST_SATYR_NEGOTIATIONS, Ragno, "normal", 1, null, QUEST_SATYR_NEGOTIATIONS, "ReplaceableTextures\\CommandButtons\\BTNForestTroll.blp", "The relations between the Horde and the satyrs are unstable. Meet with them and learn whether diplomacy is still possible.\n\n", infoText, info2MainText, 1, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Horde", giverName)
         call QuestGiver_SetQuestRequiredReputation(q, Reputation_REP_NEUTRAL)
         call QuestGiver_SetQuestRewards(q, true, 0, true, 150, false, 0, true, 0, false)
+        call QuestGiver_AddQuestPrerequisite(q, QUEST_PROTECT_OUTPOST, Ragno)
         call QuestGiver_SetRequirements(q.id, "", "Meet with the satyrs and learn what they want", "", "", "", "", "", "", "")
     endif
 
@@ -1868,6 +1873,8 @@ private function CreateQuests takes nothing returns nothing
         call QuestGiver_SetRequirements(q.id, "", "Take the Blood Signed Summon Letter to Chieftain Thork", "", "", "", "", "", "", "")
         call QuestGiver_SetStateByNameAndGiver(QUEST_GIVING_LETTER, Ragno, QUEST_STATE_UNAVAILABLE)
     endif
+    set q = QuestGiver_GetByNameAndGiver(QUEST_GIVING_LETTER, Ragno)
+    call QuestGiver_SetQuestUnitSpecificHero(q, Nazgrek)
 
     set availabilityCondition = null
     set q = 0
