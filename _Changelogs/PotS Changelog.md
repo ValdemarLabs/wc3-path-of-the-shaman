@@ -15,6 +15,42 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [27.8.2026]
+
+### Player-Facing Updates
+
+- Fixed unread Hint effects so the Game-button flash fills the complete button, replays for every new hint, and the persistent Hints marker surrounds the Hints icon.
+- Delayed `Protect the Outpost` discovery until five seconds after the gnoll-attack intro cinematic, approximately 15 seconds after the encounter begins.
+- Added Nazgrek's self-discovered prologue opening: Wolf Hunt I kills six wolves, collects six Wolf Skin, and then leads directly into the recovered Nazgrek's Flask ingredient quest.
+- Nazgrek's Flask now uses its exact legacy materials, reveals the missing Empty Flask objective after the recovered delay, and can be crafted from Alchemy 0 so the level-1 story does not require profession grinding.
+- Added Zul'kis's parallel prologue with the Darkspear river landing, first meeting with Chieftain Thork, destroyed shore, wounded troll's interrupted warning, and Rescue the Brother in Bramblehide Village.
+- Smoothed the Protect the Outpost-to-Zul'kis handoff with a black-screen camera transition, made ESC skip the moving-ship segment, and removed the repeated fade cycle during ship arrival.
+- Nazgrek and Zul'kis no longer display quest-giver punctuation for their self-driven hero quests.
+- Added Bramblehide Village as a Bloodtusk forest-troll subzone of Havenwoods.
+- Velyssara's charm now gives Nazgrek the `S01P` dummy aura while Chains of Seduction binds him, then removes it when her tasks are completed or the charm is dispelled.
+
+### Technical Updates
+
+- Updated `UI/MasterUI.j` with parent-sized Game-button alert framing, explicit flash-animation resets, and icon-owned Hints alert framing, and updated `QuestsAndDialogs/QuestGivers/qRagno.j` plus `_developer/Design Plans/Story and Quest Design.md` with post-cinematic Protect the Outpost acceptance and wave progression.
+- Added `QuestsAndDialogs/QuestGivers/qNazgrek.j` with public intro/start, recovery, progress-refresh, and completion-state hooks; combined wolf-kill tracking; live DInventory/vanilla-inventory progress; automatic Wolf Hunt I completion; and acquisition-based flask completion.
+- Updated `QuestsAndDialogs/QuestGivers/qVelyssara.j` to own Nazgrek's temporary charm aura across quest acceptance, normal completion, and external dispels such as Jin'Zun's cure.
+- Updated `Professions/ProfessionsAlchemy.j` to make the existing reusable Nazgrek's Flask `I61L` recipe available at Alchemy 0 while retaining all six recovered material requirements.
+- Updated `_developer/Design Plans/Story and Quest Design.md` with the implemented Wolf Hunt I/flask flow, planned Wolf Mother and Shamanic Cowl conclusions, compact parallel Zul'kis intro, Thork false-flag premise, Rescue the Brother convergence, and Zul'karak's later quest-giver/recruit contract.
+- Recovered the legacy `Dead Darkspear Trolls` shore layout for the Zul'kis plan: five headhunters and one witch doctor use `gg_rct_CorpseTroll01` through `gg_rct_CorpseTroll06`, with living versions shown during the landing. The headhunters become permanent corpses when Zul'kis returns; the wounded witch doctor at 03 gives the interrupted testimony before becoming the final corpse. Recorded `gg_rct_ZulkisStart` and the already preplaced Zul'karak `n65F`, referenced by `udg_Zulkarak`, as confirmed World Editor staging.
+- Added `QuestsAndDialogs/QuestGivers/qZulkis.j` with the four-camera arrival, temporary `'odes'` ship removal at `gg_rct_ZulkisShipWP2`, living-to-corpse shore staging, Thork objective, Bramblehide rescue, stable completion queries, and Zul'kis/Nazgrek control handoffs.
+- Added `Voicelines/Voicelines_Zulkarak.j` and `Voicelines/Voicelines_GenericTroll.j`, and extended `Voicelines_Zulkis.j` plus `Voicelines_Thork.j` with the prologue dialogue and prepared sound keys.
+- Updated `Zones/ZonesCore.j` with Bramblehide Village `701`, a level 1–5 Bloodtusk Tribe subzone of Havenwoods using `gg_rct_BramblehideVillage`.
+- Updated `QuestsAndDialogs/QuestGivers/qRagno.j` to start `qZulkis` from the Protect the Outpost completion fade and updated `qChieftainThork.j` to redirect the prologue meeting and gate Call of the Horde completion/companion enablement behind Rescue the Brother.
+- Updated `QuestsAndDialogs/QuestMaster.j` with reversible per-unit quest-marker suppression, used by `qNazgrek.j` and `qZulkis.j`; hardened `qZulkis.j` cinematic skipping so skipped staging still reaches its final world state.
+
+### Actions Remaining
+
+- Runtime-test the Game/Hints alert sprite bounds and Protect the Outpost discovery timing after both normal completion and Escape-skipping of the gnoll-attack cinematic.
+- Import `qNazgrek.j` after its listed dependencies, call `qNazgrek_StartIntroQuestChain()` when Nazgrek's opening gameplay begins, disable the legacy Nazgrek's Flask GUI folder, compile the full map, and runtime-test wolf kills, all ingredient counts, the 175-second Empty Flask reminder, Alchemy 0 crafting, and completion while using DInventory and vanilla inventory. Confirm whether `Spawn Plants Intro` still supplies extra prologue herbs and stop/remove that spawner after `qNazgrek_IsFlaskCompleted()`.
+- Create or confirm a unique Wolf Mother Head/Pelt and Shamanic Cowl, verify early sources for two Light Leather `I6A6` and one Thread `I66L`, register the planned trophy + six Wolf Skin + leather/thread recipe, decide the flask's Wolf Mother encounter effect, and verify Wolf Den `12111` plus Wolf Mother `n648` before implementing Wolf Hunt II–III.
+- Import `VoicelinesZulkarak`, `VoicelinesGenericTroll`, and `qZulkis` after their listed dependencies; disable the legacy `Dead Darkspear Trolls` 5-second GUI event; compile the full map; and runtime-test ship movement/removal, all four cameras, living/corpse staging, Thork selection, Bramblehide entry, Zul'karak rescue, hero ownership/inventory state, Nazgrek restoration, and Call of the Horde convergence. Add audio files for the prepared Zul'kis, Thork, Zul'karak, and Generic Troll keys when recordings are available.
+- Design and implement Zul'karak's post-rescue Horde-base quest set before enabling recruitment, then add the planned simple berserker AI and timed dismissal return to `gg_rct_ZulkarakHordeHome`.
+
 ## [26.8.2026]
 
 ### Player-Facing Updates
