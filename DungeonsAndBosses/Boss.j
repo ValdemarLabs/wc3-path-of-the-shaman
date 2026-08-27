@@ -2,7 +2,7 @@
     Boss
 
     Author: Valdemar
-    Version: 0.3.0
+    Version: 0.4.0
 
     Description:
     Shared foundation for PotS boss encounters. The library registers
@@ -10,7 +10,8 @@
     lifecycle callbacks, supports optional attack-start and combat-area reset,
     and can intercept lethal damage for scripted defeat sequences. Registered
     bosses are removed from ordinary creep respawn so Boss or Dungeon remains
-    the single owner of their lifecycle.
+    the single owner of their lifecycle. Active encounters can also be reset
+    together for global recovery flows.
 
     Encounter libraries can also publish a short overview, phase summary,
     ability summary, and tactics text for quest/UI consumers. Boss_Respawn
@@ -44,6 +45,7 @@
     - call Boss_SetPhase(bossId, phase)
     - call Boss_AdvancePhase(bossId)
     - call Boss_Reset(bossId)
+    - call Boss_ResetAllActive()
     - call Boss_Defeat(bossId, killer)
     - call Boss_FinishScriptedDefeat(bossId)
     - set whichUnit = Boss_Respawn(bossId)
@@ -715,6 +717,18 @@ library Boss initializer Init requires Table, Events, UnitDeathEvent, DamageEngi
         endif
         set whichUnit = null
         return true
+    endfunction
+
+    public function ResetAllActive takes nothing returns nothing
+        local integer bossId = 1
+
+        loop
+            exitwhen bossId > Boss_Count
+            if Boss_State[bossId] == BOSS_STATE_ACTIVE then
+                call Reset(bossId)
+            endif
+            set bossId = bossId + 1
+        endloop
     endfunction
 
     public function Defeat takes integer bossId, unit killer returns boolean

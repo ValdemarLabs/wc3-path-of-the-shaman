@@ -2,7 +2,7 @@
     Drunk
 
     Author: Valdemar
-    Version: 2.4.0
+    Version: 2.5.0
 
     Description:
     Handles drunken visuals, camera sway, movement/casting mishaps, puking,
@@ -11,8 +11,9 @@
     Credits:
 
     How to install:
-    Import this library after TimerUtils, Table, and CameraControl. Call
-    Drunk_Add from consumable systems when a unit drinks a beverage.
+    Import this library after TimerUtils, Table, CameraControl, Death, and Boss.
+    Arena is optional. Call Drunk_Add from consumable systems when a unit
+    drinks a beverage.
 
     The player-side filter follows CameraControl's active Nazgrek/Zulkis target,
     not ordinary unit selection. The fade uses the cinematic filter layer, so
@@ -32,7 +33,7 @@
 
 **/
 
-library Drunk initializer Init requires TimerUtils, Table, CameraControl, FullscreenUI, MasterUI, FallenHeroState, DialogSystem, AI, Companions, VoicelinesDrunk
+library Drunk initializer Init requires TimerUtils, Table, CameraControl, FullscreenUI, MasterUI, FallenHeroState, DialogSystem, AI, Companions, VoicelinesDrunk, Death, Boss, optional Arena
 
 globals
     // Core configuration.
@@ -812,6 +813,60 @@ private function D_GatherPassOutParty takes unit subject, integer unitId returns
     set subject = null
 endfunction
 
+private function D_ReviveWakePartyMember takes unit subject, unit member, integer slot returns nothing
+    local real angle
+    local real x
+    local real y
+
+    if member == null or member == subject then
+        set subject = null
+        set member = null
+        return
+    endif
+    set angle = I2R(slot)*D_PASSOUT_PARTY_ANGLE_STEP
+    set x = GetUnitX(subject) + D_PASSOUT_PARTY_APPROACH_DISTANCE*Cos(angle)
+    set y = GetUnitY(subject) + D_PASSOUT_PARTY_APPROACH_DISTANCE*Sin(angle)
+    call Death_ReviveAt(member, x, y, 50.00, 50.00, true)
+    set subject = null
+    set member = null
+endfunction
+
+private function D_ReviveWakeParty takes unit subject returns nothing
+    local integer index = 1
+    local integer slot = 0
+
+    call D_ReviveWakePartyMember(subject, udg_Nazgrek, slot)
+    set slot = slot + 1
+    call D_ReviveWakePartyMember(subject, udg_Zulkis, slot)
+    loop
+        exitwhen index > udg_CompanionCount
+        set slot = slot + 1
+        call D_ReviveWakePartyMember(subject, udg_CompanionUnit[index], slot)
+        set index = index + 1
+    endloop
+    set index = 1
+    loop
+        exitwhen index > Companions_GetControlledDisplayCount()
+        set slot = slot + 1
+        call D_ReviveWakePartyMember(subject, Companions_GetControlledDisplayUnit(index), slot)
+        set index = index + 1
+    endloop
+    set slot = slot + 1
+    call D_ReviveWakePartyMember(subject, udg_TamedUnit, slot)
+    set slot = slot + 1
+    call D_ReviveWakePartyMember(subject, udg_Shadowclaw, slot)
+    set subject = null
+endfunction
+
+private function D_ResetWakeEncounters takes nothing returns nothing
+    call Boss_ResetAllActive()
+    static if LIBRARY_Arena then
+        if Arena_IsActive() then
+            call Arena_End(false)
+        endif
+    endif
+endfunction
+
 private function D_WakeFromPassOut takes nothing returns nothing
     local timer expired = GetExpiredTimer()
     local integer unitId = GetTimerData(expired)
@@ -850,7 +905,9 @@ private function D_WakeFromPassOut takes nothing returns nothing
         if D_IsUnitAlive(whichUnit) then
             call SetUnitAnimation(whichUnit, "stand")
             call D_StartHangover(whichUnit, unitId)
-            if whichUnit == udg_Nazgrek or whichUnit == udg_Zulkis then
+            if GetOwningPlayer(whichUnit) == Player(0) and (whichUnit == udg_Nazgrek or whichUnit == udg_Zulkis) then
+                call D_ResetWakeEncounters()
+                call D_ReviveWakeParty(whichUnit)
                 call VoicelinesDrunk_PickWakeLine(whichUnit)
                 call DialogSystem_QueueFieldLine(whichUnit, "", VoicelinesDrunk_PickedKey, VoicelinesDrunk_PickedText)
             endif
@@ -1004,9 +1061,9 @@ private function D_StartPassOut takes unit whichUnit, integer unitId returns not
         if not udg_InCinematic and CameraControl_GetTargetUnit(owner) == whichUnit and not CameraControl_IsSuspended(owner) then
             set D_CameraSuspendedByPassOut[unitId] = true
             set D_FullscreenWasEnabled[unitId] = FullscreenUI_IsEnabled()
+            call D_ShowBlackFade(owner, true, D_PASSOUT_FADE_OUT)
             call FullscreenUI_SetEnabled(true)
             call CameraControl_Suspend(owner)
-            call D_ShowBlackFade(owner, true, D_PASSOUT_FADE_OUT)
         endif
         call D_PlayReaction(whichUnit, true)
         call TimerStart(t, D_PASSOUT_FADE_OUT + D_PASSOUT_BLACK_HOLD, false, function D_RelocatePassedOut)
