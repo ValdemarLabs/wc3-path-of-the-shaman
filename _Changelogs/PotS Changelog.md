@@ -19,6 +19,8 @@
 
 ### Player-Facing Updates
 
+- Added a recurring Mok'natha battlefield where small orc and ogre forces attack along varied lanes around the crater field.
+- Added a recurring human patrol that begins after one minute, travels among Twilight Grove, Sereneglade, and Havenwoods, makes and removes camps, and may include Captain Maelhood scouting around the camp.
 - Fixed unread Hint effects so the Game-button flash fills the complete button, replays for every new hint, and the persistent Hints marker surrounds the Hints icon.
 - Delayed `Protect the Outpost` discovery until five seconds after the gnoll-attack intro cinematic, approximately 15 seconds after the encounter begins.
 - Added Nazgrek's self-discovered prologue opening: Wolf Hunt I kills six wolves, collects six Wolf Skin, and then leads directly into the recovered Nazgrek's Flask ingredient quest.
@@ -31,6 +33,9 @@
 
 ### Technical Updates
 
+- Added `World/MoknathaBattle.j` with randomized two-sided respawns, cinematic-aware periodic cycles, persistent crater ubersplats, legacy group compatibility, and public quest/event control hooks.
+- Added `World/HumanPatrols.j` with configurable delayed startup, recurring travel/camp/respawn phases, single optional leader spawning, leader scouting, legacy group compatibility, and public quest-state hooks.
+- Updated `_developer/Design Plans/Story and Quest Design.md` with the ambient-system ledger, Mok'natha regional support, and a proposed five-step Chieftain Thork patrol/garrison chain that treats the later human attacks as retaliation rather than folding the garrison into the Dark Horde.
 - Updated `UI/MasterUI.j` with parent-sized Game-button alert framing, explicit flash-animation resets, and icon-owned Hints alert framing, and updated `QuestsAndDialogs/QuestGivers/qRagno.j` plus `_developer/Design Plans/Story and Quest Design.md` with post-cinematic Protect the Outpost acceptance and wave progression.
 - Added `QuestsAndDialogs/QuestGivers/qNazgrek.j` with public intro/start, recovery, progress-refresh, and completion-state hooks; combined wolf-kill tracking; live DInventory/vanilla-inventory progress; automatic Wolf Hunt I completion; and acquisition-based flask completion.
 - Updated `QuestsAndDialogs/QuestGivers/qVelyssara.j` to own Nazgrek's temporary charm aura across quest acceptance, normal completion, and external dispels such as Jin'Zun's cure.
@@ -45,6 +50,8 @@
 
 ### Actions Remaining
 
+- Import `MoknathaBattle.j`, keep `gg_rct_MoknathaBattleRegion01` through `05` plus `gg_rct_MoknathaCrater01` through `07`, disable both legacy Moknatha GUI triggers, compile the full map, and runtime-test ownership, lane pathing, respawn timing, cinematic suppression, and crater rendering.
+- Import `HumanPatrols.j`, keep `gg_rct_PatrolSpawnPoint`, the three zone rects, and the legacy `PatrolGroup1`/tent variables, disable all four legacy Human Patrol GUI triggers, compile the full map, and runtime-test route pathing, campsite placement, tent deaths, unique leader chance/scouting, complete patrol death, and automatic respawn. The proposed Thork quest chain still needs its QuestData, item/drop, capture, garrison, barrel, fire, reinforcement, and counterattack implementation.
 - Runtime-test the Game/Hints alert sprite bounds and Protect the Outpost discovery timing after both normal completion and Escape-skipping of the gnoll-attack cinematic.
 - Import `qNazgrek.j` after its listed dependencies, call `qNazgrek_StartIntroQuestChain()` when Nazgrek's opening gameplay begins, disable the legacy Nazgrek's Flask GUI folder, compile the full map, and runtime-test wolf kills, all ingredient counts, the 175-second Empty Flask reminder, Alchemy 0 crafting, and completion while using DInventory and vanilla inventory. Confirm whether `Spawn Plants Intro` still supplies extra prologue herbs and stop/remove that spawner after `qNazgrek_IsFlaskCompleted()`.
 - Create or confirm a unique Wolf Mother Head/Pelt and Shamanic Cowl, verify early sources for two Light Leather `I6A6` and one Thread `I66L`, register the planned trophy + six Wolf Skin + leather/thread recipe, decide the flask's Wolf Mother encounter effect, and verify Wolf Den `12111` plus Wolf Mother `n648` before implementing Wolf Hunt II–III.
