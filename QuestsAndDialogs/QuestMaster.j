@@ -2,7 +2,7 @@
     QuestMaster
 
     Author: Valdemar
-    Version: 1.2.0
+    Version: 1.2.1
 
     Description:
     Owns PotS quest data, state transitions, rewards, availability, custom
@@ -22,6 +22,8 @@
     - QuestMaster_AddStateChangedAction(handler) listens for state changes.
     - QuestMaster_AddDataChangedAction(handler) listens for display-data changes.
     - QuestMaster_IconRegisterObjective(...) tracks current unit objectives.
+    - QuestMaster_SetGiverIconsSuppressed(unit, flag) hides/restores a unit's
+      quest-giver overhead and minimap markers without changing quest state.
     - QuestMaster_AddDailyResetAction(handler) listens for daily resets.
     - QuestMaster_ResetDailyQuests() manually resets completed daily quests.
 
@@ -65,6 +67,7 @@ globals
 	private Table QuestGiverIndex = 0
 	private Table QuestGiverTable = 0
 	private Table QuestIconTable = 0
+	private Table QuestIconSuppressedUnit = 0
 	private Table QuestGiverByType = 0  // Maps unit type ID to last registered unit handle ID
 
 	// Quest registry
@@ -542,7 +545,7 @@ private function CreateMapPingForUnit takes unit u, integer style returns nothin
 endfunction
 
 private function RemoveOldEffect takes unit u returns nothing
-	local integer id = GetHandleId(u)
+	local integer id
 	local effect old
 	local Table iconTable
 	if not QuestIconTable.has(id) then
@@ -646,11 +649,20 @@ public function IconUpdateForNPC takes unit u returns nothing
 	local integer typePriority
 	local integer bestStatePriority = 0
 	local integer bestTypePriority = 0
-	local integer id = GetHandleId(u)
+	local integer id
 	local integer curState = QUEST_STATE_COMPLETE
 	local string curType = ""
 	local Table iconTable
 	local QuestData q
+	if u == null then
+		return
+	endif
+	set id = GetHandleId(u)
+	if QuestIconSuppressedUnit.boolean[id] then
+		call RemoveOldEffect(u)
+		call RemoveOldMapPing(u)
+		return
+	endif
 	if QuestIconTable.has(id) then
 		set iconTable = QuestIconTable[id]
 		set questCount = iconTable.integer[NPC_QUEST_COUNT_KEY]
@@ -802,6 +814,20 @@ public function RemoveDummyQuestIcon takes unit u returns nothing
 		return
 	endif
 	call IconRemoveQuest(u, QUEST_DUMMY_OFFSET + GetHandleId(u))
+endfunction
+
+public function SetGiverIconsSuppressed takes unit u, boolean flag returns nothing
+	local integer id
+	if u == null then
+		return
+	endif
+	set id = GetHandleId(u)
+	if flag then
+		set QuestIconSuppressedUnit.boolean[id] = true
+	else
+		call QuestIconSuppressedUnit.boolean.remove(id)
+	endif
+	call IconUpdateForNPC(u)
 endfunction
 
 private function ObjectiveIconId takes integer questId, integer reqIndex returns integer
@@ -3207,6 +3233,7 @@ private function Init takes nothing returns nothing
 	set QuestGiverTable = Table.create()
 	set QuestGiverByType = Table.create()
 	set QuestIconTable = Table.create()
+	set QuestIconSuppressedUnit = Table.create()
 	set QuestDiscoveredTimerData = Table.create()
 	set QuestCompletedTimerData = Table.create()
 	set QuestMaster_OnStateChanged = CreateTrigger()
