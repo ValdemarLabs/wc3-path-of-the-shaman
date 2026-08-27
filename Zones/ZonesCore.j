@@ -977,6 +977,33 @@ private function ConfigureZones takes nothing returns nothing
     set z.iconPath = "zones\\zone07_havenwoods.blp"
     call z.addEnterRegion(gg_rct_07Havenwoods)
     call RegisterZone(z)
+
+    // Zone 0701: Bramblehide Village
+    set z = ZoneData.create(701, "Bramblehide Village")
+    set z.musicTrack = 70
+    set z.environmentType = "Forest"
+    set z.fogDay[0] = 1000.0
+    set z.fogDay[1] = 8000.0
+    set z.fogDay[2] = 75.0
+    set z.fogDay[3] = 75.0
+    set z.fogDay[4] = 75.0
+    set z.fogNight[0] = 3000.0
+    set z.fogNight[1] = 15000.0
+    set z.fogNight[2] = 15.0
+    set z.fogNight[3] = 15.0
+    set z.fogNight[4] = 50.0
+    set z.ambientDaySound = ""
+    set z.ambientNightSound = ""
+    set z.ambientRegion = ""
+    set z.questDescription = "A Bloodtusk forest troll village hidden among the thorny thickets of Havenwoods."
+    call z.setLevelRange(1, 5)
+    set z.factions = "Bloodtusk Tribe"
+    set z.notableEntities = "Forest Troll"
+    set z.notableCharacters = "-"
+    set z.iconPath = "zones\\zone07_havenwoods.blp"
+    call z.setParentZone(7)
+    call z.addEnterRegion(gg_rct_BramblehideVillage)
+    call RegisterZone(z)
     
     // Zone 08: Bonecrush Stronghold
     set z = ZoneData.create(8, "Bonecrush Stronghold")
