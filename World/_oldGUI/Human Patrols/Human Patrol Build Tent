@@ -1,0 +1,20 @@
+Human Patrol Build Tent
+    Events
+        Time - PatrolTentTimerStart expires
+    Conditions
+        (All units of PatrolGroup1 are dead) Equal to False
+    Actions
+        Unit Group - Pick every unit in PatrolGroup1 and do (Actions)
+            Loop - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                    Then - Actions
+                        Unit - Order (Picked unit) to Stop.
+                        Unit - Add Wander (Neutral) to (Picked unit)
+                    Else - Actions
+        Set VariableSet PatrolTentPoint = ((Position of (Random unit from PatrolGroup1)) offset by (100.00, 100.00))
+        Unit - Create 1 Tent (Resting) for Player 8 (Pink) at PatrolTentPoint facing Default building facing degrees
+        Set VariableSet PatrolGroup1Tent = (Last created unit)
+        Custom script:   call RemoveLocation(udg_PatrolTentPoint)
+        -------- Start timer for the time being still at the tent --------
+        Countdown Timer - Start PatrolTentTimerStay as a One-shot timer that will expire in (Random real number between 180.00 and 400.00) seconds

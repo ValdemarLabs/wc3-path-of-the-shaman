@@ -1,0 +1,8 @@
+Human Patrol Dead
+    Events
+        Time - Every 2.00 seconds of game time
+    Conditions
+        (All units of PatrolGroup1 are dead) Equal to True
+    Actions
+        Trigger - Turn off (This trigger)
+        Unit Group - Remove all units from PatrolGroup1.

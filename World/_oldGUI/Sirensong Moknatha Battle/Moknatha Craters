@@ -1,0 +1,47 @@
+Moknatha Craters
+    Events
+        Time - Elapsed game time is 5.00 seconds
+    Conditions
+    Actions
+        -------- Crater --------
+        Set VariableSet VarPoint = (Center of MoknathaCrater01 <gen>)
+        Ubersplat - Create ubersplat at VarPoint of type Human Crater with color (100.00%, 100.00%, 100.00%) and 0.00% transparency (Enable paused state, Disable skipping birth time)
+        Ubersplat - Change (Last created ubersplat): Enable render always state
+        Ubersplat - Show (Last created ubersplat)
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        -------- Crater --------
+        Set VariableSet VarPoint = (Center of MoknathaCrater02 <gen>)
+        Ubersplat - Create ubersplat at VarPoint of type Human Crater with color (100.00%, 100.00%, 100.00%) and 0.00% transparency (Enable paused state, Disable skipping birth time)
+        Ubersplat - Change (Last created ubersplat): Enable render always state
+        Ubersplat - Show (Last created ubersplat)
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        -------- Crater --------
+        Set VariableSet VarPoint = (Center of MoknathaCrater03 <gen>)
+        Ubersplat - Create ubersplat at VarPoint of type Human Crater with color (100.00%, 100.00%, 100.00%) and 0.00% transparency (Enable paused state, Disable skipping birth time)
+        Ubersplat - Change (Last created ubersplat): Enable render always state
+        Ubersplat - Show (Last created ubersplat)
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        -------- Crater --------
+        Set VariableSet VarPoint = (Center of MoknathaCrater04 <gen>)
+        Ubersplat - Create ubersplat at VarPoint of type Human Crater with color (100.00%, 100.00%, 100.00%) and 0.00% transparency (Enable paused state, Disable skipping birth time)
+        Ubersplat - Change (Last created ubersplat): Enable render always state
+        Ubersplat - Show (Last created ubersplat)
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        -------- Crater --------
+        Set VariableSet VarPoint = (Center of MoknathaCrater05 <gen>)
+        Ubersplat - Create ubersplat at VarPoint of type Human Crater with color (100.00%, 100.00%, 100.00%) and 0.00% transparency (Enable paused state, Disable skipping birth time)
+        Ubersplat - Change (Last created ubersplat): Enable render always state
+        Ubersplat - Show (Last created ubersplat)
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        -------- Crater --------
+        Set VariableSet VarPoint = (Center of MoknathaCrater06 <gen>)
+        Ubersplat - Create ubersplat at VarPoint of type Human Crater with color (100.00%, 100.00%, 100.00%) and 0.00% transparency (Enable paused state, Disable skipping birth time)
+        Ubersplat - Change (Last created ubersplat): Enable render always state
+        Ubersplat - Show (Last created ubersplat)
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        -------- Crater --------
+        Set VariableSet VarPoint = (Center of MoknathaCrater07 <gen>)
+        Ubersplat - Create ubersplat at VarPoint of type Human Crater with color (100.00%, 100.00%, 100.00%) and 0.00% transparency (Enable paused state, Disable skipping birth time)
+        Ubersplat - Change (Last created ubersplat): Enable render always state
+        Ubersplat - Show (Last created ubersplat)
+        Custom script:   call RemoveLocation(udg_VarPoint)

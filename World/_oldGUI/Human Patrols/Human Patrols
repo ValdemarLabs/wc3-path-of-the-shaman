@@ -1,0 +1,41 @@
+Human Patrols
+    Events
+    Conditions
+    Actions
+        -------- #----------------unit --------
+        Set VariableSet PatrolSpawnPoint = (Center of PatrolSpawnPoint <gen>)
+        Unit - Create 1 Captain Maelhood for Player 8 (Pink) at PatrolSpawnPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to PatrolGroup1
+        Custom script:   call RemoveLocation(udg_PatrolSpawnPoint)
+        -------- #----------------unit --------
+        Set VariableSet PatrolSpawnPoint = (Center of PatrolSpawnPoint <gen>)
+        Unit - Create 1 Footman for Player 8 (Pink) at PatrolSpawnPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to PatrolGroup1
+        Custom script:   call RemoveLocation(udg_PatrolSpawnPoint)
+        -------- #----------------unit --------
+        Set VariableSet PatrolSpawnPoint = (Center of PatrolSpawnPoint <gen>)
+        Unit - Create 1 Footman for Player 8 (Pink) at PatrolSpawnPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to PatrolGroup1
+        Custom script:   call RemoveLocation(udg_PatrolSpawnPoint)
+        -------- #----------------unit --------
+        Set VariableSet PatrolSpawnPoint = (Center of PatrolSpawnPoint <gen>)
+        Unit - Create 1 Footman for Player 8 (Pink) at PatrolSpawnPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to PatrolGroup1
+        Custom script:   call RemoveLocation(udg_PatrolSpawnPoint)
+        -------- #----------------unit --------
+        Set VariableSet PatrolSpawnPoint = (Center of PatrolSpawnPoint <gen>)
+        Unit - Create 1 Footman for Player 8 (Pink) at PatrolSpawnPoint facing Default building facing degrees
+        Unit Group - Add (Last created unit) to PatrolGroup1
+        Custom script:   call RemoveLocation(udg_PatrolSpawnPoint)
+        -------- =================== --------
+        -------- Pick all units and set them move with slowed speed --------
+        Set VariableSet PatrolMovePoint = (Random point in 06Thornwoods <gen>)
+        Unit Group - Order PatrolGroup1 to Patrol To PatrolMovePoint
+        Custom script:   call RemoveLocation(udg_PatrolMovePoint)
+        Unit Group - Pick every unit in PatrolGroup1 and do (Actions)
+            Loop - Actions
+                Unit - Set (Picked unit) movement speed to 100.00
+        -------- Start timer with random value to when the patrol will build tent and stay for random time --------
+        Countdown Timer - Start PatrolTentTimerStart as a One-shot timer that will expire in (Random real number between 60.00 and 360.00) seconds
+        -------- turn on check if all Dead --------
+        Trigger - Turn on Human Patrol Dead <gen>

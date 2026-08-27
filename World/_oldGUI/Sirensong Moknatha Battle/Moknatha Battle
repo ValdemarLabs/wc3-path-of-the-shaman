@@ -1,0 +1,50 @@
+Moknatha Battle
+    Events
+        Time - Every 120.00 seconds of game time
+    Conditions
+        InCinematic Equal to False
+    Actions
+        -------- EVENT --------
+        -------- ==== ORCS --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Number of units in MoknathaBattle_Orcs) Equal to 0
+            Then - Actions
+                Set VariableSet VarPoint = (Center of MoknathaBattleRegion01 <gen>)
+                Set VariableSet VarPoint2 = (Center of MoknathaBattleRegion03 <gen>)
+                For each (Integer A) from 1 to 2, do (Actions)
+                    Loop - Actions
+                        Unit - Create 1 Grunt for Player 2 (Blue) at VarPoint facing Default building facing degrees
+                        Unit - Order (Last created unit) to Attack-Move To VarPoint2
+                        Unit Group - Add (Last created unit) to MoknathaBattle_Orcs
+                -------- ==== ORCS --------
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                Set VariableSet VarPoint = (Center of MoknathaBattleRegion02 <gen>)
+                For each (Integer A) from 1 to 2, do (Actions)
+                    Loop - Actions
+                        Unit - Create 1 Grunt for Player 2 (Blue) at VarPoint facing Default building facing degrees
+                        Unit - Order (Last created unit) to Attack-Move To VarPoint2
+                        Unit Group - Add (Last created unit) to MoknathaBattle_Orcs
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                Custom script:   call RemoveLocation(udg_VarPoint2)
+            Else - Actions
+        -------- ==== OGRES --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Number of units in MoknathaBattle_Ogres) Equal to 0
+            Then - Actions
+                Set VariableSet VarPoint = (Center of MoknathaBattleRegion04 <gen>)
+                Set VariableSet VarPoint2 = (Center of MoknathaBattleRegion01 <gen>)
+                Unit - Create 1 Ogre Warrior (Level 10) for Player 12 (Brown) at VarPoint facing Default building facing degrees
+                Unit Group - Add (Last created unit) to MoknathaBattle_Ogres
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                Custom script:   call RemoveLocation(udg_VarPoint2)
+                -------- ==== OGRES --------
+                Set VariableSet VarPoint = (Center of MoknathaBattleRegion05 <gen>)
+                Set VariableSet VarPoint2 = (Center of MoknathaBattleRegion02 <gen>)
+                Unit - Create 1 Ogre Warrior (Level 10) for Player 12 (Brown) at VarPoint facing Default building facing degrees
+                Unit - Order (Last created unit) to Attack-Move To VarPoint2
+                Unit Group - Add (Last created unit) to MoknathaBattle_Ogres
+                Custom script:   call RemoveLocation(udg_VarPoint)
+                Custom script:   call RemoveLocation(udg_VarPoint2)
+            Else - Actions
