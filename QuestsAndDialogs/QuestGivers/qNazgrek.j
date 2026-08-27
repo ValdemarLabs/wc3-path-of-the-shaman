@@ -127,6 +127,9 @@ private function SyncUnitReferences takes nothing returns nothing
         if oldNazgrek != null then
             call QuestGiver_UpdateGiverUnitReference(oldNazgrek, Nazgrek)
         endif
+        if Initialized then
+            call QuestMaster_SetGiverIconsSuppressed(Nazgrek, true)
+        endif
     endif
     set oldNazgrek = null
 endfunction
@@ -373,6 +376,7 @@ private function InitDelayed takes nothing returns nothing
     endif
 
     call CreateQuests()
+    call QuestMaster_SetGiverIconsSuppressed(Nazgrek, true)
     call UnitDeathEvent_Register(function OnAnyUnitDeath)
     set Initialized = true
     call TimerStart(ProgressTimer, PROGRESS_INTERVAL, true, function OnProgressTimer)
