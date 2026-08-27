@@ -15,28 +15,58 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
-## [27.8.2026]
+## [28.8.2026]
 
 ### Player-Facing Updates
 
+- Human patrol activity now varies between one and two simultaneous groups. Each group remains assigned either to the Sereneglade–Twilight Grove route or entirely within Havenwoods instead of crossing all three zones.
+- Player-hero pass-outs now begin fading before fullscreen mode changes, and waking with a hangover revives the other player hero and all companions while interrupting active boss and arena encounters.
+
+### Technical Updates
+
+- Refactored `World/HumanPatrols.j` to maintain independent indexed movement, camp, leader, tent, death, and respawn state for up to two route-bound patrols while preserving the original singular compatibility API.
+- Updated `Professions/Drunk.j` with hangover wake recovery and encounter interruption, and updated `DungeonsAndBosses/Boss.j` with a shared active-boss reset API.
+
+### Actions Remaining
+
+- Runtime-test both one-patrol route variants and the two-patrol configuration, including independent formation movement/camps, Havenwoods-only destination selection, Sereneglade–Twilight alternation, shared Captain Maelhood uniqueness, creep-respawn exclusion, and indexed quest hooks.
+- Compile `Professions/Drunk.j` with its new Death/Boss dependencies and runtime-test player-hero pass-outs during ordinary combat, active boss fights, and arena sessions; verify gradual fade timing, party revival, encounter cleanup, and multiplayer-local camera/UI behavior.
+
+## [27.8.2026]
+
+### Tool Updates
+
+- Updated `WC3_Database/WC3ItemManager/ItemEditForm.cs` and `BatchItemEditDialog.cs` with editable Perishable (`iper`) support, charged/actively-used defaults, and consumable generation that produces inventory items removed when their charges reach zero.
+
+### Player-Facing Updates
+
+- Fixed direct Sirensong-Ashfang wyvern flights so they follow the configured flight-point chain through Horde Scout Base instead of flying straight to the destination.
 - Added a recurring Mok'natha battlefield where small orc and ogre forces attack along varied lanes around the crater field.
-- Added a recurring human patrol that begins after one minute, travels among Twilight Grove, Sereneglade, and Havenwoods, makes and removes camps, and may include Captain Maelhood scouting around the camp.
-- Fixed unread Hint effects so the Game-button flash fills the complete button, replays for every new hint, and the persistent Hints marker surrounds the Hints icon.
+- Added a recurring human patrol that begins after one minute, travels in coordinated formation among Twilight Grove, Sereneglade, and Havenwoods, makes and removes camps, and may include Captain Maelhood scouting around the camp.
+- Fixed unread Hint effects so the Game-button flash fills the complete button, replays for every new hint, and the persistent Hints marker matches the full-button Quest update effect.
 - Delayed `Protect the Outpost` discovery until five seconds after the gnoll-attack intro cinematic, approximately 15 seconds after the encounter begins.
 - Added Nazgrek's self-discovered prologue opening: Wolf Hunt I kills six wolves, collects six Wolf Skin, and then leads directly into the recovered Nazgrek's Flask ingredient quest.
 - Nazgrek's Flask now uses its exact legacy materials, reveals the missing Empty Flask objective after the recovered delay, and can be crafted from Alchemy 0 so the level-1 story does not require profession grinding.
 - Added Zul'kis's parallel prologue with the Darkspear river landing, first meeting with Chieftain Thork, destroyed shore, wounded troll's interrupted warning, and Rescue the Brother in Bramblehide Village.
 - Smoothed the Protect the Outpost-to-Zul'kis handoff with a black-screen camera transition, made ESC skip the moving-ship segment, and removed the repeated fade cycle during ship arrival.
 - Nazgrek and Zul'kis no longer display quest-giver punctuation for their self-driven hero quests.
+- Hero quest markers now default off for Nazgrek and Zul'kis, while unit-specific quests such as Call of the Horde hide their giver, receiver, and objective markers whenever their required hero is neither owned nor an active companion.
+- During Zul'kis's separate gameplay, Nazgrek is hidden, invulnerable, paused, and neutral-passive, while Shadowclaw is removed from pet/companion gameplay and restored with Nazgrek afterward; the destroyed Darkspear landing is staged immediately after Thork's order, with the wounded witch doctor lying down and periodically bleeding from the chest.
+- Ragno now receives five seconds to walk into his Protect the Outpost conversation position before the cinematic applies its final placement correction.
+- Ragno's Gnoll Headcount, Lumberjack Duties, Kobold Thieves, and Satyr Negotiations quests now unlock after Protect the Outpost instead of being treated as unrelated starting quests.
+- Nazgrek is now reliably stopped and cinematic-positioned in front of Chieftain Thork before their Call of the Horde meeting, even when the World Editor cinematic trigger skips its normal unit-mover branch.
+- Quest-giver dialogue now keeps the fullscreen interface active while returning user control for dialogue choices, and reliably restores the normal interface after farewells such as Thork's and Ragno's.
+- Nazgrek's Wolf Hunt I now waits for the intro cinematic's completion hook instead of appearing while the cinematic is still playing.
 - Added Bramblehide Village as a Bloodtusk forest-troll subzone of Havenwoods.
 - Velyssara's charm now gives Nazgrek the `S01P` dummy aura while Chains of Seduction binds him, then removes it when her tasks are completed or the charm is dispelled.
 
 ### Technical Updates
 
+- Updated `Travel/TravelWyvern.j` and `Travel/TravelSystem.j` with stitched long-distance wyvern routes, expanded route waypoint capacity, and recovery when Warcraft drops an active flight movement order.
 - Added `World/MoknathaBattle.j` with randomized two-sided respawns, cinematic-aware periodic cycles, persistent crater ubersplats, legacy group compatibility, and public quest/event control hooks.
-- Added `World/HumanPatrols.j` with configurable delayed startup, recurring travel/camp/respawn phases, single optional leader spawning, leader scouting, legacy group compatibility, and public quest-state hooks.
+- Added `World/HumanPatrols.j` with configurable delayed startup, recurring travel/camp/respawn phases, coordinated group movement, normal-creep-respawn exclusion, single optional leader spawning, leader scouting, legacy group compatibility, and public quest-state hooks.
 - Updated `_developer/Design Plans/Story and Quest Design.md` with the ambient-system ledger, Mok'natha regional support, and a proposed five-step Chieftain Thork patrol/garrison chain that treats the later human attacks as retaliation rather than folding the garrison into the Dark Horde.
-- Updated `UI/MasterUI.j` with parent-sized Game-button alert framing, explicit flash-animation resets, and icon-owned Hints alert framing, and updated `QuestsAndDialogs/QuestGivers/qRagno.j` plus `_developer/Design Plans/Story and Quest Design.md` with post-cinematic Protect the Outpost acceptance and wave progression.
+- Updated `UI/MasterUI.j` with parent-sized Game-button alert framing, explicit flash-animation resets, and Quest-style full-button Hints alert framing, and updated `QuestsAndDialogs/QuestGivers/qRagno.j` plus `_developer/Design Plans/Story and Quest Design.md` with post-cinematic Protect the Outpost acceptance and wave progression.
 - Added `QuestsAndDialogs/QuestGivers/qNazgrek.j` with public intro/start, recovery, progress-refresh, and completion-state hooks; combined wolf-kill tracking; live DInventory/vanilla-inventory progress; automatic Wolf Hunt I completion; and acquisition-based flask completion.
 - Updated `QuestsAndDialogs/QuestGivers/qVelyssara.j` to own Nazgrek's temporary charm aura across quest acceptance, normal completion, and external dispels such as Jin'Zun's cure.
 - Updated `Professions/ProfessionsAlchemy.j` to make the existing reusable Nazgrek's Flask `I61L` recipe available at Alchemy 0 while retaining all six recovered material requirements.
@@ -47,15 +77,22 @@
 - Updated `Zones/ZonesCore.j` with Bramblehide Village `701`, a level 1–5 Bloodtusk Tribe subzone of Havenwoods using `gg_rct_BramblehideVillage`.
 - Updated `QuestsAndDialogs/QuestGivers/qRagno.j` to start `qZulkis` from the Protect the Outpost completion fade and updated `qChieftainThork.j` to redirect the prologue meeting and gate Call of the Horde completion/companion enablement behind Rescue the Brother.
 - Updated `QuestsAndDialogs/QuestMaster.j` with reversible per-unit quest-marker suppression, used by `qNazgrek.j` and `qZulkis.j`; hardened `qZulkis.j` cinematic skipping so skipped staging still reaches its final world state.
+- Updated `QuestsAndDialogs/QuestMaster.j` and `QuestGiver.j` with reusable unit-specific quest availability/marker settings, then applied them to the Nazgrek, Zul'kis, and Call of the Horde prologue quests.
+- Updated `Companions/Pet.j` with reversible Shadowclaw story-isolation hooks so Zul'kis-only gameplay cannot show or command Nazgrek's pet, including when the prologue begins before delayed pet initialization.
+- Updated `QuestsAndDialogs/QuestMaster.j` to transfer completed-quest prerequisite giver references when a quest giver such as Ragno is replaced after death.
+- Updated `QuestsAndDialogs/DialogInteraction.j` so configured quest-giver entry transitions guarantee the selected hero reaches the configured cinematic point while the screen is black.
+- Updated `QuestsAndDialogs/DialogInteraction.j` to own fullscreen-interface entry, interactive dialogue, and exit cleanup independently of qXXX quest-giver libraries and the World Editor cinematic triggers.
+- Updated `QuestsAndDialogs/QuestGivers/Player/qNazgrek.j` to preserve start requests made before delayed QuestData initialization while leaving cinematic timing to its explicit intro-finish hook.
 
 ### Actions Remaining
 
+- Compile the updated travel libraries with JassHelper and runtime-test Sirensong-Horde Scout Base, Horde Scout Base-Ashfang, and direct Sirensong-Ashfang wyvern flights in both directions against `gg_rct_FPRoute001` through `028`.
 - Import `MoknathaBattle.j`, keep `gg_rct_MoknathaBattleRegion01` through `05` plus `gg_rct_MoknathaCrater01` through `07`, disable both legacy Moknatha GUI triggers, compile the full map, and runtime-test ownership, lane pathing, respawn timing, cinematic suppression, and crater rendering.
-- Import `HumanPatrols.j`, keep `gg_rct_PatrolSpawnPoint`, the three zone rects, and the legacy `PatrolGroup1`/tent variables, disable all four legacy Human Patrol GUI triggers, compile the full map, and runtime-test route pathing, campsite placement, tent deaths, unique leader chance/scouting, complete patrol death, and automatic respawn. The proposed Thork quest chain still needs its QuestData, item/drop, capture, garrison, barrel, fire, reinforcement, and counterattack implementation.
+- Import `HumanPatrols.j` after `CreepRespawn`, keep `gg_rct_PatrolSpawnPoint`, the three zone rects, and the legacy `PatrolGroup1`/tent variables, disable all four legacy Human Patrol GUI triggers, compile the full map, and runtime-test coordinated formation movement, route pathing, creep-respawn exclusion, campsite placement, tent deaths, unique leader chance/scouting, complete patrol death, and automatic patrol-owned respawn. The proposed Thork quest chain still needs its QuestData, item/drop, capture, garrison, barrel, fire, reinforcement, and counterattack implementation.
 - Runtime-test the Game/Hints alert sprite bounds and Protect the Outpost discovery timing after both normal completion and Escape-skipping of the gnoll-attack cinematic.
-- Import `qNazgrek.j` after its listed dependencies, call `qNazgrek_StartIntroQuestChain()` when Nazgrek's opening gameplay begins, disable the legacy Nazgrek's Flask GUI folder, compile the full map, and runtime-test wolf kills, all ingredient counts, the 175-second Empty Flask reminder, Alchemy 0 crafting, and completion while using DInventory and vanilla inventory. Confirm whether `Spawn Plants Intro` still supplies extra prologue herbs and stop/remove that spawner after `qNazgrek_IsFlaskCompleted()`.
+- Import `qNazgrek.j` after its listed dependencies; add `call qNazgrek_StartIntroQuestChain()` to Nazgrek's intro cinematic shared normal/ESC completion path; disable the legacy Nazgrek's Flask GUI folder; compile the full map; and runtime-test post-cinematic Wolf Hunt I discovery, wolf kills, all ingredient counts, the 175-second Empty Flask reminder, Alchemy 0 crafting, and completion while using DInventory and vanilla inventory. Confirm whether `Spawn Plants Intro` still supplies extra prologue herbs and stop/remove that spawner after `qNazgrek_IsFlaskCompleted()`.
 - Create or confirm a unique Wolf Mother Head/Pelt and Shamanic Cowl, verify early sources for two Light Leather `I6A6` and one Thread `I66L`, register the planned trophy + six Wolf Skin + leather/thread recipe, decide the flask's Wolf Mother encounter effect, and verify Wolf Den `12111` plus Wolf Mother `n648` before implementing Wolf Hunt II–III.
-- Import `VoicelinesZulkarak`, `VoicelinesGenericTroll`, and `qZulkis` after their listed dependencies; disable the legacy `Dead Darkspear Trolls` 5-second GUI event; compile the full map; and runtime-test ship movement/removal, all four cameras, living/corpse staging, Thork selection, Bramblehide entry, Zul'karak rescue, hero ownership/inventory state, Nazgrek restoration, and Call of the Horde convergence. Add audio files for the prepared Zul'kis, Thork, Zul'karak, and Generic Troll keys when recordings are available.
+- Import `VoicelinesZulkarak`, `VoicelinesGenericTroll`, and `qZulkis` after their listed dependencies; disable the legacy `Dead Darkspear Trolls` 5-second GUI event; compile the full map; and runtime-test ship movement/removal, all four cameras, Thork-time corpse/captive staging, the witch doctor's death pose and chest blood effect, Thork selection, Bramblehide entry, Zul'karak rescue, hero ownership/inventory state, hero-marker suppression, Nazgrek and Shadowclaw isolation/restoration, and Call of the Horde convergence. Add audio files for the prepared Zul'kis, Thork, Zul'karak, and Generic Troll keys when recordings are available.
 - Design and implement Zul'karak's post-rescue Horde-base quest set before enabling recruitment, then add the planned simple berserker AI and timed dismissal return to `gg_rct_ZulkarakHordeHome`.
 
 ## [26.8.2026]
