@@ -66,6 +66,12 @@ globals
     constant string VL_THORK_0012_KEY = "Thork_0012"
     constant string VL_THORK_0012_TEXT = "You stand before me still breathing-good. Tell me, Nazgrek... have your battles hardened you, or merely sharpened your rage?"
     constant string VL_THORK_0012_TEXT_ALT1 = "Ahh, Nazgrek. Have you been victorious in battles?"
+
+    // Zul'kis's first meeting during the Darkspear prologue.
+    constant string VL_THORK_0013_KEY = "Thork_0013"
+    constant string VL_THORK_0013_TEXT = "Zul'kis. I expected the Darkspear to arrive in greater strength. Where is the rest of your tribe?"
+    constant string VL_THORK_0014_KEY = "Thork_0014"
+    constant string VL_THORK_0014_TEXT = "Then return and bring them here. Human patrols have been moving through Havenwoods. Keep your guard up."
 endglobals
 
 endlibrary

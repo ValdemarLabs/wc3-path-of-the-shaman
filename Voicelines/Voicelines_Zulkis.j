@@ -113,6 +113,16 @@ globals
     constant string VL_ZULKIS_0004_KEY = "Zulkis_0004"
     constant string VL_ZULKIS_0004_TEXT = "I be hearin' dat them murlocs, dey be puttin' their victims in da water for weeks, limitin' their breath supply. Keep 'em alive, ya know. And when dem victims be all soaked and ready, dat's when dem murlocs feast, eatin' 'em alive. A gruesome business, mon."
 
+    // Darkspear landing and rescue prologue.
+    constant string VL_ZULKIS_0005_KEY = "Zulkis_0005"
+    constant string VL_ZULKIS_0005_TEXT = "Don't worry, Zul'karak. Da orc chieftain promised this meetin' be quick."
+    constant string VL_ZULKIS_0006_KEY = "Zulkis_0006"
+    constant string VL_ZULKIS_0006_TEXT = "Da rest of my tribe be waitin' at da river with my brother, Zul'karak."
+    constant string VL_ZULKIS_0007_KEY = "Zulkis_0007"
+    constant string VL_ZULKIS_0007_TEXT = "Save ya strength, brother. We be gettin' out of here."
+    constant string VL_ZULKIS_0008_KEY = "Zulkis_0008"
+    constant string VL_ZULKIS_0008_TEXT = "Come. Da Horde camp be safer than these woods."
+
     // Excel draft: Zulkis lines | Quest: Magical Eye | Event: Random discussion | Done: x
     constant string VL_ZULKIS_0044_KEY = "Zulkis_0044"
     constant string VL_ZULKIS_0044_TEXT = "\"I be hearin' dat them murlocs, dey be puttin' their victims in da water for weeks, limitin' their breath supply. Keep 'em alive, ya know. And when dem victims be all soaked and ready, dat's when dem murlocs feast, eatin' 'em alive. A gruesome business, mon."
