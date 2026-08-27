@@ -2,7 +2,7 @@
     TravelWyvern
 
     Author: Valdemar
-    Version: 1.1.1
+    Version: 1.1.2
 
     Description:
     Registers all six placed Wind Rider Masters and the directed flight
@@ -222,6 +222,22 @@ library TravelWyvern initializer Init requires TravelSystem, TravelUI, optional 
                 return false
             endif
             return TW_AddWaypointRange(routeId, 15, 19)
+        elseif startStop == TW_SirensongStop and endStop == TW_AshfangOutpostStop then
+            if not TW_AddWaypointRange(routeId, 1, 19) then
+                return false
+            endif
+            if not TW_AddWaypointRange(routeId, 18, 15) then
+                return false
+            endif
+            return TW_AddWaypointRange(routeId, 20, 28)
+        elseif startStop == TW_AshfangOutpostStop and endStop == TW_SirensongStop then
+            if not TW_AddWaypointRange(routeId, 28, 20) then
+                return false
+            endif
+            if not TW_AddWaypointRange(routeId, 15, 19) then
+                return false
+            endif
+            return TW_AddWaypointRange(routeId, 18, 1)
         endif
         return true
     endfunction

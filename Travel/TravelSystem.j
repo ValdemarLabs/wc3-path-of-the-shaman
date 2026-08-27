@@ -2,7 +2,7 @@
     TravelSystem
 
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.1.1
 
     Description:
     Configurable travel-stop, route, passenger, discovery, movement, camera,
@@ -114,7 +114,7 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
 
         private constant integer TS_MAX_STOPS = 32
         private constant integer TS_MAX_ROUTES = 64
-        private constant integer TS_MAX_WAYPOINTS = 32
+        private constant integer TS_MAX_WAYPOINTS = 64
         private constant integer TS_MAX_REGISTERED_WAYPOINTS = 256
         private constant integer TS_MAX_PASSENGERS = 12
         private constant integer TS_MAX_PROXY_MODELS = 8
@@ -1719,6 +1719,10 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
                 set TS_ActiveWaypoint = TS_ActiveWaypoint + 1
                 call TS_IssueCurrentWaypoint()
             endif
+        elseif GetUnitCurrentOrder(TS_ActiveCarrier) != OrderId("move") then
+            call TS_IssueCurrentWaypoint()
+        elseif TS_ActiveCarrierB != null and GetUnitCurrentOrder(TS_ActiveCarrierB) != OrderId("move") then
+            call TS_IssueCurrentWaypoint()
         endif
     endfunction
 
