@@ -548,6 +548,10 @@ private function RemoveOldEffect takes unit u returns nothing
 	local integer id
 	local effect old
 	local Table iconTable
+	if u == null then
+		return
+	endif
+	set id = GetHandleId(u)
 	if not QuestIconTable.has(id) then
 		return
 	endif
