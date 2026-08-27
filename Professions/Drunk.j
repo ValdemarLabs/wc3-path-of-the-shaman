@@ -2,7 +2,7 @@
     Drunk
 
     Author: Valdemar
-    Version: 2.5.0
+    Version: 2.5.1
 
     Description:
     Handles drunken visuals, camera sway, movement/casting mishaps, puking,
@@ -72,6 +72,7 @@ globals
     private constant real D_PUKE_MOVE_DISTANCE = 250.00
     private constant real D_PUKE_MOVE_TIME = 1.00
     private constant real D_PUKE_SPEW_TIME = 2.00
+    private constant real D_PUKE_REACTION_DELAY = 0.65
     private constant real D_PUKE_AFTER_TIME = 10.00
     private constant real D_PUKE_MISSILE_PERIOD = 0.04
     private constant integer D_PUKE_MISSILE_STEPS = 12
@@ -117,6 +118,7 @@ globals
     private boolean array D_PukePenalized
     private boolean array D_HadPukeAbility
     private timer array D_PukeTimer
+    private timer array D_PukeReactionTimer
     private timer array D_PukePenaltyTimer
     private timer array D_PukeMissileTimer
     private effect array D_PukeMissile
@@ -464,9 +466,18 @@ private function D_DestroyPukeMissile takes integer unitId returns nothing
     endif
 endfunction
 
+private function D_CancelPukeReaction takes integer unitId returns nothing
+    if D_PukeReactionTimer[unitId] != null then
+        call PauseTimer(D_PukeReactionTimer[unitId])
+        call ReleaseTimer(D_PukeReactionTimer[unitId])
+        set D_PukeReactionTimer[unitId] = null
+    endif
+endfunction
+
 private function D_StopPuke takes integer unitId returns nothing
     local unit whichUnit = D_Unit[unitId]
 
+    call D_CancelPukeReaction(unitId)
     if D_PukeMissileTimer[unitId] != null then
         call PauseTimer(D_PukeMissileTimer[unitId])
         call ReleaseTimer(D_PukeMissileTimer[unitId])
@@ -572,6 +583,31 @@ private function D_LaunchPukeMissile takes unit whichUnit, integer unitId return
     set missileTimer = null
 endfunction
 
+private function D_PlayDelayedPukeReaction takes nothing returns nothing
+    local timer expired = GetExpiredTimer()
+    local integer unitId = GetTimerData(expired)
+    local unit whichUnit = D_Unit[unitId]
+
+    set D_PukeReactionTimer[unitId] = null
+    if whichUnit != null and D_IsUnitAlive(whichUnit) and D_Puking[unitId] and not D_PassedOut[unitId] then
+        call D_PlayReaction(whichUnit, false)
+    endif
+    call ReleaseTimer(expired)
+    set expired = null
+    set whichUnit = null
+endfunction
+
+private function D_SchedulePukeReaction takes integer unitId returns nothing
+    local timer reactionTimer
+
+    call D_CancelPukeReaction(unitId)
+    set reactionTimer = NewTimer()
+    set D_PukeReactionTimer[unitId] = reactionTimer
+    call SetTimerData(reactionTimer, unitId)
+    call TimerStart(reactionTimer, D_PUKE_REACTION_DELAY, false, function D_PlayDelayedPukeReaction)
+    set reactionTimer = null
+endfunction
+
 private function D_EndPuke takes nothing returns nothing
     local timer expired = GetExpiredTimer()
     local integer unitId = GetTimerData(expired)
@@ -604,6 +640,7 @@ private function D_BeginPuke takes nothing returns nothing
     call SetUnitAnimation(whichUnit, "spell")
     call QueueUnitAnimation(whichUnit, "stand")
     call D_LaunchPukeMissile(whichUnit, unitId)
+    call D_SchedulePukeReaction(unitId)
     call TimerStart(expired, D_PUKE_SPEW_TIME, false, function D_EndPuke)
     set expired = null
     set whichUnit = null
@@ -633,8 +670,6 @@ private function D_StartPuke takes unit whichUnit, integer unitId returns nothin
         set udg_Stats_Hit[unitId] = udg_Stats_Hit[unitId] - D_PUKE_HIT_PENALTY
         call BlzSetUnitArmor(whichUnit, BlzGetUnitArmor(whichUnit) - D_PUKE_ARMOR_PENALTY)
     endif
-    call D_PlayReaction(whichUnit, false)
-
     set angle = GetRandomReal(0.00, 2.00*bj_PI)
     call IssuePointOrder(whichUnit, "move", GetUnitX(whichUnit) + D_PUKE_MOVE_DISTANCE*Cos(angle), GetUnitY(whichUnit) + D_PUKE_MOVE_DISTANCE*Sin(angle))
 
