@@ -2,7 +2,7 @@
     DialogInteraction
 
     Author: Valdemar
-    Version:
+    Version: 1.2.0
 
     Description:
     Generic selectable-NPC dialog interaction layer. This owns NPC selection
@@ -427,7 +427,10 @@ library DialogInteraction initializer Init requires Table, DialogSystem, CameraC
     endfunction
 
     private function ReleasePendingGreetSequenceToDialog takes nothing returns nothing
-        call EndCinematicSequence(DialogInteraction_PendingSequenceCinematic)
+        if DialogInteraction_PendingSequenceCinematic then
+            call FullscreenUI_SetEnabled(true)
+        endif
+        call EnableUserControl(true)
         set DialogInteraction_PendingSequenceCinematic = false
     endfunction
 
@@ -898,7 +901,7 @@ library DialogInteraction initializer Init requires Table, DialogSystem, CameraC
         if TransitionRunCinematicTrigger then
             call TriggerExecute(gg_trg_Cinematic_OFF)
         endif
-        if TransitionUseCinematicMode and not TransitionRunCinematicTrigger then
+        if TransitionUseCinematicMode then
             call FullscreenUI_SetEnabled(false)
         endif
         if TransitionRunCinematicTrigger or TransitionUseCinematicMode then
@@ -977,6 +980,18 @@ library DialogInteraction initializer Init requires Table, DialogSystem, CameraC
         set t = null
     endfunction
 
+    private function ShouldPlaceTransitionHero takes unit hero returns boolean
+        if hero == null or TransitionMoveMode == 0 then
+            return false
+        endif
+        if hero == udg_Nazgrek then
+            return TransitionMoveMode != 3 and TransitionMoveMode != 8
+        elseif hero == udg_Zulkis then
+            return TransitionMoveMode != 2 and TransitionMoveMode != 7
+        endif
+        return false
+    endfunction
+
     private function ContinueDialogEntryTransition takes nothing returns nothing
         local timer t = GetExpiredTimer()
         local location p1
@@ -1005,6 +1020,15 @@ library DialogInteraction initializer Init requires Table, DialogSystem, CameraC
             set udg_CinematicMovePoint[1] = p1
             set udg_CinematicMovePoint[2] = p2
             call TriggerExecute(gg_trg_Cinematic_ON)
+            if TransitionUseCinematicMode then
+                call FullscreenUI_SetEnabled(true)
+            endif
+            if ShouldPlaceTransitionHero(hero) and FallenHeroState_IsAlive(hero) then
+                call IssueImmediateOrder(hero, "stop")
+                call SetUnitX(hero, x)
+                call SetUnitY(hero, y)
+                call SetUnitFacing(hero, Atan2(GetUnitY(TransitionGiver) - y, GetUnitX(TransitionGiver) - x) * bj_RADTODEG)
+            endif
             call RemoveLocation(p1)
             call RemoveLocation(p2)
             set p1 = null
@@ -1052,7 +1076,7 @@ library DialogInteraction initializer Init requires Table, DialogSystem, CameraC
         if runCinematicTrigger or useCinematicMode then
             call ExecuteFunc("MasterUI_HideGameButton")
         endif
-        if useCinematicMode and not runCinematicTrigger then
+        if useCinematicMode then
             call FullscreenUI_SetEnabled(true)
         endif
 
