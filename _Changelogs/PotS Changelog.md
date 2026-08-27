@@ -19,6 +19,7 @@
 
 ### Player-Facing Updates
 
+- Companion puke reactions now wait until shortly after the visible puke begins instead of playing as soon as the puking ability is applied.
 - Human patrol activity now varies between one and two simultaneous groups. Each group remains assigned either to the Sereneglade–Twilight Grove route or entirely within Havenwoods instead of crossing all three zones.
 - Player-hero pass-outs now begin fading before fullscreen mode changes, and waking with a hangover revives the other player hero and all companions while interrupting active boss and arena encounters.
 
