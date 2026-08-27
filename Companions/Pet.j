@@ -2,7 +2,7 @@
     Pet
 
     Author: Valdemar
-    Version:
+    Version: 1.1.0
 
     Description:
     Pet and tame-beast logic. Pets use the companion control layer for follow
@@ -18,7 +18,8 @@
     API:
     Pet_CanRename, Pet_ShowRenamePrompt, Pet_IsPetUnit, Pet_IsDead,
     Pet_Revive(unit pet, real lifePercent, real manaPercent, boolean showEffects),
-    Pet_GetClassInfoText, Pet_GetTypeInfoText, and Pet_GetAbilityInfoText.
+    Pet_GetClassInfoText, Pet_GetTypeInfoText, Pet_GetAbilityInfoText,
+    Pet_HideShadowclawForStory(), and Pet_RestoreShadowclawAfterStory().
 
 **/
 library Pet initializer Init requires Table, Companions, UnitExperience, DamageEngine, FloatingTextSimple, PetDefinitions, Events, FallenHeroState, optional HintsUI
@@ -66,6 +67,17 @@ globals
     private unit DismissPetOne = null
     private unit DismissPetTwo = null
     private integer TamedRosterCount = 0
+    private boolean ShadowclawInitialized = false
+    private boolean ShadowclawStoryIsolated = false
+    private boolean ShadowclawStoryWasActive = false
+    private boolean ShadowclawStoryWasHidden = false
+    private boolean ShadowclawStoryWasInvulnerable = false
+    private boolean ShadowclawStoryWasUnitHiderReference = false
+    private boolean ShadowclawStorySnapshotCaptured = false
+    private player ShadowclawStoryOwner = null
+    private real ShadowclawStoryX = 0.00
+    private real ShadowclawStoryY = 0.00
+    private real ShadowclawStoryFacing = 0.00
 endglobals
 
 private function DebugMsg takes string msg returns nothing
@@ -824,9 +836,54 @@ private function FindShadowclaw takes nothing returns unit
     return FoundShadowclaw
 endfunction
 
+private function IsolateShadowclaw takes unit shadowclaw, boolean assumeActive returns nothing
+    if shadowclaw == null or GetUnitTypeId(shadowclaw) == 0 then
+        return
+    endif
+
+    set ShadowclawStorySnapshotCaptured = true
+    set ShadowclawStoryWasActive = assumeActive or shadowclaw == udg_TamedUnit
+    set ShadowclawStoryWasHidden = IsUnitHidden(shadowclaw)
+    set ShadowclawStoryWasInvulnerable = BlzIsUnitInvulnerable(shadowclaw)
+    set ShadowclawStoryWasUnitHiderReference = udg_UnitHider_ReferenceGroup != null and IsUnitInGroup(shadowclaw, udg_UnitHider_ReferenceGroup)
+    set ShadowclawStoryOwner = GetOwningPlayer(shadowclaw)
+    set ShadowclawStoryX = GetUnitX(shadowclaw)
+    set ShadowclawStoryY = GetUnitY(shadowclaw)
+    set ShadowclawStoryFacing = GetUnitFacing(shadowclaw)
+
+    if ShadowclawStoryWasActive then
+        call Companions_UnregisterControlled(shadowclaw)
+        if udg_TamedUnits != null then
+            call GroupRemoveUnit(udg_TamedUnits, shadowclaw)
+        endif
+        call RemovePetFocus(shadowclaw)
+        call RefreshPetDamageTrigger(null)
+        set udg_TamedUnit = null
+        set udg_Pet_Dead = false
+    endif
+
+    call IssueImmediateOrder(shadowclaw, "stop")
+    if udg_UnitHider_ReferenceGroup != null then
+        call GroupRemoveUnit(udg_UnitHider_ReferenceGroup, shadowclaw)
+    endif
+    call PauseUnit(shadowclaw, true)
+    call SetUnitInvulnerable(shadowclaw, true)
+    call SetUnitOwner(shadowclaw, Player(PLAYER_NEUTRAL_PASSIVE), true)
+    call ShowUnit(shadowclaw, false)
+endfunction
+
 private function OnShadowclawInitTimer takes nothing returns nothing
     local timer expired = GetExpiredTimer()
     local unit shadowclaw = udg_Shadowclaw
+
+    if ShadowclawInitialized then
+        if expired != null then
+            call DestroyTimer(expired)
+        endif
+        set shadowclaw = null
+        set expired = null
+        return
+    endif
 
     if shadowclaw == null or GetUnitTypeId(shadowclaw) == 0 then
         set shadowclaw = FindShadowclaw()
@@ -844,7 +901,12 @@ private function OnShadowclawInitTimer takes nothing returns nothing
 
     if shadowclaw != null then
         call ScaleShadowclawStats(shadowclaw)
-        call RegisterPetUnit(shadowclaw, udg_Nazgrek, true, udg_InCinematic)
+        if ShadowclawStoryIsolated and not ShadowclawStorySnapshotCaptured then
+            call IsolateShadowclaw(shadowclaw, true)
+        elseif not ShadowclawStoryIsolated then
+            call RegisterPetUnit(shadowclaw, udg_Nazgrek, true, udg_InCinematic)
+        endif
+        set ShadowclawInitialized = true
     endif
 
     if expired != null then
@@ -1185,6 +1247,60 @@ public function Revive takes unit pet, real lifePercent, real manaPercent, boole
         return RestoreFatiguedPet(pet, lifePercent, manaPercent, true, "Abilities\\Spells\\Human\\Resurrect\\ResurrectTarget.mdl")
     endif
     return RestoreFatiguedPet(pet, lifePercent, manaPercent, true, "")
+endfunction
+
+public function HideShadowclawForStory takes nothing returns nothing
+    local unit shadowclaw = udg_Shadowclaw
+
+    if ShadowclawStoryIsolated then
+        set shadowclaw = null
+        return
+    endif
+
+    set ShadowclawStoryIsolated = true
+    call IsolateShadowclaw(shadowclaw, not ShadowclawInitialized)
+    set shadowclaw = null
+endfunction
+
+public function RestoreShadowclawAfterStory takes nothing returns nothing
+    local unit shadowclaw = udg_Shadowclaw
+
+    if not ShadowclawStoryIsolated then
+        set shadowclaw = null
+        return
+    endif
+
+    set ShadowclawStoryIsolated = false
+    if shadowclaw == null or GetUnitTypeId(shadowclaw) == 0 or not ShadowclawStorySnapshotCaptured then
+        set shadowclaw = null
+        return
+    endif
+    call SetUnitPosition(shadowclaw, ShadowclawStoryX, ShadowclawStoryY)
+    call SetUnitFacing(shadowclaw, ShadowclawStoryFacing)
+    if ShadowclawStoryWasActive then
+        call RegisterPetUnit(shadowclaw, udg_Nazgrek, false, false)
+        set ShadowclawInitialized = true
+        if ShadowclawStoryOwner != null then
+            call SetUnitOwner(shadowclaw, ShadowclawStoryOwner, true)
+        endif
+        call SetUnitInvulnerable(shadowclaw, ShadowclawStoryWasInvulnerable)
+    else
+        call PauseUnit(shadowclaw, false)
+        if ShadowclawStoryOwner != null then
+            call SetUnitOwner(shadowclaw, ShadowclawStoryOwner, true)
+        endif
+        call SetUnitInvulnerable(shadowclaw, ShadowclawStoryWasInvulnerable)
+    endif
+    call ShowUnit(shadowclaw, not ShadowclawStoryWasHidden)
+    if ShadowclawStoryWasUnitHiderReference and udg_UnitHider_ReferenceGroup != null then
+        call GroupAddUnit(udg_UnitHider_ReferenceGroup, shadowclaw)
+    endif
+
+    set ShadowclawStoryWasActive = false
+    set ShadowclawStoryWasUnitHiderReference = false
+    set ShadowclawStorySnapshotCaptured = false
+    set ShadowclawStoryOwner = null
+    set shadowclaw = null
 endfunction
 
 public function GetClassInfoText takes unit pet returns string
