@@ -58,6 +58,8 @@ namespace WC3ItemManager
         private CheckBox chkPawnable;
         private CheckBox chkApplyActivelyUsed;
         private CheckBox chkActivelyUsed;
+        private CheckBox chkApplyPerishable;
+        private CheckBox chkPerishable;
         private CheckBox chkApplyDroppedOnDeath;
         private CheckBox chkDroppedOnDeath;
         private CheckBox chkApplySpecificDropOnly;
@@ -88,6 +90,7 @@ namespace WC3ItemManager
             public bool Sellable { get; init; }
             public bool Pawnable { get; init; }
             public bool ActivelyUsed { get; init; }
+            public bool Perishable { get; init; }
             public bool DroppedOnDeath { get; init; }
             public bool SpecificDropOnly { get; init; }
         }
@@ -279,6 +282,10 @@ namespace WC3ItemManager
             chkApplyActivelyUsed = CreateApplyCheckBox();
             chkActivelyUsed = CreateValueCheckBox("Actively Used");
             AddEditorRow(contentPanel, chkApplyActivelyUsed, "Actively Used:", chkActivelyUsed, ref y);
+
+            chkApplyPerishable = CreateApplyCheckBox();
+            chkPerishable = CreateValueCheckBox("Removed When Charges Reach Zero");
+            AddEditorRow(contentPanel, chkApplyPerishable, "Perishable (iper):", chkPerishable, ref y);
 
             chkApplyDroppedOnDeath = CreateApplyCheckBox();
             chkDroppedOnDeath = CreateValueCheckBox("Dropped On Death");
@@ -558,6 +565,7 @@ namespace WC3ItemManager
                            i.is_sellable,
                            i.is_pawnable,
                            i.actively_used,
+                           i.is_perishable,
                            i.dropped_on_death,
                            i.specific_drop_only
                     FROM items i
@@ -596,6 +604,7 @@ namespace WC3ItemManager
                         Sellable = ReadBool(reader, "is_sellable"),
                         Pawnable = ReadBool(reader, "is_pawnable"),
                         ActivelyUsed = ReadBool(reader, "actively_used"),
+                        Perishable = ReadBool(reader, "is_perishable"),
                         DroppedOnDeath = ReadBool(reader, "dropped_on_death"),
                         SpecificDropOnly = ReadBool(reader, "specific_drop_only")
                     });
@@ -634,6 +643,7 @@ namespace WC3ItemManager
             bool sameSellable = TryGetCommonBool(items.Select(i => i.Sellable), out bool commonSellable);
             bool samePawnable = TryGetCommonBool(items.Select(i => i.Pawnable), out bool commonPawnable);
             bool sameActivelyUsed = TryGetCommonBool(items.Select(i => i.ActivelyUsed), out bool commonActivelyUsed);
+            bool samePerishable = TryGetCommonBool(items.Select(i => i.Perishable), out bool commonPerishable);
             bool sameDroppedOnDeath = TryGetCommonBool(items.Select(i => i.DroppedOnDeath), out bool commonDroppedOnDeath);
             bool sameSpecificDropOnly = TryGetCommonBool(items.Select(i => i.SpecificDropOnly), out bool commonSpecificDropOnly);
 
@@ -664,6 +674,7 @@ namespace WC3ItemManager
             ConfigureBooleanField(chkSellable, chkApplySellable, sameSellable, commonSellable);
             ConfigureBooleanField(chkPawnable, chkApplyPawnable, samePawnable, commonPawnable);
             ConfigureBooleanField(chkActivelyUsed, chkApplyActivelyUsed, sameActivelyUsed, commonActivelyUsed);
+            ConfigureBooleanField(chkPerishable, chkApplyPerishable, samePerishable, commonPerishable);
             ConfigureBooleanField(chkDroppedOnDeath, chkApplyDroppedOnDeath, sameDroppedOnDeath, commonDroppedOnDeath);
             ConfigureBooleanField(chkSpecificDropOnly, chkApplySpecificDropOnly, sameSpecificDropOnly, commonSpecificDropOnly);
 
@@ -1063,6 +1074,7 @@ namespace WC3ItemManager
                 if (!AddBooleanUpdate(cmd, updates, updatedFields, chkApplySellable, chkSellable, "is_sellable", "sellable")) return;
                 if (!AddBooleanUpdate(cmd, updates, updatedFields, chkApplyPawnable, chkPawnable, "is_pawnable", "pawnable")) return;
                 if (!AddBooleanUpdate(cmd, updates, updatedFields, chkApplyActivelyUsed, chkActivelyUsed, "actively_used", "actively_used")) return;
+                if (!AddBooleanUpdate(cmd, updates, updatedFields, chkApplyPerishable, chkPerishable, "is_perishable", "perishable")) return;
                 if (!AddBooleanUpdate(cmd, updates, updatedFields, chkApplyDroppedOnDeath, chkDroppedOnDeath, "dropped_on_death", "dropped_on_death")) return;
                 if (!AddBooleanUpdate(cmd, updates, updatedFields, chkApplySpecificDropOnly, chkSpecificDropOnly, "specific_drop_only", "ignore_loot_tables")) return;
 

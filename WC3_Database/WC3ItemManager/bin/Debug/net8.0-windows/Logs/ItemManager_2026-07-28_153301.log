@@ -1,8 +1,0 @@
-﻿[2026-07-28 15.33.01] [INFO] ============================================================
-[2026-07-28 15.33.01] [INFO] ItemManager session started
-[2026-07-28 15.33.01] [INFO] Log file: H:\Pelit\PotS_JASS\WC3_Database\WC3ItemManager\bin\Debug\net8.0-windows\logs\ItemManager_2026-07-28_153301.log
-[2026-07-28 15.33.01] [INFO] ============================================================
-[2026-07-28 15.33.01] [INFO] Loaded tooltip phrases: 6 rarities, 7 classes, 24 stats
-[2026-07-28 15.35.32] [INFO] Duplicated item: j1d2 - Blacksmith's Hammer
-[2026-07-28 15.36.03] [INFO] Exported W3T file: H:\Pelit\PotS_JASS\WC3_Database\exports\ItemData_20260728_153602.w3t
-[2026-07-28 15.36.06] [INFO] Exported DEquipment JASS file: H:\Pelit\PotS_JASS\WC3_Export\DEquipmentItemDefinitions\DEquipmentItemDefinitions_20260728-1536.j

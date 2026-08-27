@@ -100,6 +100,7 @@ namespace WC3ItemManager
         private CheckBox chkPawnable;
         private CheckBox chkPowerUpAutoAcquire;
         private CheckBox chkActivelyUsedWC3;
+        private CheckBox chkPerishable;
         private CheckBox chkDroppedOnDeath;
         private CheckBox chkSpecificDropOnly;
         private Button btnSave;
@@ -218,6 +219,7 @@ namespace WC3ItemManager
                     chkActivelyUsedWC3.Checked = isChecked;
 
                 _syncingActivelyUsedCheckboxes = false;
+                ApplyPerishableDefaultForActiveChargedItem();
             };
         }
 
@@ -234,6 +236,16 @@ namespace WC3ItemManager
         private bool GetActivelyUsedValue()
         {
             return chkActivelyUsedWC3 != null && chkActivelyUsedWC3.Checked;
+        }
+
+        private void ApplyPerishableDefaultForActiveChargedItem()
+        {
+            if (isLoadingItem || chkPerishable == null || numMaxCharges == null || numMaxCharges.Value <= 0)
+                return;
+
+            bool isCharged = GetWC3ClassificationValue().Equals("Charged", StringComparison.OrdinalIgnoreCase);
+            if (isCharged || GetActivelyUsedValue())
+                chkPerishable.Checked = true;
         }
 
         private bool IsPowerUpClassification()
@@ -1044,6 +1056,7 @@ namespace WC3ItemManager
             // Max Charges
             tab.Controls.Add(new Label { Text = "Max Charges:", Location = new Point(labelX, y), AutoSize = true });
             numMaxCharges = new NumericUpDown { Location = new Point(controlX, y), Width = 100, Minimum = 0, Maximum = 999 };
+            numMaxCharges.ValueChanged += (s, e) => ApplyPerishableDefaultForActiveChargedItem();
             tab.Controls.Add(numMaxCharges);
             y += lineHeight;
 
@@ -1360,7 +1373,11 @@ namespace WC3ItemManager
             cmbWC3Classification = new ComboBox { Location = new Point(180, y), Width = 200, DropDownStyle = ComboBoxStyle.DropDownList };
             cmbWC3Classification.Items.AddRange(new object[] { "Permanent", "Charged", "PowerUp", "Artifact", "Campaign", "Miscellaneous" });
             cmbWC3Classification.SelectedIndex = 0; // Default to "Permanent"
-            cmbWC3Classification.SelectedIndexChanged += (s, e) => UpdatePowerUpAutoAcquireState();
+            cmbWC3Classification.SelectedIndexChanged += (s, e) =>
+            {
+                UpdatePowerUpAutoAcquireState();
+                ApplyPerishableDefaultForActiveChargedItem();
+            };
             tab.Controls.Add(cmbWC3Classification);
             y += 40;
 
@@ -1422,6 +1439,24 @@ namespace WC3ItemManager
             tab.Controls.Add(new Label
             {
                 Text = "Enable this for consumables and other items that must be used from inventory.",
+                Location = new Point(360, y + 2),
+                AutoSize = true,
+                ForeColor = Color.Gray,
+                Font = new Font(FontFamily.GenericSansSerif, 8)
+            });
+            y += 35;
+
+            chkPerishable = new CheckBox
+            {
+                Text = "Perishable (removed when charges reach zero / iper)",
+                Location = new Point(20, y),
+                AutoSize = true
+            };
+            tab.Controls.Add(chkPerishable);
+
+            tab.Controls.Add(new Label
+            {
+                Text = "Defaults on for charged or actively used items with charges; disable for reusable items.",
                 Location = new Point(360, y + 2),
                 AutoSize = true,
                 ForeColor = Color.Gray,
@@ -2492,6 +2527,7 @@ namespace WC3ItemManager
                                 chkSellable.Checked = reader["is_sellable"] != DBNull.Value && Convert.ToBoolean(reader["is_sellable"]);
                                 chkPawnable.Checked = reader["is_pawnable"] != DBNull.Value && Convert.ToBoolean(reader["is_pawnable"]);
                                 SetActivelyUsedValue(reader["actively_used"] != DBNull.Value && Convert.ToBoolean(reader["actively_used"]));
+                                chkPerishable.Checked = reader["is_perishable"] != DBNull.Value && Convert.ToBoolean(reader["is_perishable"]);
                                 chkDroppedOnDeath.Checked = reader["dropped_on_death"] != DBNull.Value && Convert.ToBoolean(reader["dropped_on_death"]);
                                 chkSpecificDropOnly.Checked = reader["specific_drop_only"] != DBNull.Value && Convert.ToBoolean(reader["specific_drop_only"]);
 
@@ -2780,6 +2816,7 @@ namespace WC3ItemManager
                                 is_sellable = @is_sellable,
                                 is_pawnable = @is_pawnable,
                                 actively_used = @actively_used,
+                                is_perishable = @is_perishable,
                                 dropped_on_death = @dropped_on_death,
                                 specific_drop_only = @specific_drop_only,
                                 updated_at = CURRENT_TIMESTAMP
@@ -2802,14 +2839,14 @@ namespace WC3ItemManager
                                 tooltip, tooltip_extended, description, hotkey,
                                 icon_path, model_path, wc3_abilities, wc3_abilities_attachments, manual_abilities_data, wc3_classification,
                                 is_powerup, use_automatically,
-                                is_droppable, is_sellable, is_pawnable, actively_used, dropped_on_death, specific_drop_only
+                                is_droppable, is_sellable, is_pawnable, actively_used, is_perishable, dropped_on_death, specific_drop_only
                             ) VALUES (
                                 @item_code, @item_name, @base_id, @cooldown_group, @ignore_cooldown, @rarity_id, @class_id, @type_id,
                                 @item_level, @item_level_unclassified, @gold_cost, @lumber_cost, @max_charges, @max_stack, @stock_max, @stock_replenish,
                                 @tooltip, @tooltip_extended, @description, @hotkey,
                                 @icon_path, @model_path, @wc3_abilities, @wc3_abilities_attachments, @manual_abilities_data, @wc3_classification,
                                 @is_powerup, @use_automatically,
-                                @is_droppable, @is_sellable, @is_pawnable, @actively_used, @dropped_on_death, @specific_drop_only
+                                @is_droppable, @is_sellable, @is_pawnable, @actively_used, @is_perishable, @dropped_on_death, @specific_drop_only
                             ) RETURNING id";
 
                         using (var cmd = new NpgsqlCommand(insertQuery, conn))
@@ -2988,6 +3025,7 @@ namespace WC3ItemManager
                 cmd.Parameters.AddWithValue("is_sellable", chkSellable.Checked);
                 cmd.Parameters.AddWithValue("is_pawnable", chkPawnable.Checked);
                 cmd.Parameters.AddWithValue("actively_used", GetActivelyUsedValue());
+                cmd.Parameters.AddWithValue("is_perishable", chkPerishable.Checked);
                 cmd.Parameters.AddWithValue("dropped_on_death", chkDroppedOnDeath.Checked);
                 cmd.Parameters.AddWithValue("specific_drop_only", chkSpecificDropOnly.Checked);
             }
@@ -5688,6 +5726,9 @@ namespace WC3ItemManager
                 // 8. Set charges
                 int charges = (int)(numConsumableCharges?.Value ?? 10);
                 numMaxCharges.Value = charges;
+                SetWC3ClassificationValue("Charged");
+                SetActivelyUsedValue(true);
+                chkPerishable.Checked = true;
                 
                 // 9. Set reasonable costs with gold cost modifier
                 decimal rarityMultiplier = selectedRarity switch
