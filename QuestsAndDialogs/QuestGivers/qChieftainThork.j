@@ -13,14 +13,14 @@
     Converted from the original ChieftainThork GUI triggers.
 
     How to install:
-    Import after qRagno and the required quest, dialog, inventory, equipment,
-    item-check, and voiceline libraries.
+    Import after qRagno, qZulkis, and the required quest, dialog, inventory,
+    equipment, item-check, and voiceline libraries.
 
     API:
     Public Duty For The Horde and respawn hooks are declared at the end.
 
 **/
-library qChieftainThork initializer Init requires qRagno, QuestGiver, QuestMaster, DialogInteraction, DialogSystem, HeroItemCheck, DInventory, DEquipment, VoicelinesThork, VoicelinesNazgrek, VoicelinesZulkis
+library qChieftainThork initializer Init requires qRagno, qZulkis, QuestGiver, QuestMaster, DialogInteraction, DialogSystem, HeroItemCheck, DInventory, DEquipment, VoicelinesThork, VoicelinesNazgrek, VoicelinesZulkis
 
 globals
     private constant boolean DEBUG = false
@@ -192,7 +192,7 @@ private function RefreshThorkAvailabilityInternal takes nothing returns nothing
         call QuestGiver_RefreshAvailabilityForGiver(Thork)
     endif
     if q != 0 and q.active and not q.completed and not q.failed then
-        if HeroItemCheckBoth(ITEM_BLOOD_SIGNED_LETTER, 1) then
+        if qZulkis_IsPrologueCompleted() and HeroItemCheckBoth(ITEM_BLOOD_SIGNED_LETTER, 1) then
             if q.state != QUEST_STATE_READY_TURNIN then
                 call q.setState(QUEST_STATE_READY_TURNIN)
             endif
@@ -226,6 +226,8 @@ private function EnableZulkisCompanion takes nothing returns nothing
 
     call SetUnitOwner(Zulkis, Player(0), true)
     call SetUnitInvulnerable(Zulkis, false)
+    call PauseUnit(Zulkis, false)
+    call ShowUnit(Zulkis, true)
     call InitializeDInventoryForUnit(Zulkis)
     call InitializeDEquipmentForUnit(Zulkis)
 
@@ -238,7 +240,7 @@ endfunction
 private function CompleteGivingLetterQuest takes nothing returns boolean
     local QuestData q = GetGivingLetterQuest()
 
-    if q == 0 then
+    if q == 0 or not qZulkis_IsPrologueCompleted() then
         return false
     endif
     if not HeroItemCheckBothAndRemove(ITEM_BLOOD_SIGNED_LETTER, 1) then
@@ -390,7 +392,7 @@ private function BuildDialog takes nothing returns nothing
     call DialogSystem_ClearDialog(ThorkDialog)
     call DialogSystem_SetTitle(ThorkDialog, THORK_NAME)
 
-    if letterQuest != 0 and letterQuest.discovered and not letterQuest.completed and not letterQuest.failed then
+    if qZulkis_IsPrologueCompleted() and letterQuest != 0 and letterQuest.discovered and not letterQuest.completed and not letterQuest.failed then
         if not QuestGiver_AddReadyQuestCompleteButton(ThorkDialog, QUEST_GIVING_LETTER, Ragno, 1, function OnGiveLetter, true) then
             set b = DialogSystem_AddButton(ThorkDialog, "Speak to " + THORK_NAME, 2)
             call DialogSystem_BindButtonCode(b, function OnMissingLetter)
@@ -458,6 +460,10 @@ endfunction
 
 private function OnSelected takes nothing returns nothing
     call SyncUnitReferences()
+    if qZulkis_IsPrologueActive() then
+        call qZulkis_HandleThorkSelection()
+        return
+    endif
     if not DialogInteraction_IsUnitAlive(Thork) or not HasAnyThorkDialogContent() then
         return
     endif
