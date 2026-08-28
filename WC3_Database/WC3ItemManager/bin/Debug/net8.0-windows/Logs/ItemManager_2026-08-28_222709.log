@@ -1,0 +1,12 @@
+﻿[2026-08-28 22.27.09] [INFO] Cleaned up 4 old log file(s)
+[2026-08-28 22.27.09] [INFO] ============================================================
+[2026-08-28 22.27.09] [INFO] ItemManager session started
+[2026-08-28 22.27.09] [INFO] Log file: H:\Pelit\PotS_JASS\WC3_Database\WC3ItemManager\bin\Debug\net8.0-windows\logs\ItemManager_2026-08-28_222709.log
+[2026-08-28 22.27.09] [INFO] ============================================================
+[2026-08-28 22.27.09] [INFO] Loaded tooltip phrases: 6 rarities, 7 classes, 24 stats
+[2026-08-28 22.30.05] [ERROR] Error saving item j4c2: Parameter 'base_id' must have either its NpgsqlDbType or its DataTypeName or its Value set.
+[2026-08-28 22.30.40] [INFO] Created new item: j4c2 - Goblin Rocket Fuel
+[2026-08-28 22.31.54] [INFO] Updated item: j4c2 - Goblin Rocket Fuel
+[2026-08-28 22.32.15] [INFO] Updated item: j4c2 - Goblin Rocket Fuel
+[2026-08-28 22.32.23] [INFO] Exported W3T file: H:\Pelit\PotS_JASS\WC3_Database\exports\ItemData_20260828_223223.w3t
+[2026-08-28 22.32.29] [INFO] Exported DEquipment JASS file: H:\Pelit\PotS_JASS\WC3_Export\DEquipmentItemDefinitions\DEquipmentItemDefinitions_20260828-2232.j

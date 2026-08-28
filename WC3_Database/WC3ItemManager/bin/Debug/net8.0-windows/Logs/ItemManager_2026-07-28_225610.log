@@ -1,8 +1,0 @@
-﻿[2026-07-28 22.56.10] [INFO] ============================================================
-[2026-07-28 22.56.10] [INFO] ItemManager session started
-[2026-07-28 22.56.10] [INFO] Log file: H:\Pelit\PotS_JASS\WC3_Database\WC3ItemManager\bin\Debug\net8.0-windows\logs\ItemManager_2026-07-28_225610.log
-[2026-07-28 22.56.10] [INFO] ============================================================
-[2026-07-28 22.56.10] [INFO] Exported W3T file: H:\Pelit\PotS_JASS\WC3_Database\exports\ItemData_20260728_225609.w3t
-[2026-07-28 22.56.13] [INFO] Exported DEquipment JASS file: H:\Pelit\PotS_JASS\WC3_Export\DEquipmentItemDefinitions\DEquipmentItemDefinitions_20260728-2256.j
-[2026-07-28 22.56.24] [INFO] Loot system exported: 7 tiers, 311 specific drops, 653 destructible drops
-[2026-07-28 22.56.24] [INFO] Exported loot system to H:\Pelit\PotS_JASS\ItemLootSystems\ItemManagerExports
