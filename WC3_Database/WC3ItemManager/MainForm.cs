@@ -16,7 +16,8 @@ namespace WC3ItemManager
 {
     public partial class MainForm : Form
     {
-        private string connectionString = "Host=127.0.0.1;Port=5432;Database=wc3_pots;Username=postgres;Password=009900";
+        internal const string DefaultConnectionString = "Host=127.0.0.1;Port=5432;Database=wc3_pots;Username=postgres;Password=009900";
+        private string connectionString = DefaultConnectionString;
         private DataGridView dgvItems;
         private TextBox txtSearch;
         private ComboBox cmbRarity;

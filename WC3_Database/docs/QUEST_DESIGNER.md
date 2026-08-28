@@ -14,6 +14,23 @@ Each giver has one ownership mode:
 
 Use `external` for large existing libraries such as qAradion unless they are deliberately migrated in a separately reviewed change. Use `hybrid` for waves, companions, patrols, timers, branching story state, boss/dungeon ownership, repeatable reset policies, custom item consumption, failure cleanup, or other behavior that cannot be expressed safely through the shared APIs.
 
+## Synchronizing existing JASS
+
+Use **Sync existing JASS...** in the Quest Designer toolbar and select either the repository root or `QuestsAndDialogs`. A single run scans both active source roots:
+
+- `QuestsAndDialogs/QuestGivers/`, including vendor qXXX libraries using fetch, kill, and supply registrations.
+- `QuestsAndDialogs/GenericQuests/`, including giverless/runtime-assigned quests.
+
+Old GUI, plan, tool, backup, and test paths are excluded. Each source file becomes an `external` read-only giver or source container, and supported quest registrations populate the preview, objectives, rewards, turn-in relationships, prerequisites, and qXXX library links. Dynamic requirement text and custom runtime behavior remain source-owned and are reported as warnings rather than guessed.
+
+The synchronizer stores a separate SHA-256 source fingerprint on each imported giver and quest. Unchanged files do not rewrite quest details. Managed/hybrid rows are protected from source import, and the exporter continues to ignore external rows. To update imported content, edit JASS and synchronize again.
+
+The same operation is available for diagnostics or automation:
+
+```powershell
+dotnet .\WC3_Database\WC3ItemManager\bin\Debug\net8.0-windows\WC3ItemManager.dll --sync-quest-sources .\QuestsAndDialogs
+```
+
 ## Database setup
 
 Run the idempotent migration from `WC3_Database/migrations`:
@@ -22,7 +39,7 @@ Run the idempotent migration from `WC3_Database/migrations`:
 psql -U postgres -d wc3_pots -f .\run_all_quest_migrations.sql
 ```
 
-On a disposable database, run it twice and verify all nine quest tables are reported both times. The migration creates relationship views and `updated_at` triggers as well as the authoring tables.
+On a disposable database, run it twice and verify all nine quest tables are reported both times. The migrations create relationship views, `updated_at` triggers, and source-provenance fields as well as the authoring tables.
 
 ## Authoring workflow
 

@@ -37,6 +37,7 @@ A Windows Forms application for managing Path of the Shaman content in the PotS 
 - Preview Details, Description, Objectives, and Rewards using the same information model as `UI/QuestUI.j`.
 - Export only changed managed or hybrid qXXX JASS libraries with JSON snapshots, validation reports, and World Editor manifests.
 - Mark complex existing libraries as External so the exporter never overwrites them.
+- Synchronize existing `QuestGivers` and `GenericQuests` JASS into read-only external rows, including standard qXXX quests and vendor fetch/kill/supply registrations.
 
 ## Prerequisites
 
@@ -126,7 +127,14 @@ private string connectionString = "Host=127.0.0.1;Port=5432;Database=wc3_pots;Us
 
 **Quests menu**
 - **Open Quest Designer**: Edit giver/quest data, relationships, objectives, rewards, dialog sequences, preview, voicelines, and World Editor dependencies.
+- **Sync existing JASS** (Quest Designer toolbar): Scan both `QuestsAndDialogs/QuestGivers` and `QuestsAndDialogs/GenericQuests`, then create or refresh read-only external source projections. Managed/hybrid rows are never overwritten.
 - **Export Changed qXXX Quest Libraries**: Generate timestamped JASS scaffolds plus validation, JSON, and World Editor follow-up artifacts only when the generated library's SHA-256 fingerprint differs from its last successful export.
+
+For a command-line synchronization against the configured database:
+
+```powershell
+dotnet .\WC3_Database\WC3ItemManager\bin\Debug\net8.0-windows\WC3ItemManager.dll --sync-quest-sources .\QuestsAndDialogs
+```
 
 ### Edit/Add Item Dialog
 
@@ -182,7 +190,7 @@ WC3ItemManager/
 └── README.md              # This file
 ```
 
-The Quest Designer is kept in a bounded module: `QuestDesignerForm.cs`, `QuestLogPreviewControl.cs`, `Models/QuestDesignerModels.cs`, `Repositories/QuestDesignerRepository.cs`, and `Exporters/QuestLibraryExporter.cs`. This keeps the existing item grid and feature forms independent.
+The Quest Designer is kept in a bounded module: `QuestDesignerForm.cs`, `QuestLogPreviewControl.cs`, `Models/QuestDesignerModels.cs`, `Repositories/QuestDesignerRepository.cs`, `Importers/QuestSourceSynchronizer.cs`, and `Exporters/QuestLibraryExporter.cs`. This keeps the existing item grid and feature forms independent.
 
 ## Features in Detail
 

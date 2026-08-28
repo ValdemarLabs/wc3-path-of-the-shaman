@@ -4,6 +4,7 @@
 \set ON_ERROR_STOP on
 \echo 'Applying WC3 Manager Quest Designer schema...'
 \ir 007_create_quest_designer.sql
+\ir 008_add_quest_source_sync.sql
 \echo 'Quest Designer schema is ready.'
 
 SELECT table_name

@@ -38,7 +38,15 @@ namespace WC3ItemManager.Repositories
                     AND EXISTS (
                         SELECT 1 FROM information_schema.columns
                         WHERE table_schema = 'public' AND table_name = 'quests'
-                          AND column_name = 'required_reputation')", conn);
+                          AND column_name = 'required_reputation')
+                    AND EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_schema = 'public' AND table_name = 'quest_givers'
+                          AND column_name = 'source_import_fingerprint')
+                    AND EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_schema = 'public' AND table_name = 'quests'
+                          AND column_name = 'source_symbol')", conn);
             return Convert.ToBoolean(cmd.ExecuteScalar());
         }
 
@@ -52,7 +60,7 @@ namespace WC3ItemManager.Repositories
                        use_dialog_camera, use_cinematic_mode, camera_distance, camera_z_offset,
                        camera_angle, camera_rotation_offset, camera_far_z, camera_fov,
                        camera_block_radius, camera_block_check, enabled, notes, created_at, updated_at,
-                       ownership_mode, source_file
+                       ownership_mode, source_file, source_kind, source_import_fingerprint, source_imported_at
                 FROM quest_givers
                 WHERE (@enabled_only = FALSE OR enabled = TRUE)
                 ORDER BY display_name, giver_key", conn);
@@ -74,7 +82,7 @@ namespace WC3ItemManager.Repositories
                        use_dialog_camera, use_cinematic_mode, camera_distance, camera_z_offset,
                        camera_angle, camera_rotation_offset, camera_far_z, camera_fov,
                        camera_block_radius, camera_block_check, enabled, notes, created_at, updated_at,
-                       ownership_mode, source_file
+                       ownership_mode, source_file, source_kind, source_import_fingerprint, source_imported_at
                 FROM quest_givers WHERE id = @id", conn);
             cmd.Parameters.AddWithValue("id", id);
             using var reader = cmd.ExecuteReader();
@@ -157,7 +165,8 @@ namespace WC3ItemManager.Repositories
                        quest_level, required_level, required_reputation, icon_path, description, info_text, info2_text,
                        receiver_giver_id, receiver_display_name, zone_id, faction,
                        allow_nazgrek, allow_zulkis, requires_turn_in, auto_complete, fail_reason,
-                       draft, enabled, sort_order, notes, created_at, updated_at
+                       draft, enabled, sort_order, notes, created_at, updated_at,
+                       source_file, source_symbol, source_import_fingerprint, source_imported_at
                 FROM quests
                 WHERE (@giver_id IS NULL OR quest_giver_id = @giver_id)
                   AND (@exportable_only = FALSE OR (enabled = TRUE AND draft = FALSE))
@@ -946,7 +955,10 @@ namespace WC3ItemManager.Repositories
                 CreatedAt = reader.GetDateTime(24),
                 UpdatedAt = reader.GetDateTime(25),
                 OwnershipMode = reader.GetString(26),
-                SourceFile = reader.GetString(27)
+                SourceFile = reader.GetString(27),
+                SourceKind = reader.GetString(28),
+                SourceImportFingerprint = reader.GetString(29),
+                SourceImportedAt = reader.IsDBNull(30) ? null : reader.GetDateTime(30)
             };
         }
 
@@ -982,7 +994,11 @@ namespace WC3ItemManager.Repositories
                 SortOrder = reader.GetInt32(25),
                 Notes = reader.GetString(26),
                 CreatedAt = reader.GetDateTime(27),
-                UpdatedAt = reader.GetDateTime(28)
+                UpdatedAt = reader.GetDateTime(28),
+                SourceFile = reader.GetString(29),
+                SourceSymbol = reader.GetString(30),
+                SourceImportFingerprint = reader.GetString(31),
+                SourceImportedAt = reader.IsDBNull(32) ? null : reader.GetDateTime(32)
             };
         }
 
@@ -993,7 +1009,8 @@ namespace WC3ItemManager.Repositories
             {
                 throw new InvalidOperationException("Giver key, display name, and library name are required.");
             }
-            if (string.IsNullOrWhiteSpace(giver.UnitCode) && string.IsNullOrWhiteSpace(giver.PlacedUnitVariable))
+            if (!string.Equals(giver.OwnershipMode, "external", StringComparison.OrdinalIgnoreCase) &&
+                string.IsNullOrWhiteSpace(giver.UnitCode) && string.IsNullOrWhiteSpace(giver.PlacedUnitVariable))
             {
                 throw new InvalidOperationException("A quest giver needs a four-character unit code or a placed-unit variable.");
             }

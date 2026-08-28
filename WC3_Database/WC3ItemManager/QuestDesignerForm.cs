@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Windows.Forms;
 using WC3ItemManager.Exporters;
+using WC3ItemManager.Importers;
 using WC3ItemManager.Models;
 using WC3ItemManager.Repositories;
 
@@ -78,6 +79,7 @@ namespace WC3ItemManager
             _mainTools.Items.Add(CreateToolButton("Save", (s, e) => SaveCurrent()));
             _mainTools.Items.Add(CreateToolButton("Delete", (s, e) => DeleteCurrent()));
             _mainTools.Items.Add(CreateToolButton("Refresh", (s, e) => RefreshData()));
+            _mainTools.Items.Add(CreateToolButton("Sync existing JASS...", (s, e) => SyncExistingSources()));
             _mainTools.Items.Add(new ToolStripSeparator());
             _mainTools.Items.Add(CreateToolButton("Export changed qXXX libraries", (s, e) => ExportLibraries()));
             _mainTools.Items.Add(new ToolStripLabel(
@@ -416,7 +418,10 @@ namespace WC3ItemManager
                 TreeNode nodeToSelect = null;
                 foreach (var giver in _givers)
                 {
-                    var giverNode = new TreeNode(giver.DisplayName)
+                    string sourcePrefix = giver.SourceKind == "generic_quest"
+                        ? "[Generic] "
+                        : giver.SourceImportFingerprint.Length > 0 ? "[Source] " : "";
+                    var giverNode = new TreeNode(sourcePrefix + giver.DisplayName)
                     {
                         Tag = giver,
                         ForeColor = giver.Enabled ? SystemColors.WindowText : Color.Gray
@@ -533,6 +538,13 @@ namespace WC3ItemManager
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
+            if (IsSourceOwned(_currentGiver))
+            {
+                MessageBox.Show(
+                    "This giver is synchronized from JASS. Add the quest in the source library, then run Sync existing JASS.",
+                    "Read-only source library", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
             _currentQuest = new QuestDefinition
             {
                 QuestGiverId = _currentGiver.Id,
@@ -564,6 +576,13 @@ namespace WC3ItemManager
         {
             try
             {
+                if (IsSourceOwned(_currentGiver))
+                {
+                    MessageBox.Show(
+                        "Synchronized JASS records are read-only in WC3 Manager. Edit the source library and sync again.",
+                        "Read-only source library", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
                 if (_tabs.SelectedTab?.Text == "Dialog & events")
                 {
                     SaveSequence();
@@ -620,6 +639,13 @@ namespace WC3ItemManager
         {
             try
             {
+                if (IsSourceOwned(_currentGiver))
+                {
+                    MessageBox.Show(
+                        "Synchronized JASS records are retained as a source projection and cannot be deleted here.",
+                        "Read-only source library", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
                 if (_tabs.SelectedTab?.Text == "Dialog & events" && _currentSequence != null)
                 {
                     DeleteSequence();
@@ -967,6 +993,11 @@ namespace WC3ItemManager
                     }
                     giverNode.Nodes.Add(questNode);
                 }
+                foreach (var dependency in _repository.GetWorldEditorDependencies(giver.Id)
+                             .Where(d => d.DependencyKind == "other" && d.Symbol.StartsWith("library:", StringComparison.OrdinalIgnoreCase)))
+                {
+                    giverNode.Nodes.Add("Source link: " + dependency.Symbol.Substring("library:".Length));
+                }
                 _relationships.Nodes.Add(giverNode);
             }
             _relationships.EndUpdate();
@@ -1096,6 +1127,70 @@ namespace WC3ItemManager
             {
                 ShowError("Could not export quest libraries", ex);
             }
+        }
+
+        private void SyncExistingSources()
+        {
+            string detectedRoot = QuestSourceSynchronizer.FindQuestsAndDialogsRoot();
+            using var dialog = new FolderBrowserDialog
+            {
+                Description = "Select the PotS repository or QuestsAndDialogs folder. Both QuestGivers and GenericQuests are synchronized.",
+                ShowNewFolderButton = false,
+                SelectedPath = detectedRoot
+            };
+            if (dialog.ShowDialog(this) != DialogResult.OK) return;
+
+            try
+            {
+                Cursor = Cursors.WaitCursor;
+                SetStatus("Synchronizing QuestGivers and GenericQuests JASS sources...");
+                var synchronizer = new QuestSourceSynchronizer(_connectionString);
+                QuestSourceSyncResult result = synchronizer.Synchronize(dialog.SelectedPath);
+                RefreshData();
+
+                var message = new System.Text.StringBuilder();
+                message.AppendLine($"Files scanned: {result.FilesScanned}");
+                message.AppendLine($"Quest definitions found: {result.QuestDefinitionsFound}");
+                message.AppendLine($"Source containers synchronized: {result.GiversSynchronized}");
+                message.AppendLine($"Created: {result.GiversCreated} containers, {result.QuestsCreated} quests");
+                message.AppendLine($"Updated: {result.GiversUpdated} containers, {result.QuestsUpdated} quests");
+                message.AppendLine($"Unchanged source files: {result.UnchangedSources}");
+                if (result.SkippedProtectedSources > 0)
+                    message.AppendLine($"Protected managed/hybrid libraries skipped: {result.SkippedProtectedSources}");
+                if (result.Warnings.Count > 0)
+                {
+                    message.AppendLine();
+                    message.AppendLine($"Warnings ({result.Warnings.Count}):");
+                    foreach (string warning in result.Warnings.Take(20)) message.AppendLine("- " + warning);
+                    if (result.Warnings.Count > 20) message.AppendLine($"- ...and {result.Warnings.Count - 20} more");
+                }
+                if (result.Errors.Count > 0)
+                {
+                    message.AppendLine();
+                    message.AppendLine($"Errors ({result.Errors.Count}):");
+                    foreach (string error in result.Errors.Take(10)) message.AppendLine("- " + error);
+                }
+                MessageBox.Show(message.ToString(), "Quest source synchronization",
+                    MessageBoxButtons.OK, result.Errors.Count == 0 ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
+                SetStatus(result.Errors.Count == 0
+                    ? "Existing JASS quest sources synchronized."
+                    : "Quest source synchronization completed with errors.");
+            }
+            catch (Exception ex)
+            {
+                ShowError("Could not synchronize existing quest sources", ex);
+            }
+            finally
+            {
+                Cursor = Cursors.Default;
+            }
+        }
+
+        private static bool IsSourceOwned(QuestGiverDefinition giver)
+        {
+            return giver != null
+                   && string.Equals(giver.OwnershipMode, "external", StringComparison.OrdinalIgnoreCase)
+                   && !string.IsNullOrWhiteSpace(giver.SourceImportFingerprint);
         }
 
         private void RefreshPreview()

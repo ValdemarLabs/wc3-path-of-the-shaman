@@ -14,6 +14,12 @@ namespace WC3ItemManager.Models
         [TypeConverter(typeof(QuestOwnershipModeConverter))]
         public string OwnershipMode { get; set; } = "managed";
         public string SourceFile { get; set; } = "";
+        [ReadOnly(true)]
+        public string SourceKind { get; set; } = "";
+        [ReadOnly(true)]
+        public string SourceImportFingerprint { get; set; } = "";
+        [ReadOnly(true)]
+        public DateTime? SourceImportedAt { get; set; }
         public string UnitCode { get; set; } = "";
         public string PlacedUnitVariable { get; set; } = "";
         public int? ZoneId { get; set; }
@@ -71,6 +77,14 @@ namespace WC3ItemManager.Models
         public bool Enabled { get; set; } = true;
         public int SortOrder { get; set; }
         public string Notes { get; set; } = "";
+        [ReadOnly(true)]
+        public string SourceFile { get; set; } = "";
+        [ReadOnly(true)]
+        public string SourceSymbol { get; set; } = "";
+        [ReadOnly(true)]
+        public string SourceImportFingerprint { get; set; } = "";
+        [ReadOnly(true)]
+        public DateTime? SourceImportedAt { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
 
