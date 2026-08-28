@@ -2,7 +2,7 @@
     VoicelinesDrunk
 
     Author: Valdemar
-    Version: 2.3.2
+    Version: 2.3.3
 
     Description:
     Randomized hero, AI companion, wake-up, and Horde vendor lines used by
@@ -52,9 +52,9 @@ globals
 
     // Nazgrek reactions and wake-up lines.
     constant string VL_NAZGREKDRUNK_PUKE1_KEY = "Nazgrek_DrunkPuke1"
-    constant string VL_NAZGREKDRUNK_PUKE1_TEXT = "Easy there. The mug is not your enemy."
+    constant string VL_NAZGREKDRUNK_PUKE1_TEXT = "Easy, Zul’kis. Catch your breath."
     constant string VL_NAZGREKDRUNK_PUKE2_KEY = "Nazgrek_DrunkPuke2"
-    constant string VL_NAZGREKDRUNK_PUKE2_TEXT = "You should drink that stuff more carefully."
+    constant string VL_NAZGREKDRUNK_PUKE2_TEXT = "That is enough for now. Sit down and recover."
     constant string VL_NAZGREKDRUNK_PASSOUT1_KEY = "Nazgrek_DrunkPassOut1"
     constant string VL_NAZGREKDRUNK_PASSOUT1_TEXT = "Zul'kis! Wake up, you reckless troll!"
     constant string VL_NAZGREKDRUNK_PASSOUT2_KEY = "Nazgrek_DrunkPassOut2"
@@ -96,9 +96,9 @@ globals
 
     // Zul'kis reactions and wake-up lines.
     constant string VL_ZULKISDRUNK_PUKE1_KEY = "Zulkis_DrunkPuke1"
-    constant string VL_ZULKISDRUNK_PUKE1_TEXT = "Slow down, mon. Da cup not be runnin' away."
+    constant string VL_ZULKISDRUNK_PUKE1_TEXT = "Easy, Nazgrek. Take a breath, mon."
     constant string VL_ZULKISDRUNK_PUKE2_KEY = "Zulkis_DrunkPuke2"
-    constant string VL_ZULKISDRUNK_PUKE2_TEXT = "Ya supposed ta drink it, not fight it."
+    constant string VL_ZULKISDRUNK_PUKE2_TEXT = "Dat be enough drink for now. Sit down a moment."
     constant string VL_ZULKISDRUNK_PASSOUT1_KEY = "Zulkis_DrunkPassOut1"
     constant string VL_ZULKISDRUNK_PASSOUT1_TEXT = "Nazgrek?! What ya doin', mon? Wake up!"
     constant string VL_ZULKISDRUNK_PASSOUT2_KEY = "Zulkis_DrunkPassOut2"
@@ -140,9 +140,9 @@ globals
 
     // AI companion reactions and A Night To Remember replies.
     constant string VL_HEROENGINEERDRUNK_PUKE1_KEY = "HeroEngineer_DrunkPuke1"
-    constant string VL_HEROENGINEERDRUNK_PUKE1_TEXT = "That intake exceeded every safe operating tolerance."
+    constant string VL_HEROENGINEERDRUNK_PUKE1_TEXT = "You’re done drinking. Sit down and recover."
     constant string VL_HEROENGINEERDRUNK_PUKE2_KEY = "HeroEngineer_DrunkPuke2"
-    constant string VL_HEROENGINEERDRUNK_PUKE2_TEXT = "Next time, install a regulator between the bottle and your mouth."
+    constant string VL_HEROENGINEERDRUNK_PUKE2_TEXT = "Take a moment. I’ll keep watch."
     constant string VL_HEROENGINEERDRUNK_NIGHT1_KEY = "HeroEngineer_LastNight1"
     constant string VL_HEROENGINEERDRUNK_NIGHT1_TEXT = "You introduced me as the fool who builds toys, then invited the whole tavern to laugh at my life's work."
     constant string VL_HEROENGINEERDRUNK_NIGHT2_KEY = "HeroEngineer_LastNight2"
@@ -158,9 +158,9 @@ globals
     constant string VL_HEROENGINEERDRUNK_FORGIVE_KEY = "HeroEngineer_HangoverForgive"
     constant string VL_HEROENGINEERDRUNK_FORGIVE_TEXT = "Repairs verified. I will classify the disaster as educational."
     constant string VL_HEROPALADINDRUNK_PUKE1_KEY = "HeroPaladin_DrunkPuke1"
-    constant string VL_HEROPALADINDRUNK_PUKE1_TEXT = "Temperance would spare you this indignity."
+    constant string VL_HEROPALADINDRUNK_PUKE1_TEXT = "Easy. Breathe slowly."
     constant string VL_HEROPALADINDRUNK_PUKE2_KEY = "HeroPaladin_DrunkPuke2"
-    constant string VL_HEROPALADINDRUNK_PUKE2_TEXT = "Drink water before you challenge another keg."
+    constant string VL_HEROPALADINDRUNK_PUKE2_TEXT = "Enough for tonight. Rest a moment."
     constant string VL_HEROPALADINDRUNK_NIGHT1_KEY = "HeroPaladin_LastNight1"
     constant string VL_HEROPALADINDRUNK_NIGHT1_TEXT = "You interrupted my warning about temperance by calling me Saint Sourface before the entire tavern."
     constant string VL_HEROPALADINDRUNK_NIGHT2_KEY = "HeroPaladin_LastNight2"
@@ -176,7 +176,7 @@ globals
     constant string VL_HEROPALADINDRUNK_FORGIVE_KEY = "HeroPaladin_HangoverForgive"
     constant string VL_HEROPALADINDRUNK_FORGIVE_TEXT = "You have made amends. Let wisdom outlast the headache."
     constant string VL_HEROSHAMANDRUNK_PUKE1_KEY = "HeroShaman_DrunkPuke1"
-    constant string VL_HEROSHAMANDRUNK_PUKE1_TEXT = "Your body is rejecting what your judgment welcomed."
+    constant string VL_HEROSHAMANDRUNK_PUKE1_TEXT = "Steady yourself. Breathe."
     constant string VL_HEROSHAMANDRUNK_PUKE2_KEY = "HeroShaman_DrunkPuke2"
     constant string VL_HEROSHAMANDRUNK_PUKE2_TEXT = "The water spirits recommend water next time."
     constant string VL_HEROSHAMANDRUNK_NIGHT1_KEY = "HeroShaman_LastNight1"
@@ -196,7 +196,7 @@ globals
     constant string VL_HEROROGUEDRUNK_PUKE1_KEY = "HeroRogue_DrunkPuke1"
     constant string VL_HEROROGUEDRUNK_PUKE1_TEXT = "Subtle. No one will ever know you were drinking."
     constant string VL_HEROROGUEDRUNK_PUKE2_KEY = "HeroRogue_DrunkPuke2"
-    constant string VL_HEROROGUEDRUNK_PUKE2_TEXT = "Try stealing smaller sips next time."
+    constant string VL_HEROROGUEDRUNK_PUKE2_TEXT = "You’re done for now. Sit down."
     constant string VL_HEROROGUEDRUNK_NIGHT1_KEY = "HeroRogue_LastNight1"
     constant string VL_HEROROGUEDRUNK_NIGHT1_TEXT = "You announced every alias I have ever used to a room full of merchants, then asked which one sounded most criminal."
     constant string VL_HEROROGUEDRUNK_NIGHT2_KEY = "HeroRogue_LastNight2"
@@ -232,7 +232,7 @@ globals
     constant string VL_HEROWARRIORDRUNK_PUKE1_KEY = "HeroWarrior_DrunkPuke1"
     constant string VL_HEROWARRIORDRUNK_PUKE1_TEXT = "Hold your ground. And your stomach."
     constant string VL_HEROWARRIORDRUNK_PUKE2_KEY = "HeroWarrior_DrunkPuke2"
-    constant string VL_HEROWARRIORDRUNK_PUKE2_TEXT = "You fought that drink bravely. The drink won."
+    constant string VL_HEROWARRIORDRUNK_PUKE2_TEXT = "Sit down. We move when you’re ready."
     constant string VL_HEROWARRIORDRUNK_NIGHT1_KEY = "HeroWarrior_LastNight1"
     constant string VL_HEROWARRIORDRUNK_NIGHT1_TEXT = "You told the whole barracks I fight like a sleepy peon, then lost an arm-wrestling match to that sleepy peon."
     constant string VL_HEROWARRIORDRUNK_NIGHT2_KEY = "HeroWarrior_LastNight2"
@@ -248,9 +248,9 @@ globals
     constant string VL_HEROWARRIORDRUNK_FORGIVE_KEY = "HeroWarrior_HangoverForgive"
     constant string VL_HEROWARRIORDRUNK_FORGIVE_TEXT = "You faced the consequences. We are square."
     constant string VL_AVELINEDRUNK_PUKE1_KEY = "Aveline_DrunkPuke1"
-    constant string VL_AVELINEDRUNK_PUKE1_TEXT = "That is why soldiers pace their drinks."
+    constant string VL_AVELINEDRUNK_PUKE1_TEXT = "Enough. Sit down and recover."
     constant string VL_AVELINEDRUNK_PUKE2_KEY = "Aveline_DrunkPuke2"
-    constant string VL_AVELINEDRUNK_PUKE2_TEXT = "Clean yourself up before something smells weakness."
+    constant string VL_AVELINEDRUNK_PUKE2_TEXT = "Catch your breath. I’ll watch the road."
     constant string VL_AVELINEDRUNK_NIGHT1_KEY = "Aveline_LastNight1"
     constant string VL_AVELINEDRUNK_NIGHT1_TEXT = "You called my discipline adorable in front of the company, then ordered them to salute your mug instead of me."
     constant string VL_AVELINEDRUNK_NIGHT2_KEY = "Aveline_LastNight2"
