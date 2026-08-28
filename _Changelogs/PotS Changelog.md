@@ -35,6 +35,7 @@
 - Added `WC3_Database/migrations/007_create_quest_designer.sql`, `run_all_quest_migrations.sql`, and `docs/QUEST_DESIGNER.md` with normalized quest authoring data, relationship views, validation boundaries, and the managed/hybrid/external source-ownership contract.
 - Added change-aware validated qXXX scaffold exports with per-giver SHA-256 fingerprints, JSON snapshots, validation reports, World Editor manifests, cross-giver bindings, required-reputation support, and explicit safeguards for behavior that remains hand-owned.
 - Added `WC3_Database/WC3ItemManager/Importers/QuestSourceSynchronizer.cs` and `WC3_Database/migrations/008_add_quest_source_sync.sql` so WC3 Manager can non-destructively synchronize active `QuestGivers` and `GenericQuests` JASS into read-only external previews, including standard quests, vendor fetch/kill/supply quests, turn-in/prerequisite links, qXXX library relationships, and separate source fingerprints.
+- Updated `WC3_Database/WC3ItemManager/QuestDesignerForm.cs` with a repository-style `QuestGivers`/`GenericQuests` navigation hierarchy, preserved source folders, collapsed quest branches, and a separate database-authored section.
 
 ### Imports
 
