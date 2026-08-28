@@ -6,13 +6,14 @@
     <UseWindowsForms>true</UseWindowsForms>
     <UseWPF>true</UseWPF>
     <AssemblyName>WC3ItemManager</AssemblyName>
+    <AssemblyTitle>WC3 Manager</AssemblyTitle>
     <RootNamespace>WC3ItemManager</RootNamespace>
     <StartupObject>WC3ItemManager.Program</StartupObject>
     <Authors>PotS Project</Authors>
     <Company>PotS</Company>
-    <Product>WC3 Item Manager</Product>
-    <Description>Warcraft 3 Item Database Manager for Path of the Shaman</Description>
-    <Version>1.0.0</Version>
+    <Product>WC3 Manager</Product>
+    <Description>Warcraft 3 content database manager for Path of the Shaman</Description>
+    <Version>1.1.0</Version>
     <Copyright>Copyright © 2026</Copyright>
   </PropertyGroup>
 

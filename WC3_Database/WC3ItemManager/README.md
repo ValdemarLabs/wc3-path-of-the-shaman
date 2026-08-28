@@ -1,6 +1,6 @@
-# WC3 Item Manager
+# WC3 Manager
 
-A powerful Windows Forms application for managing Warcraft 3 items in the PotS PostgreSQL database.
+A Windows Forms application for managing Path of the Shaman content in the PotS PostgreSQL database. The application currently covers items, loot tables, unit/destructible drops, gathering nodes, and quest design.
 
 ## Features
 
@@ -27,6 +27,16 @@ A powerful Windows Forms application for managing Warcraft 3 items in the PotS P
 - All 60+ WC3 fields supported
 - Preserves tooltip_extended, hotkey, abilities
 - Auto-creates rarity/class entries
+
+### Quest Designer
+
+- Create and maintain quest givers, quests, turn-in relationships, and prerequisite graphs.
+- Author QuestMaster-compatible objectives and the live reward configuration.
+- Build ordered dialog/event sequences with line, delay, facing, look-at, fade, and safe action-hook steps.
+- Maintain source-reconciled voiceline references and explicit World Editor dependencies.
+- Preview Details, Description, Objectives, and Rewards using the same information model as `UI/QuestUI.j`.
+- Export only changed managed or hybrid qXXX JASS libraries with JSON snapshots, validation reports, and World Editor manifests.
+- Mark complex existing libraries as External so the exporter never overwrites them.
 
 ## Prerequisites
 
@@ -66,6 +76,18 @@ dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=
 # Output: bin\Release\net8.0-windows\win-x64\publish\WC3ItemManager.exe
 ```
 
+The executable and project keep the legacy `WC3ItemManager` technical name for launcher and solution compatibility. The product and UI are branded **WC3 Manager**.
+
+## Quest Designer Database Setup
+
+Apply the idempotent quest migration to a non-production database before opening **Quests > Open Quest Designer**:
+
+```powershell
+psql -U postgres -d wc3_pots -f .\WC3_Database\migrations\run_all_quest_migrations.sql
+```
+
+The migration adds normalized tables for quest givers, quests, objectives, rewards, prerequisites, sequences, sequence steps, voiceline references, and World Editor dependencies. Run the migration twice when validating a disposable database to confirm idempotency.
+
 ## Database Connection
 
 The application connects to:
@@ -101,6 +123,10 @@ private string connectionString = "Host=127.0.0.1;Port=5432;Database=wc3_pots;Us
 - **🗑️ Delete**: Delete selected item (with confirmation)
 - **🔄 Refresh**: Reload data from database
 - **💾 Export to W3T**: Export items to .w3t file
+
+**Quests menu**
+- **Open Quest Designer**: Edit giver/quest data, relationships, objectives, rewards, dialog sequences, preview, voicelines, and World Editor dependencies.
+- **Export Changed qXXX Quest Libraries**: Generate timestamped JASS scaffolds plus validation, JSON, and World Editor follow-up artifacts only when the generated library's SHA-256 fingerprint differs from its last successful export.
 
 ### Edit/Add Item Dialog
 
@@ -156,6 +182,8 @@ WC3ItemManager/
 └── README.md              # This file
 ```
 
+The Quest Designer is kept in a bounded module: `QuestDesignerForm.cs`, `QuestLogPreviewControl.cs`, `Models/QuestDesignerModels.cs`, `Repositories/QuestDesignerRepository.cs`, and `Exporters/QuestLibraryExporter.cs`. This keeps the existing item grid and feature forms independent.
+
 ## Features in Detail
 
 ### Filtering System
@@ -191,6 +219,12 @@ Planned features:
 - [ ] Undo/Redo support
 
 ## Version History
+
+**v1.1.0** (2026-08-28)
+- Renamed the user-facing application to WC3 Manager.
+- Added the database-backed Quest Designer.
+- Added quest relationships, dialog/event sequences, voiceline references, and QuestUI preview.
+- Added validated managed/hybrid qXXX exports and World Editor dependency manifests.
 
 **v1.0.0** (2026-03-11)
 - Initial release

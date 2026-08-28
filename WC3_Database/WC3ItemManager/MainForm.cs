@@ -172,7 +172,7 @@ namespace WC3ItemManager
 
         private void SetupUI()
         {
-            this.Text = "WC3 Item Manager - PotS Database";
+            this.Text = "WC3 Manager - PotS Database";
             this.Size = new Size(1900, 900);
             this.StartPosition = FormStartPosition.CenterScreen;
 
@@ -1554,6 +1554,12 @@ namespace WC3ItemManager
             gatheringMenu.DropDownItems.Add(new ToolStripSeparator());
             gatheringMenu.DropDownItems.Add(new ToolStripMenuItem("📤 Export Gather Nodes JASS...", null, Menu_ExportGatherNodes));
             
+            // Quest Designer Menu
+            var questsMenu = new ToolStripMenuItem("&Quests");
+            questsMenu.DropDownItems.Add(new ToolStripMenuItem("Open Quest Designer...", null, Menu_ManageQuestDesigner));
+            questsMenu.DropDownItems.Add(new ToolStripSeparator());
+            questsMenu.DropDownItems.Add(new ToolStripMenuItem("Export Changed qXXX Quest Libraries...", null, Menu_ExportQuestLibraries));
+
             // Tools Menu
             var toolsMenu = new ToolStripMenuItem("&Tools");
             toolsMenu.DropDownItems.Add(new ToolStripMenuItem("⚙️ Configuration", null, BtnConfiguration_Click));
@@ -1569,7 +1575,7 @@ namespace WC3ItemManager
             helpMenu.DropDownItems.Add(new ToolStripSeparator());
             helpMenu.DropDownItems.Add(new ToolStripMenuItem("About", null, Menu_ShowAbout));
             
-            menuStrip.Items.AddRange(new ToolStripItem[] { fileMenu, lootMenu, gatheringMenu, toolsMenu, logsMenu, helpMenu });
+            menuStrip.Items.AddRange(new ToolStripItem[] { fileMenu, lootMenu, gatheringMenu, questsMenu, toolsMenu, logsMenu, helpMenu });
         }
         
         private void Menu_ImportW3T(object sender, EventArgs e)
@@ -2142,7 +2148,7 @@ namespace WC3ItemManager
         
         private void Menu_ShowAbout(object sender, EventArgs e)
         {
-            MessageBox.Show($"WC3 Item Manager\\n\\nVersion: 1.0.0\\nAuthor: PotS Project\\nDate: {DateTime.Now.Year}\\n\\nA database management tool for Warcraft 3 custom items.",
+            MessageBox.Show($"WC3 Manager\\n\\nVersion: 1.1.0\\nAuthor: PotS Project\\nDate: {DateTime.Now.Year}\\n\\nDatabase and content management for Warcraft 3 items, loot, gathering, and quests.",
                           "About", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
@@ -2324,6 +2330,73 @@ namespace WC3ItemManager
                         MessageBox.Show($"Export failed: {ex.Message}", "Export Error",
                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
+                }
+            }
+        }
+
+        private void Menu_ManageQuestDesigner(object sender, EventArgs e)
+        {
+            if (!isConnected)
+            {
+                MessageBox.Show("Please connect to the database first.", "Not Connected",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            using (var form = new QuestDesignerForm(connectionString))
+            {
+                form.ShowDialog(this);
+            }
+        }
+
+        private void Menu_ExportQuestLibraries(object sender, EventArgs e)
+        {
+            if (!isConnected)
+            {
+                MessageBox.Show("Please connect to the database first.", "Not Connected",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            using (var fbd = new FolderBrowserDialog())
+            {
+                fbd.Description = "Select an output folder for qXXX JASS libraries and validation artifacts";
+                fbd.ShowNewFolderButton = true;
+                if (fbd.ShowDialog() != DialogResult.OK)
+                {
+                    return;
+                }
+
+                try
+                {
+                    var exporter = new Exporters.QuestLibraryExporter(connectionString);
+                    var result = exporter.ExportAll(fbd.SelectedPath);
+                    var sb = new System.Text.StringBuilder();
+                    sb.AppendLine($"Quest givers exported: {result.GiversExported}");
+                    sb.AppendLine($"Unchanged givers skipped: {result.GiversUnchanged}");
+                    sb.AppendLine($"Quests exported: {result.QuestsExported}");
+                    sb.AppendLine($"Files written: {result.FilesExported.Count}");
+                    sb.AppendLine($"Warnings: {result.Warnings.Count}");
+                    sb.AppendLine($"Errors: {result.Errors.Count}");
+                    if (result.Errors.Count > 0)
+                    {
+                        sb.AppendLine();
+                        foreach (var error in result.Errors.Take(12))
+                        {
+                            sb.AppendLine("- " + error);
+                        }
+                    }
+                    Logger.Instance.Info($"Exported Quest Designer data to {fbd.SelectedPath}");
+                    MessageBox.Show(sb.ToString(),
+                        result.Success ? "Quest Export Complete" : "Quest Export Needs Attention",
+                        MessageBoxButtons.OK,
+                        result.Success ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Instance.Error("Failed to export Quest Designer data", ex);
+                    MessageBox.Show($"Quest export failed: {ex.Message}", "Export Error",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
         }

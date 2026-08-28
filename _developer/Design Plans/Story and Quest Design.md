@@ -2,7 +2,7 @@
 
 - **Status:** Living master design plan
 - **Created:** 22 August 2026
-- **Last reviewed:** 27 August 2026
+- **Last reviewed:** 28 August 2026
 - **Scope:** Main story, side stories, generic quests, dungeon quests, quest-giver connections, and world-event dependencies
 
 ## 1. Purpose
@@ -619,6 +619,17 @@ Recommended antagonist structure: use a coalition or chain of exploitation rathe
 14. Add generic quests zone by zone after checking the vendor ledger and WE placement, prioritizing hubs that currently have no repeatable support.
 
 ## 15. Quest design and implementation checklist
+
+### WC3 Manager Quest Designer contract
+
+`WC3_Database/WC3ItemManager/` now contains a database-backed Quest Designer for structured quest/giver metadata, objective and reward configuration, giver/receiver/prerequisite relationships, dialog/event sequences, voiceline references, QuestUI-style previewing, and validated qXXX scaffold exports. It is an authoring aid, not a replacement source of truth: current JASS, current World Editor state, this ledger, and `ZonesCore` still win when data conflicts.
+
+- Mark ordinary shared-API work `managed`, custom-event work `hybrid`, and existing hand-owned qXXX libraries `external`.
+- External sources are previewed and related in the database but are never generated or overwritten.
+- Generated files are timestamped review artifacts accompanied by a database snapshot, validation report, and explicit World Editor dependency manifest. WC3 Manager fingerprints the exact generated JASS with SHA-256 and skips giver libraries unchanged since their last successful export.
+- Respect the runtime limits enforced by the tool: eight QuestMaster objective slots (seven authored when turn-in reserves one), four prerequisites, and 100 DialogSystem steps.
+- Treat multiple automatic trackers, repeatable resets, item consumption, branching story state, waves, companions, bosses/dungeons, timers, failure cleanup, and custom sequence actions as hybrid/hand-owned behavior.
+- Reconcile every quest identity and story dependency here before implementation, and compile/test generated work through the normal JassHelper workflow.
 
 Before creating or changing a quest:
 

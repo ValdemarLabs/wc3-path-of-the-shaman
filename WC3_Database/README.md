@@ -1,6 +1,16 @@
-# WC3 Database Tools - Organized Structure
+# WC3 Database and WC3 Manager
 
-This folder contains tools for importing/exporting Warcraft 3 item data between .w3t files and PostgreSQL database.
+This folder contains the PotS PostgreSQL content database, the WC3 Manager Windows application, and import/export tools. In addition to items and loot, WC3 Manager now provides bounded quest-giver, quest, relationship, dialog-sequence, voiceline-reference, preview, and qXXX export authoring.
+
+## Quest Designer
+
+- Application: `WC3ItemManager/` (the technical project/executable name remains unchanged for compatibility; the product name is WC3 Manager).
+- Schema: `migrations/007_create_quest_designer.sql`.
+- Migration runner: `migrations/run_all_quest_migrations.sql`.
+- Design and validation guide: `docs/QUEST_DESIGNER.md`.
+- Export artifacts: timestamped qXXX JASS, JSON snapshot, validation report, and World Editor dependency manifest.
+
+Apply the migration to a non-production `wc3_pots` database before opening **Quests > Open Quest Designer**.
 
 ## 📁 Folder Structure
 

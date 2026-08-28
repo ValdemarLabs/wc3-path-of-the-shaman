@@ -23,7 +23,7 @@ namespace WC3ItemManager
         
         private void InitializeUI()
         {
-            this.Text = "📖 WC3 Item Manager - User Guide & FAQ";
+            this.Text = "📖 WC3 Manager - User Guide & FAQ";
             this.Size = new Size(1000, 750);
             this.StartPosition = FormStartPosition.CenterParent;
             this.FormBorderStyle = FormBorderStyle.Sizable;
@@ -42,6 +42,7 @@ namespace WC3ItemManager
             // Add tabs
             tabControl.TabPages.Add(CreateGettingStartedTab());
             tabControl.TabPages.Add(CreateItemManagementTab());
+            tabControl.TabPages.Add(CreateQuestDesignerTab());
             tabControl.TabPages.Add(CreateLootSystemTab());
             tabControl.TabPages.Add(CreateUnitsDestructiblesTab());
             tabControl.TabPages.Add(CreateExportingTab());
@@ -160,8 +161,8 @@ namespace WC3ItemManager
             var tab = new TabPage("🚀 Getting Started");
             var rtb = CreateStyledRichTextBox();
             
-            AppendHeader(rtb, "Welcome to WC3 Item Manager");
-            AppendText(rtb, "A powerful desktop application for managing Warcraft 3 custom items, loot systems, and JASS code generation using a PostgreSQL database backend.");
+            AppendHeader(rtb, "Welcome to WC3 Manager");
+            AppendText(rtb, "A desktop application for managing Warcraft 3 items, loot, gathering nodes, quest design, and JASS exports using a PostgreSQL database backend.");
             AppendSpacer(rtb);
             
             AppendSubHeader(rtb, "🔌 Database Connection");
@@ -251,6 +252,42 @@ namespace WC3ItemManager
             
             AppendWarning(rtb, "Deletions are permanent! Consider duplicating items before major changes.");
             
+            tab.Controls.Add(rtb);
+            return tab;
+        }
+
+        private TabPage CreateQuestDesignerTab()
+        {
+            var tab = new TabPage("Quest Designer");
+            var rtb = CreateStyledRichTextBox();
+
+            AppendHeader(rtb, "Quest Designer");
+            AppendText(rtb, "Access: Quests > Open Quest Designer");
+            AppendSpacer(rtb);
+
+            AppendSubHeader(rtb, "Authoring workflow");
+            AppendNumbered(rtb, 1, "Create or select a quest giver and configure its JASS/World Editor binding.");
+            AppendNumbered(rtb, 2, "Create quests, objectives, rewards, turn-in relationships, and up to four prerequisites.");
+            AppendNumbered(rtb, 3, "Build ordered dialogue/event sequences and link source-owned voiceline constants.");
+            AppendNumbered(rtb, 4, "Review the in-game journal preview and relationship tree.");
+            AppendNumbered(rtb, 5, "Record every required placed unit, rect, rawcode, camera, trigger, or audio dependency.");
+            AppendNumbered(rtb, 6, "Clear Draft, save, then export and review every validation/World Editor manifest item.");
+            AppendSpacer(rtb);
+
+            AppendSubHeader(rtb, "Source ownership");
+            AppendBullet(rtb, "Managed: safe standard quest/dialog behavior generated from the database.");
+            AppendBullet(rtb, "Hybrid: generated scaffold with explicit hooks requiring hand implementation and review.");
+            AppendBullet(rtb, "External: relationship and preview data only; existing qXXX source is never generated or overwritten.");
+            AppendSpacer(rtb);
+
+            AppendSubHeader(rtb, "Runtime limits enforced");
+            AppendBullet(rtb, "Eight QuestMaster objective slots; a normal turn-in reserves one, leaving seven authored objectives.");
+            AppendBullet(rtb, "Four prerequisite quests and 100 DialogSystem sequence steps.");
+            AppendBullet(rtb, "Multiple automatic trackers, repeatable reset behavior, and custom events require Hybrid ownership.");
+            AppendSpacer(rtb);
+
+            AppendWarning(rtb, "Generated qXXX files are review artifacts. Compile them in a focused JassHelper test map, then the full map, and complete every World Editor dependency manually.");
+
             tab.Controls.Add(rtb);
             return tab;
         }
