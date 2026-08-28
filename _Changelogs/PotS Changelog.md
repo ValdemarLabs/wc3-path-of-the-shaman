@@ -34,6 +34,7 @@
 - Updated `WC3_Database/WC3ItemManager/` as the user-facing WC3 Manager and added the database-backed Quest Designer for quest-giver/quest CRUD, giver/receiver/prerequisite relationships, objectives, rewards, dialog/event sequences, source-reconciled voicelines, World Editor dependencies, and an in-game journal-style preview.
 - Added `WC3_Database/migrations/007_create_quest_designer.sql`, `run_all_quest_migrations.sql`, and `docs/QUEST_DESIGNER.md` with normalized quest authoring data, relationship views, validation boundaries, and the managed/hybrid/external source-ownership contract.
 - Added change-aware validated qXXX scaffold exports with per-giver SHA-256 fingerprints, JSON snapshots, validation reports, World Editor manifests, cross-giver bindings, required-reputation support, and explicit safeguards for behavior that remains hand-owned.
+- Added `WC3_Database/WC3ItemManager/Importers/QuestSourceSynchronizer.cs` and `WC3_Database/migrations/008_add_quest_source_sync.sql` so WC3 Manager can non-destructively synchronize active `QuestGivers` and `GenericQuests` JASS into read-only external previews, including standard quests, vendor fetch/kill/supply quests, turn-in/prerequisite links, qXXX library relationships, and separate source fingerprints.
 
 ### Imports
 
@@ -41,7 +42,7 @@
 
 ### Actions Remaining
 
-- Apply the Quest Designer migration twice to a disposable PostgreSQL database, exercise giver/quest/relationship/sequence CRUD and change-aware exports, then compile a managed and hybrid generated qXXX library in a focused JassHelper test map and the full map.
+- Exercise giver/quest/relationship/sequence CRUD and change-aware exports, then compile a managed and hybrid generated qXXX library in a focused JassHelper test map and the full map.
 
 - Review `Nazgrek_DrunkPuke1`–`2`, `Zulkis_DrunkPuke1`–`2`, `HeroEngineer_DrunkPuke1`–`2`, `HeroPaladin_DrunkPuke1`–`2`, `HeroShaman_DrunkPuke1`, `HeroRogue_DrunkPuke2`, `HeroWarrior_DrunkPuke2`, and `Aveline_DrunkPuke1`–`2`, then replace/import their stale master audio files.
 
