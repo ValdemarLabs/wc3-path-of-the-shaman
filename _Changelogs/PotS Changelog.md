@@ -19,6 +19,8 @@
 
 ### Player-Facing Updates
 
+- Added Quinx's level-5 `Shredder Fuel` side quest. After receiving Goblin Rocket Fuel, Quinx periodically harvests nearby trees and pauses between work cycles.
+- Specialized goblin explosives and reagent merchants now stock Goblin Rocket Fuel `j4c2` for 150 gold, with four canisters available and one replenished every five minutes.
 - Updated the approved Nazgrek, Zul'kis, Engineer, Paladin, Shaman, Rogue, Warrior, and Aveline puke-reaction dialogue while retaining every reaction marked `No` and all pass-out lines.
 - Companion puke reactions now wait until shortly after the visible puke begins instead of playing as soon as the puking ability is applied.
 - Human patrol activity now varies between one and two simultaneous groups. Each group remains assigned either to the Sereneglade–Twilight Grove route or entirely within Havenwoods instead of crossing all three zones.
@@ -26,6 +28,7 @@
 
 ### Technical Updates
 
+- Added `QuestsAndDialogs/QuestGivers/Goblins/qQuinx.j` with delayed `udg_Quinx` registration, Goblin Rocket Fuel `j4c2` tracking and consumption, dialogue, availability/respawn hooks, and a post-completion harvesting loop; updated `Vendors/VendorCatalogs.j` with the fuel stock.
 - Refactored `World/HumanPatrols.j` to maintain independent indexed movement, camp, leader, tent, death, and respawn state for up to two route-bound patrols while preserving the original singular compatibility API.
 - Updated `Professions/Drunk.j` with hangover wake recovery and encounter interruption, and updated `DungeonsAndBosses/Boss.j` with a shared active-boss reset API.
 
@@ -43,6 +46,7 @@
 
 ### Actions Remaining
 
+- Import `qQuinx`, confirm `udg_Quinx` points to a placed harvest-capable shredder, verify Quinx's final rawcode/zone and nearby harvestable trees, then compile and runtime-test `j4c2` quest turn-in plus repeated work/pause cycles.
 - Exercise giver/quest/relationship/sequence CRUD and change-aware exports, then compile a managed and hybrid generated qXXX library in a focused JassHelper test map and the full map.
 
 - Review `Nazgrek_DrunkPuke1`–`2`, `Zulkis_DrunkPuke1`–`2`, `HeroEngineer_DrunkPuke1`–`2`, `HeroPaladin_DrunkPuke1`–`2`, `HeroShaman_DrunkPuke1`, `HeroRogue_DrunkPuke2`, `HeroWarrior_DrunkPuke2`, and `Aveline_DrunkPuke1`–`2`, then replace/import their stale master audio files.
