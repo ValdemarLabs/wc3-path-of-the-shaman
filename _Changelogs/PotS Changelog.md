@@ -19,6 +19,7 @@
 
 ### Player-Facing Updates
 
+- Updated the approved Nazgrek, Zul'kis, Engineer, Paladin, Shaman, Rogue, Warrior, and Aveline puke-reaction dialogue while retaining every reaction marked `No` and all pass-out lines.
 - Companion puke reactions now wait until shortly after the visible puke begins instead of playing as soon as the puking ability is applied.
 - Human patrol activity now varies between one and two simultaneous groups. Each group remains assigned either to the Sereneglade–Twilight Grove route or entirely within Havenwoods instead of crossing all three zones.
 - Player-hero pass-outs now begin fading before fullscreen mode changes, and waking with a hangover revives the other player hero and all companions while interrupting active boss and arena encounters.
@@ -28,7 +29,21 @@
 - Refactored `World/HumanPatrols.j` to maintain independent indexed movement, camp, leader, tent, death, and respawn state for up to two route-bound patrols while preserving the original singular compatibility API.
 - Updated `Professions/Drunk.j` with hangover wake recovery and encounter interruption, and updated `DungeonsAndBosses/Boss.j` with a shared active-boss reset API.
 
+### Tool Updates
+
+- Updated `WC3_Database/WC3ItemManager/` as the user-facing WC3 Manager and added the database-backed Quest Designer for quest-giver/quest CRUD, giver/receiver/prerequisite relationships, objectives, rewards, dialog/event sequences, source-reconciled voicelines, World Editor dependencies, and an in-game journal-style preview.
+- Added `WC3_Database/migrations/007_create_quest_designer.sql`, `run_all_quest_migrations.sql`, and `docs/QUEST_DESIGNER.md` with normalized quest authoring data, relationship views, validation boundaries, and the managed/hybrid/external source-ownership contract.
+- Added change-aware validated qXXX scaffold exports with per-giver SHA-256 fingerprints, JSON snapshots, validation reports, World Editor manifests, cross-giver bindings, required-reputation support, and explicit safeguards for behavior that remains hand-owned.
+
+### Imports
+
+- Generated all 13 approved replacement puke-reaction MP3 files under `tools/temp/fishaudio-review/` for review before master-audio promotion and map import, and moved 32 older review MP3s into `tools/temp/fishaudio-review/older-review-files/` so the active review folders contain only the approved batch.
+
 ### Actions Remaining
+
+- Apply the Quest Designer migration twice to a disposable PostgreSQL database, exercise giver/quest/relationship/sequence CRUD and change-aware exports, then compile a managed and hybrid generated qXXX library in a focused JassHelper test map and the full map.
+
+- Review `Nazgrek_DrunkPuke1`–`2`, `Zulkis_DrunkPuke1`–`2`, `HeroEngineer_DrunkPuke1`–`2`, `HeroPaladin_DrunkPuke1`–`2`, `HeroShaman_DrunkPuke1`, `HeroRogue_DrunkPuke2`, `HeroWarrior_DrunkPuke2`, and `Aveline_DrunkPuke1`–`2`, then replace/import their stale master audio files.
 
 - Runtime-test both one-patrol route variants and the two-patrol configuration, including independent formation movement/camps, Havenwoods-only destination selection, Sereneglade–Twilight alternation, shared Captain Maelhood uniqueness, creep-respawn exclusion, and indexed quest hooks.
 - Compile `Professions/Drunk.j` with its new Death/Boss dependencies and runtime-test player-hero pass-outs during ordinary combat, active boss fights, and arena sessions; verify gradual fade timing, party revival, encounter cleanup, and multiplayer-local camera/UI behavior.
