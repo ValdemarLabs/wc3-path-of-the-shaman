@@ -111,6 +111,7 @@ These rawcodes or named globals are evidence that the character already exists i
 | Boom Brothers | `n013` | Sirensong engineering chain and Boom Mine dungeon |
 | Atex Blix | `n01A` | Boom-chain contractor, betrayer, and dungeon boss identity |
 | Kribugs | `n61E` | Comic Ogre side-quest hub |
+| Quinx | `udg_Quinx`; rawcode pending WE verification | Goblin shredder operator and Shredder Fuel side-quest giver |
 | Prince Zaekolaerr | `n62W` | Satyr diplomacy branch endpoint and manipulator |
 | Velyssara | `n636` | Female satyr/succubus tied to Chains of Seduction and Zaekolaerr's corruption arc |
 | Zul'karak | `n65F`, `udg_Zulkarak` | Existing preplaced troll unit referenced by the World Editor unit variable; Zul'kis's older brother and a possible later recruit |
@@ -168,6 +169,7 @@ This section records current qXXX content at the time this plan was created. Upd
 | `qOutcastJinzun.j` | Plague Upon Trees; Lurking In The Shadows; Unknown Entity; Seeds of Life; Resurgence of Dead I; Resurgence of Dead II; Da Fishing Pole Missing | **Implemented JASS.** Forms a nature-to-undeath side arc through tree runes, lake, dead trees, graveyard, Zaekolaerr inquiry, and Crypt-facing escalation. |
 | `qVelyssara.j` | Chains of Seduction | **Implemented JASS.** Normal + Story in Sereneglade `2`, available to Nazgrek. Accepting Velyssara's charm confines him to Sereneglade and makes her follow him while he spreads four rumors, steals Gnoll Pillage `I6A4`, kills a Horde member, and dies/revives. Jin'Zun can instead dispel the charm and redirect the quest to killing Velyssara. Completion awards 300 XP and Orb of Lifesteal `I6A5`. The library preserves legacy "Succubus" behavior under canonical Velyssara and exposes confinement, escape-attempt, teleport, dispel, and respawn hooks. |
 | `qKribugs.j` | Ogre Lost His Sandwich; Kribugs Lost His Satchel; Ogre Is Very Thirsty; Meat For The Ogre; Ogre Ate Too Much; Angry Customers | **Implemented JASS.** Three early normals, two repeatables, and one gnoll-kill follow-up. Keep as comic relief rather than a main-story gate. |
+| `qQuinx.j` | Shredder Fuel | **Implemented JASS; WE placement verification required.** Level-5 Normal side quest for both heroes. It consumes Goblin Rocket Fuel `j4c2`, confirmed by the map author and sold through the specialized goblin explosives/reagents catalog, then makes Quinx's shredder repeatedly harvest nearby valid trees with short pauses. Confirm Quinx's unit rawcode, zone, placed `udg_Quinx` assignment, and nearby harvestable trees in World Editor. |
 | `qANightToRemember.j` | A Night To Remember | **Implemented JASS.** Repeatable, zone-aware social quest with three witnesses and randomized make-amends tasks. It is an optional character vignette, not a canonical story requirement. |
 | `qZaekolaerr.j` | Satyr Negotiations and fishing-pole dialogue endpoints | **Partial support.** It owns the durable negotiation outcome and completes the arena route only after a successful Coliseum challenge started through satyr arena master `n62V`; Ragno still owns the QuestData and reward. The hostile escape and false-alliance consequences remain future work. |
 
@@ -493,6 +495,12 @@ These are candidates, not promises. Before implementation, search the vendor REA
 | GQ-048 | Trial of the Coliseum | Normal | Existing arena master | Coliseum of Ages `18` | Introduce rules and complete Zaek's arena branch if that choice was made. |
 | GQ-049 | Blood on the Circle | Daily | Existing arena master | Circle of Blood `21` | Optional daily match; uses arena rewards, not story progression. |
 | GQ-050 | A Champion Remembered | Repeatable | Existing arena historian | Either arena | High-tier challenge with cooldown only if a safe cooldown/reset rule exists. |
+
+### Unplaced side content
+
+| Plan ID | Working title | Type + category | Giver | Objective location | Connection |
+|---|---|---|---|---|---|
+| GQ-051 | Shredder Fuel | Normal | Quinx | Specialized goblin merchant; return to Quinx | **Implemented JASS; WE verification required.** Bring one Goblin Rocket Fuel `j4c2`; afterward Quinx periodically harvests nearby trees. Confirm Quinx's final zone, rawcode, placement, and tree layout before treating the content as map-integrated. |
 
 ## 10. Dungeon quest packages
 

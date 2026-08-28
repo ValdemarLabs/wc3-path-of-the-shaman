@@ -130,10 +130,13 @@ respawn restoration also use that rawcode.
 
 Snikka Sparkdust `n047`, the Sirensong reagent merchant, uses the dedicated
 `VENDOR_CATALOG_EXPLOSIVES_AND_REAGENTS` catalog. Alongside the normal reagent
-stock, Snikka sells Barrel of Explosives `I00F` for 500 gold per barrel. Each
-purchase grants one barrel, stock is capped at two, and one barrel replenishes
-every 600 seconds. This is the costly fallback route for `Explosive Crisis`;
-recovering the stolen barrels remains the intended primary route.
+stock, Snikka sells Goblin Rocket Fuel `j4c2` for 150 gold per canister, with
+four in stock and one replenished every 300 seconds. The fuel supplies Quinx's
+`Shredder Fuel` quest. Snikka also sells Barrel of Explosives `I00F` for 500
+gold per barrel. Each purchase grants one barrel, stock is capped at two, and
+one barrel replenishes every 600 seconds. This is the costly fallback route for
+`Explosive Crisis`; recovering the stolen barrels remains the intended primary
+route.
 
 ## A Night To Remember witnesses
 
