@@ -416,37 +416,36 @@ namespace WC3ItemManager
                 _navigation.BeginUpdate();
                 _navigation.Nodes.Clear();
                 TreeNode nodeToSelect = null;
-                foreach (var giver in _givers)
+                var questGiversRoot = new TreeNode("QuestGivers") { Name = "source:QuestGivers" };
+                var genericQuestsRoot = new TreeNode("GenericQuests") { Name = "source:GenericQuests" };
+                var databaseRoot = new TreeNode("Database-authored") { Name = "source:Database" };
+
+                string sourceRoot = QuestSourceSynchronizer.FindQuestsAndDialogsRoot();
+                if (!string.IsNullOrWhiteSpace(sourceRoot))
                 {
-                    string sourcePrefix = giver.SourceKind == "generic_quest"
-                        ? "[Generic] "
-                        : giver.SourceImportFingerprint.Length > 0 ? "[Source] " : "";
-                    var giverNode = new TreeNode(sourcePrefix + giver.DisplayName)
-                    {
-                        Tag = giver,
-                        ForeColor = giver.Enabled ? SystemColors.WindowText : Color.Gray
-                    };
-                    foreach (var quest in _quests.Where(q => q.QuestGiverId == giver.Id)
-                                 .OrderBy(q => q.SortOrder).ThenBy(q => q.Title))
-                    {
-                        var questNode = new TreeNode(quest.Draft ? $"[Draft] {quest.Title}" : quest.Title)
-                        {
-                            Tag = quest,
-                            ForeColor = quest.Enabled ? SystemColors.WindowText : Color.Gray
-                        };
-                        giverNode.Nodes.Add(questNode);
-                        if (quest.Id == selectQuestId) nodeToSelect = questNode;
-                    }
-                    _navigation.Nodes.Add(giverNode);
-                    if (nodeToSelect == null && giver.Id == selectGiverId) nodeToSelect = giverNode;
+                    AddRepositoryFolders(questGiversRoot, Path.Combine(sourceRoot, "QuestGivers"));
+                    AddRepositoryFolders(genericQuestsRoot, Path.Combine(sourceRoot, "GenericQuests"));
                 }
+
+                foreach (var giver in _givers.OrderBy(g => g.SourceFile).ThenBy(g => g.DisplayName))
+                {
+                    TreeNode parent = GetNavigationParent(
+                        giver, questGiversRoot, genericQuestsRoot, databaseRoot);
+                    TreeNode giverNode = CreateGiverNavigationNode(giver, selectGiverId, selectQuestId, ref nodeToSelect);
+                    parent.Nodes.Add(giverNode);
+                }
+
+                if (questGiversRoot.Nodes.Count > 0) _navigation.Nodes.Add(questGiversRoot);
+                if (genericQuestsRoot.Nodes.Count > 0) _navigation.Nodes.Add(genericQuestsRoot);
+                if (databaseRoot.Nodes.Count > 0) _navigation.Nodes.Add(databaseRoot);
                 _navigation.EndUpdate();
-                _navigation.ExpandAll();
+                foreach (TreeNode root in _navigation.Nodes) root.Expand();
                 LoadVoicelines();
                 BuildRelationshipTree();
                 _loading = false;
                 if (nodeToSelect != null)
                 {
+                    ExpandAncestors(nodeToSelect);
                     _navigation.SelectedNode = nodeToSelect;
                     nodeToSelect.EnsureVisible();
                 }
@@ -464,6 +463,79 @@ namespace WC3ItemManager
             {
                 _loading = false;
             }
+        }
+
+        private TreeNode CreateGiverNavigationNode(QuestGiverDefinition giver, int? selectGiverId,
+            int? selectQuestId, ref TreeNode nodeToSelect)
+        {
+            var giverNode = new TreeNode(giver.DisplayName)
+            {
+                Tag = giver,
+                ForeColor = giver.Enabled ? SystemColors.WindowText : Color.Gray
+            };
+            foreach (var quest in _quests.Where(q => q.QuestGiverId == giver.Id)
+                         .OrderBy(q => q.SortOrder).ThenBy(q => q.Title))
+            {
+                var questNode = new TreeNode(quest.Draft ? $"[Draft] {quest.Title}" : quest.Title)
+                {
+                    Tag = quest,
+                    ForeColor = quest.Enabled ? SystemColors.WindowText : Color.Gray
+                };
+                giverNode.Nodes.Add(questNode);
+                if (quest.Id == selectQuestId) nodeToSelect = questNode;
+            }
+            if (nodeToSelect == null && giver.Id == selectGiverId) nodeToSelect = giverNode;
+            return giverNode;
+        }
+
+        private static TreeNode GetNavigationParent(QuestGiverDefinition giver, TreeNode questGiversRoot,
+            TreeNode genericQuestsRoot, TreeNode databaseRoot)
+        {
+            if (IsSourceOwned(giver))
+            {
+                string normalized = (giver.SourceFile ?? "").Replace('\\', '/');
+                string sourceFolder = giver.SourceKind == "generic_quest" ? "GenericQuests" : "QuestGivers";
+                TreeNode root = giver.SourceKind == "generic_quest" ? genericQuestsRoot : questGiversRoot;
+                string[] parts = normalized.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+                int sourceIndex = Array.FindIndex(parts,
+                    part => string.Equals(part, sourceFolder, StringComparison.OrdinalIgnoreCase));
+                for (int index = sourceIndex + 1; sourceIndex >= 0 && index < parts.Length - 1; index++)
+                {
+                    root = GetOrCreateFolder(root, parts[index]);
+                }
+                return root;
+            }
+
+            string ownership = string.IsNullOrWhiteSpace(giver.OwnershipMode)
+                ? "Managed"
+                : char.ToUpperInvariant(giver.OwnershipMode[0]) + giver.OwnershipMode.Substring(1).ToLowerInvariant();
+            return GetOrCreateFolder(databaseRoot, ownership);
+        }
+
+        private static void AddRepositoryFolders(TreeNode parent, string directory)
+        {
+            if (!Directory.Exists(directory)) return;
+            foreach (string childDirectory in Directory.GetDirectories(directory).OrderBy(Path.GetFileName))
+            {
+                TreeNode child = GetOrCreateFolder(parent, Path.GetFileName(childDirectory));
+                AddRepositoryFolders(child, childDirectory);
+            }
+        }
+
+        private static TreeNode GetOrCreateFolder(TreeNode parent, string name)
+        {
+            string key = "folder:" + name;
+            TreeNode existing = parent.Nodes.Cast<TreeNode>()
+                .FirstOrDefault(node => string.Equals(node.Name, key, StringComparison.OrdinalIgnoreCase));
+            if (existing != null) return existing;
+            var folder = new TreeNode(name) { Name = key };
+            parent.Nodes.Add(folder);
+            return folder;
+        }
+
+        private static void ExpandAncestors(TreeNode node)
+        {
+            for (TreeNode parent = node.Parent; parent != null; parent = parent.Parent) parent.Expand();
         }
 
         private void NavigationAfterSelect(object sender, TreeViewEventArgs e)

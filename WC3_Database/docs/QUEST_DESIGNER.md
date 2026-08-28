@@ -25,6 +25,14 @@ Old GUI, plan, tool, backup, and test paths are excluded. Each source file becom
 
 The synchronizer stores a separate SHA-256 source fingerprint on each imported giver and quest. Unchanged files do not rewrite quest details. Managed/hybrid rows are protected from source import, and the exporter continues to ignore external rows. To update imported content, edit JASS and synchronize again.
 
+### Which copy should be edited?
+
+- **Synchronized/external library:** edit the existing `.j` file under `QuestsAndDialogs`, then synchronize. WC3 Manager treats its database rows as a read-only projection and never writes to that source file.
+- **Managed library:** edit the database record in WC3 Manager, then export. Treat generated JASS as build output; hand edits are not imported back and a later export may supersede them.
+- **Hybrid library:** edit supported metadata in WC3 Manager, export a new scaffold, and manually reconcile the explicitly hand-owned hooks. There is no automatic three-way merge.
+
+Do not change an imported row from `external` to `managed` merely to make it editable. That changes the source-of-truth contract and can create a second generated implementation of an existing library. If a library is intentionally being migrated to database ownership, use a reviewed conversion: preserve the original file, resolve library-name/import-order conflicts, compare generated behavior, compile with JassHelper, and runtime-test before replacing the hand-owned source.
+
 The same operation is available for diagnostics or automation:
 
 ```powershell

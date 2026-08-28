@@ -130,6 +130,8 @@ private string connectionString = "Host=127.0.0.1;Port=5432;Database=wc3_pots;Us
 - **Sync existing JASS** (Quest Designer toolbar): Scan both `QuestsAndDialogs/QuestGivers` and `QuestsAndDialogs/GenericQuests`, then create or refresh read-only external source projections. Managed/hybrid rows are never overwritten.
 - **Export Changed qXXX Quest Libraries**: Generate timestamped JASS scaffolds plus validation, JSON, and World Editor follow-up artifacts only when the generated library's SHA-256 fingerprint differs from its last successful export.
 
+The navigation tree mirrors the repository hierarchy (`QuestGivers` folders and `GenericQuests`) and keeps database-authored managed/hybrid records under a separate root. Edit synchronized libraries in their repository `.j` source and sync afterward; edit managed libraries in WC3 Manager and export afterward. Generated output is not reverse-imported.
+
 For a command-line synchronization against the configured database:
 
 ```powershell
