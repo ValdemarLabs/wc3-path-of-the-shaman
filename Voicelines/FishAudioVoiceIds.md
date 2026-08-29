@@ -81,3 +81,7 @@ powershell -ExecutionPolicy Bypass -File .\tools\voicelines.ps1 `
     -Speaker GenericGoblinMale3 `
     -ReferenceId 7bd87fcdbe1c430a9618e2b5d2bea58d
 ```
+
+Tagged narrator review generations use `Voicelines/FishAudioNarratorTts.csv`
+with `tools/generate_fish_audio_register_barks.ps1`. The manifest keeps FishAudio
+delivery and pause cues separate from the clean text displayed in game.
