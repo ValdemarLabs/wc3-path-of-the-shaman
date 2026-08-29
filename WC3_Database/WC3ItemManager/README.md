@@ -37,7 +37,11 @@ A Windows Forms application for managing Path of the Shaman content in the PotS 
 - Preview Details, Description, Objectives, and Rewards using the same information model as `UI/QuestUI.j`.
 - Export only changed managed or hybrid qXXX JASS libraries with JSON snapshots, validation reports, and World Editor manifests.
 - Mark complex existing libraries as External so the exporter never overwrites them.
-- Synchronize existing `QuestGivers` and `GenericQuests` JASS into read-only external rows, including standard qXXX quests and vendor fetch/kill/supply registrations.
+- Synchronize existing `QuestGivers` and `GenericQuests` JASS into source-owned external rows, including standard qXXX quests and vendor fetch/kill/supply registrations.
+- Distinguish synchronized source, managed, hybrid, and manual external records with ownership banners and guarded editing actions. Synchronized rows expose only uniquely mapped JASS literals; custom/shared/computed fields remain gray with a repository-only explanation.
+- Review field-level source patches before writing, reject overlapping repository/manager edits, preserve unmapped code byte-for-byte, create a temporary recovery copy, validate the patched structure, and synchronize the result automatically.
+- Add standard external quests only inside explicit `WC3M-BEGIN/END QUEST CONSTANTS` and parameterized `WC3M-BEGIN/END QUESTS` regions reviewed in the repository.
+- Browse the repository-style Quest Library with folder overviews and giver/quest search (`Ctrl+F`).
 
 ## Prerequisites
 
@@ -127,10 +131,10 @@ private string connectionString = "Host=127.0.0.1;Port=5432;Database=wc3_pots;Us
 
 **Quests menu**
 - **Open Quest Designer**: Edit giver/quest data, relationships, objectives, rewards, dialog sequences, preview, voicelines, and World Editor dependencies.
-- **Sync existing JASS** (Quest Designer toolbar): Scan both `QuestsAndDialogs/QuestGivers` and `QuestsAndDialogs/GenericQuests`, then create or refresh read-only external source projections. Managed/hybrid rows are never overwritten.
+- **Sync existing JASS** (Quest Designer toolbar): Scan both `QuestsAndDialogs/QuestGivers` and `QuestsAndDialogs/GenericQuests`, then create or refresh guarded external source projections. Managed/hybrid rows are never overwritten.
 - **Export Changed qXXX Quest Libraries**: Generate timestamped JASS scaffolds plus validation, JSON, and World Editor follow-up artifacts only when the generated library's SHA-256 fingerprint differs from its last successful export.
 
-The navigation tree mirrors the repository hierarchy (`QuestGivers` folders and `GenericQuests`) and keeps database-authored managed/hybrid records under a separate root. Edit synchronized libraries in their repository `.j` source and sync afterward; edit managed libraries in WC3 Manager and export afterward. Generated output is not reverse-imported.
+The navigation tree mirrors the repository hierarchy (`QuestGivers` folders and `GenericQuests`) and keeps database-authored managed/hybrid records under a separate root. Edit uniquely mapped synchronized literals through a reviewed source patch, edit all custom logic directly in the repository `.j` source, and sync afterward. Edit managed libraries in WC3 Manager and export afterward; generated output is not reverse-imported.
 
 For a command-line synchronization against the configured database:
 

@@ -21,22 +21,67 @@ Use **Sync existing JASS...** in the Quest Designer toolbar and select either th
 - `QuestsAndDialogs/QuestGivers/`, including vendor qXXX libraries using fetch, kill, and supply registrations.
 - `QuestsAndDialogs/GenericQuests/`, including giverless/runtime-assigned quests.
 
-Old GUI, plan, tool, backup, and test paths are excluded. Each source file becomes an `external` read-only giver or source container, and supported quest registrations populate the preview, objectives, rewards, turn-in relationships, prerequisites, and qXXX library links. Dynamic requirement text and custom runtime behavior remain source-owned and are reported as warnings rather than guessed.
+Old GUI, plan, tool, backup, and test paths are excluded. Each source file becomes an `external` source-owned giver or source container, and supported quest registrations populate the preview, objectives, rewards, turn-in relationships, prerequisites, and qXXX library links. Only uniquely mapped literals can be patched through the guarded editor; dynamic requirement text and custom runtime behavior remain repository-owned and are reported as warnings rather than guessed.
 
 The synchronizer stores a separate SHA-256 source fingerprint on each imported giver and quest. Unchanged files do not rewrite quest details. Managed/hybrid rows are protected from source import, and the exporter continues to ignore external rows. To update imported content, edit JASS and synchronize again.
 
+### Ownership and editing cues
+
+The editor makes the source boundary visible before any edit:
+
+- Synchronized JASS uses an amber **GUARDED SOURCE** banner and blue navigation text. Only fields mapped to a unique literal or uniquely owned constant in a recognized quest API call are editable.
+- Computed expressions, concatenations, function calls, shared constants, ambiguous calls, relationships, and custom runtime behavior remain gray. Hover the editor or select a gray field to see that it must be edited in the repository `.j` file.
+- Selecting a synchronized quest opens its quest-log preview first. **Open source .j** shows a source-of-truth warning before opening the authoritative repository file.
+- Managed, hybrid, and manually created external records use distinct banners so their export behavior is visible without relying on the database fields alone.
+- The Quest Library includes a search box (`Ctrl+F`, then Enter to cycle matches) and an overview card for repository folders and ownership workflows.
+
 ### Which copy should be edited?
 
-- **Synchronized/external library:** edit the existing `.j` file under `QuestsAndDialogs`, then synchronize. WC3 Manager treats its database rows as a read-only projection and never writes to that source file.
+- **Synchronized/external library:** use WC3 Manager for green-lit mapped literals or edit the existing `.j` file directly, then synchronize. Custom logic always remains source-owned.
 - **Managed library:** edit the database record in WC3 Manager, then export. Treat generated JASS as build output; hand edits are not imported back and a later export may supersede them.
 - **Hybrid library:** edit supported metadata in WC3 Manager, export a new scaffold, and manually reconcile the explicitly hand-owned hooks. There is no automatic three-way merge.
 
 Do not change an imported row from `external` to `managed` merely to make it editable. That changes the source-of-truth contract and can create a second generated implementation of an existing library. If a library is intentionally being migrated to database ownership, use a reviewed conversion: preserve the original file, resolve library-name/import-order conflicts, compare generated behavior, compile with JassHelper, and runtime-test before replacing the hand-owned source.
 
+## Guarded round-trip source editing
+
+Saving a synchronized record never regenerates its library. WC3 Manager rereads the current file and prepares narrow replacements for recognized literal spans only. The review dialog lists every field-level change and shows the resulting source before anything is written.
+
+The database values from the last synchronization, the current repository value, and the proposed manager value form a field-level three-way check. If both the repository and WC3 Manager changed the same field, the patch is blocked. Changes to different mapped fields can coexist. After confirmation, WC3 Manager rereads the fingerprint to prevent a change between preview and write, creates a timestamped recovery copy under the system temporary `WC3Manager/source-backups` folder, writes through a same-directory temporary file, validates the library declaration and quest-registration count, and synchronizes the result back into PostgreSQL.
+
+The conservative writable set currently covers direct or uniquely owned literals used by recognized standard calls:
+
+- configured quest name/type/level/title/icon/description/details, required level, hero flags, faction, and receiver display text;
+- category and required reputation when a unique recognized setter owns the value;
+- standard XP, gold, arena-point, and reputation reward arguments;
+- direct quest-log requirement strings imported as objectives;
+- giver display name only when all recognized registrations map it unambiguously.
+
+Bindings, prerequisites, tracking hooks, item rewards, auto-completion, failure state, dialog sequences, World Editor dependencies, and any expression involving custom code remain source-only until a dedicated safe mapping exists.
+
+### Adding standard quests to external libraries
+
+WC3 Manager inserts a new quest only into explicit, developer-reviewed regions. Place the constant markers inside the library's `globals` block:
+
+```jass
+// WC3M-BEGIN QUEST CONSTANTS
+// WC3M-END QUEST CONSTANTS
+```
+
+Place the registration markers inside the correct quest-registration function, after its local quest variable has been declared:
+
+```jass
+// WC3M-BEGIN QUESTS variable=q giver=Aradion receiver=null
+// WC3M-END QUESTS
+```
+
+The `variable`, `giver`, and optional `receiver` values are JASS expressions reviewed by the developer. Without both regions, **New quest** explains the required contract and does not modify the file. Generated region content is limited to the standard configured quest, category, reputation, reward, and requirement calls; acceptance menus, dialog, cinematics, runtime trackers, cleanup, and other custom behavior still require repository work.
+
 The same operation is available for diagnostics or automation:
 
 ```powershell
 dotnet .\WC3_Database\WC3ItemManager\bin\Debug\net8.0-windows\WC3ItemManager.dll --sync-quest-sources .\QuestsAndDialogs
+dotnet .\WC3_Database\WC3ItemManager\bin\Debug\net8.0-windows\WC3ItemManager.dll --audit-quest-source-editing
 ```
 
 ## Database setup

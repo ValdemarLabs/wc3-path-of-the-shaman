@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -9,14 +10,17 @@ using WC3ItemManager.Exporters;
 using WC3ItemManager.Importers;
 using WC3ItemManager.Models;
 using WC3ItemManager.Repositories;
+using WC3ItemManager.SourceEditing;
 
 namespace WC3ItemManager
 {
     public sealed class QuestDesignerForm : Form
     {
         private readonly QuestDesignerRepository _repository;
+        private readonly QuestSourceEditor _sourceEditor = new QuestSourceEditor();
         private readonly string _connectionString;
         private readonly TreeView _navigation = new TreeView();
+        private readonly SplitContainer _workspaceSplit = new SplitContainer();
         private readonly TabControl _tabs = new TabControl();
         private readonly ToolStrip _mainTools = new ToolStrip();
         private readonly ToolStripStatusLabel _status = new ToolStripStatusLabel();
@@ -37,6 +41,23 @@ namespace WC3ItemManager
         private readonly ComboBox _questReceiver = new ComboBox();
         private readonly TreeView _relationships = new TreeView();
         private readonly QuestLogPreviewControl _preview = new QuestLogPreviewControl();
+        private readonly TextBox _navigationSearch = new TextBox();
+        private readonly Panel _ownershipBanner = new Panel();
+        private readonly Panel _ownershipAccent = new Panel();
+        private readonly Label _ownershipTitle = new Label();
+        private readonly Label _ownershipDetails = new Label();
+        private readonly Button _openSourceButton = new Button();
+        private readonly ColumnStyle _sourceButtonColumn = new ColumnStyle(SizeType.Absolute, 0f);
+        private readonly Panel _overviewPanel = new Panel();
+        private readonly Label _overviewTitle = new Label();
+        private readonly Label _overviewStats = new Label();
+        private readonly ToolTip _sourceFieldToolTip = new ToolTip();
+        private ToolStripButton _newQuestButton;
+        private ToolStripButton _saveButton;
+        private ToolStripButton _deleteButton;
+        private ToolStripButton _openSourceToolButton;
+        private ToolStripLabel _modeBadge;
+        private TreeNode _lastSearchNode;
 
         private BindingList<QuestObjectiveDefinition> _objectives = new BindingList<QuestObjectiveDefinition>();
         private BindingList<QuestSequenceStepDefinition> _steps = new BindingList<QuestSequenceStepDefinition>();
@@ -48,6 +69,11 @@ namespace WC3ItemManager
         private QuestDefinition _currentQuest;
         private QuestRewardDefinition _currentReward;
         private QuestSequenceDefinition _currentSequence;
+        private QuestSourceEditSession _sourceEditSession;
+        private QuestGiverDefinition _sourceGiverBaseline;
+        private QuestDefinition _sourceQuestBaseline;
+        private QuestRewardDefinition _sourceRewardBaseline;
+        private List<QuestObjectiveDefinition> _sourceObjectiveBaselines = new List<QuestObjectiveDefinition>();
         private bool _loading;
 
         public QuestDesignerForm(string connectionString)
@@ -60,10 +86,31 @@ namespace WC3ItemManager
             Height = 900;
             MinimumSize = new Size(1120, 720);
             Icon = null;
+            Font = new Font("Segoe UI", 9f);
+            BackColor = Color.FromArgb(243, 246, 250);
+            AutoScaleMode = AutoScaleMode.Dpi;
+            KeyPreview = true;
+            KeyDown += (s, e) =>
+            {
+                if (e.Control && e.KeyCode == Keys.F)
+                {
+                    _navigationSearch.Focus();
+                    _navigationSearch.SelectAll();
+                    e.SuppressKeyPress = true;
+                }
+            };
 
             BuildToolbar();
             BuildWorkspace();
-            var statusStrip = new StatusStrip();
+            ConfigureSourceFieldTooltips();
+            ShowOverview("Quest Library");
+            var statusStrip = new StatusStrip
+            {
+                SizingGrip = false,
+                BackColor = Color.White
+            };
+            _status.Spring = true;
+            _status.TextAlign = ContentAlignment.MiddleLeft;
             statusStrip.Items.Add(_status);
             Controls.Add(statusStrip);
             Shown += OnShown;
@@ -73,68 +120,316 @@ namespace WC3ItemManager
         {
             _mainTools.GripStyle = ToolStripGripStyle.Hidden;
             _mainTools.Dock = DockStyle.Top;
-            _mainTools.Items.Add(CreateToolButton("New giver", (s, e) => NewGiver()));
-            _mainTools.Items.Add(CreateToolButton("New quest", (s, e) => NewQuest()));
+            _mainTools.AutoSize = false;
+            _mainTools.Height = 40;
+            _mainTools.Padding = new Padding(8, 5, 8, 4);
+            _mainTools.BackColor = Color.White;
+            _mainTools.RenderMode = ToolStripRenderMode.System;
+
+            _mainTools.Items.Add(CreateToolButton("New giver", (s, e) => NewGiver(), "Create a database-authored quest giver"));
+            _newQuestButton = CreateToolButton("New quest", (s, e) => NewQuest(), "Create a quest under the selected database-authored giver");
+            _mainTools.Items.Add(_newQuestButton);
             _mainTools.Items.Add(new ToolStripSeparator());
-            _mainTools.Items.Add(CreateToolButton("Save", (s, e) => SaveCurrent()));
-            _mainTools.Items.Add(CreateToolButton("Delete", (s, e) => DeleteCurrent()));
-            _mainTools.Items.Add(CreateToolButton("Refresh", (s, e) => RefreshData()));
-            _mainTools.Items.Add(CreateToolButton("Sync existing JASS...", (s, e) => SyncExistingSources()));
+            _saveButton = CreateToolButton("Save changes", (s, e) => SaveCurrent(), "Save the selected database-authored record");
+            _deleteButton = CreateToolButton("Delete", (s, e) => DeleteCurrent(), "Delete the selected database-authored record");
+            _mainTools.Items.Add(_saveButton);
+            _mainTools.Items.Add(_deleteButton);
             _mainTools.Items.Add(new ToolStripSeparator());
-            _mainTools.Items.Add(CreateToolButton("Export changed qXXX libraries", (s, e) => ExportLibraries()));
-            _mainTools.Items.Add(new ToolStripLabel(
-                "Managed = generated; Hybrid = scaffold + hooks; External = preview/relationships only"));
+            _mainTools.Items.Add(CreateToolButton("Refresh", (s, e) => RefreshData(), "Reload quest data from PostgreSQL"));
+            _mainTools.Items.Add(CreateToolButton("Sync JASS sources...", (s, e) => SyncExistingSources(),
+                "Refresh read-only QuestGivers and GenericQuests projections from the repository"));
+            _openSourceToolButton = CreateToolButton("Open source .j", (s, e) => OpenCurrentSource(),
+                "Open the selected synchronized JASS source after a safety warning");
+            _mainTools.Items.Add(_openSourceToolButton);
+            _mainTools.Items.Add(new ToolStripSeparator());
+            _mainTools.Items.Add(CreateToolButton("Export changed libraries...", (s, e) => ExportLibraries(),
+                "Export only changed managed and hybrid qXXX libraries"));
+            _modeBadge = new ToolStripLabel("NO SELECTION")
+            {
+                Alignment = ToolStripItemAlignment.Right,
+                Font = new Font("Segoe UI Semibold", 8.5f),
+                ForeColor = Color.DimGray,
+                Margin = new Padding(8, 2, 4, 2),
+                Padding = new Padding(8, 2, 8, 2)
+            };
+            _mainTools.Items.Add(_modeBadge);
             Controls.Add(_mainTools);
         }
 
         private void BuildWorkspace()
         {
-            var split = new SplitContainer
+            _workspaceSplit.Dock = DockStyle.Fill;
+            _workspaceSplit.SplitterWidth = 5;
+            _workspaceSplit.FixedPanel = FixedPanel.Panel1;
+            Controls.Add(_workspaceSplit);
+            _workspaceSplit.BringToFront();
+
+            var left = new Panel
             {
                 Dock = DockStyle.Fill,
-                SplitterDistance = 285,
-                FixedPanel = FixedPanel.Panel1
+                Padding = new Padding(10),
+                BackColor = Color.FromArgb(248, 250, 253)
             };
-            Controls.Add(split);
-            split.BringToFront();
-
-            var left = new Panel { Dock = DockStyle.Fill, Padding = new Padding(6) };
-            split.Panel1.Controls.Add(left);
-            left.Controls.Add(new Label
+            _workspaceSplit.Panel1.Controls.Add(left);
+            var navigationHeader = new Label
             {
                 Dock = DockStyle.Top,
-                Height = 30,
-                Text = "Quest givers and quests",
-                Font = new Font("Segoe UI", 10f, FontStyle.Bold),
-                TextAlign = ContentAlignment.MiddleLeft
+                Height = 42,
+                Text = "Quest Library",
+                Font = new Font("Segoe UI Semibold", 12f),
+                ForeColor = Color.FromArgb(32, 45, 64),
+                TextAlign = ContentAlignment.MiddleLeft,
+                Padding = new Padding(2, 0, 0, 0)
+            };
+            var searchPanel = new Panel { Dock = DockStyle.Top, Height = 40, Padding = new Padding(0, 4, 0, 7) };
+            _navigationSearch.Dock = DockStyle.Fill;
+            _navigationSearch.PlaceholderText = "Find giver or quest (Ctrl+F)";
+            _navigationSearch.BorderStyle = BorderStyle.FixedSingle;
+            _navigationSearch.KeyDown += NavigationSearchKeyDown;
+            searchPanel.Controls.Add(_navigationSearch);
+            searchPanel.Controls.Add(new Label
+            {
+                Dock = DockStyle.Left,
+                Width = 52,
+                Text = "Find:",
+                TextAlign = ContentAlignment.MiddleLeft,
+                ForeColor = Color.FromArgb(78, 89, 103)
             });
             _navigation.Dock = DockStyle.Fill;
             _navigation.HideSelection = false;
+            _navigation.FullRowSelect = true;
+            _navigation.ShowNodeToolTips = true;
+            _navigation.ItemHeight = 23;
+            _navigation.Indent = 20;
+            _navigation.BorderStyle = BorderStyle.FixedSingle;
+            _navigation.BackColor = Color.White;
             _navigation.AfterSelect += NavigationAfterSelect;
             left.Controls.Add(_navigation);
+            left.Controls.Add(searchPanel);
+            left.Controls.Add(navigationHeader);
             _navigation.BringToFront();
 
             _tabs.Dock = DockStyle.Fill;
+            _tabs.Padding = new Point(14, 5);
             _tabs.TabPages.Add(CreateGiverTab());
             _tabs.TabPages.Add(CreateQuestTab());
             _tabs.TabPages.Add(CreateSequencesTab());
             _tabs.TabPages.Add(CreatePreviewTab());
             _tabs.TabPages.Add(CreateRelationshipsTab());
             _tabs.TabPages.Add(CreateVoicelinesTab());
-            split.Panel2.Controls.Add(_tabs);
+            foreach (PropertyGrid propertyGrid in new[]
+                     {
+                         _giverProperties, _questProperties, _rewardProperties, _objectiveProperties,
+                         _sequenceProperties, _stepProperties
+                     })
+            {
+                StylePropertyGrid(propertyGrid);
+            }
+
+            BuildOwnershipBanner();
+            BuildOverviewPanel();
+            var rightLayout = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 1,
+                RowCount = 2,
+                BackColor = Color.White
+            };
+            rightLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
+            rightLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 68f));
+            rightLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100f));
+            var editorHost = new Panel { Dock = DockStyle.Fill, BackColor = Color.White };
+            editorHost.Controls.Add(_tabs);
+            editorHost.Controls.Add(_overviewPanel);
+            _overviewPanel.BringToFront();
+            rightLayout.Controls.Add(_ownershipBanner, 0, 0);
+            rightLayout.Controls.Add(editorHost, 0, 1);
+            _workspaceSplit.Panel2.Controls.Add(rightLayout);
+        }
+
+        private void BuildOwnershipBanner()
+        {
+            _ownershipBanner.Dock = DockStyle.Fill;
+            _ownershipBanner.Margin = Padding.Empty;
+            _ownershipBanner.Padding = Padding.Empty;
+            _ownershipBanner.BackColor = Color.FromArgb(239, 243, 248);
+
+            _ownershipAccent.Dock = DockStyle.Fill;
+            _ownershipAccent.BackColor = Color.FromArgb(104, 118, 138);
+
+            _ownershipTitle.Dock = DockStyle.Top;
+            _ownershipTitle.Height = 24;
+            _ownershipTitle.Font = new Font("Segoe UI Semibold", 10f);
+            _ownershipTitle.ForeColor = Color.FromArgb(32, 45, 64);
+            _ownershipTitle.Text = "Select a quest giver or quest";
+
+            _ownershipDetails.Dock = DockStyle.Fill;
+            _ownershipDetails.AutoEllipsis = true;
+            _ownershipDetails.ForeColor = Color.FromArgb(77, 88, 104);
+            _ownershipDetails.Text = "Choose a folder or record from the Quest Library.";
+
+            _openSourceButton.Dock = DockStyle.Fill;
+            _openSourceButton.Text = "Open source .j";
+            _openSourceButton.FlatStyle = FlatStyle.System;
+            _openSourceButton.Margin = new Padding(6, 10, 12, 10);
+            _openSourceButton.Visible = false;
+            _openSourceButton.Click += (s, e) => OpenCurrentSource();
+
+            var textPanel = new Panel { Dock = DockStyle.Fill, Padding = new Padding(14, 8, 10, 7) };
+            textPanel.Controls.Add(_ownershipDetails);
+            textPanel.Controls.Add(_ownershipTitle);
+            var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 1 };
+            layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 6f));
+            layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
+            layout.ColumnStyles.Add(_sourceButtonColumn);
+            layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100f));
+            layout.Controls.Add(_ownershipAccent, 0, 0);
+            layout.Controls.Add(textPanel, 1, 0);
+            layout.Controls.Add(_openSourceButton, 2, 0);
+            _ownershipBanner.Controls.Add(layout);
+        }
+
+        private void BuildOverviewPanel()
+        {
+            _overviewPanel.Dock = DockStyle.Fill;
+            _overviewPanel.BackColor = Color.FromArgb(243, 246, 250);
+
+            var layout = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 3,
+                RowCount = 3,
+                BackColor = Color.Transparent
+            };
+            layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50f));
+            layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 720f));
+            layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50f));
+            layout.RowStyles.Add(new RowStyle(SizeType.Percent, 50f));
+            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 360f));
+            layout.RowStyles.Add(new RowStyle(SizeType.Percent, 50f));
+
+            var card = new Panel
+            {
+                Dock = DockStyle.Fill,
+                BackColor = Color.White,
+                BorderStyle = BorderStyle.FixedSingle,
+                Padding = new Padding(30)
+            };
+            _overviewTitle.Dock = DockStyle.Top;
+            _overviewTitle.Height = 44;
+            _overviewTitle.Font = new Font("Segoe UI Semibold", 18f);
+            _overviewTitle.ForeColor = Color.FromArgb(31, 44, 62);
+            _overviewTitle.Text = "Quest Designer";
+
+            var description = new Label
+            {
+                Dock = DockStyle.Top,
+                Height = 62,
+                Font = new Font("Segoe UI", 10f),
+                ForeColor = Color.FromArgb(75, 86, 101),
+                Text = "Browse synchronized JASS under the repository folders, or create database-managed " +
+                       "content that WC3 Manager can validate, preview, and export."
+            };
+            _overviewStats.Dock = DockStyle.Top;
+            _overviewStats.Height = 38;
+            _overviewStats.Font = new Font("Segoe UI Semibold", 10f);
+            _overviewStats.ForeColor = Color.FromArgb(43, 93, 140);
+
+            var actions = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Top,
+                Height = 52,
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = false,
+                Padding = new Padding(0, 7, 0, 5)
+            };
+            var syncButton = CreateOverviewButton("Sync JASS sources", Color.FromArgb(42, 103, 158));
+            syncButton.Click += (s, e) => SyncExistingSources();
+            var newGiverButton = CreateOverviewButton("New database giver", Color.FromArgb(68, 118, 74));
+            newGiverButton.Click += (s, e) => NewGiver();
+            var refreshButton = CreateOverviewButton("Refresh", Color.FromArgb(98, 107, 120));
+            refreshButton.Click += (s, e) => RefreshData();
+            actions.Controls.Add(syncButton);
+            actions.Controls.Add(newGiverButton);
+            actions.Controls.Add(refreshButton);
+
+            var ownershipGuide = new Label
+            {
+                Dock = DockStyle.Fill,
+                Padding = new Padding(14, 12, 14, 8),
+                BackColor = Color.FromArgb(247, 249, 252),
+                ForeColor = Color.FromArgb(61, 72, 88),
+                Font = new Font("Segoe UI", 9.5f),
+                Text = "SOURCE / EXTERNAL  •  Only uniquely mapped literals are editable; custom logic stays source-only.\n\n" +
+                       "MANAGED  •  Edit in WC3 Manager and export only when the generated library changes.\n\n" +
+                       "HYBRID  •  Generate a scaffold, then manually reconcile hand-owned hooks."
+            };
+
+            card.Controls.Add(ownershipGuide);
+            card.Controls.Add(actions);
+            card.Controls.Add(_overviewStats);
+            card.Controls.Add(description);
+            card.Controls.Add(_overviewTitle);
+            layout.Controls.Add(card, 1, 1);
+            _overviewPanel.Controls.Add(layout);
+        }
+
+        private static Button CreateOverviewButton(string text, Color color)
+        {
+            return new Button
+            {
+                Text = text,
+                AutoSize = false,
+                Width = 170,
+                Height = 34,
+                Margin = new Padding(0, 0, 10, 0),
+                FlatStyle = FlatStyle.Flat,
+                BackColor = color,
+                ForeColor = Color.White,
+                Font = new Font("Segoe UI Semibold", 9f),
+                Cursor = Cursors.Hand
+            };
+        }
+
+        private static void StylePropertyGrid(PropertyGrid grid)
+        {
+            grid.PropertySort = PropertySort.Categorized;
+            grid.ViewBackColor = Color.White;
+            grid.ViewForeColor = Color.FromArgb(40, 48, 58);
+            grid.LineColor = Color.FromArgb(220, 225, 232);
+            grid.CategoryForeColor = Color.FromArgb(41, 82, 122);
+            grid.HelpBackColor = Color.FromArgb(247, 249, 252);
+            grid.HelpForeColor = Color.FromArgb(65, 75, 88);
+        }
+
+        private void ConfigureSourceFieldTooltips()
+        {
+            _sourceFieldToolTip.InitialDelay = 350;
+            _sourceFieldToolTip.ReshowDelay = 150;
+            _sourceFieldToolTip.AutoPopDelay = 9000;
+            const string message =
+                "Gray fields contain custom, shared, computed, or unmapped JASS logic and are only editable in the repository .j file. Select a field to see its specific reason below.";
+            foreach (PropertyGrid grid in new[]
+                     {
+                         _giverProperties, _questProperties, _rewardProperties, _objectiveProperties,
+                         _sequenceProperties, _stepProperties
+                     })
+            {
+                _sourceFieldToolTip.SetToolTip(grid, message);
+            }
         }
 
         private TabPage CreateGiverTab()
         {
-            var page = new TabPage("Quest giver");
+            var page = new TabPage("Quest giver") { BackColor = Color.White };
             var note = new Label
             {
                 Dock = DockStyle.Top,
-                Height = 48,
-                Padding = new Padding(8),
-                Text = "Binding requires a placed JASS unit variable or a four-character rawcode. " +
-                       "Use External ownership for existing complex qXXX sources; WC3 Manager will never export them.",
-                BackColor = Color.FromArgb(240, 245, 252)
+                Height = 44,
+                Padding = new Padding(12),
+                Text = "Giver binding and camera configuration. Gray synchronized fields contain custom or unmapped JASS logic; select or hover them for the source-only reason.",
+                ForeColor = Color.FromArgb(53, 74, 96),
+                BackColor = Color.FromArgb(239, 245, 251)
             };
             _giverProperties.Dock = DockStyle.Fill;
             _giverProperties.HelpVisible = true;
@@ -247,7 +542,7 @@ namespace WC3ItemManager
 
         private TabPage CreateSequencesTab()
         {
-            var page = new TabPage("Dialog & events");
+            var page = new TabPage("Dialog / events");
             var split = new SplitContainer { Dock = DockStyle.Fill, SplitterDistance = 280 };
             page.Controls.Add(split);
             var left = new Panel { Dock = DockStyle.Fill };
@@ -328,14 +623,14 @@ namespace WC3ItemManager
 
         private TabPage CreatePreviewTab()
         {
-            var page = new TabPage("In-game quest log preview");
+            var page = new TabPage("Quest log preview");
             page.Controls.Add(_preview);
             return page;
         }
 
         private TabPage CreateRelationshipsTab()
         {
-            var page = new TabPage("Relationships & WE dependencies");
+            var page = new TabPage("Relationships");
             var split = new SplitContainer
             {
                 Dock = DockStyle.Fill,
@@ -362,7 +657,7 @@ namespace WC3ItemManager
 
         private TabPage CreateVoicelinesTab()
         {
-            var page = new TabPage("Voiceline catalog");
+            var page = new TabPage("Voicelines");
             var panel = new Panel { Dock = DockStyle.Fill };
             page.Controls.Add(panel);
             var tools = new ToolStrip { Dock = DockStyle.Top, GripStyle = ToolStripGripStyle.Hidden };
@@ -383,6 +678,10 @@ namespace WC3ItemManager
         {
             try
             {
+                int preferredNavigationWidth = Math.Min(360, Math.Max(280, _workspaceSplit.Width - 700));
+                _workspaceSplit.SplitterDistance = preferredNavigationWidth;
+                _workspaceSplit.Panel1MinSize = 280;
+                _workspaceSplit.Panel2MinSize = 700;
                 if (!_repository.SchemaExists())
                 {
                     MessageBox.Show(
@@ -471,7 +770,12 @@ namespace WC3ItemManager
             var giverNode = new TreeNode(giver.DisplayName)
             {
                 Tag = giver,
-                ForeColor = giver.Enabled ? SystemColors.WindowText : Color.Gray
+                ForeColor = !giver.Enabled
+                    ? Color.Gray
+                    : IsSourceOwned(giver) ? Color.FromArgb(38, 91, 139) : SystemColors.WindowText,
+                ToolTipText = IsSourceOwned(giver)
+                    ? "Guarded synchronized source; only uniquely mapped literals are editable: " + giver.SourceFile
+                    : $"{giver.OwnershipMode} database record"
             };
             foreach (var quest in _quests.Where(q => q.QuestGiverId == giver.Id)
                          .OrderBy(q => q.SortOrder).ThenBy(q => q.Title))
@@ -549,7 +853,46 @@ namespace WC3ItemManager
             else if (e.Node.Tag is QuestDefinition quest)
             {
                 LoadQuest(quest.Id);
-                _tabs.SelectedIndex = 1;
+                _tabs.SelectedIndex = IsSourceOwned(_currentGiver) ? 3 : 1;
+            }
+            else
+            {
+                ShowOverview(e.Node.Text);
+            }
+        }
+
+        private void NavigationSearchKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode != Keys.Enter) return;
+            string search = _navigationSearch.Text.Trim();
+            if (search.Length == 0) return;
+            var matches = EnumerateNodes(_navigation.Nodes)
+                .Where(node => node.Tag is QuestGiverDefinition || node.Tag is QuestDefinition)
+                .Where(node => node.Text.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0)
+                .ToList();
+            if (matches.Count == 0)
+            {
+                SetStatus($"No quest giver or quest matched '{search}'.");
+                System.Media.SystemSounds.Beep.Play();
+            }
+            else
+            {
+                int currentIndex = _lastSearchNode == null ? -1 : matches.IndexOf(_lastSearchNode);
+                _lastSearchNode = matches[(currentIndex + 1) % matches.Count];
+                ExpandAncestors(_lastSearchNode);
+                _navigation.SelectedNode = _lastSearchNode;
+                _lastSearchNode.EnsureVisible();
+                SetStatus($"Match {(currentIndex + 2 > matches.Count ? 1 : currentIndex + 2)} of {matches.Count}: {_lastSearchNode.Text}");
+            }
+            e.SuppressKeyPress = true;
+        }
+
+        private static IEnumerable<TreeNode> EnumerateNodes(TreeNodeCollection nodes)
+        {
+            foreach (TreeNode node in nodes)
+            {
+                yield return node;
+                foreach (TreeNode child in EnumerateNodes(node.Nodes)) yield return child;
             }
         }
 
@@ -565,6 +908,9 @@ namespace WC3ItemManager
             _preview.ClearQuest();
             LoadSequences();
             LoadDependencies();
+            ConfigureSourceEditing();
+            _overviewPanel.Visible = false;
+            UpdateOwnershipUi();
             SetStatus($"Editing quest giver {_currentGiver.DisplayName} ({_currentGiver.OwnershipMode}).");
         }
 
@@ -584,11 +930,15 @@ namespace WC3ItemManager
             LoadSequences();
             LoadDependencies();
             RefreshPreview();
+            ConfigureSourceEditing();
+            _overviewPanel.Visible = false;
+            UpdateOwnershipUi();
             SetStatus($"Editing quest {_currentQuest.Title}.");
         }
 
         private void NewGiver()
         {
+            ClearSourceEditing();
             _currentQuest = null;
             _currentGiver = new QuestGiverDefinition
             {
@@ -598,6 +948,8 @@ namespace WC3ItemManager
                 UnitCode = "n000"
             };
             _giverProperties.SelectedObject = _currentGiver;
+            _overviewPanel.Visible = false;
+            UpdateOwnershipUi();
             _tabs.SelectedIndex = 0;
             SetStatus("Configure the new giver, then Save.");
         }
@@ -612,10 +964,16 @@ namespace WC3ItemManager
             }
             if (IsSourceOwned(_currentGiver))
             {
-                MessageBox.Show(
-                    "This giver is synchronized from JASS. Add the quest in the source library, then run Sync existing JASS.",
-                    "Read-only source library", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                return;
+                if (_sourceEditSession?.CanAddQuest != true)
+                {
+                    MessageBox.Show(
+                        (_sourceEditSession?.AddQuestReason ?? "The source could not be analyzed.") +
+                        "\n\nRequired marker examples:\n" +
+                        "// WC3M-BEGIN QUEST CONSTANTS\n// WC3M-END QUEST CONSTANTS\n\n" +
+                        "// WC3M-BEGIN QUESTS variable=q giver=GiverVariable receiver=null\n// WC3M-END QUESTS",
+                        "Source-owned quest region required", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
             }
             _currentQuest = new QuestDefinition
             {
@@ -639,6 +997,9 @@ namespace WC3ItemManager
             _objectivesGrid.DataSource = _objectives;
             LoadQuestReceiverChoices(0);
             LoadPrerequisites();
+            if (IsSourceOwned(_currentGiver)) ConfigureNewSourceQuestEditing();
+            _overviewPanel.Visible = false;
+            UpdateOwnershipUi();
             _tabs.SelectedIndex = 1;
             RefreshPreview();
             SetStatus("Configure the new quest, then Save.");
@@ -650,22 +1011,20 @@ namespace WC3ItemManager
             {
                 if (IsSourceOwned(_currentGiver))
                 {
-                    MessageBox.Show(
-                        "Synchronized JASS records are read-only in WC3 Manager. Edit the source library and sync again.",
-                        "Read-only source library", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    SaveSourceChanges();
                     return;
                 }
-                if (_tabs.SelectedTab?.Text == "Dialog & events")
+                if (_tabs.SelectedTab?.Text == "Dialog / events")
                 {
                     SaveSequence();
                     return;
                 }
-                if (_tabs.SelectedTab?.Text == "Relationships & WE dependencies")
+                if (_tabs.SelectedTab?.Text == "Relationships")
                 {
                     SaveDependencies();
                     return;
                 }
-                if (_tabs.SelectedTab?.Text == "Voiceline catalog")
+                if (_tabs.SelectedTab?.Text == "Voicelines")
                 {
                     SaveVoicelines();
                     return;
@@ -718,7 +1077,7 @@ namespace WC3ItemManager
                         "Read-only source library", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     return;
                 }
-                if (_tabs.SelectedTab?.Text == "Dialog & events" && _currentSequence != null)
+                if (_tabs.SelectedTab?.Text == "Dialog / events" && _currentSequence != null)
                 {
                     DeleteSequence();
                     return;
@@ -763,7 +1122,8 @@ namespace WC3ItemManager
             };
             _objectives.Add(objective);
             SelectGridItem(_objectivesGrid, _objectives.Count - 1);
-            _objectiveProperties.SelectedObject = objective;
+            if (IsSourceOwned(_currentGiver)) ShowSourceObjectiveProperties(objective);
+            else _objectiveProperties.SelectedObject = objective;
             RefreshPreview();
         }
 
@@ -773,7 +1133,9 @@ namespace WC3ItemManager
             if (index < 0 || index >= _objectives.Count) return;
             _objectives.RemoveAt(index);
             RenumberObjectives();
-            _objectiveProperties.SelectedObject = _objectives.ElementAtOrDefault(Math.Min(index, _objectives.Count - 1));
+            var selected = _objectives.ElementAtOrDefault(Math.Min(index, _objectives.Count - 1));
+            if (IsSourceOwned(_currentGiver)) ShowSourceObjectiveProperties(selected);
+            else _objectiveProperties.SelectedObject = selected;
             RefreshPreview();
         }
 
@@ -812,7 +1174,9 @@ namespace WC3ItemManager
             _objectivesGrid.SelectionChanged += (s, e) =>
             {
                 int index = CurrentGridIndex(_objectivesGrid);
-                _objectiveProperties.SelectedObject = index >= 0 && index < _objectives.Count ? _objectives[index] : null;
+                var objective = index >= 0 && index < _objectives.Count ? _objectives[index] : null;
+                if (IsSourceOwned(_currentGiver)) ShowSourceObjectiveProperties(objective);
+                else _objectiveProperties.SelectedObject = objective;
             };
             _objectivesGrid.CellValueChanged += (s, e) => RefreshPreview();
         }
@@ -1258,6 +1622,353 @@ namespace WC3ItemManager
             }
         }
 
+        private void ClearSourceEditing()
+        {
+            _sourceEditSession = null;
+            _sourceGiverBaseline = null;
+            _sourceQuestBaseline = null;
+            _sourceRewardBaseline = null;
+            _sourceObjectiveBaselines.Clear();
+        }
+
+        private void ConfigureSourceEditing()
+        {
+            ClearSourceEditing();
+            if (!IsSourceOwned(_currentGiver)) return;
+            _sourceGiverBaseline = CloneModel(_currentGiver);
+            _sourceQuestBaseline = CloneModel(_currentQuest);
+            _sourceRewardBaseline = CloneModel(_currentReward);
+            _sourceObjectiveBaselines = _objectives.Select(CloneModel).ToList();
+            try
+            {
+                _sourceEditSession = _sourceEditor.Analyze(_currentGiver, _currentQuest, _sourceObjectiveBaselines);
+                _giverProperties.SelectedObject = new SelectivePropertyModel(
+                    _currentGiver, _sourceEditSession.GiverFields, _sourceEditSession.DefaultReadOnlyReason);
+                if (_currentQuest != null)
+                {
+                    _questProperties.SelectedObject = new SelectivePropertyModel(
+                        _currentQuest, _sourceEditSession.QuestFields, _sourceEditSession.DefaultReadOnlyReason);
+                    _rewardProperties.SelectedObject = new SelectivePropertyModel(
+                        _currentReward, _sourceEditSession.RewardFields, _sourceEditSession.DefaultReadOnlyReason);
+                    ShowSourceObjectiveProperties(_objectives.FirstOrDefault());
+                }
+            }
+            catch (Exception ex)
+            {
+                const string reason =
+                    "WC3 Manager could not analyze this source safely. All fields remain source-only until the file can be parsed.";
+                _giverProperties.SelectedObject = new SelectivePropertyModel(
+                    _currentGiver, new Dictionary<string, SourceFieldAccess>(), reason + " " + ex.Message);
+                if (_currentQuest != null)
+                {
+                    _questProperties.SelectedObject = new SelectivePropertyModel(
+                        _currentQuest, new Dictionary<string, SourceFieldAccess>(), reason + " " + ex.Message);
+                    _rewardProperties.SelectedObject = new SelectivePropertyModel(
+                        _currentReward, new Dictionary<string, SourceFieldAccess>(), reason + " " + ex.Message);
+                }
+                SetStatus("Source editing unavailable: " + ex.Message);
+            }
+        }
+
+        private void ConfigureNewSourceQuestEditing()
+        {
+            _sourceQuestBaseline = null;
+            _sourceRewardBaseline = null;
+            _sourceObjectiveBaselines.Clear();
+            var questFields = CreateSourceFieldAccess<QuestDefinition>(new[]
+            {
+                nameof(QuestDefinition.QuestKey), nameof(QuestDefinition.QuestName), nameof(QuestDefinition.Title),
+                nameof(QuestDefinition.QuestType), nameof(QuestDefinition.Category), nameof(QuestDefinition.QuestLevel),
+                nameof(QuestDefinition.RequiredLevel), nameof(QuestDefinition.RequiredReputation),
+                nameof(QuestDefinition.IconPath), nameof(QuestDefinition.Description), nameof(QuestDefinition.InfoText),
+                nameof(QuestDefinition.Info2Text), nameof(QuestDefinition.ReceiverDisplayName),
+                nameof(QuestDefinition.Faction), nameof(QuestDefinition.AllowNazgrek), nameof(QuestDefinition.AllowZulkis)
+            });
+            var rewardFields = CreateSourceFieldAccess<QuestRewardDefinition>(new[]
+            {
+                nameof(QuestRewardDefinition.XpActive), nameof(QuestRewardDefinition.XpAdjust),
+                nameof(QuestRewardDefinition.GoldActive), nameof(QuestRewardDefinition.GoldAdjust),
+                nameof(QuestRewardDefinition.ArenaActive), nameof(QuestRewardDefinition.ArenaAdjust),
+                nameof(QuestRewardDefinition.ReputationActive), nameof(QuestRewardDefinition.ReputationAdjust),
+                nameof(QuestRewardDefinition.ReputationLinked)
+            });
+            _questProperties.SelectedObject = new SelectivePropertyModel(
+                _currentQuest, questFields, _sourceEditSession.DefaultReadOnlyReason);
+            _rewardProperties.SelectedObject = new SelectivePropertyModel(
+                _currentReward, rewardFields, _sourceEditSession.DefaultReadOnlyReason);
+            ShowSourceObjectiveProperties(_objectives.FirstOrDefault());
+        }
+
+        private void ShowSourceObjectiveProperties(QuestObjectiveDefinition objective)
+        {
+            if (objective == null)
+            {
+                _objectiveProperties.SelectedObject = null;
+                return;
+            }
+            IReadOnlyDictionary<string, SourceFieldAccess> access = null;
+            if (_currentQuest?.Id > 0 && _sourceEditSession != null)
+            {
+                _sourceEditSession.ObjectiveFields.TryGetValue(objective.Id, out access);
+            }
+            else if (_currentQuest?.Id == 0)
+            {
+                access = CreateSourceFieldAccess<QuestObjectiveDefinition>(new[]
+                {
+                    nameof(QuestObjectiveDefinition.Text)
+                });
+            }
+            _objectiveProperties.SelectedObject = new SelectivePropertyModel(
+                objective, access ?? new Dictionary<string, SourceFieldAccess>(),
+                _sourceEditSession?.DefaultReadOnlyReason ?? "Edit this value in the repository .j file.");
+        }
+
+        private static Dictionary<string, SourceFieldAccess> CreateSourceFieldAccess<T>(IEnumerable<string> editable)
+        {
+            var allowed = new HashSet<string>(editable, StringComparer.Ordinal);
+            return typeof(T).GetProperties().ToDictionary(property => property.Name, property => new SourceFieldAccess
+            {
+                PropertyName = property.Name,
+                Editable = allowed.Contains(property.Name),
+                Reason = allowed.Contains(property.Name)
+                    ? "This value will be generated inside the explicit WC3 Manager-owned region."
+                    : "This value is not part of the safe standard quest region and must be implemented in the repository .j file."
+            }, StringComparer.Ordinal);
+        }
+
+        private void SaveSourceChanges()
+        {
+            _objectivesGrid.EndEdit();
+            RenumberObjectives();
+            SourcePatchPreview preview;
+            if (_currentQuest == null)
+            {
+                preview = _sourceEditor.PrepareGiverPatch(_currentGiver, _sourceGiverBaseline, _currentGiver);
+            }
+            else if (_currentQuest.Id == 0)
+            {
+                preview = _sourceEditor.PrepareNewQuestPatch(
+                    _currentGiver, _currentQuest, _currentReward, _objectives.ToList());
+            }
+            else
+            {
+                preview = _sourceEditor.PrepareQuestPatch(
+                    _currentGiver, _sourceQuestBaseline, _currentQuest,
+                    _sourceRewardBaseline, _currentReward,
+                    _sourceObjectiveBaselines, _objectives.ToList());
+            }
+
+            using var dialog = new SourcePatchPreviewForm(preview);
+            if (dialog.ShowDialog(this) != DialogResult.OK) return;
+            string backupPath = _sourceEditor.Apply(preview);
+            string questsRoot = QuestSourceSynchronizer.FindQuestsAndDialogsRoot();
+            QuestSourceSyncResult sync = new QuestSourceSynchronizer(_connectionString).Synchronize(questsRoot);
+            if (sync.Errors.Count > 0)
+            {
+                MessageBox.Show(
+                    "The source patch was written, but synchronization failed:\n\n" +
+                    string.Join("\n", sync.Errors) + "\n\nBackup: " + backupPath,
+                    "Source patched; sync failed", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            int giverId = _currentGiver.Id;
+            int? questId = _currentQuest?.Id > 0 ? _currentQuest.Id : null;
+            RefreshData(giverId, questId);
+            SetStatus($"Source patch applied and synchronized. Backup: {backupPath}");
+        }
+
+        private static T CloneModel<T>(T source) where T : class, new()
+        {
+            if (source == null) return null;
+            var clone = new T();
+            foreach (var property in typeof(T).GetProperties()
+                         .Where(property => property.CanRead && property.CanWrite && property.GetIndexParameters().Length == 0))
+            {
+                property.SetValue(clone, property.GetValue(source));
+            }
+            return clone;
+        }
+
+        private void OpenCurrentSource()
+        {
+            if (!IsSourceOwned(_currentGiver)) return;
+            string questsRoot = QuestSourceSynchronizer.FindQuestsAndDialogsRoot();
+            if (string.IsNullOrWhiteSpace(questsRoot))
+            {
+                MessageBox.Show("WC3 Manager could not locate the repository's QuestsAndDialogs folder.",
+                    "Source file not found", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            string repositoryRoot = Directory.GetParent(questsRoot)?.FullName ?? questsRoot;
+            string safeRoot = Path.GetFullPath(repositoryRoot).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            string sourcePath = Path.GetFullPath(Path.Combine(repositoryRoot,
+                (_currentGiver.SourceFile ?? "").Replace('/', Path.DirectorySeparatorChar)));
+            if (!sourcePath.StartsWith(safeRoot, StringComparison.OrdinalIgnoreCase) || !File.Exists(sourcePath))
+            {
+                MessageBox.Show($"The synchronized source path could not be opened:\n\n{_currentGiver.SourceFile}",
+                    "Source file not found", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            var answer = MessageBox.Show(
+                "This JASS file is the authoritative source. WC3 Manager only patches uniquely mapped literals after a reviewed diff; all custom logic remains source-owned.\n\n" +
+                "Keep quest/library symbols stable where possible, save the file, then run Sync JASS sources. " +
+                "Renaming or deleting symbols may leave an older database projection for manual review.\n\n" +
+                "Open the source file now?",
+                "Open synchronized source", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+            if (answer != DialogResult.Yes) return;
+
+            try
+            {
+                Process.Start(new ProcessStartInfo { FileName = sourcePath, UseShellExecute = true });
+                SetStatus("Opened source: " + _currentGiver.SourceFile);
+            }
+            catch (Exception ex)
+            {
+                ShowError("Could not open the synchronized source", ex);
+            }
+        }
+
+        private void UpdateOwnershipUi()
+        {
+            bool hasGiver = _currentGiver != null;
+            bool sourceOwned = IsSourceOwned(_currentGiver);
+            bool hybrid = hasGiver && string.Equals(_currentGiver.OwnershipMode, "hybrid", StringComparison.OrdinalIgnoreCase);
+            bool external = hasGiver && string.Equals(_currentGiver.OwnershipMode, "external", StringComparison.OrdinalIgnoreCase);
+
+            bool sourceCanSave = sourceOwned && _sourceEditSession != null &&
+                                 (_currentQuest?.Id == 0 ||
+                                  (_currentQuest != null
+                                      ? _sourceEditSession.QuestFields.Values.Any(field => field.Editable) ||
+                                        _sourceEditSession.RewardFields.Values.Any(field => field.Editable) ||
+                                        _sourceEditSession.ObjectiveFields.Values.Any(fields => fields.Values.Any(field => field.Editable))
+                                      : _sourceEditSession.GiverFields.Values.Any(field => field.Editable)));
+            _newQuestButton.Enabled = hasGiver && _currentGiver.Id > 0;
+            _newQuestButton.ToolTipText = sourceOwned
+                ? (_sourceEditSession?.CanAddQuest == true
+                    ? "Add a standard quest inside the reviewed WC3 Manager-owned JASS regions"
+                    : _sourceEditSession?.AddQuestReason ?? "Source analysis is unavailable")
+                : "Create a quest under the selected database-authored giver";
+            _saveButton.Enabled = hasGiver && (!sourceOwned || sourceCanSave);
+            _deleteButton.Enabled = hasGiver && _currentGiver.Id > 0 && !sourceOwned;
+            _openSourceToolButton.Enabled = sourceOwned;
+            _openSourceButton.Visible = sourceOwned;
+            _sourceButtonColumn.Width = sourceOwned ? 165f : 0f;
+            SetSelectionEditorsReadOnly(!hasGiver);
+
+            if (!hasGiver)
+            {
+                SetOwnershipBanner(
+                    "Select a quest giver or quest",
+                    "Choose a repository folder, synchronized source, or database-authored record from the Quest Library.",
+                    Color.FromArgb(239, 243, 248), Color.FromArgb(104, 118, 138),
+                    "NO SELECTION", Color.DimGray, Color.Transparent);
+            }
+            else if (sourceOwned)
+            {
+                SetOwnershipBanner(
+                    "Guarded synchronized JASS source",
+                    $"{_currentGiver.SourceFile}  •  Only uniquely mapped literals are editable. Gray fields contain custom logic and remain repository-only.",
+                    Color.FromArgb(255, 246, 213), Color.FromArgb(218, 148, 28),
+                    "GUARDED SOURCE", Color.FromArgb(117, 72, 0), Color.FromArgb(255, 235, 166));
+            }
+            else if (hybrid)
+            {
+                SetOwnershipBanner(
+                    "Hybrid quest library",
+                    "Edit supported metadata here. Export a new scaffold and manually reconcile all hand-owned hooks.",
+                    Color.FromArgb(232, 242, 252), Color.FromArgb(55, 121, 178),
+                    "HYBRID", Color.FromArgb(31, 77, 117), Color.FromArgb(210, 231, 249));
+            }
+            else if (external)
+            {
+                SetOwnershipBanner(
+                    "External preview record",
+                    "This record is not synchronized and is excluded from qXXX exports. Confirm its source ownership before editing.",
+                    Color.FromArgb(255, 240, 226), Color.FromArgb(196, 103, 42),
+                    "EXTERNAL", Color.FromArgb(125, 58, 17), Color.FromArgb(250, 220, 197));
+            }
+            else
+            {
+                SetOwnershipBanner(
+                    "Database-managed quest library",
+                    "Edit and validate this record in WC3 Manager, then use Export changed libraries when ready.",
+                    Color.FromArgb(232, 246, 235), Color.FromArgb(67, 137, 79),
+                    "MANAGED", Color.FromArgb(39, 92, 48), Color.FromArgb(210, 237, 215));
+            }
+        }
+
+        private void SetOwnershipBanner(string title, string details, Color background, Color accent,
+            string badge, Color badgeForeground, Color badgeBackground)
+        {
+            _ownershipTitle.Text = title;
+            _ownershipDetails.Text = details;
+            _ownershipBanner.BackColor = background;
+            _ownershipAccent.BackColor = accent;
+            _modeBadge.Text = badge;
+            _modeBadge.ForeColor = badgeForeground;
+            _modeBadge.BackColor = badgeBackground;
+        }
+
+        private void SetSelectionEditorsReadOnly(bool noSelection)
+        {
+            bool sourceOwned = IsSourceOwned(_currentGiver);
+            bool enabled = !noSelection;
+            bool newSourceQuest = sourceOwned && _currentQuest?.Id == 0;
+            _giverProperties.Enabled = enabled;
+            _questProperties.Enabled = enabled;
+            _rewardProperties.Enabled = enabled;
+            _objectiveProperties.Enabled = enabled;
+            _sequenceProperties.Enabled = enabled && !sourceOwned;
+            _stepProperties.Enabled = enabled && !sourceOwned;
+            _questReceiver.Enabled = enabled && !sourceOwned;
+            _sequenceQuest.Enabled = enabled && !sourceOwned;
+            _prerequisites.Enabled = enabled && !sourceOwned;
+            _objectivesGrid.ReadOnly = noSelection || sourceOwned;
+            _stepsGrid.ReadOnly = noSelection || sourceOwned;
+            _dependenciesGrid.ReadOnly = noSelection || sourceOwned;
+            SetAuthoringActionsEnabled(_tabs.TabPages[1], enabled && (!sourceOwned || newSourceQuest));
+            SetAuthoringActionsEnabled(_tabs.TabPages[2], enabled && !sourceOwned);
+            SetAuthoringActionsEnabled(_tabs.TabPages[4], enabled && !sourceOwned);
+            if (sourceOwned)
+            {
+                _questReceiver.Enabled = false;
+                _prerequisites.Enabled = false;
+                _objectivesGrid.ReadOnly = true;
+            }
+        }
+
+        private static void SetAuthoringActionsEnabled(Control parent, bool enabled)
+        {
+            foreach (Control child in parent.Controls)
+            {
+                if (child is ToolStrip || child is Button || child is ComboBox || child is CheckedListBox)
+                {
+                    child.Enabled = enabled;
+                }
+                SetAuthoringActionsEnabled(child, enabled);
+            }
+        }
+
+        private void ShowOverview(string title)
+        {
+            ClearSourceEditing();
+            _currentGiver = null;
+            _currentQuest = null;
+            _currentSequence = null;
+            _giverProperties.SelectedObject = null;
+            _questProperties.SelectedObject = null;
+            _rewardProperties.SelectedObject = null;
+            _preview.ClearQuest();
+            _overviewTitle.Text = string.IsNullOrWhiteSpace(title) ? "Quest Designer" : title;
+            _overviewStats.Text = $"{_givers.Count} quest givers  •  {_quests.Count} quests  •  " +
+                                  $"{_givers.Count(IsSourceOwned)} synchronized sources";
+            _overviewPanel.Visible = true;
+            _overviewPanel.BringToFront();
+            UpdateOwnershipUi();
+        }
+
         private static bool IsSourceOwned(QuestGiverDefinition giver)
         {
             return giver != null
@@ -1280,13 +1991,7 @@ namespace WC3ItemManager
 
         private void ClearSelection()
         {
-            _currentGiver = null;
-            _currentQuest = null;
-            _currentSequence = null;
-            _giverProperties.SelectedObject = null;
-            _questProperties.SelectedObject = null;
-            _rewardProperties.SelectedObject = null;
-            _preview.ClearQuest();
+            ShowOverview("Quest Library");
         }
 
         private void RenumberObjectives()
@@ -1341,21 +2046,40 @@ namespace WC3ItemManager
 
         private static DataGridView CreateGrid()
         {
-            return new DataGridView
+            var grid = new DataGridView
             {
                 AllowUserToAddRows = false,
                 AllowUserToDeleteRows = false,
                 MultiSelect = false,
                 SelectionMode = DataGridViewSelectionMode.FullRowSelect,
                 RowHeadersVisible = false,
-                BackgroundColor = SystemColors.Window,
-                BorderStyle = BorderStyle.Fixed3D
+                BackgroundColor = Color.White,
+                BorderStyle = BorderStyle.FixedSingle,
+                GridColor = Color.FromArgb(224, 228, 234),
+                EnableHeadersVisualStyles = false,
+                RowTemplate = { Height = 25 },
+                AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.None
             };
+            grid.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(238, 242, 247);
+            grid.ColumnHeadersDefaultCellStyle.ForeColor = Color.FromArgb(40, 53, 69);
+            grid.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI Semibold", 9f);
+            grid.ColumnHeadersDefaultCellStyle.SelectionBackColor = Color.FromArgb(238, 242, 247);
+            grid.DefaultCellStyle.SelectionBackColor = Color.FromArgb(215, 232, 247);
+            grid.DefaultCellStyle.SelectionForeColor = Color.FromArgb(25, 43, 61);
+            grid.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(249, 250, 252);
+            return grid;
         }
 
-        private static ToolStripButton CreateToolButton(string text, EventHandler handler)
+        private static ToolStripButton CreateToolButton(string text, EventHandler handler, string toolTip = "")
         {
-            var button = new ToolStripButton(text);
+            var button = new ToolStripButton(text)
+            {
+                DisplayStyle = ToolStripItemDisplayStyle.Text,
+                AutoToolTip = !string.IsNullOrWhiteSpace(toolTip),
+                ToolTipText = toolTip,
+                Margin = new Padding(2, 0, 2, 0),
+                Padding = new Padding(4, 2, 4, 2)
+            };
             button.Click += handler;
             return button;
         }

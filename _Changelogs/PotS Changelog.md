@@ -15,6 +15,13 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [29.8.2026]
+
+### Tool Updates
+
+- Updated `WC3_Database/WC3ItemManager/` with guarded round-trip editing for synchronized qXXX sources: only uniquely mapped literals are editable, custom/shared/computed fields remain gray with source-only guidance, every write requires a patch preview and three-way field conflict check, and confirmed patches are backed up, structurally validated, atomically written, and synchronized.
+- Added explicit WC3 Manager-owned quest-region support for safely inserting standard external quests without replacing hand-authored library code, plus a read-only source-edit audit command covering all synchronized quest records.
+
 ## [28.8.2026]
 
 ### Player-Facing Updates
@@ -39,6 +46,7 @@
 - Added change-aware validated qXXX scaffold exports with per-giver SHA-256 fingerprints, JSON snapshots, validation reports, World Editor manifests, cross-giver bindings, required-reputation support, and explicit safeguards for behavior that remains hand-owned.
 - Added `WC3_Database/WC3ItemManager/Importers/QuestSourceSynchronizer.cs` and `WC3_Database/migrations/008_add_quest_source_sync.sql` so WC3 Manager can non-destructively synchronize active `QuestGivers` and `GenericQuests` JASS into read-only external previews, including standard quests, vendor fetch/kill/supply quests, turn-in/prerequisite links, qXXX library relationships, and separate source fingerprints.
 - Updated `WC3_Database/WC3ItemManager/QuestDesignerForm.cs` with a repository-style `QuestGivers`/`GenericQuests` navigation hierarchy, preserved source folders, collapsed quest branches, and a separate database-authored section.
+- Updated `WC3_Database/WC3ItemManager/QuestDesignerForm.cs` and `Models/QuestDesignerModels.cs` with a friendlier searchable workspace, categorized editor fields, folder overview cards, clearer ownership badges, and prominent read-only safeguards for synchronized JASS libraries.
 
 ### Imports
 

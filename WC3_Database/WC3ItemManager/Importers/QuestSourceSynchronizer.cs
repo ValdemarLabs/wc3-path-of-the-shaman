@@ -183,9 +183,7 @@ namespace WC3ItemManager.Importers
                 SourceKind = sourceKind,
                 LibraryName = libraryName,
                 GiverKey = libraryName,
-                DisplayName = sourceKind == "generic_quest"
-                    ? "Generic: " + HumanizeLibraryName(libraryName)
-                    : HumanizeLibraryName(libraryName),
+                DisplayName = HumanizeLibraryName(libraryName),
                 Fingerprint = ComputeSha256(sourceText)
             };
             Match requiresMatch = Regex.Match(code,
@@ -206,6 +204,7 @@ namespace WC3ItemManager.Importers
                 "QuestGiver_SetQuestRewards",
                 "QuestGiver_SetRequirements",
                 "QuestGiver_AddQuestPrerequisite",
+                "QuestGiver_SetQuestRequiredReputation",
                 "QuestGiver_SetRequiredReputation",
                 "QuestsVendor_RegisterFetchQuest",
                 "QuestsVendor_RegisterKillQuest",
@@ -412,7 +411,8 @@ namespace WC3ItemManager.Importers
             {
                 quest.PrerequisiteSymbols.Add(NormalizeSymbol(call.Arguments[1], ""));
             }
-            else if (call.Name == "QuestGiver_SetRequiredReputation" && call.Arguments.Count >= 2)
+            else if ((call.Name == "QuestGiver_SetQuestRequiredReputation" ||
+                      call.Name == "QuestGiver_SetRequiredReputation") && call.Arguments.Count >= 2)
             {
                 quest.RequiredReputation = ParseInt(call.Arguments[1], 0);
             }
