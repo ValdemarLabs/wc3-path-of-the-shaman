@@ -2,7 +2,7 @@
     qZulkis
 
     Author: Valdemar
-    Version: 1.1.2
+    Version: 1.1.3
 
     Description:
 
@@ -33,7 +33,7 @@
     qZulkis_IsPrologueCompleted() gates Call of the Horde convergence.
 
 **/
-library qZulkis initializer Init requires QuestGiver, QuestMaster, DialogInteraction, DialogSystem, CameraControl, DInventory, DEquipment, VoicelinesZulkis, VoicelinesThork, VoicelinesZulkarak, VoicelinesGenericTroll, optional Pet
+library qZulkis initializer Init requires QuestGiver, QuestMaster, DialogInteraction, DialogSystem, CameraControl, DInventory, DEquipment, VoicelinesNarrator, VoicelinesZulkis, VoicelinesThork, VoicelinesZulkarak, VoicelinesGenericTroll, optional Pet
     globals
         // Quest and staging configuration
         public constant string QUEST_MEET_CHIEFTAIN_THORK = "Meet with Chieftain Thork"
@@ -282,6 +282,8 @@ endfunction
 private function PlayShoreIntroSequence takes nothing returns nothing
     local integer seq = DialogInteraction_CreateBaseSequence(Zulkarak, "Zul'karak")
 
+    call DialogSystem_AddLine(seq, null, "Narrator", VL_NARRATOR_0006_TEXT, VL_NARRATOR_0006_KEY, false)
+    call DialogSystem_AddLine(seq, null, "Narrator", VL_NARRATOR_0007_TEXT, VL_NARRATOR_0007_KEY, false)
     call DialogSystem_AddMakeFaceEachOther(seq, Zulkarak, Zulkis, 0.75, 0.00)
     call DialogSystem_AddLine(seq, Zulkarak, "Zul'karak", VL_ZULKARAK_0001_TEXT, VL_ZULKARAK_0001_KEY, true)
     call DialogSystem_AddLine(seq, Zulkis, "Zul'kis", VL_ZULKIS_0005_TEXT, VL_ZULKIS_0005_KEY, true)
