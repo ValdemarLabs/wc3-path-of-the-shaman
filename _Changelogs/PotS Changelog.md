@@ -19,18 +19,28 @@
 
 ### Player-Facing Updates
 
+- Corrected Hint alerts so new hints flash around the complete Game button edge and the unread marker is centered at the Hints icon's size.
 - Fixed Ragno's follow-up quests remaining unavailable when delayed quest initialization missed the player's entry into the Protect the Outpost regions.
 - Fixed pressing ESC during Ragno's dialogue entry transition leaving the interaction without dialogue or choices.
-- Fixed Zul'kis's opening camera sliding in from Nazgrek's view instead of starting at the first river-arrival camera.
-- Darkspear bodies at the broken landing now remain as fleshy corpses throughout Zul'kis's prologue and begin decaying normally after it ends; the wounded witch doctor's interrupted final line now ends with a death vocal.
+- Restored the missing grunt attack warning in the Protect the Outpost intro before the outnumbered response.
+- Protect the Outpost now restores the player's tracked gameplay camera unit after the intro finishes or is skipped.
+- Fixed Zul'kis's river and landing cameras inheriting the current gameplay view: the gameplay camera controller is suspended, cameras 1 and 3 apply instantly, and only the intended camera 1-to-2 and camera 3-to-4 movements pan.
+- Darkspear bodies at the broken landing now remain as fleshy corpses throughout Zul'kis's prologue and begin decaying normally after it ends; the wounded witch doctor now dies as the same unit, stops bleeding, and is not replaced or restaged afterward.
+- The DEquipment Inspect button now stays hidden during fullscreen cinematics.
+- Chieftain Thork's Zul'kis meeting now consumes the selection event so his generic Nazgrek greeting cannot overlap the prologue dialogue.
+- Zul'karak now describes his captors as forest trolls questioning what he witnessed at the shore, without naming Bramblehide or claiming to know who carried out the false-flag attack.
 - Fixed placed Traveler's Journals failing to provide a replacement item or offer a reliable way to bind a new home.
 - Selecting a placed Traveler's Journal now opens the Journal dashboard in a distinct binding mode, with context-sensitive Take Journal, Set Home, and Cancel actions.
 
 ### Technical Updates
 
-- Updated `QuestsAndDialogs/QuestGivers/Orcs/qRagno.j` with occupied-region recovery for Protect the Outpost and an explicit ESC-safe dialogue-entry continuation.
-- Updated `QuestsAndDialogs/QuestGivers/Player/qZulkis.j` with a deferred opening-camera pan, legacy GUI-equivalent permanent corpse staging, post-prologue decay release, and timed witch-doctor death audio.
-- Updated `_developer/Design Plans/Story and Quest Design.md` with the corrected Zul'kis camera, corpse lifecycle, and wounded-survivor sequence.
+- Updated `UI/MasterUI.j` with a race-matched, full-button highlight texture for Game hint notifications and an explicitly sized and offset Hints icon sprite.
+- Updated `QuestsAndDialogs/QuestGivers/Orcs/qRagno.j` with occupied-region recovery, legacy intro dialogue, explicit CameraControl suspension/restoration, the standard shared dialogue ESC path, and pending-dialog cleanup when the encounter interrupts an interaction.
+- Updated `QuestsAndDialogs/DialogInteraction.j` with complete configured-transition abort cleanup for cinematic triggers, fullscreen UI, game buttons, and player control.
+- Updated `QuestsAndDialogs/QuestGivers/Player/qZulkis.j` with explicit CameraControl suspension/resume, instant camera setup application before both intended pans, legacy GUI-equivalent permanent corpse staging, and same-unit witch-doctor death handling.
+- Updated `QuestsAndDialogs/QuestGivers/Orcs/qChieftainThork.j` to consume the prologue selection before generic selection handlers run, and updated `Voicelines/Voicelines_Zulkarak.j` with captivity dialogue that preserves Zul'karak's uncertainty.
+- Updated `UI/MasterUI.j` and `DestroyerInventoryAndEquipmentSystem/PoTs/DEquipment.j` with cinematic inspect-button suppression and restoration.
+- Updated `_developer/Design Plans/Story and Quest Design.md` with the corrected Zul'kis camera and corpse lifecycle plus the resolved premise that Thork paid forest trolls to leave no Darkspear survivors and frame humans for the attack.
 - Updated `PlayerHome/PlayerHome.j`, `UI/PlayerHomeUI.j`, and `UI/HintsUI.j` with direct world-Journal binding mode, current-home replacement Journals, delayed initial delivery, DInventory fallback when vanilla inventory is full, and matching recovery guidance.
 
 ### Tool Updates
