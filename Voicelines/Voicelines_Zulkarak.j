@@ -25,11 +25,11 @@ library VoicelinesZulkarak initializer Init requires Voicelines
         constant string VL_ZULKARAK_FOLDER = "Zulkarak"
 
         constant string VL_ZULKARAK_0001_KEY = "Zulkarak_0001"
-        constant string VL_ZULKARAK_0001_TEXT = "I don't like dis, brother. Humans be crawlin' through these woods more every day."
+        constant string VL_ZULKARAK_0001_TEXT = "I don't like dis, brother. Da wise one sensed a dark threat comin’ for us..."
         constant string VL_ZULKARAK_0002_KEY = "Zulkarak_0002"
         constant string VL_ZULKARAK_0002_TEXT = "Stay on ya guard. I be protectin' da ship and our people till ya return."
         constant string VL_ZULKARAK_0003_KEY = "Zulkarak_0003"
-        constant string VL_ZULKARAK_0003_TEXT = "Took ya long enough, little brother. These forest trolls kept askin' what I saw at da shore. I told dem I saw nothin'."
+        constant string VL_ZULKARAK_0003_TEXT = "Took ya long enough, little brother. All dis time, I been wonderin’ what dis tribe had against us. But now I got me answer. Guess we were just rivals in their eyes... and truth be told, we did step into their territory."
         constant string VL_ZULKARAK_0004_KEY = "Zulkarak_0004"
         constant string VL_ZULKARAK_0004_TEXT = "Good. I had enough of their hospitality."
     endglobals
