@@ -2,7 +2,7 @@
     qZulkis
 
     Author: Valdemar
-    Version: 1.1.4
+    Version: 1.1.5
 
     Description:
 
@@ -56,8 +56,10 @@ library qZulkis initializer Init requires QuestGiver, QuestMaster, DialogInterac
         private constant real PROGRESS_PERIOD = 0.25
         private constant real SHIP_ARRIVAL_RANGE = 160.00
         private constant real SHIP_ARRIVAL_TIMEOUT = 14.00
-        private constant real SHIP_CAMERA_START_DELAY = 0.10
-        private constant real SHIP_CAMERA_PAN_DURATION = 10.00
+        private constant real SHIP_CAMERA_SECOND_SHOT_DELAY = 5.00
+        private constant real SHIP_CAMERA_FIRST_PAN_DURATION = 20.00
+        private constant real SHIP_CAMERA_SECOND_PAN_DURATION = 15.00
+        private constant real SHORE_CAMERA_PAN_DURATION = 20.00
         private constant real SHORE_RETURN_RANGE = 450.00
         private constant real THORK_INTERACTION_RANGE = 600.00
         private constant real ZULKARAK_RESCUE_RANGE = 350.00
@@ -143,8 +145,7 @@ private function SyncUnitReferences takes nothing returns nothing
 endfunction
 
 private function ApplyCameraSetupInstant takes camerasetup whichSetup returns nothing
-    call SetCameraPositionForPlayer(Player(0), CameraSetupGetDestPositionX(whichSetup), CameraSetupGetDestPositionY(whichSetup))
-    call CameraSetupApplyForPlayer(false, whichSetup, Player(0), 0.00)
+    call CameraSetupApplyForPlayer(true, whichSetup, Player(0), 0.00)
 endfunction
 
 private function ResumeGameplayCamera takes unit target returns nothing
@@ -291,6 +292,14 @@ private function StartMeetThorkQuest takes nothing returns nothing
     call DebugMsg("Started Meet with Chieftain Thork.")
 endfunction
 
+private function PlayOpeningNarratorSequence takes nothing returns nothing
+    local integer seq = DialogInteraction_CreateBaseSequence(Zulkarak, "Narrator")
+
+    call DialogSystem_AddLine(seq, null, "Narrator", VL_NARRATOR_0006_TEXT, VL_NARRATOR_0006_KEY, false)
+    call DialogSystem_AddLine(seq, null, "Narrator", VL_NARRATOR_0007_TEXT, VL_NARRATOR_0007_KEY, false)
+    call DialogSystem_PlaySequence(seq, Player(0), Zulkarak)
+endfunction
+
 private function OnShoreIntroSequenceEnd takes nothing returns nothing
     call DialogInteraction_EndCinematicSequence(true)
     call PauseUnit(Zulkis, false)
@@ -303,20 +312,12 @@ endfunction
 private function PlayShoreIntroSequence takes nothing returns nothing
     local integer seq = DialogInteraction_CreateBaseSequence(Zulkarak, "Zul'karak")
 
-    call DialogSystem_AddLine(seq, null, "Narrator", VL_NARRATOR_0006_TEXT, VL_NARRATOR_0006_KEY, false)
-    call DialogSystem_AddLine(seq, null, "Narrator", VL_NARRATOR_0007_TEXT, VL_NARRATOR_0007_KEY, false)
     call DialogSystem_AddMakeFaceEachOther(seq, Zulkarak, Zulkis, 0.75, 0.00)
     call DialogSystem_AddLine(seq, Zulkarak, "Zul'karak", VL_ZULKARAK_0001_TEXT, VL_ZULKARAK_0001_KEY, true)
     call DialogSystem_AddLine(seq, Zulkis, "Zul'kis", VL_ZULKIS_0005_TEXT, VL_ZULKIS_0005_KEY, true)
     call DialogSystem_AddLine(seq, Zulkarak, "Zul'karak", VL_ZULKARAK_0002_TEXT, VL_ZULKARAK_0002_KEY, true)
     call DialogSystem_SetSequenceCallbacks(seq, null, function OnShoreIntroSequenceEnd)
     call DialogSystem_PlaySequence(seq, Player(0), Zulkarak)
-endfunction
-
-private function StartShoreCameraPan takes nothing returns nothing
-    if PrologueState == STATE_SHORE_INTRO then
-        call CameraSetupApplyForPlayer(true, gg_cam_IntroZulkisCam4, Player(0), 8.00)
-    endif
 endfunction
 
 private function StageShoreIntro takes nothing returns nothing
@@ -329,8 +330,8 @@ private function StageShoreIntro takes nothing returns nothing
     call ShowUnit(Zulkarak, true)
     call PauseUnit(Zulkarak, true)
     call ApplyCameraSetupInstant(gg_cam_IntroZulkisCam3)
+    call CameraSetupApplyForPlayer(true, gg_cam_IntroZulkisCam4, Player(0), SHORE_CAMERA_PAN_DURATION)
     call CinematicFadeBJ(bj_CINEFADETYPE_FADEIN, FADE_DURATION, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
-    call TimerStart(TransitionTimer, SHIP_CAMERA_START_DELAY, false, function StartShoreCameraPan)
     call PlayShoreIntroSequence()
 endfunction
 
@@ -616,9 +617,10 @@ private function OnProgress takes nothing returns nothing
     endif
 endfunction
 
-private function StartShipCameraPan takes nothing returns nothing
+private function StartShipSecondCameraShot takes nothing returns nothing
     if PrologueState == STATE_SHIP_ARRIVAL then
-        call CameraSetupApplyForPlayer(true, gg_cam_IntroZulkisCam2, Player(0), SHIP_CAMERA_PAN_DURATION)
+        call ApplyCameraSetupInstant(gg_cam_IntroZulkisCam5)
+        call CameraSetupApplyForPlayer(true, gg_cam_IntroZulkisCam6, Player(0), SHIP_CAMERA_SECOND_PAN_DURATION)
     endif
 endfunction
 
@@ -626,12 +628,13 @@ private function StartShipArrival takes nothing returns nothing
     if PrologueState != STATE_SHIP_ARRIVAL then
         return
     endif
-    call ApplyCameraSetupInstant(gg_cam_IntroZulkisCam1)
+    call ApplyCameraSetupInstant(gg_cam_IntroZulkisCam2)
+    call CameraSetupApplyForPlayer(true, gg_cam_IntroZulkisCam1, Player(0), SHIP_CAMERA_FIRST_PAN_DURATION)
     call RemoveIntroShip()
     set IntroShip = CreateUnit(Player(DARKSPEAR_PLAYER_ID), UNIT_INTRO_SHIP, GetRectCenterX(gg_rct_ZulkisShipWP1), GetRectCenterY(gg_rct_ZulkisShipWP1), bj_UNIT_FACING)
     call IssuePointOrder(IntroShip, "move", GetRectCenterX(gg_rct_ZulkisShipWP2), GetRectCenterY(gg_rct_ZulkisShipWP2))
     call CinematicFadeBJ(bj_CINEFADETYPE_FADEIN, FADE_DURATION, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
-    call TimerStart(TransitionTimer, SHIP_CAMERA_START_DELAY, false, function StartShipCameraPan)
+    call TimerStart(TransitionTimer, SHIP_CAMERA_SECOND_SHOT_DELAY, false, function StartShipSecondCameraShot)
     call TimerStart(ProgressTimer, PROGRESS_PERIOD, true, function OnProgress)
 endfunction
 
@@ -675,6 +678,7 @@ private function StartPrologueInternal takes nothing returns nothing
     set ShipTravelElapsed = 0.00
     call CameraControl_Suspend(Player(0))
     call DialogInteraction_BeginCinematicSequence(true)
+    call PlayOpeningNarratorSequence()
     call DialogSystem_SetEscapeAction(function SkipShipArrival)
     call CinematicFadeBJ(bj_CINEFADETYPE_FADEOUT, FADE_DURATION, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
     call TimerStart(TransitionTimer, FADE_DURATION, false, function StartShipArrival)
@@ -706,6 +710,7 @@ private function CreateQuests takes nothing returns nothing
     else
         set MeetThorkQuest = QuestGiver_GetByNameAndGiver(QUEST_MEET_CHIEFTAIN_THORK, Zulkis)
     endif
+    call QuestGiver_SetObjectiveTarget(MeetThorkQuest.id, 1, Thork)
     call QuestGiver_SetQuestUnitSpecificHero(MeetThorkQuest, Zulkis)
 
     if not QuestGiver_QuestExistsByNameAndGiver(QUEST_RESCUE_BROTHER, Zulkis) then
