@@ -2,7 +2,7 @@
     DialogInteraction
 
     Author: Valdemar
-    Version: 1.2.1
+    Version: 1.2.2
 
     Description:
     Generic selectable-NPC dialog interaction layer. This owns NPC selection
@@ -935,6 +935,8 @@ library DialogInteraction initializer Init requires Table, DialogSystem, CameraC
         endif
         call EnableUserControl(true)
         if FallenHeroState_IsAlive(TransitionHero) then
+            call ShowUnit(TransitionHero, true)
+            call PauseUnit(TransitionHero, false)
             call CameraControl_SetTargetUnit(Player(0), TransitionHero)
             call SelectUnitForPlayerSingle(TransitionHero, Player(0))
         endif
