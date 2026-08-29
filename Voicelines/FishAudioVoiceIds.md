@@ -26,7 +26,7 @@ the same voice profile used by their shop dialogue.
 | `GenericOrcMale8` | Shaman | Orc shaman | `dab87e7b8c7549d691a90076609bc317` | Forest/Sirensong spirit speakers, reagents, and Sirensong quartermaster |
 | `GenericOrcMale9` | Shaman (fighter) | Orc fighter | `90a80ffccde247c69af75edf5d66cad2` | Fiery Mountain and Sirensong weapons merchants |
 | `GenericTrollMale1` | TrollMale1 | Troll male | `749a792a18654ac19c8668fe9ceb6a31` | Horde Troll jeweller |
-| `GenericTrollMale2` | Troll Witch Doctor | Troll witch doctor | `11573f63b7cb42cd919a0ebd0f74aa84` | Horde Troll voodoo merchant |
+| `GenericTroll` / `GenericTrollMale2` | Troll Witch Doctor | Troll witch doctor | `11573f63b7cb42cd919a0ebd0f74aa84` | Darkspear wounded-survivor testimony and Horde Troll voodoo merchant |
 | `GenericGoblinMale1` | Goblin2 | Goblin male | `b3e77482cd444ad09b04a33fe6817c32` | Riverbane weapons/professions, travelling trade, reagents, and expedition supplies |
 | `GenericGoblinMale2` | Goblin1 | Goblin male | `c8fe49fa32b245c786a26ad2a28e771f` | Riverbane armor/potions, travelling trade, Stormhaven bartender, Sirensong beast supplies |
 | `GenericGoblinMale3` | Goblin3 | Goblin male | `7bd87fcdbe1c430a9618e2b5d2bea58d` | Riverbane shields, Stormhaven fishing, Sirensong cooking, and arena quartermaster |
@@ -43,7 +43,10 @@ the same voice profile used by their shop dialogue.
 | `GenericElarindorFemale2` | BloodElfFemale | Elarindor female | `b02accf6560f41419210b67f9431fd5f` | Enchanting and quartermaster; matched vendor quests |
 | `GenericOgreBonecrusherMale1` | OgreMale | Bonecrusher ogre male | `065c2be6b4814fe59916ece73d6660b3` | Bonecrusher vendors, bag merchant, and generic quests |
 | `NazgrekGeneric` | Nazgrek2 | Nazgrek reusable replies | `82895e2c2e62463bb023c0c858a55b9d` | Generic quests plus matched LastNight responses |
-| `ZulkisGeneric` | Shadowhunter | Zul'kis reusable replies | `139c8b251a2f4a97a2dbce510e1f94cf` | Generic quests plus matched LastNight responses |
+| `Zulkis` / `ZulkisGeneric` | Shadowhunter | Zul'kis story voice and reusable replies | `139c8b251a2f4a97a2dbce510e1f94cf` | Story dialogue, generic quests, and matched LastNight responses |
+| `Thork` | Thork | Chieftain Thork | `da8c8f301eea4e9fab1fdd64557e109d` | Chieftain Thork story and quest dialogue |
+| `Zulkarak` | TrollMale1 | Zul'karak story voice; shared TrollMale1 profile | `749a792a18654ac19c8668fe9ceb6a31` | Darkspear landing and Rescue the Brother dialogue |
+| `Narrator` | Narrator | Story narrator | `df07a1c2278e4fba9fa6a43c424855ac` | Nazgrek and Zul'kis prologue narration |
 | `HeroEngineer` | HeroEngineer | Engineer AI hero | `b901bbbb4b3748e5ae04a4defaf7a3c9` | Drunk reaction lines and AI companion dialogue |
 | `HeroPaladin` | HeroPaladin | Paladin AI hero | `ffa580e4304440e2b78bf2a02d493942` | Drunk reaction lines and AI companion dialogue |
 | `HeroShaman` / `HeroRestoshaman` | HeroRestoshaman | Restoration shaman AI hero | `2f5da025973948bea9c3d21b09a73d8f` | Drunk reaction lines and AI companion dialogue |
