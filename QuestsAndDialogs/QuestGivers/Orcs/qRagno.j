@@ -2,7 +2,7 @@
     qRagno
 
     Author: Valdemar
-    Version: 1.1.4
+    Version: 1.1.5
 
     Description:
     Implements Ragno's quest dialogue, daily outpost tasks, Protect the
@@ -13,14 +13,14 @@
 
     How to install:
     Import after qZulkis and the required quest, dialogue, cinematic, follow,
-    loot, reputation, death-event, hero-item, fallen-hero, and voiceline
-    libraries.
+    loot, reputation, death-event, hero-item, fallen-hero, ambient-event, and
+    voiceline libraries.
 
     API:
     Public quest-state hooks are declared at the end of this library.
 
 **/
-library qRagno initializer Init requires qZulkis, QuestGiver, QuestMaster, DialogInteraction, DialogSystem, CameraControl, CinematicMover, FollowSystem, HeroItemCheck, ItemLootSystem, Reputation, UnitDeathEvent, VoicelinesNazgrek, VoicelinesOrcGrunt, VoicelinesOrcPeon, FallenHeroState
+library qRagno initializer Init requires qZulkis, QuestGiver, QuestMaster, DialogInteraction, DialogSystem, CameraControl, CinematicMover, FollowSystem, HeroItemCheck, ItemLootSystem, Reputation, UnitDeathEvent, VoicelinesNazgrek, VoicelinesOrcGrunt, VoicelinesOrcPeon, FallenHeroState, HordeUnitsRandomChat
 
 globals
     private constant boolean DEBUG = false
@@ -1331,6 +1331,7 @@ private function OnProtectOutpostCompletionCinematicEnd takes nothing returns no
     call PlaceProtectOutpostPetByNazgrek()
     set MountainDefenseActive = false
     call UnhideProtectOutpostPreplacedGnolls()
+    call HordeUnitsRandomChat_EnableMountainChat()
     if DialogInteraction_IsUnitAlive(Ragno) then
         call IssuePointOrder(Ragno, "move", GetRectCenterX(gg_rct_RagnoIntroRagno2), GetRectCenterY(gg_rct_RagnoIntroRagno2))
     endif
@@ -1988,6 +1989,9 @@ private function InitDelayed takes nothing returns nothing
     call RegisterDialogLines()
     call RegisterBaseGnollHeadDrops()
     call CreateQuests()
+    if QuestGiver_IsQuestCompletedByNameAndGiver(QUEST_PROTECT_OUTPOST, Ragno) then
+        call HordeUnitsRandomChat_EnableMountainChat()
+    endif
     call RegisterProtectOutpostStartTrigger()
     call RefreshRagnoAvailabilityInternal()
     call DialogInteraction_RegisterSelectionHandler(Ragno, function OnSelected)
