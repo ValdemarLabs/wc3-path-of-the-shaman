@@ -17,6 +17,22 @@
 
 ## [29.8.2026]
 
+### Player-Facing Updates
+
+- Fixed Ragno's follow-up quests remaining unavailable when delayed quest initialization missed the player's entry into the Protect the Outpost regions.
+- Fixed pressing ESC during Ragno's dialogue entry transition leaving the interaction without dialogue or choices.
+- Fixed Zul'kis's opening camera sliding in from Nazgrek's view instead of starting at the first river-arrival camera.
+- Darkspear bodies at the broken landing now remain as fleshy corpses throughout Zul'kis's prologue and begin decaying normally after it ends; the wounded witch doctor's interrupted final line now ends with a death vocal.
+- Fixed placed Traveler's Journals failing to provide a replacement item or offer a reliable way to bind a new home.
+- Selecting a placed Traveler's Journal now opens the Journal dashboard in a distinct binding mode, with context-sensitive Take Journal, Set Home, and Cancel actions.
+
+### Technical Updates
+
+- Updated `QuestsAndDialogs/QuestGivers/Orcs/qRagno.j` with occupied-region recovery for Protect the Outpost and an explicit ESC-safe dialogue-entry continuation.
+- Updated `QuestsAndDialogs/QuestGivers/Player/qZulkis.j` with a deferred opening-camera pan, legacy GUI-equivalent permanent corpse staging, post-prologue decay release, and timed witch-doctor death audio.
+- Updated `_developer/Design Plans/Story and Quest Design.md` with the corrected Zul'kis camera, corpse lifecycle, and wounded-survivor sequence.
+- Updated `PlayerHome/PlayerHome.j`, `UI/PlayerHomeUI.j`, and `UI/HintsUI.j` with direct world-Journal binding mode, current-home replacement Journals, delayed initial delivery, DInventory fallback when vanilla inventory is full, and matching recovery guidance.
+
 ### Tool Updates
 
 - Updated `WC3_Database/WC3ItemManager/` with guarded round-trip editing for synchronized qXXX sources: only uniquely mapped literals are editable, custom/shared/computed fields remain gray with source-only guidance, every write requires a patch preview and three-way field conflict check, and confirmed patches are backed up, structurally validated, atomically written, and synchronized.
