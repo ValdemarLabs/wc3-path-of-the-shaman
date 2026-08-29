@@ -31,7 +31,7 @@ globals
 
     private constant integer ITEM_MURLOC_HEAD = 'I610'
     private constant integer MURLOC_HEAD_COUNT = 40
-    private constant integer QUEST_ZONE_ID = 7
+    private constant integer QUEST_ZONE_ID = 19
 
     private constant real DIALOG_RANGE = 500.00
     private constant real DIALOG_COOLDOWN = 6.00
@@ -227,7 +227,7 @@ endfunction
 
 private function CreateQuests takes nothing returns nothing
     local QuestData q
-    local string infoText = "|cffffcc00Quest giver:|r " + ERDUK_NAME + "\n|cffffcc00Zone:|r Havenwoods (7)\n|cffffcc00Objective area:|r Rivers near Erduk\n"
+    local string infoText = "|cffffcc00Quest giver:|r " + ERDUK_NAME + "\n|cffffcc00Zone:|r Ghostwalk Ridge (19)\n|cffffcc00Objective area:|r Outskirts of Ironspine Post\n"
 
     if not QuestGiver_QuestExistsByNameAndGiver(QUEST_HEADS_OF_THE_MURLOCS, Erduk) then
         set q = QuestGiver_CreateConfiguredQuest(QUEST_HEADS_OF_THE_MURLOCS, Erduk, "normal", 8, null, QUEST_HEADS_OF_THE_MURLOCS, "ReplaceableTextures\\CommandButtons\\BTNMurlocFlesheater.blp", "Murlocs from the nearby rivers keep raiding Erduk's lodges and stealing their food. Gather their heads and return them to Erduk.\n\n", infoText, "|cffffcc00Recommended level:|r 8\n\n", 5, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Horde", ERDUK_NAME)
