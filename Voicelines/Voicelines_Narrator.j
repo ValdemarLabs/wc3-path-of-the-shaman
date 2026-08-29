@@ -2,25 +2,25 @@
     VoicelinesNarrator
 
     Author: Valdemar
-    Version:
+    Version: 1.0.3
 
     Description:
-    Speaker-owned voiceline key/text constants migrated from legacy
-    Excel draft/reference rows. Runtime consumers require this
-    library directly when they need these constants.
+    Speaker-owned narrator voiceline key/text constants for story
+    introductions, including migrated legacy Excel draft/reference rows.
+    Runtime consumers require this library directly.
 
     Credits:
     - Voicelines/_oldExcel/VoicelinesMaster.xlsx
 
     How to install:
-    Import after `Voicelines.j`. Add runtime registration when a
-    consumer starts using these constants.
+    Import after `Voicelines.j`. Audio files use the
+    `Pots\Sound\Voicelines\Narrator\` directory.
 
     API:
     Global `VL_NARRATOR_*` constants.
 
 **/
-library VoicelinesNarrator requires Voicelines
+library VoicelinesNarrator initializer Init requires Voicelines
 
 globals
     constant string VL_NARRATOR_FOLDER = "Narrator"
@@ -40,6 +40,15 @@ globals
     constant string VL_NARRATOR_0004_TEXT = "Now, the forest is his sanctuary, a place where he can learn from the spirits and find purpose within the harmony of nature."
     constant string VL_NARRATOR_0005_KEY = "Narrator_0005"
     constant string VL_NARRATOR_0005_TEXT = "But as the sun rises over Serenaglade. He senses something amiss. Today's hunt may hold more than prey, for destiny never lets a shaman stray for long..."
+
+    constant string VL_NARRATOR_0006_KEY = "Narrator_0006"
+    constant string VL_NARRATOR_0006_TEXT = "Answering Chieftain Thork's call, Zul'kis of the Darkspear tribe is arriving on the eastern river of Havenwoods to aid the orcish clan."
+    constant string VL_NARRATOR_0007_KEY = "Narrator_0007"
+    constant string VL_NARRATOR_0007_TEXT = "At his side sails his elder brother, Zul'karak."
 endglobals
+
+private function Init takes nothing returns nothing
+    call ExSound_RegisterSequence("Narrator_", 1, 50, "Pots\\Sound\\Voicelines\\Narrator\\")
+endfunction
 
 endlibrary
