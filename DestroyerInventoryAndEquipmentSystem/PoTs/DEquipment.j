@@ -2,7 +2,7 @@
     DEquipment
 
     Author: Valdemar
-    Version: 1.0.0
+    Version: 1.0.1
 
     Description:
     Equipment frames, equip/unequip behavior, character-sheet updates, and
@@ -21,6 +21,8 @@
     - call ToggleDEqUIForUnit(playerId, unit)
     - call DInventoryEquipment_Hide()
     - call DInventoryEquipment_HideForPlayer(viewer)
+    - call DEquipment_HideForCinematic()
+    - call DEquipment_ShowAfterCinematic()
     - call DEqItemTypeDefineShieldBlock(itemTypeId, blockAmount)
     - call DEqItemTypeDefineAsShield(itemTypeId) // 50% compatibility helper
 
@@ -55,6 +57,7 @@ trigger trg_DInspectUnitDeselected = CreateTrigger()
 framehandle array EquipmentBackDropFrame[24]
 framehandle array DInspectButtonFrame[24]
 unit array DInspectSelectedUnit[24]
+boolean array DInspectHiddenForCinematic
 real DEqBackDropTopLeftX = 0.04
 real DEqBackDropTopLeftY = 0.56
 real DEqBackDropBottomRightX = 0.3
@@ -453,7 +456,7 @@ endfunction
 function DInspectSetButtonState takes integer pid, boolean visible, string label returns nothing
 if DInspectButtonFrame[pid] != null and GetLocalPlayer() == Player(pid) then
 call BlzFrameSetText(DInspectButtonFrame[pid], label)
-call BlzFrameSetVisible(DInspectButtonFrame[pid], visible)
+call BlzFrameSetVisible(DInspectButtonFrame[pid], visible and not DInspectHiddenForCinematic[pid])
 endif
 endfunction
 
@@ -493,6 +496,20 @@ call DInspectSetButtonState(pid, FALSE, "Inspect")
 endif
 set viewer = null
 set target = null
+endfunction
+
+
+
+function DEquipment_HideForCinematic takes nothing returns nothing
+set DInspectHiddenForCinematic[0] = TRUE
+call DInspectSetButtonState(0, FALSE, "Inspect")
+endfunction
+
+
+
+function DEquipment_ShowAfterCinematic takes nothing returns nothing
+set DInspectHiddenForCinematic[0] = FALSE
+call DInspectRefreshButtonForPlayer(Player(0))
 endfunction
 
 

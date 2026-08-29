@@ -2,7 +2,7 @@
     qChieftainThork
 
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.1.1
 
     Description:
     Handles Ragno's Call of the Horde handoff and Chieftain Thork's Duty For
@@ -462,6 +462,7 @@ endfunction
 private function OnSelected takes nothing returns nothing
     call SyncUnitReferences()
     if qZulkis_IsPrologueActive() then
+        call DialogInteraction_ConsumeSelection()
         call qZulkis_HandleThorkSelection()
         return
     endif

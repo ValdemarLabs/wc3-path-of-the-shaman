@@ -2,7 +2,7 @@
     qZulkis
 
     Author: Valdemar
-    Version: 1.1.1
+    Version: 1.1.2
 
     Description:
 
@@ -33,7 +33,7 @@
     qZulkis_IsPrologueCompleted() gates Call of the Horde convergence.
 
 **/
-library qZulkis initializer Init requires QuestGiver, QuestMaster, DialogInteraction, DialogSystem, DInventory, DEquipment, VoicelinesZulkis, VoicelinesThork, VoicelinesZulkarak, VoicelinesGenericTroll, optional Pet
+library qZulkis initializer Init requires QuestGiver, QuestMaster, DialogInteraction, DialogSystem, CameraControl, DInventory, DEquipment, VoicelinesZulkis, VoicelinesThork, VoicelinesZulkarak, VoicelinesGenericTroll, optional Pet
     globals
         // Quest and staging configuration
         public constant string QUEST_MEET_CHIEFTAIN_THORK = "Meet with Chieftain Thork"
@@ -65,7 +65,6 @@ library qZulkis initializer Init requires QuestGiver, QuestMaster, DialogInterac
         private constant real WOUNDED_BLOOD_MAX_DELAY = 4.00
         private constant real WOUNDED_DEATH_DELAY = 1.50
         private constant string WOUNDED_BLOOD_EFFECT = "Objects\\Spawnmodels\\Orc\\OrcBlood\\OrcBloodGrunt.mdl"
-        private constant string WOUNDED_DEATH_SOUND = "WitchDoctorDeath"
         private constant boolean DEBUG = false
 
         // Runtime state
@@ -120,6 +119,16 @@ private function SyncUnitReferences takes nothing returns nothing
     if udg_Thork != null and udg_Thork != Thork then
         set Thork = udg_Thork
     endif
+endfunction
+
+private function ApplyCameraSetupInstant takes camerasetup whichSetup returns nothing
+    call SetCameraPositionForPlayer(Player(0), CameraSetupGetDestPositionX(whichSetup), CameraSetupGetDestPositionY(whichSetup))
+    call CameraSetupApplyForPlayer(false, whichSetup, Player(0), 0.00)
+endfunction
+
+private function ResumeGameplayCamera takes unit target returns nothing
+    call CameraControl_SetTargetUnit(Player(0), target)
+    call CameraControl_ResumeQuick(Player(0))
 endfunction
 
 private function IsUnitNearPoint takes unit whichUnit, real x, real y, real range returns boolean
@@ -215,21 +224,19 @@ private function ReplaceLandingTrollWithCorpse takes integer index, integer unit
     call CreatePermanentCorpse(index, unitTypeId, whichRect)
 endfunction
 
-private function FinishWoundedTrollDeath takes boolean playDeathSound returns nothing
-    local real deathX
-    local real deathY
-
+private function FinishWoundedTrollDeath takes boolean stopVoice returns nothing
     if LandingTroll[3] == null or GetUnitTypeId(LandingTroll[3]) == 0 or GetWidgetLife(LandingTroll[3]) <= 0.405 then
         return
     endif
     call PauseTimer(WoundedBloodTimer)
-    if playDeathSound then
-        set deathX = GetUnitX(LandingTroll[3])
-        set deathY = GetUnitY(LandingTroll[3])
+    if stopVoice then
         call ExSound_Stop()
-        call ExSound_PlayLabelAtPoint(WOUNDED_DEATH_SOUND, deathX, deathY, false)
     endif
-    call ReplaceLandingTrollWithCorpse(3, UNIT_DARKSPEAR_WITCH_DOCTOR, gg_rct_CorpseTroll03)
+    call SetUnitTimeScale(LandingTroll[3], 1.00)
+    call SetUnitInvulnerable(LandingTroll[3], false)
+    call PauseUnit(LandingTroll[3], false)
+    call KillUnit(LandingTroll[3])
+    call UnitSuspendDecay(LandingTroll[3], true)
 endfunction
 
 private function RemoveIntroShip takes nothing returns nothing
@@ -265,9 +272,9 @@ endfunction
 
 private function OnShoreIntroSequenceEnd takes nothing returns nothing
     call DialogInteraction_EndCinematicSequence(true)
-    call ResetToGameCameraForPlayer(Player(0), 0.00)
     call PauseUnit(Zulkis, false)
     call SelectUnitForPlayerSingle(Zulkis, Player(0))
+    call ResumeGameplayCamera(Zulkis)
     set ScenePlaying = false
     call StartMeetThorkQuest()
 endfunction
@@ -283,6 +290,12 @@ private function PlayShoreIntroSequence takes nothing returns nothing
     call DialogSystem_PlaySequence(seq, Player(0), Zulkarak)
 endfunction
 
+private function StartShoreCameraPan takes nothing returns nothing
+    if PrologueState == STATE_SHORE_INTRO then
+        call CameraSetupApplyForPlayer(true, gg_cam_IntroZulkisCam4, Player(0), 8.00)
+    endif
+endfunction
+
 private function StageShoreIntro takes nothing returns nothing
     call StageLivingLandingParty()
     call SetUnitPosition(Zulkis, GetRectCenterX(gg_rct_ZulkisStart), GetRectCenterY(gg_rct_ZulkisStart))
@@ -292,9 +305,9 @@ private function StageShoreIntro takes nothing returns nothing
     call SetUnitInvulnerable(Zulkarak, true)
     call ShowUnit(Zulkarak, true)
     call PauseUnit(Zulkarak, true)
-    call CameraSetupApplyForPlayer(true, gg_cam_IntroZulkisCam3, Player(0), 0.00)
-    call CameraSetupApplyForPlayer(true, gg_cam_IntroZulkisCam4, Player(0), 8.00)
+    call ApplyCameraSetupInstant(gg_cam_IntroZulkisCam3)
     call CinematicFadeBJ(bj_CINEFADETYPE_FADEIN, FADE_DURATION, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
+    call TimerStart(TransitionTimer, SHIP_CAMERA_START_DELAY, false, function StartShoreCameraPan)
     call PlayShoreIntroSequence()
 endfunction
 
@@ -332,6 +345,7 @@ private function FinishThorkMeeting takes nothing returns nothing
     call DialogInteraction_EndCinematicSequence(true)
     call PauseUnit(Zulkis, false)
     call SelectUnitForPlayerSingle(Zulkis, Player(0))
+    call ResumeGameplayCamera(Zulkis)
 endfunction
 
 private function OnThorkMeetingSequenceEnd takes nothing returns nothing
@@ -339,7 +353,9 @@ private function OnThorkMeetingSequenceEnd takes nothing returns nothing
 endfunction
 
 private function OnThorkMeetingSequenceStart takes nothing returns nothing
+    call CameraControl_Suspend(Player(0))
     call DialogInteraction_BeginCinematicSequence(true)
+    call ExSound_Stop()
     call IssueImmediateOrder(Zulkis, "stop")
 endfunction
 
@@ -370,7 +386,7 @@ endfunction
 private function OnWoundedBlood takes nothing returns nothing
     local effect blood
 
-    if BrokenLandingStaged and LandingTroll[3] != null and GetUnitTypeId(LandingTroll[3]) != 0 then
+    if BrokenLandingStaged and LandingTroll[3] != null and GetUnitTypeId(LandingTroll[3]) != 0 and GetWidgetLife(LandingTroll[3]) > 0.405 then
         set blood = AddSpecialEffectTarget(WOUNDED_BLOOD_EFFECT, LandingTroll[3], "chest")
         call DestroyEffect(blood)
         call TimerStart(WoundedBloodTimer, GetRandomReal(WOUNDED_BLOOD_MIN_DELAY, WOUNDED_BLOOD_MAX_DELAY), false, function OnWoundedBlood)
@@ -416,7 +432,7 @@ endfunction
 private function StageBrokenLandingView takes nothing returns nothing
     call StageBrokenLanding()
     set BrokenLandingViewStaged = true
-    call CameraSetupApplyForPlayer(true, gg_cam_IntroZulkisCam4, Player(0), 0.00)
+    call ApplyCameraSetupInstant(gg_cam_IntroZulkisCam4)
 endfunction
 
 private function OnWoundedDeath takes nothing returns nothing
@@ -442,12 +458,12 @@ private function FinishBrokenLanding takes nothing returns nothing
     endif
     call StartRescueBrotherQuest()
     call DialogInteraction_EndCinematicSequence(true)
-    call ResetToGameCameraForPlayer(Player(0), 0.00)
     if skippedBeforeStaging then
         call CinematicFadeBJ(bj_CINEFADETYPE_FADEIN, FADE_DURATION, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
     endif
     call PauseUnit(Zulkis, false)
     call SelectUnitForPlayerSingle(Zulkis, Player(0))
+    call ResumeGameplayCamera(Zulkis)
     set ScenePlaying = false
 endfunction
 
@@ -456,6 +472,7 @@ private function OnBrokenLandingSequenceEnd takes nothing returns nothing
 endfunction
 
 private function OnBrokenLandingSequenceStart takes nothing returns nothing
+    call CameraControl_Suspend(Player(0))
     call DialogInteraction_BeginCinematicSequence(true)
     call IssueImmediateOrder(Zulkis, "stop")
 endfunction
@@ -519,10 +536,10 @@ private function CompletePrologue takes nothing returns nothing
     static if LIBRARY_Pet then
         call Pet_RestoreShadowclawAfterStory()
     endif
-    call ResetToGameCameraForPlayer(Player(0), 0.00)
     call CinematicFadeBJ(bj_CINEFADETYPE_FADEIN, FADE_DURATION, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
     call DialogInteraction_EndCinematicSequence(true)
     call SelectUnitForPlayerSingle(Nazgrek, Player(0))
+    call ResumeGameplayCamera(Nazgrek)
     call ExecuteFunc("qChieftainThork_RefreshAvailability")
     call ExecuteFunc("qRagno_RefreshAvailability")
     call QuestMaster_RefreshUnitSpecificQuests()
@@ -534,6 +551,7 @@ private function OnRescueSequenceEnd takes nothing returns nothing
 endfunction
 
 private function OnRescueSequenceStart takes nothing returns nothing
+    call CameraControl_Suspend(Player(0))
     call DialogInteraction_BeginCinematicSequence(true)
     call IssueImmediateOrder(Zulkis, "stop")
 endfunction
@@ -583,7 +601,7 @@ private function StartShipArrival takes nothing returns nothing
     if PrologueState != STATE_SHIP_ARRIVAL then
         return
     endif
-    call CameraSetupApplyForPlayer(true, gg_cam_IntroZulkisCam1, Player(0), 0.00)
+    call ApplyCameraSetupInstant(gg_cam_IntroZulkisCam1)
     call RemoveIntroShip()
     set IntroShip = CreateUnit(Player(DARKSPEAR_PLAYER_ID), UNIT_INTRO_SHIP, GetRectCenterX(gg_rct_ZulkisShipWP1), GetRectCenterY(gg_rct_ZulkisShipWP1), bj_UNIT_FACING)
     call IssuePointOrder(IntroShip, "move", GetRectCenterX(gg_rct_ZulkisShipWP2), GetRectCenterY(gg_rct_ZulkisShipWP2))
@@ -628,6 +646,7 @@ private function StartPrologueInternal takes nothing returns nothing
     call ShowUnit(Zulkarak, false)
     set PrologueState = STATE_SHIP_ARRIVAL
     set ShipTravelElapsed = 0.00
+    call CameraControl_Suspend(Player(0))
     call DialogInteraction_BeginCinematicSequence(true)
     call DialogSystem_SetEscapeAction(function SkipShipArrival)
     call CinematicFadeBJ(bj_CINEFADETYPE_FADEOUT, FADE_DURATION, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
