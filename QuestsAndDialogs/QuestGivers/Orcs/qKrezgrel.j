@@ -2,7 +2,7 @@
     qKrezgrel
 
     Author: Valdemar
-    Version:
+    Version: 1.0.0
 
     Description:
     Converts Krezgrel's Murloc Fins and Rescue The Grunts daily quests. The
@@ -13,9 +13,9 @@
     Converted from QuestsAndDialogs/OLDGUI/Krezgrel.
 
     How to install:
-    Import after the quest/dialog and Krezgrel voiceline libraries. Remove
-    the eight old World Editor placed upside-down grunts and retain rects
-    gg_rct_UpsideGrunt01 through gg_rct_UpsideGrunt08.
+    Import after the quest/dialog, Krezgrel, and Orc Grunt voiceline
+    libraries. Remove the eight old World Editor placed upside-down grunts
+    and retain rects gg_rct_UpsideGrunt01 through gg_rct_UpsideGrunt08.
 
     API:
     - qKrezgrel_GetRescuedGruntCount()
@@ -24,7 +24,7 @@
     - qKrezgrel_RefreshRespawnedUnitHooks()
 
 **/
-library qKrezgrel initializer Init requires QuestGiver, QuestMaster, DialogInteraction, DialogSystem, HeroItemCheck, VoicelinesKrezgrel, VoicelinesNazgrek
+library qKrezgrel initializer Init requires QuestGiver, QuestMaster, DialogInteraction, DialogSystem, HeroItemCheck, VoicelinesKrezgrel, VoicelinesNazgrek, VoicelinesOrcGrunt
 
 globals
     private constant boolean DEBUG = false
@@ -273,11 +273,11 @@ private function ResolveLivingGrunt takes real x, real y returns nothing
     call SetUnitCreepGuard(rescued, false)
     call GroupAddUnit(RescuedGruntGroup, rescued)
     if bark == 1 then
-        call DialogSystem_PlayLine(rescued, "Grunt", "Well, that was horrible!", "OrcGrunt_0120", true)
+        call DialogSystem_PlayLine(rescued, "Grunt", VL_ORCGRUNT_0120_TEXT, VL_ORCGRUNT_0120_KEY, true)
     elseif bark == 2 then
-        call DialogSystem_PlayLine(rescued, "Grunt", "I would not have been saved without you!", "OrcGrunt_0121", true)
+        call DialogSystem_PlayLine(rescued, "Grunt", VL_ORCGRUNT_0121_TEXT, VL_ORCGRUNT_0121_KEY, true)
     else
-        call DialogSystem_PlayLine(rescued, "Grunt", "These damn murlocs!", "OrcGrunt_0122", true)
+        call DialogSystem_PlayLine(rescued, "Grunt", VL_ORCGRUNT_0122_TEXT, VL_ORCGRUNT_0122_KEY, true)
     endif
     call IssuePointOrder(rescued, "move", GetRectCenterX(gg_rct_UpsideGruntRemoval), GetRectCenterY(gg_rct_UpsideGruntRemoval))
     call UpdateRescueProgress()

@@ -2,7 +2,7 @@
     qGranis
 
     Author: Valdemar
-    Version:
+    Version: 1.0.0
 
     Description:
     Converts Granis's Rol'jin hunt and the distinct second mountain-outpost
@@ -15,7 +15,8 @@
 
     How to install:
     Import after qRagno, UnitWaves, the quest/dialog systems, and Granis and
-    Nazgrek voicelines. Keep the referenced map rects and GUI unit globals.
+    Nazgrek and Orc Grunt voicelines. Keep the referenced map rects and GUI
+    unit globals.
 
     API:
     - qGranis_IsProofTaskComplete()
@@ -24,7 +25,7 @@
     - qGranis_RefreshRespawnedUnitHooks()
 
 **/
-library qGranis initializer Init requires qRagno, UnitWaves, QuestGiver, QuestMaster, DialogInteraction, DialogSystem, HeroItemCheck, VoicelinesGranis, VoicelinesNazgrek
+library qGranis initializer Init requires qRagno, UnitWaves, QuestGiver, QuestMaster, DialogInteraction, DialogSystem, HeroItemCheck, VoicelinesGranis, VoicelinesNazgrek, VoicelinesOrcGrunt
 
 globals
     private constant boolean DEBUG = false
@@ -272,9 +273,9 @@ private function PlayDefenseVictorySequence takes nothing returns nothing
         return
     endif
     set seq = DialogInteraction_CreateBaseSequence(Ragno, "Ragno")
-    call DialogSystem_AddLine(seq, Ragno, "Ragno", "The gnoll attack is over! We have prevailed!", "OrcGrunt_0063", true)
+    call DialogSystem_AddLine(seq, Ragno, "Ragno", VL_ORCGRUNT_0063_TEXT, VL_ORCGRUNT_0063_KEY, true)
     call DialogSystem_AddLine(seq, Nazgrek, "Nazgrek", VL_NAZGREK_0163_TEXT, VL_NAZGREK_0163_KEY, true)
-    call DialogSystem_AddLine(seq, Ragno, "Ragno", "Yes, I fear that this was just the beginning. Tell Granis what happened here.", "OrcGrunt_0064", true)
+    call DialogSystem_AddLine(seq, Ragno, "Ragno", VL_ORCGRUNT_0064_TEXT, VL_ORCGRUNT_0064_KEY, true)
     call DialogSystem_PlaySequence(seq, Player(0), Ragno)
 endfunction
 
