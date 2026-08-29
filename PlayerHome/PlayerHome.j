@@ -2,7 +2,7 @@
     PlayerHome
 
     Author: Valdemar
-    Version: 1.0.0
+    Version: 1.1.0
 
     Description:
     Provides the Traveler's Journal home-binding interaction, Return Home
@@ -12,8 +12,8 @@
     - The original PotS Player Home GUI triggers
 
     How to install:
-    Import after the required event, dialog, inventory, companion, zone,
-    camera, and sound libraries. Disable the legacy Player Home GUI triggers.
+    Import after the required event, dialog, inventory, companion, zone, and
+    sound libraries. Disable the legacy Player Home GUI triggers.
 
     API:
     - PlayerHome_RegisterJournal(unit, locationName, zoneId, factionOwner) returns integer
@@ -26,6 +26,14 @@
     - PlayerHome_IsChanneling(unit) returns boolean
     - PlayerHome_UseJournal(unit) returns boolean
     - PlayerHome_PingHome()
+    - PlayerHome_IsBinding() returns boolean
+    - PlayerHome_GetBindingLocationName() returns string
+    - PlayerHome_GetBindingZoneName() returns string
+    - PlayerHome_GetBindingHero() returns unit
+    - PlayerHome_IsBindingCurrentHome() returns boolean
+    - PlayerHome_CanConfirmBinding() returns boolean
+    - PlayerHome_ConfirmBinding() returns boolean
+    - PlayerHome_CancelBinding()
 
 **/
 library PlayerHome initializer Init requires Table, Events, DamageEngine, DialogInteraction, DialogSystem, HeroItemCheck, SharedDInvLib, Companions, Pet, ZonesCore, ZoneEvent, ExSound, FallenHeroState, optional HintsUI
@@ -44,17 +52,6 @@ library PlayerHome initializer Init requires Table, Events, DamageEngine, Dialog
         private constant real PH_COOLDOWN_DURATION = 1800.00
         private constant real PH_FADE_DURATION = 1.00
         private constant real PH_FORMATION_RADIUS = 115.00
-        private constant integer PH_CINEMATIC_MOVE_MODE = 1
-        private constant real PH_CINEMATIC_MOVE_OFFSET = 220.00
-        private constant real PH_CINEMATIC_MOVE_ANGLE = 210.00
-        private constant real PH_CAMERA_DISTANCE = 900.00
-        private constant real PH_CAMERA_Z_OFFSET = 35.00
-        private constant real PH_CAMERA_ANGLE = 350.00
-        private constant real PH_CAMERA_ROTATION_OFFSET = 180.00
-        private constant real PH_CAMERA_FAR_Z = 10000.00
-        private constant real PH_CAMERA_FOV = 60.00
-        private constant real PH_CAMERA_BLOCK_RADIUS = 0.00
-        private constant boolean PH_CAMERA_BLOCK_CHECK = true
 
         private integer PH_HomeCount = 0
         private integer PH_CurrentHomeId = 0
@@ -82,7 +79,6 @@ library PlayerHome initializer Init requires Table, Events, DamageEngine, Dialog
         private boolean array PH_PassengerWasPaused
         private boolean array PH_PassengerWasInvulnerable
 
-        private dialog PH_BindDialog = null
         private unit PH_BindJournal = null
         private unit PH_BindHero = null
         private integer PH_BindHomeId = 0
@@ -184,6 +180,10 @@ library PlayerHome initializer Init requires Table, Events, DamageEngine, Dialog
 
     private function PH_GiveJournal takes unit hero returns boolean
         local item journal = null
+        local integer pid = -1
+        local integer bid = -1
+        local integer eqid = -1
+        local integer storedSlot = -1
         local real x
         local real y
         local boolean added = false
@@ -202,6 +202,15 @@ library PlayerHome initializer Init requires Table, Events, DamageEngine, Dialog
         set journal = CreateItem(PH_JOURNAL_ITEM_ID, x, y)
         if journal != null then
             set added = UnitAddItem(hero, journal)
+            if not added then
+                set pid = GetPlayerId(GetOwningPlayer(hero))
+                set bid = BIDOfUnit(hero)
+                set eqid = EQIDOfUnit(hero)
+                if bid > 0 and eqid > 0 and DInvCanBIDReceiveItem(journal, pid, bid) then
+                    set storedSlot = StoreItemForPIDBID(journal, pid, bid, eqid)
+                    set added = storedSlot >= 0
+                endif
+            endif
             if added then
                 call ExSound_PlayLabel("ItemReceived", false)
                 static if LIBRARY_HintsUI then
@@ -642,63 +651,100 @@ library PlayerHome initializer Init requires Table, Events, DamageEngine, Dialog
     endfunction
 
     private function PH_FinishBindInteraction takes nothing returns nothing
-        local unit journal = PH_BindJournal
-        local unit hero = PH_BindHero
-
         call DialogSystem_ClearEscapeAction()
-        if PH_BindDialog != null then
-            call DialogSystem_HideDialog(PH_BindDialog, Player(0))
-        endif
         call DialogInteraction_EndCombatSensitiveInteraction()
-        if journal != null then
-            call DialogInteraction_StartConfiguredDialogExitTransition(journal, hero, null, 0.00, true, true)
-        endif
+        call ExecuteFunc("PlayerHomeUI_CloseBindMode")
         call PH_ClearBindState()
-        set journal = null
-        set hero = null
     endfunction
 
-    private function PH_BindHomeAction takes nothing returns nothing
-        local player factionOwner = null
+    public function IsBinding takes nothing returns boolean
+        return PH_BindingActive and PH_BindJournal != null and PH_BindHero != null and PH_BindHomeId > 0 and PH_BindHomeId <= PH_HomeCount
+    endfunction
 
-        if PH_BindHomeId > 0 and PH_BindHomeId <= PH_HomeCount then
+    public function GetBindingLocationName takes nothing returns string
+        if IsBinding() then
+            return PH_HomeName[PH_BindHomeId]
+        endif
+        return "Unknown Location"
+    endfunction
+
+    public function GetBindingZoneName takes nothing returns string
+        if IsBinding() then
+            return ZonesCore_GetZoneName(PH_HomeZoneId[PH_BindHomeId])
+        endif
+        return "Unknown Zone"
+    endfunction
+
+    public function GetBindingHero takes nothing returns unit
+        if IsBinding() then
+            return PH_BindHero
+        endif
+        return null
+    endfunction
+
+    public function IsBindingCurrentHome takes nothing returns boolean
+        return IsBinding() and PH_BindHomeId == PH_CurrentHomeId
+    endfunction
+
+    public function CanConfirmBinding takes nothing returns boolean
+        local player factionOwner = null
+        local boolean allowed = false
+
+        if IsBinding() and DialogInteraction_IsUnitAlive(PH_BindHero) and PH_IsWithinRange(PH_BindJournal, PH_BindHero, PH_BIND_RANGE) and not DialogInteraction_IsUnitCasting(PH_BindHero) and not DialogInteraction_IsUnitInCombat(PH_BindHero) then
             set factionOwner = PH_HomeFactionOwner[PH_BindHomeId]
-            if factionOwner != null and IsPlayerEnemy(factionOwner, Player(0)) then
-                call PH_Display("Home cannot be set while you are hostile to the faction here.")
-                call PH_PlayError()
-            else
-                call PH_SetHome(PH_BindHomeId, PH_BindHero, true)
+            if factionOwner == null or not IsPlayerEnemy(factionOwner, Player(0)) then
+                if not IsBindingCurrentHome() or not HeroHasJournal(PH_BindHero) then
+                    set allowed = true
+                endif
             endif
         endif
-        call PH_FinishBindInteraction()
         set factionOwner = null
+        return allowed
+    endfunction
+
+    public function ConfirmBinding takes nothing returns boolean
+        local boolean success = false
+
+        if not CanConfirmBinding() then
+            call PH_Display("Stay near the Journal and leave combat before using it.")
+            call PH_PlayError()
+            return false
+        endif
+        if IsBindingCurrentHome() then
+            set success = PH_GiveJournal(PH_BindHero)
+            if success then
+                call PH_Display(PH_HomeName[PH_BindHomeId] + " remains your home. " + PH_GetHeroName(PH_BindHero) + " received a Traveler's Journal.")
+            endif
+        else
+            set success = PH_SetHome(PH_BindHomeId, PH_BindHero, true)
+        endif
+        call PH_FinishBindInteraction()
+        return success
+    endfunction
+
+    public function CancelBinding takes nothing returns nothing
+        if PH_BindingActive then
+            call PH_FinishBindInteraction()
+        endif
     endfunction
 
     private function PH_CancelBindAction takes nothing returns nothing
-        call PH_FinishBindInteraction()
+        call CancelBinding()
     endfunction
 
-    private function PH_BuildBindDialog takes nothing returns nothing
-        local button dialogButton = null
+    private function PH_DisplayBindGateError takes nothing returns nothing
+        local string reason = DialogInteraction_GetLastSelectionBlockReason()
 
-        call DialogSystem_ClearDialog(PH_BindDialog)
-        call DialogSystem_SetTitle(PH_BindDialog, "Traveler's Journal")
-        set dialogButton = DialogSystem_AddButton(PH_BindDialog, "Set " + PH_HomeName[PH_BindHomeId] + " as your home", 1)
-        call DialogSystem_BindButtonCode(dialogButton, function PH_BindHomeAction)
-        set dialogButton = DialogSystem_AddButton(PH_BindDialog, "Cancel", 2)
-        call DialogSystem_BindButtonCode(dialogButton, function PH_CancelBindAction)
-        call DialogSystem_SetEscapeAction(function PH_CancelBindAction)
-        call DialogSystem_SetContext(PH_BindJournal, Player(0))
-        call DialogSystem_ShowDialog(PH_BindDialog, Player(0))
-        set dialogButton = null
-    endfunction
-
-    public function ContinueBindDialog takes nothing returns nothing
-        if PH_BindingActive and PH_BindJournal != null and PH_BindHero != null then
-            call PH_BuildBindDialog()
+        if reason == "missing allowed hero" or reason == "hero out of range" then
+            call PH_Display("Bring Nazgrek or Zul'kis within 300 range of the Journal.")
+        elseif reason == "hero is casting" then
+            call PH_Display("A home cannot be set while the nearby hero is casting.")
+        elseif reason == "hero is in combat" then
+            call PH_Display("A home cannot be set while the nearby hero is in combat.")
         else
-            call PH_FinishBindInteraction()
+            call PH_Display("This Journal cannot be used right now.")
         endif
+        call PH_PlayError()
     endfunction
 
     private function PH_InterruptBindInteraction takes nothing returns nothing
@@ -728,24 +774,12 @@ library PlayerHome initializer Init requires Table, Events, DamageEngine, Dialog
         set hero = DialogInteraction_GetDialogSelectionHero(journal, PH_BIND_RANGE, true, true)
         if not DialogInteraction_PassDialogSelectionGate(journal, hero, PH_BIND_RANGE, null, true, true, false, false, true, true) then
             call PH_Debug("Journal selection blocked: " + DialogInteraction_GetLastSelectionBlockReason())
+            call PH_DisplayBindGateError()
             set journal = null
             set hero = null
             set factionOwner = null
             return
         endif
-        if homeId == PH_CurrentHomeId then
-            call PH_Display("This is your current home location: |cffffcc00" + PH_HomeName[homeId] + "|r|cffffffff.")
-            if not HeroHasJournal(hero) then
-                static if LIBRARY_HintsUI then
-                    call HintsUI_PublishForUnit(HintsUI_HINT_TRAVELERS_JOURNAL_LOST, hero)
-                endif
-            endif
-            set journal = null
-            set hero = null
-            set factionOwner = null
-            return
-        endif
-
         set factionOwner = PH_HomeFactionOwner[homeId]
         if factionOwner != null and IsPlayerEnemy(factionOwner, Player(0)) then
             call PH_Display("Home cannot be set while you are hostile to the faction here.")
@@ -756,6 +790,8 @@ library PlayerHome initializer Init requires Table, Events, DamageEngine, Dialog
             return
         endif
         if not DialogInteraction_BeginCombatSensitiveInteractionEx(journal, hero, function PH_InterruptBindInteraction, true) then
+            call PH_Display("This Journal cannot be used while the nearby hero is in combat.")
+            call PH_PlayError()
             set journal = null
             set hero = null
             set factionOwner = null
@@ -767,7 +803,7 @@ library PlayerHome initializer Init requires Table, Events, DamageEngine, Dialog
         set PH_BindHomeId = homeId
         set PH_BindingActive = true
         call DialogSystem_SetEscapeAction(function PH_CancelBindAction)
-        call DialogInteraction_StartConfiguredDialogEntryTransition(journal, hero, true, true, true, "PlayerHome_ContinueBindDialog")
+        call ExecuteFunc("PlayerHomeUI_ShowBindMode")
         set journal = null
         set hero = null
         set factionOwner = null
@@ -804,8 +840,6 @@ library PlayerHome initializer Init requires Table, Events, DamageEngine, Dialog
         set PH_HomeFactionOwner[homeId] = factionOwner
         set PH_HomeX[homeId] = GetUnitX(journal)
         set PH_HomeY[homeId] = GetUnitY(journal)
-        call DialogInteraction_ConfigureDialogTransition(journal, PH_CINEMATIC_MOVE_MODE, PH_CINEMATIC_MOVE_OFFSET, PH_CINEMATIC_MOVE_ANGLE, PH_CAMERA_DISTANCE, PH_CAMERA_Z_OFFSET, PH_CAMERA_ANGLE, PH_CAMERA_ROTATION_OFFSET, PH_CAMERA_FAR_Z, PH_CAMERA_FOV, PH_CAMERA_BLOCK_RADIUS, PH_CAMERA_BLOCK_CHECK)
-
         set journal = null
         set factionOwner = null
         return homeId
@@ -846,19 +880,31 @@ library PlayerHome initializer Init requires Table, Events, DamageEngine, Dialog
         return homeId
     endfunction
 
+    private function PH_GrantInitialJournal takes nothing returns nothing
+        local timer grantTimer = GetExpiredTimer()
+
+        call PH_GiveJournal(udg_Nazgrek)
+        call DestroyTimer(grantTimer)
+        set grantTimer = null
+    endfunction
+
     private function PH_DelayedInit takes nothing returns nothing
         local timer initTimer = GetExpiredTimer()
+        local timer grantTimer = CreateTimer()
         local integer defaultHomeId
 
         set defaultHomeId = PH_RegisterRectJournal(gg_rct_PlayerHome1, "Nazgrek's Hut", 2, Player(5))
         call PH_RegisterRectJournal(gg_rct_PlayerHome2, "Horde Scout Base", 8810, Player(5))
         if defaultHomeId > 0 then
-            call PH_SetHome(defaultHomeId, udg_Nazgrek, false)
+            call PH_SetHome(defaultHomeId, null, false)
+            call TimerStart(grantTimer, 2.00, false, function PH_GrantInitialJournal)
         else
             call PH_Debug("Nazgrek's Hut could not be configured as the default home.")
+            call DestroyTimer(grantTimer)
         endif
 
         call DestroyTimer(initTimer)
+        set grantTimer = null
         set initTimer = null
     endfunction
 
@@ -871,8 +917,6 @@ library PlayerHome initializer Init requires Table, Events, DamageEngine, Dialog
         set PH_TransferTimer = CreateTimer()
         set PH_CooldownTimer[1] = CreateTimer()
         set PH_CooldownTimer[2] = CreateTimer()
-        set PH_BindDialog = DialogCreate()
-
         call Events_RegisterSpellEffect(function PH_OnSpellEffect)
         call Events_RegisterPlayerUnitEvent(function PH_OnIssuedOrder, EVENT_PLAYER_UNIT_ISSUED_ORDER)
         call Events_RegisterPlayerUnitEvent(function PH_OnIssuedOrder, EVENT_PLAYER_UNIT_ISSUED_POINT_ORDER)

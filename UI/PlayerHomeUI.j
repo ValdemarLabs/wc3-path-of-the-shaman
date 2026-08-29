@@ -2,11 +2,12 @@
     PlayerHomeUI
 
     Author: Valdemar
-    Version: 1.0.0
+    Version: 1.1.0
 
     Description:
-    Displays the Traveler's Journal dashboard and routes Return Home actions
-    through the real Journal item so UI and inventory use share one spell path.
+    Displays the Traveler's Journal dashboard, routes Return Home actions
+    through the real Journal item, and provides a distinct binding mode when
+    the player selects a registered world Journal.
 
     Credits:
     - Tasyen for frame UI examples used throughout PotS
@@ -18,6 +19,8 @@
     - PlayerHomeUI_Show()
     - PlayerHomeUI_Hide()
     - PlayerHomeUI_ForceUpdate()
+    - PlayerHomeUI_ShowBindMode()
+    - PlayerHomeUI_CloseBindMode()
 
 **/
 library PlayerHomeUI initializer AutoInit requires PlayerHome, MasterUI, Interface, FallenHeroState
@@ -26,6 +29,7 @@ library PlayerHomeUI initializer AutoInit requires PlayerHome, MasterUI, Interfa
         private constant real PHUI_REFRESH_PERIOD = 0.25
 
         private boolean PHUI_Initialized = false
+        private boolean PHUI_BindMode = false
         private framehandle PHUI_Parent = null
         private framehandle PHUI_Title = null
         private framehandle PHUI_Icon = null
@@ -35,6 +39,10 @@ library PlayerHomeUI initializer AutoInit requires PlayerHome, MasterUI, Interfa
         private framehandle PHUI_CloseButton = null
         private framehandle PHUI_ReturnToMenuButton = null
         private framehandle PHUI_PingButton = null
+        private framehandle PHUI_BindLocationText = null
+        private framehandle PHUI_BindHelpText = null
+        private framehandle PHUI_BindConfirmButton = null
+        private framehandle PHUI_BindCancelButton = null
         private framehandle array PHUI_HeroStatus
         private framehandle array PHUI_ReturnButton
 
@@ -42,6 +50,8 @@ library PlayerHomeUI initializer AutoInit requires PlayerHome, MasterUI, Interfa
         private trigger PHUI_ReturnToMenuTrigger = null
         private trigger PHUI_PingTrigger = null
         private trigger PHUI_ReturnTrigger = null
+        private trigger PHUI_BindConfirmTrigger = null
+        private trigger PHUI_BindCancelTrigger = null
         private trigger PHUI_ClearFocusTrigger = null
         private trigger PHUI_InitTrigger = null
         private timer PHUI_RefreshTimer = null
@@ -105,6 +115,31 @@ library PlayerHomeUI initializer AutoInit requires PlayerHome, MasterUI, Interfa
         return hero != null and GetOwningPlayer(hero) == Player(0) and PlayerHome_HasHome() and FallenHeroState_IsAlive(hero) and PlayerHome_HeroHasJournal(hero) and PlayerHome_GetCooldownRemaining(hero) <= 0.00 and not PlayerHome_IsChanneling(udg_Nazgrek) and not PlayerHome_IsChanneling(udg_Zulkis)
     endfunction
 
+    private function PHUI_SetFrameVisible takes framehandle frame, boolean visible returns nothing
+        if frame != null then
+            call BlzFrameSetVisible(frame, visible)
+        endif
+    endfunction
+
+    private function PHUI_ApplyModeVisibility takes nothing returns nothing
+        local boolean normalMode = not PHUI_BindMode
+
+        call PHUI_SetFrameVisible(PHUI_HomeText, normalMode)
+        call PHUI_SetFrameVisible(PHUI_OwnershipText, normalMode)
+        call PHUI_SetFrameVisible(PHUI_RulesText, normalMode)
+        call PHUI_SetFrameVisible(PHUI_ReturnButton[1], normalMode)
+        call PHUI_SetFrameVisible(PHUI_ReturnButton[2], normalMode)
+        call PHUI_SetFrameVisible(PHUI_HeroStatus[1], normalMode)
+        call PHUI_SetFrameVisible(PHUI_HeroStatus[2], normalMode)
+        call PHUI_SetFrameVisible(PHUI_PingButton, normalMode)
+        call PHUI_SetFrameVisible(PHUI_ReturnToMenuButton, normalMode)
+
+        call PHUI_SetFrameVisible(PHUI_BindLocationText, PHUI_BindMode)
+        call PHUI_SetFrameVisible(PHUI_BindHelpText, PHUI_BindMode)
+        call PHUI_SetFrameVisible(PHUI_BindConfirmButton, PHUI_BindMode)
+        call PHUI_SetFrameVisible(PHUI_BindCancelButton, PHUI_BindMode)
+    endfunction
+
     private function PHUI_Update takes nothing returns nothing
         local unit nazgrek = null
         local unit zulkis = null
@@ -114,8 +149,43 @@ library PlayerHomeUI initializer AutoInit requires PlayerHome, MasterUI, Interfa
             set zulkis = null
             return
         endif
+        if PHUI_BindMode and not PlayerHome_IsBinding() then
+            set PHUI_BindMode = false
+            call BlzFrameSetVisible(PHUI_Parent, false)
+            set nazgrek = null
+            set zulkis = null
+            return
+        endif
         set nazgrek = udg_Nazgrek
         set zulkis = udg_Zulkis
+
+        call PHUI_ApplyModeVisibility()
+        if PHUI_BindMode then
+            call BlzFrameSetText(PHUI_Title, "|cffffffffSet |r|cffffcc00Home|r")
+            call BlzFrameSetText(PHUI_BindLocationText, "|cffffcc00Selected Journal|r|n" + PlayerHome_GetBindingLocationName() + "|n|cffaaaaaa" + PlayerHome_GetBindingZoneName() + "|r|n|nInteracting hero: |cffffffff" + GetUnitName(PlayerHome_GetBindingHero()) + "|r")
+            if PlayerHome_IsBindingCurrentHome() then
+                if PlayerHome_HeroHasJournal(PlayerHome_GetBindingHero()) then
+                    call BlzFrameSetText(PHUI_BindConfirmButton, "Already Bound")
+                    call BlzFrameSetText(PHUI_BindHelpText, "This Journal already marks your shared home, and the interacting hero already owns a Traveler's Journal.")
+                else
+                    call BlzFrameSetText(PHUI_BindConfirmButton, "Take Traveler's Journal")
+                    call BlzFrameSetText(PHUI_BindHelpText, "This is already your shared home. Take a replacement Traveler's Journal for the interacting hero without changing the bound location.")
+                endif
+            else
+                if PlayerHome_HeroHasJournal(PlayerHome_GetBindingHero()) then
+                    call BlzFrameSetText(PHUI_BindConfirmButton, "Set Home")
+                else
+                    call BlzFrameSetText(PHUI_BindConfirmButton, "Set Home & Take Journal")
+                endif
+                call BlzFrameSetText(PHUI_BindHelpText, "Bind this location as the shared home and give the interacting hero a Traveler's Journal if needed.|n|nRemain within 300 range, out of combat, and do not cast while confirming.")
+            endif
+            call BlzFrameSetEnable(PHUI_BindConfirmButton, PlayerHome_CanConfirmBinding())
+            set nazgrek = null
+            set zulkis = null
+            return
+        endif
+
+        call BlzFrameSetText(PHUI_Title, "|cffffffffTraveler's |r|cffffcc00Journal|r")
 
         if PlayerHome_HasHome() then
             call BlzFrameSetText(PHUI_HomeText, "|cffffcc00Current home|r|n" + PlayerHome_GetHomeName() + "|n|cffaaaaaa" + PlayerHome_GetHomeZoneName() + "|r")
@@ -137,7 +207,7 @@ library PlayerHomeUI initializer AutoInit requires PlayerHome, MasterUI, Interfa
         call PHUI_Update()
     endfunction
 
-    public function Hide takes nothing returns nothing
+    private function PHUI_HideInternal takes nothing returns nothing
         if PHUI_Parent != null then
             if BlzFrameIsVisible(PHUI_Parent) then
                 call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_CLOSE, Player(0))
@@ -146,13 +216,43 @@ library PlayerHomeUI initializer AutoInit requires PlayerHome, MasterUI, Interfa
         endif
     endfunction
 
+    public function CloseBindMode takes nothing returns nothing
+        set PHUI_BindMode = false
+        call PHUI_HideInternal()
+    endfunction
+
+    public function Hide takes nothing returns nothing
+        if PHUI_BindMode and PlayerHome_IsBinding() then
+            call PlayerHome_CancelBinding()
+        else
+            set PHUI_BindMode = false
+            call PHUI_HideInternal()
+        endif
+    endfunction
+
     public function Show takes nothing returns nothing
         if PHUI_Parent != null then
+            set PHUI_BindMode = false
             if not BlzFrameIsVisible(PHUI_Parent) then
                 call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_OPEN, Player(0))
             endif
             call BlzFrameSetVisible(PHUI_Parent, true)
             call PHUI_Update()
+        endif
+    endfunction
+
+    public function ShowBindMode takes nothing returns nothing
+        if PHUI_Parent != null and PlayerHome_IsBinding() then
+            set PHUI_BindMode = false
+            call MasterUI_ClosePanels()
+            if PlayerHome_IsBinding() then
+                set PHUI_BindMode = true
+                if not BlzFrameIsVisible(PHUI_Parent) then
+                    call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_OPEN, Player(0))
+                endif
+                call BlzFrameSetVisible(PHUI_Parent, true)
+                call PHUI_Update()
+            endif
         endif
     endfunction
 
@@ -193,6 +293,18 @@ library PlayerHomeUI initializer AutoInit requires PlayerHome, MasterUI, Interfa
 
         set clickedFrame = null
         set hero = null
+    endfunction
+
+    private function PHUI_BindConfirmAction takes nothing returns nothing
+        if PHUI_BindMode and PlayerHome_CanConfirmBinding() then
+            call PlayerHome_ConfirmBinding()
+        endif
+    endfunction
+
+    private function PHUI_BindCancelAction takes nothing returns nothing
+        if PHUI_BindMode then
+            call PlayerHome_CancelBinding()
+        endif
     endfunction
 
     private function PHUI_CreateText takes string frameName, real x, real y, real width, real height returns framehandle
@@ -239,7 +351,23 @@ library PlayerHomeUI initializer AutoInit requires PlayerHome, MasterUI, Interfa
         call PHUI_CreateReturnButton(2, -0.190)
 
         set PHUI_RulesText = PHUI_CreateText("PlayerHomeUIRulesText", 0.045, -0.240, 0.355, 0.070)
-        call BlzFrameSetText(PHUI_RulesText, "|cffffcc00How it works|r|nChannel for 10 seconds; moving, issuing any order, taking or dealing damage, or dying interrupts the return. Cooldown is 30 minutes per hero. Nearby heroes, active companions, and the active pet within 900 range travel with the caster. Select a different world Journal nearby to bind a new home.")
+        call BlzFrameSetText(PHUI_RulesText, "|cffffcc00How it works|r|nChannel for 10 seconds; moving, issuing any order, taking or dealing damage, or dying interrupts the return. Cooldown is 30 minutes per hero. Nearby heroes, active companions, and the active pet within 900 range travel with the caster. Select a nearby world Journal to bind a home or replace a missing Journal.")
+
+        set PHUI_BindLocationText = PHUI_CreateText("PlayerHomeUIBindLocationText", 0.105, -0.060, 0.295, 0.100)
+        set PHUI_BindHelpText = PHUI_CreateText("PlayerHomeUIBindHelpText", 0.045, -0.185, 0.355, 0.090)
+
+        set PHUI_BindConfirmButton = BlzCreateFrameByType("GLUETEXTBUTTON", "PlayerHomeUIBindConfirmButton", PHUI_Parent, "ScriptDialogButton", 0)
+        call BlzFrameSetPoint(PHUI_BindConfirmButton, FRAMEPOINT_BOTTOMLEFT, PHUI_Parent, FRAMEPOINT_BOTTOMLEFT, 0.070, 0.055)
+        call BlzFrameSetSize(PHUI_BindConfirmButton, 0.190, 0.036)
+        call BlzTriggerRegisterFrameEvent(PHUI_BindConfirmTrigger, PHUI_BindConfirmButton, FRAMEEVENT_CONTROL_CLICK)
+        call BlzTriggerRegisterFrameEvent(PHUI_ClearFocusTrigger, PHUI_BindConfirmButton, FRAMEEVENT_CONTROL_CLICK)
+
+        set PHUI_BindCancelButton = BlzCreateFrameByType("GLUETEXTBUTTON", "PlayerHomeUIBindCancelButton", PHUI_Parent, "ScriptDialogButton", 0)
+        call BlzFrameSetPoint(PHUI_BindCancelButton, FRAMEPOINT_BOTTOMRIGHT, PHUI_Parent, FRAMEPOINT_BOTTOMRIGHT, -0.070, 0.055)
+        call BlzFrameSetSize(PHUI_BindCancelButton, 0.105, 0.036)
+        call BlzFrameSetText(PHUI_BindCancelButton, "Cancel")
+        call BlzTriggerRegisterFrameEvent(PHUI_BindCancelTrigger, PHUI_BindCancelButton, FRAMEEVENT_CONTROL_CLICK)
+        call BlzTriggerRegisterFrameEvent(PHUI_ClearFocusTrigger, PHUI_BindCancelButton, FRAMEEVENT_CONTROL_CLICK)
 
         set PHUI_PingButton = BlzCreateFrameByType("GLUETEXTBUTTON", "PlayerHomeUIPingButton", PHUI_Parent, "ScriptDialogButton", 0)
         call BlzFrameSetPoint(PHUI_PingButton, FRAMEPOINT_BOTTOMLEFT, PHUI_Parent, FRAMEPOINT_BOTTOMLEFT, 0.045, 0.025)
@@ -289,6 +417,10 @@ library PlayerHomeUI initializer AutoInit requires PlayerHome, MasterUI, Interfa
         call TriggerAddAction(PHUI_PingTrigger, function PHUI_PingAction)
         set PHUI_ReturnTrigger = CreateTrigger()
         call TriggerAddAction(PHUI_ReturnTrigger, function PHUI_ReturnAction)
+        set PHUI_BindConfirmTrigger = CreateTrigger()
+        call TriggerAddAction(PHUI_BindConfirmTrigger, function PHUI_BindConfirmAction)
+        set PHUI_BindCancelTrigger = CreateTrigger()
+        call TriggerAddAction(PHUI_BindCancelTrigger, function PHUI_BindCancelAction)
         set PHUI_ClearFocusTrigger = CreateTrigger()
         call TriggerAddAction(PHUI_ClearFocusTrigger, function PHUI_ClearFocusAction)
 

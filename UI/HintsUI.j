@@ -191,7 +191,7 @@ private function HUI_InitDefinitions takes nothing returns nothing
     call HUI_SetHintText(HINT_QUESTS, "Look for NPCs with a question mark above them to discover available quests.")
 
     set HINT_TRAVELERS_JOURNAL_LOST = HUI_RegisterHint("Traveler's Journal: Lost Journal", "Hint", "ReplaceableTextures\\CommandButtons\\BTNScrollOfTownPortal.blp", false)
-    call HUI_SetHintText(HINT_TRAVELERS_JOURNAL_LOST, "If you lose your Traveler's Journal, you must select a different journal than the one where your home was previously set.")
+    call HUI_SetHintText(HINT_TRAVELERS_JOURNAL_LOST, "If you lose your Traveler's Journal, select a nearby world Journal. Your current home can provide a replacement without changing the bound location.")
 
     set HINT_TRAVELERS_JOURNAL_UNIQUE = HUI_RegisterHint("Traveler's Journal: Hero Item", "Hint", "ReplaceableTextures\\CommandButtons\\BTNScrollOfTownPortal.blp", false)
     call HUI_SetHintText(HINT_TRAVELERS_JOURNAL_UNIQUE, "Nazgrek and Zul'kis may each carry a Traveler's Journal, but companions cannot use one.")
