@@ -167,6 +167,7 @@ private function Revival_StopDeathCamera takes nothing returns nothing
     set Revival_DeathCameraActive = false
     call PauseTimer(Revival_DeathCameraTimer)
     set Revival_DeathCameraHero = null
+    call StopCameraForPlayerBJ(Player(0))
     call CameraControl_ResumeQuick(Player(0))
 endfunction
 
@@ -422,6 +423,7 @@ private function Revival_OnDeathRevived takes nothing returns nothing
     local unit whichHero = Death_EventHero
 
     if Revival_DeathCameraActive and Revival_DeathCameraHero == whichHero then
+        call CameraControl_SetTargetUnit(Player(0), whichHero)
         call Revival_StopDeathCamera()
     endif
 
