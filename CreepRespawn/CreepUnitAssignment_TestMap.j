@@ -54,6 +54,8 @@ private function TriggerQuestEvaluation_Delayed takes nothing returns nothing
     call QuestGiver_RefreshAvailabilityForGiver(newUnit)
     if unitTypeId == 'o60X' then
         call ExecuteFunc("qOutcastJinzun_RefreshRespawnedUnitHooks")
+    elseif unitTypeId == 'o61C' then
+        call ExecuteFunc("qErduk_RefreshRespawnedUnitHooks")
     endif
     
     // Cleanup

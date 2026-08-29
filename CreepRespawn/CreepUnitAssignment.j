@@ -72,6 +72,8 @@ private function TriggerQuestEvaluation_Delayed takes nothing returns nothing
         call ExecuteFunc("qGrumBloodfang_RefreshRespawnedUnitHooks")
     elseif unitTypeId == 'o61S' then
         call ExecuteFunc("qGraknar_RefreshRespawnedUnitHooks")
+    elseif unitTypeId == 'o61C' then
+        call ExecuteFunc("qErduk_RefreshRespawnedUnitHooks")
     elseif unitTypeId == 'n013' then
         call ExecuteFunc("qBoomBrothers_RefreshRespawnedUnitHooks")
     elseif unitTypeId == 'n01A' then
@@ -131,6 +133,7 @@ function CreepUnitAssignment takes integer utype returns nothing
         set udg_Ogmar = bj_lastCreatedUnit
     elseif utype == 'o61C' then
         set udg_Erduk = bj_lastCreatedUnit
+        call TriggerQuestEvaluation(bj_lastCreatedUnit)
     elseif utype == 'o61S' then
         set udg_Graknar = bj_lastCreatedUnit
         call TriggerQuestEvaluation(bj_lastCreatedUnit)
