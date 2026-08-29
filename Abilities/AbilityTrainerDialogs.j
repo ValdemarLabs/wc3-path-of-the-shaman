@@ -22,6 +22,7 @@
     - set trainer = AbilityTrainerDialogs_GetSelectedTrainer()
     - set hero = AbilityTrainerDialogs_GetSelectedHero()
     - set treeId = AbilityTrainerDialogs_GetSelectedTree()
+    - call AbilityTrainerDialogs_RefreshDialog()
 
 **/
 library AbilityTrainerDialogs initializer Init requires Table, DialogInteraction, DialogSystem, DialogSystemPlayer, AbilitiesPlayer, AbilitiesUI, AbilityTrainerLines, Interface, optional Events, optional HintsUI
@@ -279,6 +280,14 @@ library AbilityTrainerDialogs initializer Init requires Table, DialogInteraction
         call DialogSystem_BindButtonCode(b, function ATD_OnFarewell)
 
         set b = null
+    endfunction
+
+    public function RefreshDialog takes nothing returns nothing
+        if ATD_IsSelectedContextValid() then
+            call ATD_BuildDialog()
+            call DialogSystem_SetContext(ATD_SelectedTrainer, Player(0))
+            call DialogSystem_ShowDialog(ATD_Dialog, Player(0))
+        endif
     endfunction
 
     public function ReopenFromAbilitiesUI takes nothing returns nothing

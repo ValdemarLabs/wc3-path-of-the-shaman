@@ -11,8 +11,8 @@
     Credits:
 
     How to install:
-    Import this library with the rest of the Leveling libraries. Disable the
-    old GUI level-up and reset-abilities triggers after importing.
+    Import after AbilitiesPlayer with the rest of the Leveling libraries.
+    Disable the old GUI level-up and reset-abilities triggers after importing.
 
     API:
     - call AbilityPoints_Add(hero, amount)
@@ -28,7 +28,7 @@
     - Debug: /debug ap add
 
 **/
-library AbilityPoints initializer Init requires optional RegionTitles, optional DItemTransfer, optional DInventory, optional DEquipment, optional HintsUI
+library AbilityPoints initializer Init requires AbilitiesPlayer, optional RegionTitles, optional DItemTransfer, optional DInventory, optional DEquipment, optional HintsUI
     globals
         public constant integer HERO_NAZGREK = 1
         public constant integer HERO_ZULKIS = 2
@@ -41,6 +41,7 @@ library AbilityPoints initializer Init requires optional RegionTitles, optional 
         private constant integer AP_MAX_PLAYER_INDEX = 27
 
         private integer array AP_Points
+        private integer array AP_ResetQuestRank
         private boolean AP_HeroLevelUpEnabled = true
         private trigger AP_LevelTrigger = null
         private trigger AP_ItemTrigger = null
@@ -195,6 +196,56 @@ library AbilityPoints initializer Init requires optional RegionTitles, optional 
         return AP_HeroLevelUpEnabled
     endfunction
 
+    private function AP_StoreQuestRanks takes unit whichHero returns nothing
+        local integer entryIndex = 1
+        local integer entryCount = AbilitiesPlayer_GetEntryCount()
+        local integer currentLevel
+        local integer lockedThroughRank
+
+        loop
+            exitwhen entryIndex > entryCount
+            set currentLevel = GetUnitAbilityLevel(whichHero, AbilitiesPlayer_GetEntryAbilityId(entryIndex))
+            set lockedThroughRank = AbilitiesPlayer_GetEntryQuestLockedThroughRank(entryIndex)
+            if currentLevel > lockedThroughRank then
+                set currentLevel = lockedThroughRank
+            endif
+            set AP_ResetQuestRank[entryIndex] = currentLevel
+            set entryIndex = entryIndex + 1
+        endloop
+    endfunction
+
+    private function AP_RestoreQuestRanks takes unit whichHero returns nothing
+        local integer entryIndex = 1
+        local integer entryCount = AbilitiesPlayer_GetEntryCount()
+        local integer abilityId
+        local integer addAbilityId
+        local integer permanentAbilityId
+        local integer rank
+
+        loop
+            exitwhen entryIndex > entryCount
+            set rank = AP_ResetQuestRank[entryIndex]
+            if rank > 0 then
+                set abilityId = AbilitiesPlayer_GetEntryAbilityId(entryIndex)
+                set addAbilityId = AbilitiesPlayer_GetEntryAddAbilityId(entryIndex)
+                set permanentAbilityId = AbilitiesPlayer_GetEntryPermanentAbilityId(entryIndex)
+                if GetUnitAbilityLevel(whichHero, addAbilityId) <= 0 then
+                    call UnitAddAbility(whichHero, addAbilityId)
+                endif
+                call UnitMakeAbilityPermanent(whichHero, true, addAbilityId)
+                call UnitMakeAbilityPermanent(whichHero, true, abilityId)
+                if permanentAbilityId != 0 and permanentAbilityId != abilityId and permanentAbilityId != addAbilityId then
+                    call UnitMakeAbilityPermanent(whichHero, true, permanentAbilityId)
+                endif
+                if rank > 1 then
+                    call SetUnitAbilityLevel(whichHero, abilityId, rank)
+                endif
+            endif
+            set AP_ResetQuestRank[entryIndex] = 0
+            set entryIndex = entryIndex + 1
+        endloop
+    endfunction
+
     public function ResetHeroAbilities takes unit whichHero returns unit
         local integer heroSlot = AP_GetHeroSlot(whichHero)
         local integer unitTypeId
@@ -205,6 +256,7 @@ library AbilityPoints initializer Init requires optional RegionTitles, optional 
         endif
 
         set unitTypeId = GetUnitTypeId(whichHero)
+        call AP_StoreQuestRanks(whichHero)
 
         static if LIBRARY_DItemTransfer then
             static if LIBRARY_DInventory then
@@ -221,6 +273,7 @@ library AbilityPoints initializer Init requires optional RegionTitles, optional 
         elseif heroSlot == HERO_ZULKIS then
             set udg_Zulkis = replacement
         endif
+        call AP_RestoreQuestRanks(replacement)
 
         static if LIBRARY_DItemTransfer then
             static if LIBRARY_DInventory then

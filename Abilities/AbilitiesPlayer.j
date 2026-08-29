@@ -23,6 +23,7 @@
     - set title = AbilitiesPlayer_GetEntryTitle(entry)
     - set body = AbilitiesPlayer_GetEntryBodyForLevel(entry, level)
     - set locked = AbilitiesPlayer_IsEntryInitialQuestLocked(entry)
+    - set rank = AbilitiesPlayer_GetEntryQuestLockedThroughRank(entry)
     - set text = AbilitiesPlayer_GetEntryInitialQuestLockedText(entry)
 
 **/
@@ -64,6 +65,7 @@ library AbilitiesPlayer initializer Init
         private integer array ABP_EntryMaxLevel
         private integer array ABP_EntryCost
         private boolean array ABP_EntryInitialQuestLocked
+        private integer array ABP_EntryQuestLockedThroughRank
         private string array ABP_EntryInitialQuestLockedText
         private string array ABP_EntryTitleOverride
         private string array ABP_EntryBodyOverride
@@ -140,6 +142,7 @@ library AbilitiesPlayer initializer Init
         set ABP_EntryCost[ABP_EntryCount] = cost
         set ABP_EntryRequiredAbilityId[ABP_EntryCount] = requiredAbilityId
         set ABP_EntryInitialQuestLocked[ABP_EntryCount] = false
+        set ABP_EntryQuestLockedThroughRank[ABP_EntryCount] = 0
         set ABP_EntryInitialQuestLockedText[ABP_EntryCount] = ""
         set ABP_EntryTitleOverride[ABP_EntryCount] = titleText
         set ABP_EntryBodyOverride[ABP_EntryCount] = bodyText
@@ -155,16 +158,26 @@ library AbilitiesPlayer initializer Init
         return ABP_RegisterEntry(treeId, ENTRY_SPECIALIZATION, abilityId, abilityId, permanentAbilityId, 1, ABP_SPECIALIZATION_COST, 0, "", "")
     endfunction
 
-    private function ABP_SetEntryInitialQuestLocked takes integer entryIndex, string lockedText returns nothing
+    private function ABP_SetEntryQuestLockedThroughRank takes integer entryIndex, integer rank, string lockedText returns nothing
         if entryIndex <= 0 or entryIndex > ABP_MAX_ENTRIES then
             return
         endif
 
+        if rank < 1 then
+            set rank = 1
+        endif
         set ABP_EntryInitialQuestLocked[entryIndex] = true
+        set ABP_EntryQuestLockedThroughRank[entryIndex] = rank
         set ABP_EntryInitialQuestLockedText[entryIndex] = lockedText
     endfunction
 
+    private function ABP_SetEntryInitialQuestLocked takes integer entryIndex, string lockedText returns nothing
+        call ABP_SetEntryQuestLockedThroughRank(entryIndex, 1, lockedText)
+    endfunction
+
     private function ABP_RegisterElemental takes nothing returns nothing
+        local integer entryIndex
+
         call ABP_RegisterAbility(TREE_ELEMENTAL, 'A6A0', 'A67F', 5, 0)     // Lightning Bolt
         call ABP_RegisterAbility(TREE_ELEMENTAL, 'A67H', 'A67I', 5, 0)     // Lightning Strike
         call ABP_RegisterAbility(TREE_ELEMENTAL, 'A67L', 'A67M', 5, 0)     // Chain Lightning
@@ -172,7 +185,8 @@ library AbilitiesPlayer initializer Init
         call ABP_RegisterAbility(TREE_ELEMENTAL, 'A69L', 'A69P', 5, 0)     // Frost Shock
         call ABP_RegisterAbility(TREE_ELEMENTAL, 'A69N', 'A69Q', 5, 0)     // Nature Shock
         call ABP_RegisterAbility(TREE_ELEMENTAL, 'A68H', 'A67C', 5, 0)     // Lightning Shield
-        call ABP_RegisterAbility(TREE_ELEMENTAL, 'A67Q', 'A67R', 5, 'A6A3') // Summon Elemental, requires Stormcaller
+        set entryIndex = ABP_RegisterAbility(TREE_ELEMENTAL, 'A67Q', 'A67R', 5, 'A6A3') // Summon Elemental, requires Stormcaller
+        call ABP_SetEntryQuestLockedThroughRank(entryIndex, 4, "Requires elemental covenant quest training.")
         call ABP_RegisterSpecialization(TREE_ELEMENTAL, 'A6A3', 0)         // Stormcaller
     endfunction
 
@@ -322,6 +336,13 @@ library AbilitiesPlayer initializer Init
             return false
         endif
         return ABP_EntryInitialQuestLocked[entryIndex]
+    endfunction
+
+    public function GetEntryQuestLockedThroughRank takes integer entryIndex returns integer
+        if not IsValidEntry(entryIndex) then
+            return 0
+        endif
+        return ABP_EntryQuestLockedThroughRank[entryIndex]
     endfunction
 
     public function GetEntryInitialQuestLockedText takes integer entryIndex returns string

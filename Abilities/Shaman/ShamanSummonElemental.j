@@ -15,10 +15,11 @@
 
     How to install:
     Requires `Table`, `Events`, `UnitDeathEvent`, `Companions`, and
-    `ShamanCommon`.
+    `ShamanCommon`. Import `ItemLootSystem` to suppress loot from summoned
+    elementals.
 
 **/
-library ShamanSummonElemental initializer Init requires Table, Events, UnitDeathEvent, Companions, ShamanCommon
+library ShamanSummonElemental initializer Init requires Table, Events, UnitDeathEvent, Companions, ShamanCommon, optional ItemLootSystem
 
 globals
     private constant real SUMMON_DELAY = 3.00
@@ -30,6 +31,7 @@ globals
     private constant real GREATER_ELEMENTAL_SUMMONER_STAT_MULTIPLIER = 1.50
 
     private constant integer GREATER_SUMMON_RANK = 5
+    private constant integer ABILITY_STORMCALLER = 'A6A3'
 
     private constant integer ABILITY_AIR_LIGHTNING_SHIELD = 'ACls'
     private constant integer ABILITY_AIR_CHAIN_LIGHTNING = 'ACcl'
@@ -374,6 +376,9 @@ private function SpawnPendingElemental takes nothing returns nothing
         set x = ShamanCommon_PolarX(GetUnitX(hero), SUMMON_OFFSET, GetUnitFacing(hero))
         set y = ShamanCommon_PolarY(GetUnitY(hero), SUMMON_OFFSET, GetUnitFacing(hero))
         set elemental = CreateUnit(GetOwningPlayer(hero), unitTypeId, x, y, GetUnitFacing(hero))
+        static if LIBRARY_ItemLootSystem then
+            call ItemLoot_RegisterExcludedUnit(elemental)
+        endif
         call SetUnitOwner(elemental, Player(ShamanCommon_COMPANION_OWNER_PLAYER_INDEX), false)
         call ApplyElementalTalent(hero, elemental, unitTypeId, summonRank)
         set ElementalBySlot.unit[heroSlot] = elemental
@@ -409,7 +414,7 @@ endfunction
 private function HandleSpellChannel takes nothing returns nothing
     local integer abilityId = GetSpellAbilityId()
     local integer unitTypeId = GetElementalUnitType(abilityId)
-    if unitTypeId != 0 then
+    if unitTypeId != 0 and GetUnitAbilityLevel(GetTriggerUnit(), ABILITY_STORMCALLER) > 0 then
         call ScheduleSummon(GetTriggerUnit(), unitTypeId)
     endif
 endfunction

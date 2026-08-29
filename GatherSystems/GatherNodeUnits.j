@@ -275,6 +275,9 @@ endfunction
 private function GNU_RegisterDropForZone takes integer defId, integer zoneId, string groupName, integer itemCode, integer dropChancePct, integer weight, integer minQty, integer maxQty, boolean enabled returns integer
     local integer dropId = GNU_DropCount
 
+    if itemCode == 'I6C7' or itemCode == 'I6C8' or itemCode == 'I6C5' or itemCode == 'I6C6' then
+        return -1
+    endif
     if defId < 0 or defId >= GNU_DefinitionCount then
         return -1
     endif

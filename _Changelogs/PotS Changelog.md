@@ -19,6 +19,10 @@
 
 ### Player-Facing Updates
 
+- Restored the one-time Orc Grunt conversations at the western Horde scout base and southern mountain camp; the mountain exchange unlocks after Protect the Outpost as before.
+- Added the Elemental Master's ordered Summon Elemental covenant quests: Air, Earth, Fire, and Water. Any Elemental Master can begin a rank, but its essence must be returned to that same trainer; Stormcaller remains required, and rank 5 Greater Elementals remain the final AP upgrade.
+- Elemental Essences now come only from their matching hostile elementals; generic creature loot, gathering nodes, vendors, and player-summoned elementals no longer provide them.
+- Added Erduk's one-time Heads of the Murlocs quest for Nazgrek, tracking and consuming 40 Murloc Heads before rewarding experience, gold, and Horde reputation.
 - Updated Protect the Outpost's first grunt warning, added a four-second pause before the overwhelmed response, and shifted the remaining dialogue and camera timing with it.
 - Protect the Outpost now periodically sends idle gnolls and gnolls lingering in their spawn regions toward the Horde mountain outpost.
 - Shadowclaw now joins the Protect the Outpost completion scene beside Nazgrek and remains there when Nazgrek gameplay resumes after Zul'kis's prologue.
@@ -31,6 +35,11 @@
 
 ### Technical Updates
 
+- Added `World/AmbientEvents/AmbientEvents.j` with reusable one-shot region-entry and ambient unit-type transmission helpers, and added `World/AmbientEvents/HordeUnitsRandomChat.j` to convert the three legacy Horde chat triggers with `Voicelines/Voicelines_OrcGrunt.j` keys and text; updated `QuestsAndDialogs/QuestGivers/Orcs/qRagno.j` and `_developer/Design Plans/Story and Quest Design.md` with the Protect the Outpost unlock contract.
+- Added `QuestsAndDialogs/QuestGivers/Shaman/qElementalMaster.j` with per-trainer quest identity, ordered rank conditions, shared item tracking, class metadata, and quest-granted Summon Elemental ranks; updated `Abilities/AbilitiesPlayer.j`, `Abilities/Abilities.j`, `Abilities/AbilityPoints.j`, and `Abilities/AbilityTrainerDialogs.j` with rank-aware quest locks, exact quest-rank grants, reset preservation for earned quest ranks, and trainer-dialog refresh support.
+- Added `ItemLootSystems/ElementalEssenceDrops.j`; updated `ItemLootSystems/ItemLootSystem.j`, `GatherSystems/GatherNodeUnits.j`, `Vendors/VendorCatalogs.j`, and `Abilities/Shaman/ShamanSummonElemental.j` to enforce matching-element-only essence acquisition and suppress summoned-elemental loot.
+- Updated `_developer/Design Plans/Story and Quest Design.md` with the implemented elemental covenant order, trainer binding, rawcodes, specialization dependency, and rank-5 boundary.
+- Added `QuestsAndDialogs/QuestGivers/Orcs/qErduk.j` to convert Erduk's legacy GUI dialogue and quest to the shared quest, item-tracking, objective-reveal, dialogue, camera, and respawn systems; updated `CreepRespawn/CreepUnitAssignment.j`, its test-map respawn dispatcher, and `_developer/Design Plans/Story and Quest Design.md` with Erduk's respawn hook and confirmed Ghostwalk Ridge placement outside Ironspine Post.
 - Updated `QuestsAndDialogs/QuestGivers/Orcs/qRagno.j` with synchronized intro-delay timing, periodic gnoll attack-order recovery, and completion-position preservation for active Shadowclaw, and updated `Voicelines/Voicelines_OrcGrunt.j` with the corrected attack warning.
 - Updated `UI/MasterUI.j` to remove the invalid full-texture Game alert and alpha pulse, reusing QuestUI's timed replacement-button label pattern instead.
 - Updated `QuestsAndDialogs/QuestGivers/Player/qZulkis.j` with GUI-equivalent zero-second camera setup application, the intended six-camera arrival flow, opening narration timing, and Thork objective-target registration.
@@ -40,6 +49,9 @@
 
 ### Actions Remaining
 
+- Import `World/AmbientEvents/AmbientEvents.j` before `World/AmbientEvents/HordeUnitsRandomChat.j`, import the Horde chat library before `qRagno.j`, disable the three legacy Horde Units Random Chat GUI triggers, then compile and runtime-test both one-shot regions and the delayed mountain follow-up.
+- Disable the four old Quest Elemental GUI trigger groups, import `qElementalMaster` and `ElementalEssenceDrops`, then compile and runtime-test every trainer start/turn-in pairing, inventory consumption, Stormcaller gating, ranks 1–4, the rank-5 AP upgrade, essence drop ownership, and save/load behavior.
+- Disable Erduk's old GUI trigger group, then compile and runtime-test the `gg_rct_LakeAmbient042` reveal, 40-head tracking across both inventories, turn-in consumption, rewards, camera restoration, and respawned selection hooks in Ghostwalk Ridge `19` outside Ironspine Post `1901`.
 - Compile and runtime-test Protect the Outpost's delayed intro, both wave spawn exits, ESC timing, completion staging, and Shadowclaw's post-Zul'kis return position.
 - Compile the full map with World Editor/JassHelper and runtime-test the zero-second camera snaps, both river pans, the shore pan, Thork's temporary question mark, and Zul'kis's death-camera release after revival.
 - Runtime-test Graknar and Kribugs by leaving directly through Farewell and by opening trade, returning to their choices, and then leaving through Farewell; confirm fullscreen mode, camera, selection, and hero control all restore.

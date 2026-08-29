@@ -160,6 +160,23 @@ library ItemLootSystem initializer Init requires Table, Events, UnitDeathEvent, 
         endif
         return 0
     endfunction
+
+    private function IsElementalEssence takes integer itemTypeId returns boolean
+        return itemTypeId == 'I6C7' or itemTypeId == 'I6C8' or itemTypeId == 'I6C5' or itemTypeId == 'I6C6'
+    endfunction
+
+    private function IsMatchingElementalEssenceDrop takes integer unitTypeId, integer itemTypeId returns boolean
+        if itemTypeId == 'I6C7' then
+            return unitTypeId == 'h60D'
+        elseif itemTypeId == 'I6C8' then
+            return unitTypeId == 'n615'
+        elseif itemTypeId == 'I6C5' then
+            return unitTypeId == 'n616'
+        elseif itemTypeId == 'I6C6' then
+            return unitTypeId == 'n00O' or unitTypeId == 'h60C'
+        endif
+        return true
+    endfunction
     
     // =========================================================================
     // FLOATING TEXT CONFIGURATION
@@ -815,6 +832,10 @@ library ItemLootSystem initializer Init requires Table, Events, UnitDeathEvent, 
         local integer poolKey = itemLevel * 100 + rarityId
         local integer entryIndex = itemPoolEntryCount
         local integer firstEntry
+
+        if IsElementalEssence(itemTypeId) then
+            return
+        endif
         
         // Store item data
         set itemPoolItemType[entryIndex] = itemTypeId
@@ -851,6 +872,23 @@ library ItemLootSystem initializer Init requires Table, Events, UnitDeathEvent, 
     function RegisterSpecificDrop takes integer unitTypeId, integer itemTypeId, integer dropChance, boolean isGuaranteed, integer weight returns nothing
         local integer entryIndex = specificEntryCount
         local integer firstEntry
+
+        if IsElementalEssence(itemTypeId) and not IsMatchingElementalEssenceDrop(unitTypeId, itemTypeId) then
+            return
+        endif
+        if IsElementalEssence(itemTypeId) then
+            set itemRarity[itemTypeId] = ITEM_RARITY_RARE
+        endif
+        if IsElementalEssence(itemTypeId) and unitHasSpecificDrops[unitTypeId] != 0 then
+            set firstEntry = unitSpecificFirst[unitTypeId]
+            loop
+                exitwhen firstEntry < 0
+                if specificItemType[firstEntry] == itemTypeId then
+                    return
+                endif
+                set firstEntry = specificNext[firstEntry]
+            endloop
+        endif
         
         // Store drop data
         set specificItemType[entryIndex] = itemTypeId

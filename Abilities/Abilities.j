@@ -20,6 +20,7 @@
     - set ok = Abilities_Learn(hero, entryIndex)
     - set ok = Abilities_GrantQuestEntry(hero, entryIndex)
     - set ok = Abilities_GrantQuestAbility(hero, abilityId)
+    - set ok = Abilities_GrantQuestAbilityRank(hero, abilityId, targetRank)
     - set canLearn = Abilities_CanLearn(hero, entryIndex)
     - set level = Abilities_GetEntryLevel(hero, entryIndex)
     - set text = Abilities_GetEntryStateText(hero, entryIndex)
@@ -178,7 +179,7 @@ library Abilities initializer Init requires ExSound, AbilitiesPlayer, AbilitiesP
         if AB_AreModeAbilityPrerequisitesEnabled() and not AB_HasEntryRequirement(hero, entryIndex) then
             return RESULT_REQUIREMENT
         endif
-        if currentLevel <= 0 and AB_AreModeAbilityQuestLocksEnabled() and AbilitiesPlayer_IsEntryInitialQuestLocked(entryIndex) then
+        if AB_AreModeAbilityQuestLocksEnabled() and currentLevel < AbilitiesPlayer_GetEntryQuestLockedThroughRank(entryIndex) then
             return RESULT_QUEST_LOCKED
         endif
         if AB_AreModeAbilityPointCostsEnabled() and AbilityPoints_Get(hero) < AbilitiesPlayer_GetEntryCost(entryIndex) then
@@ -499,6 +500,37 @@ library Abilities initializer Init requires ExSound, AbilitiesPlayer, AbilitiesP
         endif
 
         return GrantQuestEntry(hero, entryIndex)
+    endfunction
+
+    public function GrantQuestAbilityRank takes unit hero, integer abilityId, integer targetRank returns boolean
+        local integer entryIndex = AbilitiesPlayer_GetEntryByAbilityId(abilityId)
+        local integer currentLevel
+        local integer maxLevel
+
+        if not AB_IsPlayerShamanHero(hero) or entryIndex == 0 then
+            return AB_Fail(hero, entryIndex, RESULT_INVALID)
+        endif
+
+        set currentLevel = AB_GetEntryLevelRaw(hero, entryIndex)
+        set maxLevel = AbilitiesPlayer_GetEntryMaxLevel(entryIndex)
+        if targetRank < 1 or targetRank > maxLevel or currentLevel + 1 != targetRank then
+            if currentLevel >= targetRank and targetRank > 0 then
+                set AB_LastResult = RESULT_OK
+                return true
+            endif
+            return AB_Fail(hero, entryIndex, RESULT_INVALID)
+        endif
+        if AB_AreModeAbilityPrerequisitesEnabled() and not AB_HasEntryRequirement(hero, entryIndex) then
+            return AB_Fail(hero, entryIndex, RESULT_REQUIREMENT)
+        endif
+
+        if currentLevel <= 0 then
+            call AB_AddEntryAbility(hero, entryIndex)
+        else
+            call SetUnitAbilityLevel(hero, abilityId, targetRank)
+        endif
+        call AB_OnEntryAbilityChanged(hero, abilityId)
+        return AB_Success(hero, entryIndex, currentLevel)
     endfunction
 
     public function ResetAbilities takes unit hero returns unit
