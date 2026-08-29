@@ -966,11 +966,21 @@ namespace WC3ItemManager
             {
                 if (_sourceEditSession?.CanAddQuest != true)
                 {
+                    string variable = _sourceEditSession?.SuggestedQuestVariable ?? "q";
+                    string giver = _sourceEditSession?.SuggestedGiverExpression ?? "null";
                     MessageBox.Show(
-                        (_sourceEditSession?.AddQuestReason ?? "The source could not be analyzed.") +
-                        "\n\nRequired marker examples:\n" +
+                        "Existing mapped quest fields can already be edited without markers. " +
+                        "These markers are only the one-time opt-in for inserting brand-new standard quests.\n\n" +
+                        "1. Open the source .j file.\n" +
+                        "2. Inside its globals/endglobals block, add:\n\n" +
                         "// WC3M-BEGIN QUEST CONSTANTS\n// WC3M-END QUEST CONSTANTS\n\n" +
-                        "// WC3M-BEGIN QUESTS variable=q giver=GiverVariable receiver=null\n// WC3M-END QUESTS",
+                        "3. Inside the CreateQuests registration function, after 'local QuestData " + variable +
+                        "' and normally after the existing registrations, add:\n\n" +
+                        $"// WC3M-BEGIN QUESTS variable={variable} giver={giver} receiver=null\n" +
+                        "// WC3M-END QUESTS\n\n" +
+                        "Current safety check: " +
+                        (_sourceEditSession?.AddQuestReason ?? "The source could not be analyzed.") +
+                        "\n\nNo source file has been changed.",
                         "Source-owned quest region required", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     return;
                 }

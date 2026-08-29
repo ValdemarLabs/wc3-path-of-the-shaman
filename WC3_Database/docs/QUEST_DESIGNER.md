@@ -68,14 +68,14 @@ WC3 Manager inserts a new quest only into explicit, developer-reviewed regions. 
 // WC3M-END QUEST CONSTANTS
 ```
 
-Place the registration markers inside the correct quest-registration function, after its local quest variable has been declared:
+Place the registration markers inside the correct quest-registration function, after its `local QuestData` variable has been declared and normally after the existing standard quest registrations:
 
 ```jass
 // WC3M-BEGIN QUESTS variable=q giver=Aradion receiver=null
 // WC3M-END QUESTS
 ```
 
-The `variable`, `giver`, and optional `receiver` values are JASS expressions reviewed by the developer. Without both regions, **New quest** explains the required contract and does not modify the file. Generated region content is limited to the standard configured quest, category, reputation, reward, and requirement calls; acceptance menus, dialog, cinematics, runtime trackers, cleanup, and other custom behavior still require repository work.
+Here `q` must match an earlier declaration such as `local QuestData q`, and `Aradion` must match the giver expression already used by that library. The `variable`, `giver`, and optional `receiver` values are simple JASS identifiers reviewed by the developer. Without both regions, **New quest** shows values detected from the current source and does not modify the file. Generated region content is limited to the standard configured quest, category, reputation, reward, and requirement calls; acceptance menus, dialog, cinematics, runtime trackers, cleanup, and other custom behavior still require repository work.
 
 The same operation is available for diagnostics or automation:
 

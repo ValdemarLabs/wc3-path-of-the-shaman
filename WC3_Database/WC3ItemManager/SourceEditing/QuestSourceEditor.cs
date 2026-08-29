@@ -51,12 +51,43 @@ namespace WC3ItemManager.SourceEditing
             };
 
             AddGiverMappings(session, giver, document);
+            SourceCall firstQuestCall = document.Calls
+                .FirstOrDefault(call => call.Name == "QuestGiver_CreateConfiguredQuest" && call.Arguments.Count >= 2);
+            if (firstQuestCall != null)
+            {
+                session.SuggestedQuestVariable = string.IsNullOrWhiteSpace(firstQuestCall.AssignmentTarget)
+                    ? "q" : firstQuestCall.AssignmentTarget;
+                string giverExpression = firstQuestCall.Arguments[1].Text.Trim();
+                session.SuggestedGiverExpression = Regex.IsMatch(giverExpression,
+                    @"^(?:null|[A-Za-z][A-Za-z0-9_]*)$") ? giverExpression : "null";
+            }
             if (quest != null)
             {
                 AddQuestMappings(session, quest, objectives ?? Array.Empty<QuestObjectiveDefinition>(), document);
             }
             FindManagedRegions(session, document);
             return session;
+        }
+
+        internal static void RunMarkerContractSelfTest()
+        {
+            const string source =
+                "library qSourceEditAudit requires QuestGiver\n" +
+                "globals\n" +
+                "    // WC3M-BEGIN QUEST CONSTANTS\n" +
+                "    // WC3M-END QUEST CONSTANTS\n" +
+                "endglobals\n" +
+                "private function CreateQuests takes nothing returns nothing\n" +
+                "    local QuestData q\n" +
+                "    // WC3M-BEGIN QUESTS variable=q giver=AuditGiver receiver=null\n" +
+                "    // WC3M-END QUESTS\n" +
+                "endfunction\n" +
+                "endlibrary\n";
+            SourceDocument document = SourceDocument.Parse("qSourceEditAudit.j", source, false);
+            var session = new QuestSourceEditSession();
+            FindManagedRegions(session, document);
+            if (!session.CanAddQuest)
+                throw new InvalidOperationException("The valid QuestData marker contract was rejected: " + session.AddQuestReason);
         }
 
         public SourcePatchPreview PrepareGiverPatch(QuestGiverDefinition giver,
@@ -454,10 +485,10 @@ namespace WC3ItemManager.SourceEditing
             string functionPrefix = functionStart >= 0
                 ? document.MaskedText.Substring(functionStart, session.QuestRegion.BodyStart - functionStart)
                 : "";
-            if (!Regex.IsMatch(functionPrefix, $@"(?m)^\s*local\s+quest\s+{Regex.Escape(variable)}\b"))
+            if (!Regex.IsMatch(functionPrefix, $@"(?m)^\s*local\s+QuestData\s+{Regex.Escape(variable)}\b"))
             {
                 session.CanAddQuest = false;
-                session.AddQuestReason = $"The containing function must declare 'local quest {variable}' before the QUESTS region.";
+                session.AddQuestReason = $"The containing function must declare 'local QuestData {variable}' before the QUESTS region.";
                 return;
             }
             session.CanAddQuest = true;
@@ -1101,6 +1132,8 @@ namespace WC3ItemManager.SourceEditing
         public string DefaultReadOnlyReason { get; set; } = "";
         public bool CanAddQuest { get; set; }
         public string AddQuestReason { get; set; } = "";
+        public string SuggestedQuestVariable { get; set; } = "q";
+        public string SuggestedGiverExpression { get; set; } = "null";
         public IReadOnlyDictionary<string, SourceFieldAccess> GiverFields => MutableGiverFields;
         public IReadOnlyDictionary<string, SourceFieldAccess> QuestFields => MutableQuestFields;
         public IReadOnlyDictionary<string, SourceFieldAccess> RewardFields => MutableRewardFields;

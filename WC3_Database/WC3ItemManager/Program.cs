@@ -15,6 +15,7 @@ namespace WC3ItemManager
         {
             if (args.Length >= 1 && string.Equals(args[0], "--audit-quest-source-editing", StringComparison.OrdinalIgnoreCase))
             {
+                QuestSourceEditor.RunMarkerContractSelfTest();
                 var repository = new QuestDesignerRepository(MainForm.DefaultConnectionString);
                 var editor = new QuestSourceEditor();
                 var givers = repository.GetGivers()
@@ -129,7 +130,7 @@ namespace WC3ItemManager
                     $"EditableRewardFields={editableRewardFields}; EditableObjectiveFields={editableObjectiveFields}; " +
                     $"PatchPreviews={patchPreviews}; RewardPatchPreviews={rewardPatchPreviews}; " +
                     $"ObjectivePatchPreviews={objectivePatchPreviews}; ConflictChecks={conflictChecks}; " +
-                    $"CustomLogicChecks={customLogicChecks}; Errors={errors}");
+                    $"CustomLogicChecks={customLogicChecks}; MarkerContractChecks=1; Errors={errors}");
                 return errors == 0 ? 0 : 1;
             }
             if (args.Length >= 2 && string.Equals(args[0], "--sync-quest-sources", StringComparison.OrdinalIgnoreCase))
