@@ -1,0 +1,12 @@
+Quest Elemental Air Completed
+    Events
+    Conditions
+    Actions
+        -------- Ensure that the quest exists --------
+        Trigger - Run Quest Elemental Air Create <gen> (checking conditions)
+        -------- Update the quest --------
+        Quest - Mark QuestElementalAir as Discovered
+        Quest - Mark QuestElementalAirReq as Completed
+        Quest - Mark QuestElementalAir as Completed
+        -------- Display a quest message. --------
+        Quest - Display to (All players) the Quest Completed message: |cffffcc00CLASS QUE...

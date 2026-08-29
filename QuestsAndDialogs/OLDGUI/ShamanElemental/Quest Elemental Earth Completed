@@ -1,0 +1,12 @@
+Quest Elemental Earth Completed
+    Events
+    Conditions
+    Actions
+        -------- Ensure that the quest exists --------
+        Trigger - Run Quest Elemental Earth Create <gen> (checking conditions)
+        -------- Update the quest --------
+        Quest - Mark QuestElementalEarth as Discovered
+        Quest - Mark QuestElementalEarthReq as Completed
+        Quest - Mark QuestElementalEarth as Completed
+        -------- Display a quest message. --------
+        Quest - Display to (All players) the Quest Completed message: |cffffcc00CLASS QUE...

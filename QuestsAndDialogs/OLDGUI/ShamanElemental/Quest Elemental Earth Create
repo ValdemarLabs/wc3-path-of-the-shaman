@@ -1,0 +1,11 @@
+Quest Elemental Earth Create
+    Events
+    Conditions
+        ((This trigger) is on) Equal to True
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- Create the quest objects --------
+        Quest - Create a Required, undiscovered quest titled Element of Earth with the description The elemental maste..., using icon path ReplaceableTextures\CommandButtons\BTNRockGolem.blp
+        Set VariableSet QuestElementalEarth = (Last created quest)
+        Quest - Create a quest requirement for QuestElementalEarth with the description Bring Essence of Ea...
+        Set VariableSet QuestElementalEarthReq = (Last created quest requirement)

@@ -1,0 +1,10 @@
+Quest Elemental Air Discover
+    Events
+    Conditions
+    Actions
+        -------- Ensure that the quest exists --------
+        Trigger - Run Quest Elemental Air Create <gen> (checking conditions)
+        -------- Update the quest --------
+        Quest - Mark QuestElementalAir as Discovered
+        -------- Display a quest message. --------
+        Quest - Display to (All players) the Quest Discovered message: |cffffcc00CLASS QUE...
