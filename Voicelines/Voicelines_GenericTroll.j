@@ -27,7 +27,7 @@ library VoicelinesGenericTroll initializer Init requires Voicelines
         constant string VL_GENERICTROLL_0001_KEY = "GenericTroll_0001"
         constant string VL_GENERICTROLL_0001_TEXT = "Zul'kis... dey came from da trees. Most of us never even saw dem."
         constant string VL_GENERICTROLL_0002_KEY = "GenericTroll_0002"
-        constant string VL_GENERICTROLL_0002_TEXT = "Zul'karak still lives. Dey dragged him toward Bramblehide Village."
+        constant string VL_GENERICTROLL_0002_TEXT = "Zul'karak still lives. Dey forest trolls dragged him to nearby village."
         constant string VL_GENERICTROLL_0003_KEY = "GenericTroll_0003"
         constant string VL_GENERICTROLL_0003_TEXT = "But da ones who struck da shore... dey were—"
     endglobals
