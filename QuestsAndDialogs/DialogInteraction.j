@@ -2,7 +2,7 @@
     DialogInteraction
 
     Author: Valdemar
-    Version: 1.2.0
+    Version: 1.2.1
 
     Description:
     Generic selectable-NPC dialog interaction layer. This owns NPC selection
@@ -26,6 +26,7 @@
     - call DialogInteraction_ConfigureDialogTransition(...)
     - call DialogInteraction_StartConfiguredDialogEntryTransition(...)
     - call DialogInteraction_CancelActiveTransition()
+    - call DialogInteraction_AbortActiveTransition()
     - call DialogInteraction_PlayGreetSequenceEx(...)
     - call DialogInteraction_AddHeroLineForVoices(...)
     - call DialogInteraction_AddHeroLookAtLineForVoices(...)
@@ -887,6 +888,31 @@ library DialogInteraction initializer Init requires Table, DialogSystem, CameraC
         if wasActive then
             call CinematicFadeBJ(bj_CINEFADETYPE_FADEIN, 0.25, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
         endif
+    endfunction
+
+    public function AbortActiveTransition takes nothing returns nothing
+        local boolean wasActive = TransitionTimer != null
+        local boolean runCinematicTrigger = TransitionRunCinematicTrigger
+        local boolean useCinematicMode = TransitionUseCinematicMode
+        local boolean useCamera = TransitionUseCamera
+
+        call CancelActiveTransition()
+        if not wasActive then
+            return
+        endif
+        if runCinematicTrigger then
+            call TriggerExecute(gg_trg_Cinematic_OFF)
+        endif
+        if useCamera then
+            call DialogSystem_StopDialogCamera(Player(0), 0.00, true)
+        endif
+        if useCinematicMode then
+            call FullscreenUI_SetEnabled(false)
+        endif
+        if runCinematicTrigger or useCinematicMode then
+            call ExecuteFunc("MasterUI_ShowGameButton")
+        endif
+        call EnableUserControl(true)
     endfunction
 
     private function FinishDialogExitTransition takes nothing returns nothing

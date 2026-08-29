@@ -2,7 +2,7 @@
     qRagno
 
     Author: Valdemar
-    Version: 1.1.1
+    Version: 1.1.2
 
     Description:
     Implements Ragno's quest dialogue, daily outpost tasks, Protect the
@@ -20,7 +20,7 @@
     Public quest-state hooks are declared at the end of this library.
 
 **/
-library qRagno initializer Init requires qZulkis, QuestGiver, QuestMaster, DialogInteraction, DialogSystem, CinematicMover, FollowSystem, HeroItemCheck, ItemLootSystem, Reputation, UnitDeathEvent, VoicelinesNazgrek, VoicelinesOrcPeon, FallenHeroState
+library qRagno initializer Init requires qZulkis, QuestGiver, QuestMaster, DialogInteraction, DialogSystem, CameraControl, CinematicMover, FollowSystem, HeroItemCheck, ItemLootSystem, Reputation, UnitDeathEvent, VoicelinesNazgrek, VoicelinesOrcPeon, FallenHeroState
 
 globals
     private constant boolean DEBUG = false
@@ -108,6 +108,7 @@ globals
     private unit SelectedHero = null
     private unit LumberPeon = null
     private unit ProtectOutpostGruntPick = null
+    private unit ProtectOutpostCameraTarget = null
 
     private dialog RagnoDialog = null
     private timer RagnoDialogCooldown = null
@@ -1134,6 +1135,11 @@ private function OnProtectOutpostIntroCameraReturn takes nothing returns nothing
 endfunction
 
 private function OnProtectOutpostIntroCinematicStart takes nothing returns nothing
+    set ProtectOutpostCameraTarget = CameraControl_GetTargetUnit(Player(0))
+    if not DialogInteraction_IsUnitAlive(ProtectOutpostCameraTarget) then
+        set ProtectOutpostCameraTarget = Nazgrek
+    endif
+    call CameraControl_Suspend(Player(0))
     call DialogInteraction_BeginCinematicSequence(CINEMATIC)
     if DialogInteraction_IsUnitAlive(Nazgrek) then
         call IssueImmediateOrder(Nazgrek, "stop")
@@ -1160,6 +1166,12 @@ private function OnProtectOutpostIntroCinematicEnd takes nothing returns nothing
     call ReturnPlayerUnitsFromProtectOutpostCinematic()
     call CinematicFadeBJ(bj_CINEFADETYPE_FADEIN, OUTPOST_CINEMATIC_END_FADE_DURATION, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
     call DialogInteraction_EndCinematicSequence(CINEMATIC)
+    if not DialogInteraction_IsUnitAlive(ProtectOutpostCameraTarget) then
+        set ProtectOutpostCameraTarget = Nazgrek
+    endif
+    call CameraControl_SetTargetUnit(Player(0), ProtectOutpostCameraTarget)
+    call CameraControl_ResumeQuick(Player(0))
+    set ProtectOutpostCameraTarget = null
     set ProtectOutpostIntroFinished = true
 
     call QuestGiver_AcceptQuestByNameAndGiver(QUEST_PROTECT_OUTPOST, Ragno)
@@ -1183,6 +1195,7 @@ private function PlayProtectOutpostIntroCinematic takes nothing returns nothing
     call DialogSystem_AddFadeTransition(seq, OUTPOST_CINEMATIC_FADE_DURATION, OUTPOST_CINEMATIC_FADE_DURATION, function StageProtectOutpostIntroCinematic)
     call DialogSystem_AddDelay(seq, 1.00)
     if grunt != null then
+        call DialogSystem_AddLine(seq, grunt, "Grunt", "The gnolls are attacking! Defend yourselves!", "OrcGrunt_0012", true)
         call DialogSystem_AddLine(seq, grunt, "Grunt", "They are too many! We're outnumbered! Lok'tar Ogar!!!", "OrcGrunt_0013", true)
     endif
     call DialogSystem_AddLine(seq, Nazgrek, "Nazgrek", VL_NAZGREK_0057_TEXT, VL_NAZGREK_0057_KEY, true)
@@ -1405,6 +1418,13 @@ private function OnProtectOutpostSecondWaveTimer takes nothing returns nothing
     endif
 endfunction
 
+private function PrepareProtectOutpostCinematic takes nothing returns nothing
+    call DialogSystem_SkipActiveSequence()
+    call DialogInteraction_CloseActiveDialog()
+    call DialogInteraction_AbortActiveTransition()
+    call DialogSystem_StopDialogCamera(Player(0), 0.00, USE_DIALOG_CAMERA)
+endfunction
+
 private function StartProtectOutpostEncounter takes nothing returns boolean
     call SyncUnitReferences()
     if ProtectOutpostStarted or ProtectOutpostCompleted or GivingLetterUnlocked or not IsProtectOutpostQuestOpen() then
@@ -1419,7 +1439,7 @@ private function StartProtectOutpostEncounter takes nothing returns boolean
     set ProtectOutpostIntroFinished = false
     set ProtectOutpostSecondWaveSpawned = false
     set MountainDefenseActive = true
-    call DialogInteraction_CancelActiveTransition()
+    call PrepareProtectOutpostCinematic()
 
     call SpawnProtectOutpostFirstWave()
     call PlayProtectOutpostIntroCinematic()
@@ -1805,13 +1825,6 @@ private function ContinueToDialogInternal takes nothing returns nothing
 endfunction
 
 public function ContinueToDialogAfterSelection takes nothing returns nothing
-    call DialogSystem_ClearEscapeAction()
-    call ContinueToDialogInternal()
-endfunction
-
-private function OnDialogEntryEscape takes nothing returns nothing
-    call DialogSystem_ClearEscapeAction()
-    call DialogInteraction_CancelActiveTransition()
     call ContinueToDialogInternal()
 endfunction
 
@@ -1829,7 +1842,6 @@ private function OnSelected takes nothing returns nothing
     endif
 
     call DialogInteraction_StartConfiguredDialogEntryTransition(Ragno, SelectedHero, true, USE_DIALOG_CAMERA, CINEMATIC, "qRagno_ContinueToDialogAfterSelection")
-    call DialogSystem_SetEscapeAction(function OnDialogEntryEscape)
 endfunction
 
 private function CreateQuests takes nothing returns nothing
