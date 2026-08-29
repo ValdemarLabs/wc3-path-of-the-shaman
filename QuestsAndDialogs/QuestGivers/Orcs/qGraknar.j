@@ -393,22 +393,31 @@ library qGraknar initializer Init requires QuestGiver, QuestMaster, DialogIntera
         call OpenTrade()
     endfunction
 
-    private function OnFarewellEnd takes nothing returns nothing
-        call StartExitFadeOut()
+    private function EndVendorDialog takes nothing returns nothing
+        local unit hero = SelectedHero
+
+        call DialogInteraction_EndCombatSensitiveInteraction()
+        call DialogSystem_ClearEscapeAction()
+        call DialogSystem_HideDialog(GraknarDialog, Player(0))
+        call DialogSystem_StopDialogCamera(Player(0), 0.75, USE_DIALOG_CAMERA)
+        call TriggerExecute(gg_trg_Cinematic_OFF)
+        call DialogInteraction_EndCinematicSequence(CINEMATIC)
+        set GraknarDialogCooldown = DialogInteraction_StartCooldown(GraknarDialogCooldown, DIALOG_COOLDOWN)
+        if hero != null and DialogInteraction_IsUnitAlive(hero) then
+            call ShowUnit(hero, true)
+            call PauseUnit(hero, false)
+            call SelectUnitForPlayerSingle(hero, Player(0))
+        endif
+        set SelectedHero = null
+        set hero = null
     endfunction
 
     private function OnFarewell takes nothing returns nothing
-        local integer seq
+        local unit vendor = Graknar
 
-        call DialogInteraction_BeginDialogSequence()
-        set seq = DialogInteraction_CreateBaseSequence(Graknar, GRAKNAR_NAME)
-        if VendorLines_PickFarewellLine(Graknar) then
-            call DialogSystem_AddLine(seq, Graknar, VendorLines_GetVendorSpeakerName(Graknar), DialogSystem_PickedText, DialogSystem_PickedSound, DialogSystem_PickedSoundAtUnit)
-        else
-            call DialogSystem_AddLineNoSound(seq, Graknar, GRAKNAR_NAME, "Travel lighter. Come back richer.")
-        endif
-        call DialogSystem_SetSequenceCallbacks(seq, null, function OnFarewellEnd)
-        call DialogSystem_PlaySequence(seq, Player(0), Graknar)
+        call EndVendorDialog()
+        call VendorLines_PlayFarewellLine(vendor)
+        set vendor = null
     endfunction
 
     private function BuildDialog takes nothing returns nothing

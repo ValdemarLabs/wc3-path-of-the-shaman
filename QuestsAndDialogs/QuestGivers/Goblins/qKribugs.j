@@ -667,18 +667,32 @@ library qKribugs initializer Init requires QuestGiver, QuestMaster, DialogIntera
         call DialogSystem_PlaySequence(seq, Player(0), Kribugs)
     endfunction
 
-    private function OnFarewellEnd takes nothing returns nothing
-        call StartExitFadeOut()
+    private function EndVendorDialog takes nothing returns nothing
+        local unit hero = SelectedHero
+
+        call DialogInteraction_EndCombatSensitiveInteraction()
+        call DialogSystem_ClearEscapeAction()
+        call DialogSystem_HideDialog(KribugsDialog, Player(0))
+        call DialogSystem_StopDialogCamera(Player(0), 0.75, USE_DIALOG_CAMERA)
+        call TriggerExecute(gg_trg_Cinematic_OFF)
+        call DialogInteraction_EndCinematicSequence(CINEMATIC)
+        set KribugsDialogCooldown = DialogInteraction_StartCooldown(KribugsDialogCooldown, DIALOG_COOLDOWN)
+        call ContinuePatrol()
+        if hero != null and DialogInteraction_IsUnitAlive(hero) then
+            call ShowUnit(hero, true)
+            call PauseUnit(hero, false)
+            call SelectUnitForPlayerSingle(hero, Player(0))
+        endif
+        set SelectedHero = null
+        set hero = null
     endfunction
 
     private function OnFarewell takes nothing returns nothing
-        local unit hero = ResolveDialogHero()
-        local integer seq
-        call DialogInteraction_BeginDialogSequence()
-        set seq = DialogInteraction_CreateFarewellSequence(Kribugs, "Kribugs", hero, DialogInteraction_GetHeroName(hero), DIALOG_RANGE, ALLOW_NAZGREK, ALLOW_ZULKIS)
-        call DialogSystem_SetSequenceCallbacks(seq, null, function OnFarewellEnd)
-        call DialogSystem_PlaySequence(seq, Player(0), Kribugs)
-        set hero = null
+        local unit vendor = Kribugs
+
+        call EndVendorDialog()
+        call VendorLines_PlayFarewellLine(vendor)
+        set vendor = null
     endfunction
 
     private function BuildDialog takes nothing returns nothing
