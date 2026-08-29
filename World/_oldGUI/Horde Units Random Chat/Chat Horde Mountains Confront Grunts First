@@ -1,0 +1,13 @@
+Chat Horde Mountains Confront Grunts First
+    Events
+        Unit - A unit enters HordeMountainCampSouth <gen>
+    Conditions
+        (Owner of (Entering unit)) Equal to Player 1 (Red)
+    Actions
+        Trigger - Turn off (This trigger)
+        Set VariableSet VarPoint = (Center of HordeMountainCampSouth <gen>)
+        Cinematic - Send transmission to (All players) from a Player 6 (Orange).Grunt named Grunt at VarPoint: Play OrcGrunt_0001 <gen> and display Well met, shaman..  Modify duration: Set to 1.50 seconds and Wait
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Wait 6.00 game-time seconds
+        Trigger - Turn on Chat Horde Mountains Confront Grunts Second <gen>
+        Trigger - Remove (This trigger) from the trigger queue

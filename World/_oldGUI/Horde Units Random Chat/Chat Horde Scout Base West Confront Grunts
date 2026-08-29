@@ -1,0 +1,11 @@
+Chat Horde Scout Base West Confront Grunts
+    Events
+        Unit - A unit enters HordeScoutBaseOrcs <gen>
+    Conditions
+        (Owner of (Entering unit)) Equal to Player 1 (Red)
+    Actions
+        Trigger - Turn off (This trigger)
+        Set VariableSet VarPoint = (Center of HordeScoutBaseOrcs <gen>)
+        Cinematic - Send transmission to (All players) from a Player 6 (Orange).Grunt named Grunt at VarPoint: Play OrcGrunt_0002 <gen> and display Hey you there! I ha....  Modify duration: Set to 4.00 seconds and Wait
+        Custom script:   call RemoveLocation(udg_VarPoint)
+        Trigger - Remove (This trigger) from the trigger queue
