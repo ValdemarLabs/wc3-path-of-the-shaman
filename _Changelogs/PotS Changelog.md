@@ -15,6 +15,35 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [30.8.2026]
+
+### Player-Facing Updates
+
+- Updated Protect the Outpost's first grunt warning, added a four-second pause before the overwhelmed response, and shifted the remaining dialogue and camera timing with it.
+- Protect the Outpost now periodically sends idle gnolls and gnolls lingering in their spawn regions toward the Horde mountain outpost.
+- Shadowclaw now joins the Protect the Outpost completion scene beside Nazgrek and remains there when Nazgrek gameplay resumes after Zul'kis's prologue.
+- Fixed new Hint notifications obscuring and repeatedly dimming the Game button; it now keeps its normal button frame and briefly displays `Game!` in the same style as QuestUI's `Quests!` update indicator.
+- Corrected Zul'kis's opening camera direction and timing: the river cinematic now snaps from camera 2 toward camera 1, cuts after five seconds from camera 5 toward camera 6, and the shore dialogue snaps from camera 3 toward camera 4 over 20 seconds.
+- Zul'kis's narrator introduction now begins with the river cinematic instead of waiting for the shore conversation.
+- Chieftain Thork now shows the objective question mark while Zul'kis is assigned to meet him.
+- Fixed the death-camera motion remaining active after Zul'kis is revived.
+- Fixed Graknar's bag-trade dialogue becoming stuck without choices in fullscreen cinematic mode when leaving through Farewell, including after returning from trade; Kribugs now uses the same corrected custom-vendor exit.
+
+### Technical Updates
+
+- Updated `QuestsAndDialogs/QuestGivers/Orcs/qRagno.j` with synchronized intro-delay timing, periodic gnoll attack-order recovery, and completion-position preservation for active Shadowclaw, and updated `Voicelines/Voicelines_OrcGrunt.j` with the corrected attack warning.
+- Updated `UI/MasterUI.j` to remove the invalid full-texture Game alert and alpha pulse, reusing QuestUI's timed replacement-button label pattern instead.
+- Updated `QuestsAndDialogs/QuestGivers/Player/qZulkis.j` with GUI-equivalent zero-second camera setup application, the intended six-camera arrival flow, opening narration timing, and Thork objective-target registration.
+- Updated `Death/Revival.j` to stop the active camera motion and restore the revived hero as CameraControl's target before releasing the death camera.
+- Updated `_developer/Design Plans/Story and Quest Design.md` with the corrected Zul'kis arrival-camera and narration sequence.
+- Updated `QuestsAndDialogs/QuestGivers/Orcs/qGraknar.j` and `QuestsAndDialogs/QuestGivers/Goblins/qKribugs.j` to restore gameplay immediately on vendor farewell and play the farewell as a non-blocking field line, matching normal vendors; updated `QuestsAndDialogs/DialogInteraction.j` so configured dialog exit transitions also explicitly show and unpause the restored hero.
+
+### Actions Remaining
+
+- Compile and runtime-test Protect the Outpost's delayed intro, both wave spawn exits, ESC timing, completion staging, and Shadowclaw's post-Zul'kis return position.
+- Compile the full map with World Editor/JassHelper and runtime-test the zero-second camera snaps, both river pans, the shore pan, Thork's temporary question mark, and Zul'kis's death-camera release after revival.
+- Runtime-test Graknar and Kribugs by leaving directly through Farewell and by opening trade, returning to their choices, and then leaving through Farewell; confirm fullscreen mode, camera, selection, and hero control all restore.
+
 ## [29.8.2026]
 
 ### Player-Facing Updates
@@ -68,7 +97,7 @@
 
 - Runtime-test Zul'kis dying during each playable prologue phase, confirm revival at Graveyard02, and confirm the prior graveyard selection plus Nazgrek and Shadowclaw visibility/state are restored only after Rescue the Brother completes.
 - Export/import Zul'kis's new `j4c3`-`j4d0` item objects and current DEquipment definitions from WC3 Manager, then compile and runtime-test the one-time prologue loadout, two-handed scepter equip, native consumable counts, and ESC/retry paths.
-- Review and promote/import the 15 generated Zul'kis-prologue MP3s, then runtime-test narrator pacing across the camera-3-to-4 landing pan, the wounded witch doctor's interrupted final line, and all speaker transitions.
+- Review and promote/import the 15 generated Zul'kis-prologue MP3s, then runtime-test narrator pacing across the camera-2-to-1 and camera-5-to-6 river shots, the wounded witch doctor's interrupted final line, and all speaker transitions.
 
 ## [28.8.2026]
 
