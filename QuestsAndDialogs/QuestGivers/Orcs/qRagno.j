@@ -2,7 +2,7 @@
     qRagno
 
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.1.1
 
     Description:
     Implements Ragno's quest dialogue, daily outpost tasks, Protect the
@@ -1405,10 +1405,10 @@ private function OnProtectOutpostSecondWaveTimer takes nothing returns nothing
     endif
 endfunction
 
-private function StartProtectOutpostEncounter takes nothing returns nothing
+private function StartProtectOutpostEncounter takes nothing returns boolean
     call SyncUnitReferences()
     if ProtectOutpostStarted or ProtectOutpostCompleted or GivingLetterUnlocked or not IsProtectOutpostQuestOpen() then
-        return
+        return false
     endif
 
     call EnsureProtectOutpostRuntime()
@@ -1424,13 +1424,25 @@ private function StartProtectOutpostEncounter takes nothing returns nothing
     call SpawnProtectOutpostFirstWave()
     call PlayProtectOutpostIntroCinematic()
     call TimerStart(ProtectOutpostSecondWaveTimer, OUTPOST_WAVE_CHECK_PERIOD, true, function OnProtectOutpostSecondWaveTimer)
+    return true
 endfunction
 
 private function OnProtectOutpostRegionEnter takes nothing returns nothing
     if GetOwningPlayer(GetTriggerUnit()) == Player(0) then
-        call DisableTrigger(ProtectOutpostStartTrigger)
-        call StartProtectOutpostEncounter()
+        if StartProtectOutpostEncounter() then
+            call DisableTrigger(ProtectOutpostStartTrigger)
+        endif
     endif
+endfunction
+
+private function IsOwnedHeroInProtectOutpostStartRegion takes unit u returns boolean
+    if u == null then
+        return false
+    endif
+    if GetOwningPlayer(u) != Player(0) then
+        return false
+    endif
+    return RectContainsUnit(gg_rct_RagnoIntroRegion01, u) or RectContainsUnit(gg_rct_RagnoIntroRegion02, u) or RectContainsUnit(gg_rct_RagnoIntroRegion03, u) or RectContainsUnit(gg_rct_RagnoIntroRegion04, u)
 endfunction
 
 private function RegisterProtectOutpostStartTrigger takes nothing returns nothing
@@ -1443,6 +1455,11 @@ private function RegisterProtectOutpostStartTrigger takes nothing returns nothin
     call TriggerRegisterEnterRectSimple(ProtectOutpostStartTrigger, gg_rct_RagnoIntroRegion03)
     call TriggerRegisterEnterRectSimple(ProtectOutpostStartTrigger, gg_rct_RagnoIntroRegion04)
     call TriggerAddAction(ProtectOutpostStartTrigger, function OnProtectOutpostRegionEnter)
+    if IsOwnedHeroInProtectOutpostStartRegion(Nazgrek) or IsOwnedHeroInProtectOutpostStartRegion(Zulkis) then
+        if StartProtectOutpostEncounter() then
+            call DisableTrigger(ProtectOutpostStartTrigger)
+        endif
+    endif
 endfunction
 
 private function OnAnyUnitDeath takes nothing returns nothing
@@ -1788,6 +1805,13 @@ private function ContinueToDialogInternal takes nothing returns nothing
 endfunction
 
 public function ContinueToDialogAfterSelection takes nothing returns nothing
+    call DialogSystem_ClearEscapeAction()
+    call ContinueToDialogInternal()
+endfunction
+
+private function OnDialogEntryEscape takes nothing returns nothing
+    call DialogSystem_ClearEscapeAction()
+    call DialogInteraction_CancelActiveTransition()
     call ContinueToDialogInternal()
 endfunction
 
@@ -1805,6 +1829,7 @@ private function OnSelected takes nothing returns nothing
     endif
 
     call DialogInteraction_StartConfiguredDialogEntryTransition(Ragno, SelectedHero, true, USE_DIALOG_CAMERA, CINEMATIC, "qRagno_ContinueToDialogAfterSelection")
+    call DialogSystem_SetEscapeAction(function OnDialogEntryEscape)
 endfunction
 
 private function CreateQuests takes nothing returns nothing
