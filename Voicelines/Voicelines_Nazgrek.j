@@ -276,7 +276,7 @@ globals
     constant string VL_NAZGREK_0061_KEY = "Nazgrek_0061"
     constant string VL_NAZGREK_0061_TEXT = "To aid the Horde? I owe no debt for the Horde."
     constant string VL_NAZGREK_0062_KEY = "Nazgrek_0062"
-    constant string VL_NAZGREK_0062_TEXT = "I guess the times have finally changed. Give me letter, warrior. I'll decide if I sign it or incinerate to dust."
+    constant string VL_NAZGREK_0062_TEXT = "I guess the times have finally changed. Give me letter, warrior. I'll decide if I sign it or incinerate it."
 
     // Excel draft: Nazgrek Lines | Event: Meeting with Thork | Done: x
     constant string VL_NAZGREK_0063_KEY = "Nazgrek_0063"
