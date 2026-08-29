@@ -1,0 +1,27 @@
+Create ErdukDialog02
+    Events
+    Conditions
+    Actions
+        Trigger - Turn off Button Pressed in ErdukDialog01 <gen>
+        Trigger - Turn on Button Pressed in ErdukDialog02 <gen>
+        Dialog - Clear ErdukDialog
+        Dialog - Change the title of ErdukDialog to Quests
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestMurlocsHeads is discovered) Equal to False
+                (QuestMurlocsHeads is completed) Equal to False
+            Then - Actions
+                Dialog - Create a dialog button for ErdukDialog labelled Heads of the Murlocs
+                Set VariableSet HeadsMurlocs = (Last created dialog Button)
+            Else - Actions
+                Do nothing
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestMurlocsHeads is completed) Equal to False
+            Then - Actions
+                Dialog - Create a dialog button for ErdukDialog labelled - Back
+                Set VariableSet Back = (Last created dialog Button)
+                Cinematic - Enable user control for (All players).
+                Dialog - Show ErdukDialog for Player 1 (Red)
+            Else - Actions
+                Do nothing

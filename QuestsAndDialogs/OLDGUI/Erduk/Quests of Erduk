@@ -1,0 +1,21 @@
+Quests of Erduk
+    Events
+        Unit - Erduk 1031 <gen> Is selected
+    Conditions
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Distance between (Position of Erduk 1031 <gen>) and (Position of Nazgrek)) Less than or equal to 500.00
+                (QuestMurlocsHeads is completed) Equal to False
+                (QuestMurlocsHeads is discovered) Equal to False
+            Then - Actions
+                Cinematic - Turn cinematic mode On for (All players)
+                Camera - Pan camera for Player 1 (Red) to (Position of Erduk 1031 <gen>) over 1.00 seconds
+                Camera - Set Player 1 (Red)'s camera Distance to target to 1000.00 over 1.00 seconds
+                Wait 1.00 seconds
+                Unit - Make Erduk 1031 <gen> face Nazgrek over 0.75 seconds
+                Unit - Make Nazgrek face Erduk 1031 <gen> over 0.75 seconds
+                Cinematic - Send transmission to (All players) from Erduk 1031 <gen> named Erduk: Play No sound and display Our ancestors are w....  Modify duration: Set to 2.00 seconds and Wait
+                Wait 1.25 seconds
+                Trigger - Run Create ErdukDialog01 <gen> (checking conditions)
+            Else - Actions

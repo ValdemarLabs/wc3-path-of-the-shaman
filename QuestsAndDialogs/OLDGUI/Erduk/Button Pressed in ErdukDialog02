@@ -1,0 +1,20 @@
+Button Pressed in ErdukDialog02
+    Events
+        Dialog - A dialog button is clicked for ErdukDialog
+    Conditions
+    Actions
+        Trigger - Turn off (This trigger)
+        Trigger - Turn on Button Pressed in ErdukDialog01 <gen>
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to HeadsMurlocs
+            Then - Actions
+                Trigger - Run Quest Murlocs <gen> (checking conditions)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to Back
+            Then - Actions
+                Trigger - Run Create ErdukDialog01 <gen> (checking conditions)
+            Else - Actions

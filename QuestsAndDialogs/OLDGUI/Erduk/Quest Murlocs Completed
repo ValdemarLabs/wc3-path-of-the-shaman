@@ -1,0 +1,12 @@
+Quest Murlocs Completed
+    Events
+    Conditions
+    Actions
+        -------- Ensure that the quest exists --------
+        Trigger - Run Quest Murlocs Create <gen> (checking conditions)
+        -------- Update the quest --------
+        Quest - Mark QuestMurlocsHeads as Discovered
+        Quest - Mark QuestMurlocsHeadsReqHeads as Completed
+        Quest - Mark QuestMurlocsHeads as Completed
+        -------- Display a quest message. --------
+        Quest - Display to (All players) the Quest Completed message: |cffffcc00MAIN QUES...

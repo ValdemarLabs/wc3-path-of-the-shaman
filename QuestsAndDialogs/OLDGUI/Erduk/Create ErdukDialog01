@@ -1,0 +1,26 @@
+Create ErdukDialog01
+    Events
+    Conditions
+    Actions
+        Dialog - Clear ErdukDialog
+        Dialog - Change the title of ErdukDialog to (null)
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestMurlocsHeads is completed) Equal to False
+                (QuestMurlocsHeads is discovered) Equal to False
+            Then - Actions
+                Dialog - Create a dialog button for ErdukDialog labelled Quests
+                Set VariableSet Quests = (Last created dialog Button)
+            Else - Actions
+                Do nothing
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (QuestMurlocsHeads is completed) Equal to False
+            Then - Actions
+                Dialog - Create a dialog button for ErdukDialog labelled - Farewell
+                Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play No sound and display Farewell..  Modify duration: Set to 0.50 seconds and Wait
+                Set VariableSet Farewell = (Last created dialog Button)
+                Cinematic - Enable user control for (All players).
+                Dialog - Show ErdukDialog for Player 1 (Red)
+            Else - Actions
+                Do nothing

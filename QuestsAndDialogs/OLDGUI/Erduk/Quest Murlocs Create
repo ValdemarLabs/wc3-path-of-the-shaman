@@ -1,0 +1,11 @@
+Quest Murlocs Create
+    Events
+    Conditions
+        ((This trigger) is on) Equal to True
+    Actions
+        Trigger - Turn off (This trigger)
+        -------- Create the quest objects --------
+        Quest - Create a Optional, undiscovered quest titled Heads of the Murlocs with the description Erduk wants you hav..., using icon path ReplaceableTextures\CommandButtons\BTNMurlocFlesheater.blp
+        Set VariableSet QuestMurlocsHeads = (Last created quest)
+        Quest - Create a quest requirement for QuestMurlocsHeads with the description Bring 40 murloc hea...
+        Set VariableSet QuestMurlocsHeadsReqHeads = (Last created quest requirement)

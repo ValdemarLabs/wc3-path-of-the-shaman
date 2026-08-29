@@ -1,0 +1,20 @@
+Quest Murlocs
+    Events
+    Conditions
+    Actions
+        Cinematic - Disable user control for (All players).
+        Cinematic - Send transmission to (All players) from Erduk 1031 <gen> named Erduk: Play No sound and display As you may have see....  Modify duration: Set to 5.00 seconds and Wait
+        Cinematic - Send transmission to (All players) from Erduk 1031 <gen> named Erduk: Play No sound and display They keep attacking....  Modify duration: Set to 5.00 seconds and Wait
+        Wait 1.00 seconds
+        Unit - Make Erduk 1031 <gen> face 33.00 over 1.00 seconds
+        Wait 1.00 seconds
+        Unit - Make Nazgrek face Erduk 1031 <gen> over 3.00 seconds
+        Cinematic - Send transmission to (All players) from Nazgrek named Nazgrek: Play No sound and display Is there something ....  Modify duration: Set to 4.00 seconds and Wait
+        Unit - Make Erduk 1031 <gen> face Nazgrek over 0.75 seconds
+        Wait 0.50 seconds
+        Cinematic - Send transmission to (All players) from Erduk 1031 <gen> named Erduk: Play No sound and display Hunt them down as m....  Modify duration: Set to 13.00 seconds and Wait
+        Cinematic - Enable user control for (All players).
+        Camera - Set Player 1 (Red)'s camera Distance to target to 1650.00 over 1.00 seconds
+        Cinematic - Turn cinematic mode Off for (All players)
+        Wait 5.00 seconds
+        Trigger - Remove (This trigger) from the trigger queue

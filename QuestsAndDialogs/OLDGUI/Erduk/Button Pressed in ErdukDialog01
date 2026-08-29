@@ -1,0 +1,19 @@
+Button Pressed in ErdukDialog01
+    Events
+        Dialog - A dialog button is clicked for ErdukDialog
+    Conditions
+    Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to Quests
+            Then - Actions
+                Trigger - Run Create ErdukDialog02 <gen> (checking conditions)
+                Skip remaining actions
+            Else - Actions
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                (Clicked dialog button) Equal to Farewell
+            Then - Actions
+                Camera - Set Player 1 (Red)'s camera Distance to target to 1650.00 over 1.00 seconds
+                Cinematic - Turn cinematic mode Off for (All players)
+            Else - Actions
