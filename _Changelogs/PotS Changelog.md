@@ -19,6 +19,8 @@
 
 ### Player-Facing Updates
 
+- Zul'kis now revives at Graveyard02 during his separate prologue gameplay; finishing the prologue restores the player's previously selected graveyard. Nazgrek and Shadowclaw remain hidden and isolated until that gameplay section ends.
+- Added Zul'kis's starter loadout: Shadowcaster's Scepter, eight modest Darkspear travel pieces, two Mana Potions, one Healing Potion, and Purified Water. Most of the new common equipment is flavor-only, with only small Intelligence, Mana, and Spell Power bonuses across the set.
 - Corrected Hint alerts so new hints flash around the complete Game button edge and the unread marker is centered at the Hints icon's size.
 - Fixed Ragno's follow-up quests remaining unavailable when delayed quest initialization missed the player's entry into the Protect the Outpost regions.
 - Fixed pressing ESC during Ragno's dialogue entry transition leaving the interaction without dialogue or choices.
@@ -35,6 +37,8 @@
 
 ### Technical Updates
 
+- Updated `QuestsAndDialogs/QuestGivers/Player/qZulkis.j` to snapshot `udg_GraveyardSelect`, override it with Graveyard02 ID `2` for the complete Zul'kis gameplay section, and restore the saved value at prologue completion; verified its existing Nazgrek and Shadowclaw state snapshots already hide and isolate both characters for the same interval.
+- Updated `Preload/Start.j` with reusable per-hero starter-item helpers and an idempotent Zul'kis loadout API, and updated `QuestsAndDialogs/QuestGivers/Player/qZulkis.j` to grant the loadout after his inventory and equipment systems initialize.
 - Updated `Voicelines/Voicelines_OrcGrunt.j` with normal grunt, Protect the Outpost, Call of the Horde, Ragno-specific, Mountain Defense, and Rescue the Grunts sections; moved active Ragno, Granis, and Krezgrel quest text/key pairs into the shared library and documented the remaining legacy GUI grunt lines there.
 - Updated `UI/MasterUI.j` with a race-matched, full-button highlight texture for Game hint notifications and an explicitly sized and offset Hints icon sprite.
 - Updated `QuestsAndDialogs/QuestGivers/Orcs/qRagno.j` with occupied-region recovery, legacy intro dialogue, explicit CameraControl suspension/restoration, the standard shared dialogue ESC path, and pending-dialog cleanup when the encounter interrupts an interaction.
@@ -42,6 +46,7 @@
 - Updated `QuestsAndDialogs/QuestGivers/Player/qZulkis.j` with explicit CameraControl suspension/resume, instant camera setup application before both intended pans, legacy GUI-equivalent permanent corpse staging, and same-unit witch-doctor death handling.
 - Updated `Voicelines/Voicelines_Narrator.j` and `QuestsAndDialogs/QuestGivers/Player/qZulkis.j` with registered narrator audio keys and two speakerless opening lines before the shore conversation.
 - Updated `Voicelines/FishAudioVoiceIds.md` with Thork, Zul'karak's shared TrollMale1 reference, Narrator, and confirmation that Zul'kis story dialogue uses the ZulkisGeneric profile.
+- Added `Voicelines/FishAudioNarratorTts.csv` with narrator-only delivery cues and short pauses that remain separate from in-game dialogue text.
 - Updated `QuestsAndDialogs/QuestGivers/Orcs/qChieftainThork.j` to consume the prologue selection before generic selection handlers run, and updated `Voicelines/Voicelines_Zulkarak.j` with captivity dialogue that preserves Zul'karak's uncertainty.
 - Updated `UI/MasterUI.j` and `DestroyerInventoryAndEquipmentSystem/PoTs/DEquipment.j` with cinematic inspect-button suppression and restoration.
 - Updated `_developer/Design Plans/Story and Quest Design.md` with the corrected Zul'kis camera and corpse lifecycle plus the resolved premise that Thork paid forest trolls to leave no Darkspear survivors and frame humans for the attack.
@@ -49,6 +54,7 @@
 
 ### Tool Updates
 
+- Added `WC3_Database/WC3ItemManager/zulkis_starter_gear_20260829.sql` and applied it to WC3 Manager, creating eight common starter-equipment records, their three low-power stat assignments, and correcting Shadowcaster's Scepter to the Stave class for DEquipment export.
 - Updated `WC3_Database/WC3ItemManager/` with guarded round-trip editing for synchronized qXXX sources: only uniquely mapped literals are editable, custom/shared/computed fields remain gray with source-only guidance, every write requires a patch preview and three-way field conflict check, and confirmed patches are backed up, structurally validated, atomically written, and synchronized.
 - Added explicit WC3 Manager-owned quest-region support for safely inserting standard external quests without replacing hand-authored library code, plus a read-only source-edit audit command covering all synchronized quest records.
 
@@ -56,9 +62,12 @@
 
 - Generated 15 FishAudio review MP3s for the Zul'kis prologue: `Zulkarak_0001`–`0004`, `Narrator_0006`–`0007`, `Thork_0013`–`0014`, `Zulkis_0005`–`0008`, and witch-doctor testimony `GenericTroll_0001`–`0003`.
 - Regenerated `Narrator_0006`–`0007` as brief introductions centered on the Darkspear answering Thork's call for aid and Zul'karak being Zul'kis's elder brother.
+- Regenerated `Narrator_0006`–`0007` with calm measured-narration cues and short pauses around the character and location beats.
 
 ### Actions Remaining
 
+- Runtime-test Zul'kis dying during each playable prologue phase, confirm revival at Graveyard02, and confirm the prior graveyard selection plus Nazgrek and Shadowclaw visibility/state are restored only after Rescue the Brother completes.
+- Export/import Zul'kis's new `j4c3`-`j4d0` item objects and current DEquipment definitions from WC3 Manager, then compile and runtime-test the one-time prologue loadout, two-handed scepter equip, native consumable counts, and ESC/retry paths.
 - Review and promote/import the 15 generated Zul'kis-prologue MP3s, then runtime-test narrator pacing across the camera-3-to-4 landing pan, the wounded witch doctor's interrupted final line, and all speaker transitions.
 
 ## [28.8.2026]
