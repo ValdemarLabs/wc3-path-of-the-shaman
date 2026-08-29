@@ -2,7 +2,7 @@
     VoicelinesOrcGrunt
 
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.1.1
 
     Description:
     Speaker-owned voiceline key/text constants migrated from legacy
@@ -42,20 +42,20 @@ globals
     constant string VL_ORCGRUNT_0005_KEY = "OrcGrunt_0005"
     constant string VL_ORCGRUNT_0005_TEXT = "The warchief has issued you to aid the Horde once again."
     constant string VL_ORCGRUNT_0006_KEY = "OrcGrunt_0006"
-    constant string VL_ORCGRUNT_0006_TEXT = "If you accept his summon, sign this letter with blood and go meet our chieftain Thork face to face in the outpost to the east."
+    constant string VL_ORCGRUNT_0006_TEXT = "If you accept his summon, sign this letter with blood and go meet our chieftain face to face in the outpost to the east."
     constant string VL_ORCGRUNT_0007_KEY = "OrcGrunt_0007"
     constant string VL_ORCGRUNT_0007_TEXT = "He would not summon you if the matters where not so severe. I'll leave you to think this through... Remember the blood sign of the letter - that is if you make the right call..."
 
     // Protect the Outpost voicelines.
 
     constant string VL_ORCGRUNT_0012_KEY = "OrcGrunt_0012"
-    constant string VL_ORCGRUNT_0012_TEXT = "The gnolls are attacking! Defend yourselves!"
+    constant string VL_ORCGRUNT_0012_TEXT = "The gnolls are attacking! Crush them in the name of the Horde!"
     constant string VL_ORCGRUNT_0013_KEY = "OrcGrunt_0013"
     constant string VL_ORCGRUNT_0013_TEXT = "They are too many! We're outnumbered! Lok'tar Ogar!!!"
     constant string VL_ORCGRUNT_0014_KEY = "OrcGrunt_0014"
     constant string VL_ORCGRUNT_0014_TEXT = "Thank you, shaman! Without your assistance, the gnolls would've surely outnumbered us."
     constant string VL_ORCGRUNT_0015_KEY = "OrcGrunt_0015"
-    constant string VL_ORCGRUNT_0015_TEXT = "Hey you! You must be that shaman from the forest nearby..."
+    constant string VL_ORCGRUNT_0015_TEXT = "Hey you! You must be that shaman from the forest nearby. Aren't you Nazgrek or does my memory serve correct?"
     constant string VL_ORCGRUNT_0016_KEY = "OrcGrunt_0016"
     constant string VL_ORCGRUNT_0016_TEXT = "Wait! I knew you looked familiar. I was issued a task related to you shaman."
     constant string VL_ORCGRUNT_0017_KEY = "OrcGrunt_0017"

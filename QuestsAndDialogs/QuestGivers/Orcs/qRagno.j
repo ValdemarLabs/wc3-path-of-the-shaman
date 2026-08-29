@@ -2,7 +2,7 @@
     qRagno
 
     Author: Valdemar
-    Version: 1.1.3
+    Version: 1.1.4
 
     Description:
     Implements Ragno's quest dialogue, daily outpost tasks, Protect the
@@ -93,8 +93,11 @@ globals
     private constant real LUMBER_HARVEST_RETURN_DELAY = 1.00
     private constant real OUTPOST_WAVE_CHECK_PERIOD = 0.50
     private constant integer OUTPOST_SECOND_WAVE_LIVING_THRESHOLD = 2
+    private constant real OUTPOST_INTRO_GRUNT_RESPONSE_DELAY = 4.00
     private constant real OUTPOST_CINEMATIC_FADE_DURATION = 1.00
     private constant real OUTPOST_CINEMATIC_END_FADE_DURATION = 0.50
+    private constant real OUTPOST_PET_DISTANCE = 120.00
+    private constant real OUTPOST_PET_ANGLE_OFFSET = -90.00
     private constant real OUTPOST_RAGNO_CONVERSATION_DISTANCE = 140.00
     private constant real OUTPOST_RAGNO_CONVERSATION_MOVE_WAIT = 5.00
     private constant real OUTPOST_COMPLETION_PERIOD = 2.00
@@ -1081,6 +1084,30 @@ private function GetLivingProtectOutpostGnollCount takes nothing returns integer
     return ProtectOutpostLivingGnolls
 endfunction
 
+private function IsProtectOutpostGnollAtSpawn takes unit u returns boolean
+    if gg_rct_GnollCinemaSpawnRegion != null and RectContainsUnit(gg_rct_GnollCinemaSpawnRegion, u) then
+        return true
+    endif
+    if gg_rct_GnollSpawnRegion != null and RectContainsUnit(gg_rct_GnollSpawnRegion, u) then
+        return true
+    endif
+    return gg_rct_GnollSpawnRegion2 != null and RectContainsUnit(gg_rct_GnollSpawnRegion2, u)
+endfunction
+
+private function ReissueProtectOutpostGnollOrderEnum takes nothing returns nothing
+    local unit u = GetEnumUnit()
+    if FallenHeroState_IsAlive(u) and (GetUnitCurrentOrder(u) == 0 or IsProtectOutpostGnollAtSpawn(u)) then
+        call IssuePointOrder(u, "attack", GetRectCenterX(gg_rct_HordeMountainCamp), GetRectCenterY(gg_rct_HordeMountainCamp))
+    endif
+    set u = null
+endfunction
+
+private function ReissueProtectOutpostGnollOrders takes nothing returns nothing
+    if ProtectOutpostGnolls != null then
+        call ForGroup(ProtectOutpostGnolls, function ReissueProtectOutpostGnollOrderEnum)
+    endif
+endfunction
+
 private function SpawnProtectOutpostGnoll takes integer unitTypeId, rect spawnRect returns nothing
     local unit u
     if spawnRect == null then
@@ -1153,8 +1180,8 @@ private function StageProtectOutpostIntroCinematic takes nothing returns nothing
         call SetUnitFacing(Nazgrek, 49.00)
     endif
     call CameraSetupApplyForPlayer(true, gg_cam_ProtectOutpost01, Player(0), 0.00)
-    call TimerStart(ProtectOutpostIntroCameraAssistTimer, 5.00, false, function OnProtectOutpostIntroCameraAssist)
-    call TimerStart(ProtectOutpostIntroCameraReturnTimer, 8.00, false, function OnProtectOutpostIntroCameraReturn)
+    call TimerStart(ProtectOutpostIntroCameraAssistTimer, 5.00 + OUTPOST_INTRO_GRUNT_RESPONSE_DELAY, false, function OnProtectOutpostIntroCameraAssist)
+    call TimerStart(ProtectOutpostIntroCameraReturnTimer, 8.00 + OUTPOST_INTRO_GRUNT_RESPONSE_DELAY, false, function OnProtectOutpostIntroCameraReturn)
 endfunction
 
 private function OnProtectOutpostIntroCinematicEnd takes nothing returns nothing
@@ -1196,6 +1223,7 @@ private function PlayProtectOutpostIntroCinematic takes nothing returns nothing
     call DialogSystem_AddDelay(seq, 1.00)
     if grunt != null then
         call DialogSystem_AddLine(seq, grunt, "Grunt", VL_ORCGRUNT_0012_TEXT, VL_ORCGRUNT_0012_KEY, true)
+        call DialogSystem_AddDelay(seq, OUTPOST_INTRO_GRUNT_RESPONSE_DELAY)
         call DialogSystem_AddLine(seq, grunt, "Grunt", VL_ORCGRUNT_0013_TEXT, VL_ORCGRUNT_0013_KEY, true)
     endif
     call DialogSystem_AddLine(seq, Nazgrek, "Nazgrek", VL_NAZGREK_0057_TEXT, VL_NAZGREK_0057_KEY, true)
@@ -1262,6 +1290,24 @@ private function OnProtectOutpostCompletionCinematicStart takes nothing returns 
     endif
 endfunction
 
+private function PlaceProtectOutpostPetByNazgrek takes nothing returns nothing
+    local real angle
+    local real x
+    local real y
+    if not DialogInteraction_IsUnitAlive(Nazgrek) or not DialogInteraction_IsUnitAlive(udg_Shadowclaw) or IsUnitHidden(udg_Shadowclaw) then
+        return
+    endif
+    if udg_Shadowclaw != udg_TamedUnit and (udg_TamedUnits == null or not IsUnitInGroup(udg_Shadowclaw, udg_TamedUnits)) then
+        return
+    endif
+    set angle = (GetUnitFacing(Nazgrek) + OUTPOST_PET_ANGLE_OFFSET) * bj_DEGTORAD
+    set x = GetUnitX(Nazgrek) + OUTPOST_PET_DISTANCE * Cos(angle)
+    set y = GetUnitY(Nazgrek) + OUTPOST_PET_DISTANCE * Sin(angle)
+    call SetUnitPosition(udg_Shadowclaw, x, y)
+    call SetUnitFacing(udg_Shadowclaw, GetUnitFacing(Nazgrek))
+    call IssueImmediateOrder(udg_Shadowclaw, "stop")
+endfunction
+
 private function StageProtectOutpostCompletionCinematic takes nothing returns nothing
     call MovePlayerUnitsToProtectOutpostCinematic(gg_rct_RagnoIntroPlayerUnits, gg_rct_RagnoIntroNazgrek)
     call CameraSetupApplyForPlayer(true, gg_cam_ProtectOutpost03, Player(0), 0.00)
@@ -1277,10 +1323,12 @@ private function StageProtectOutpostCompletionCinematic takes nothing returns no
         call SetUnitPosition(Ragno, GetRectCenterX(gg_rct_RagnoPoint), GetRectCenterY(gg_rct_RagnoPoint))
         call SetUnitFacing(Ragno, 73.00)
     endif
+    call PlaceProtectOutpostPetByNazgrek()
 endfunction
 
 private function OnProtectOutpostCompletionCinematicEnd takes nothing returns nothing
     call ReturnPlayerUnitsFromProtectOutpostCinematic()
+    call PlaceProtectOutpostPetByNazgrek()
     set MountainDefenseActive = false
     call UnhideProtectOutpostPreplacedGnolls()
     if DialogInteraction_IsUnitAlive(Ragno) then
@@ -1396,6 +1444,7 @@ private function CompleteProtectOutpost takes nothing returns nothing
 endfunction
 
 private function OnProtectOutpostCompletionTimer takes nothing returns nothing
+    call ReissueProtectOutpostGnollOrders()
     if ProtectOutpostStarted and ProtectOutpostSecondWaveSpawned and not ProtectOutpostCompleted and GetLivingProtectOutpostGnollCount() == 0 then
         call CompleteProtectOutpost()
     endif
@@ -1409,6 +1458,7 @@ private function OnProtectOutpostSecondWaveTimer takes nothing returns nothing
     if not ProtectOutpostIntroFinished then
         return
     endif
+    call ReissueProtectOutpostGnollOrders()
     if not ProtectOutpostSecondWaveSpawned and GetLivingProtectOutpostGnollCount() <= OUTPOST_SECOND_WAVE_LIVING_THRESHOLD then
         call PauseTimer(ProtectOutpostSecondWaveTimer)
         call SpawnProtectOutpostSecondWave()
