@@ -34,7 +34,6 @@ globals
 
     private framehandle MUI_Parent = null
     private framehandle MUI_OpenButton = null
-    private framehandle MUI_OpenButtonHintAlert = null
     private framehandle MUI_HintsButtonAlert = null
     private framehandle MUI_CloseButton = null
     private framehandle MUI_Title = null
@@ -49,7 +48,6 @@ globals
     private trigger MUI_ClearFocusTrigger = null
     private trigger MUI_InitTrigger = null
     private timer MUI_HintFlashTimer = null
-    private real MUI_HintFlashElapsed = 0.00
 
     private constant integer MUI_ACTION_ZONES = 1
     private constant integer MUI_ACTION_PROFESSIONS = 2
@@ -78,7 +76,6 @@ globals
     private constant real MUI_MENU_TEXT_RIGHT_OFFSET = -0.004
     private constant real MUI_MENU_TEXT_BOTTOM_OFFSET = 0.004
     private constant real MUI_HINT_FLASH_DURATION = 2.00
-    private constant real MUI_HINT_FLASH_INTERVAL = 0.10
     // UI-ModalButtonOn renders above-right of its frame origin; compensate at this icon size.
     private constant real MUI_HINT_ICON_ALERT_OFFSET = -0.0064
     private constant real MUI_HINT_ICON_ALERT_SCALE = 0.44
@@ -153,31 +150,16 @@ private function MUI_ApplyHintsUnreadState takes nothing returns nothing
     endif
 endfunction
 
-private function MUI_HideHintOpenButtonAlert takes nothing returns nothing
-    if MUI_OpenButtonHintAlert != null then
-        call BlzFrameSetAlpha(MUI_OpenButtonHintAlert, 255)
-        call BlzFrameSetVisible(MUI_OpenButtonHintAlert, false)
-    endif
-endfunction
-
-private function MUI_UpdateHintOpenButtonAlert takes nothing returns nothing
-    set MUI_HintFlashElapsed = MUI_HintFlashElapsed + MUI_HINT_FLASH_INTERVAL
-    if MUI_HintFlashElapsed >= MUI_HINT_FLASH_DURATION then
-        call PauseTimer(MUI_HintFlashTimer)
-        call MUI_HideHintOpenButtonAlert()
-    elseif ModuloInteger(R2I(MUI_HintFlashElapsed / 0.20), 2) == 0 then
-        call BlzFrameSetAlpha(MUI_OpenButtonHintAlert, 255)
-    else
-        call BlzFrameSetAlpha(MUI_OpenButtonHintAlert, 96)
+private function MUI_ResetHintOpenButtonLabel takes nothing returns nothing
+    if MUI_OpenButton != null then
+        call BlzFrameSetText(MUI_OpenButton, "|cffffffffGame|r")
     endif
 endfunction
 
 private function MUI_FlashHintOpenButton takes nothing returns nothing
-    if MUI_OpenButtonHintAlert != null and MUI_HintFlashTimer != null then
-        set MUI_HintFlashElapsed = 0.00
-        call BlzFrameSetAlpha(MUI_OpenButtonHintAlert, 255)
-        call BlzFrameSetVisible(MUI_OpenButtonHintAlert, true)
-        call TimerStart(MUI_HintFlashTimer, MUI_HINT_FLASH_INTERVAL, true, function MUI_UpdateHintOpenButtonAlert)
+    if MUI_OpenButton != null and MUI_HintFlashTimer != null then
+        call BlzFrameSetText(MUI_OpenButton, "|cffffcc00Game!|r")
+        call TimerStart(MUI_HintFlashTimer, MUI_HINT_FLASH_DURATION, false, function MUI_ResetHintOpenButtonLabel)
     endif
 endfunction
 
@@ -190,7 +172,7 @@ public function SetHintsUnread takes boolean unread returns nothing
         if MUI_HintFlashTimer != null then
             call PauseTimer(MUI_HintFlashTimer)
         endif
-        call MUI_HideHintOpenButtonAlert()
+        call MUI_ResetHintOpenButtonLabel()
     endif
 endfunction
 
@@ -403,28 +385,6 @@ private function MUI_CreateMenuButton takes integer index, string label, string 
     set iconFrame = null
 endfunction
 
-private function MUI_GetButtonHighlightTexture takes nothing returns string
-    if GetPlayerRace(GetLocalPlayer()) == RACE_ORC then
-        return "UI\\Widgets\\EscMenu\\Orc\\orc-options-button-highlight.blp"
-    elseif GetPlayerRace(GetLocalPlayer()) == RACE_NIGHTELF then
-        return "UI\\Widgets\\EscMenu\\NightElf\\nightelf-options-button-highlight.blp"
-    elseif GetPlayerRace(GetLocalPlayer()) == RACE_UNDEAD then
-        return "UI\\Widgets\\EscMenu\\Undead\\undead-options-button-highlight.blp"
-    endif
-    return "UI\\Widgets\\EscMenu\\Human\\human-options-button-highlight.blp"
-endfunction
-
-private function MUI_CreateOpenButtonHintAlert takes framehandle parent returns framehandle
-    local framehandle alertFrame = BlzCreateFrameByType("BACKDROP", "MasterUIOpenButtonHintAlert", parent, "", 0)
-
-    call BlzFrameSetAllPoints(alertFrame, parent)
-    call BlzFrameSetTexture(alertFrame, MUI_GetButtonHighlightTexture(), 0, true)
-    call BlzFrameSetLevel(alertFrame, 7)
-    call BlzFrameSetEnable(alertFrame, false)
-    call BlzFrameSetVisible(alertFrame, false)
-    return alertFrame
-endfunction
-
 private function MUI_CreateHintsButtonAlert takes nothing returns framehandle
     local framehandle alertFrame = BlzCreateFrameByType("SPRITE", "MasterUIHintsButtonAlert", MUI_MenuButton[6], "", 0)
 
@@ -481,7 +441,6 @@ private function MUI_CreateFrames takes nothing returns nothing
     call BlzTriggerRegisterFrameEvent(MUI_OpenTrigger, MUI_OpenButton, FRAMEEVENT_CONTROL_CLICK)
     call BlzTriggerRegisterFrameEvent(MUI_ClearFocusTrigger, MUI_OpenButton, FRAMEEVENT_CONTROL_CLICK)
     call MUI_ApplyOpenButtonVisibility()
-    set MUI_OpenButtonHintAlert = MUI_CreateOpenButtonHintAlert(MUI_OpenButton)
     call MUI_ApplyHintsUnreadState()
     if MUI_HintsUnread then
         call MUI_FlashHintOpenButton()
