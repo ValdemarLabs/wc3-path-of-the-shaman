@@ -2,7 +2,7 @@
     qZulkis
 
     Author: Valdemar
-    Version: 1.1.3
+    Version: 1.1.4
 
     Description:
 
@@ -33,7 +33,7 @@
     qZulkis_IsPrologueCompleted() gates Call of the Horde convergence.
 
 **/
-library qZulkis initializer Init requires QuestGiver, QuestMaster, DialogInteraction, DialogSystem, CameraControl, DInventory, DEquipment, VoicelinesNarrator, VoicelinesZulkis, VoicelinesThork, VoicelinesZulkarak, VoicelinesGenericTroll, optional Pet
+library qZulkis initializer Init requires QuestGiver, QuestMaster, DialogInteraction, DialogSystem, CameraControl, DInventory, DEquipment, Start, VoicelinesNarrator, VoicelinesZulkis, VoicelinesThork, VoicelinesZulkarak, VoicelinesGenericTroll, optional Pet
     globals
         // Quest and staging configuration
         public constant string QUEST_MEET_CHIEFTAIN_THORK = "Meet with Chieftain Thork"
@@ -43,6 +43,7 @@ library qZulkis initializer Init requires QuestGiver, QuestMaster, DialogInterac
         private constant integer UNIT_DARKSPEAR_WITCH_DOCTOR = 'odoc'
         private constant integer UNIT_INTRO_SHIP = 'odes'
         private constant integer DARKSPEAR_PLAYER_ID = 1
+        private constant integer ZULKIS_GRAVEYARD_ID = 2
 
         private constant integer STATE_DORMANT = 0
         private constant integer STATE_SHIP_ARRIVAL = 1
@@ -90,6 +91,8 @@ library qZulkis initializer Init requires QuestGiver, QuestMaster, DialogInterac
         private player NazgrekSavedOwner = null
         private boolean NazgrekSavedInvulnerable = false
         private boolean NazgrekWasUnitHiderReference = false
+        private integer SavedGraveyardId = 0
+        private boolean GraveyardOverrideActive = false
         private boolean Initialized = false
         private boolean StartRequested = false
         private boolean PrologueStarted = false
@@ -103,6 +106,24 @@ library qZulkis initializer Init requires QuestGiver, QuestMaster, DialogInterac
 private function DebugMsg takes string msg returns nothing
     if DEBUG then
         call BJDebugMsg("|cff88ccff[qZulkis]|r " + msg)
+    endif
+endfunction
+
+private function OverridePrologueGraveyard takes nothing returns nothing
+    if not PrologueStarted or PrologueCompleted then
+        return
+    endif
+    if not GraveyardOverrideActive then
+        set SavedGraveyardId = udg_GraveyardSelect
+        set GraveyardOverrideActive = true
+    endif
+    set udg_GraveyardSelect = ZULKIS_GRAVEYARD_ID
+endfunction
+
+private function RestorePlayerGraveyard takes nothing returns nothing
+    if GraveyardOverrideActive then
+        set udg_GraveyardSelect = SavedGraveyardId
+        set GraveyardOverrideActive = false
     endif
 endfunction
 
@@ -510,6 +531,7 @@ private function CompletePrologue takes nothing returns nothing
     set PrologueCompleted = true
     set ScenePlaying = false
     call PauseTimer(ProgressTimer)
+    call RestorePlayerGraveyard()
 
     call SetUnitPosition(Zulkis, GetRectCenterX(gg_rct_ZulkisHordeStage), GetRectCenterY(gg_rct_ZulkisHordeStage))
     call SetUnitOwner(Zulkis, Player(PLAYER_NEUTRAL_PASSIVE), true)
@@ -573,6 +595,7 @@ endfunction
 
 private function OnProgress takes nothing returns nothing
     call SyncUnitReferences()
+    call OverridePrologueGraveyard()
 
     if PrologueState == STATE_SHIP_ARRIVAL then
         set ShipTravelElapsed = ShipTravelElapsed + PROGRESS_PERIOD
@@ -619,6 +642,7 @@ private function StartPrologueInternal takes nothing returns nothing
 
     set PrologueStarted = true
     set ScenePlaying = true
+    call OverridePrologueGraveyard()
     set NazgrekSavedX = GetUnitX(Nazgrek)
     set NazgrekSavedY = GetUnitY(Nazgrek)
     set NazgrekSavedFacing = GetUnitFacing(Nazgrek)
@@ -642,6 +666,7 @@ private function StartPrologueInternal takes nothing returns nothing
     call ShowUnit(Zulkis, false)
     call InitializeDInventoryForUnit(Zulkis)
     call InitializeDEquipmentForUnit(Zulkis)
+    call Start_SetupZulkisStartingItems()
 
     call SetUnitInvulnerable(Zulkarak, true)
     call PauseUnit(Zulkarak, true)
