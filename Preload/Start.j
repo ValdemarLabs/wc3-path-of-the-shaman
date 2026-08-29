@@ -2,7 +2,7 @@
     Start
 
     Author: Valdemar
-    Version:
+    Version: 1.1.0
 
     Description:
     Runs the player start flow after GameMode finishes. This replaces the old
@@ -18,6 +18,7 @@
 
     API:
     call Start_Start()
+    call Start_SetupZulkisStartingItems()
     call Start_SetRunIntroCinematic(boolean enabled)
     call Start_SetStartingGoldBonus(integer amount)
 
@@ -61,11 +62,31 @@ library Start requires ZonesCore, DInventory, DEquipment, WeatherSystem, Terrain
         private constant integer ST_ITEM_SPRING_WATER = 'I60Z'
 
         // ============================================================
+        // ZUL'KIS
+
+        // Starting equipment
+        private constant integer ST_ITEM_SHADOWCASTERS_SCEPTER = 'I68B'
+        private constant integer ST_ITEM_ZULKIS_HEAD = 'j4c3'
+        private constant integer ST_ITEM_ZULKIS_CHEST = 'j4c4'
+        private constant integer ST_ITEM_ZULKIS_HANDS = 'j4c5'
+        private constant integer ST_ITEM_ZULKIS_BELT = 'j4c6'
+        private constant integer ST_ITEM_ZULKIS_LEGS = 'j4c7'
+        private constant integer ST_ITEM_ZULKIS_FOOT = 'j4c8'
+        private constant integer ST_ITEM_ZULKIS_NECK = 'j4c9'
+        private constant integer ST_ITEM_ZULKIS_TRINKET = 'j4d0'
+
+        // Starting consumables
+        private constant integer ST_ITEM_MANA_POTION = 'pman'
+        private constant integer ST_ITEM_HEALING_POTION = 'phea'
+        private constant integer ST_ITEM_PURIFIED_WATER = 'I6BB'
+
+        // ============================================================
 
         // Runtime state
         private timer ST_Timer = null
         private boolean ST_Started = false
         private boolean ST_RunIntroCinematic = true
+        private boolean ST_ZulkisStartingItemsAdded = false
         private integer ST_StartingGoldBonus = 0
     endglobals
 
@@ -134,20 +155,20 @@ library Start requires ZonesCore, DInventory, DEquipment, WeatherSystem, Terrain
         endif
     endfunction
 
-    private function ST_AddAndEquipStartingItem takes integer itemTypeId returns nothing
-        call UnitAddItemByIdSwapped(itemTypeId, udg_Nazgrek)
+    private function ST_AddAndEquipStartingItem takes unit whichHero, integer itemTypeId returns nothing
+        call UnitAddItemByIdSwapped(itemTypeId, whichHero)
         loop
-            exitwhen not DInvTryEquipBestStoredEquipmentForUnit(udg_Nazgrek)
+            exitwhen not DInvTryEquipBestStoredEquipmentForUnit(whichHero)
         endloop
     endfunction
 
-    private function ST_AddStartingConsumable takes integer itemTypeId returns nothing
-        local item startingItem = CreateItem(itemTypeId, GetUnitX(udg_Nazgrek), GetUnitY(udg_Nazgrek))
+    private function ST_AddStartingConsumable takes unit whichHero, integer itemTypeId returns nothing
+        local item startingItem = CreateItem(itemTypeId, GetUnitX(whichHero), GetUnitY(whichHero))
 
         if startingItem != null then
-            call AddItemToUnitExclusionList(startingItem, udg_Nazgrek)
-            call UnitAddItem(udg_Nazgrek, startingItem)
-            call RemoveItemFromUnitExclusionList(startingItem, udg_Nazgrek)
+            call AddItemToUnitExclusionList(startingItem, whichHero)
+            call UnitAddItem(whichHero, startingItem)
+            call RemoveItemFromUnitExclusionList(startingItem, whichHero)
         endif
 
         set startingItem = null
@@ -158,24 +179,47 @@ library Start requires ZonesCore, DInventory, DEquipment, WeatherSystem, Terrain
         // Create items for Nazgrek
         if ST_HasNazgrek() then
             // gear
-            call ST_AddAndEquipStartingItem(ST_ITEM_NAZGREKS_AXE)
-            call ST_AddAndEquipStartingItem(ST_ITEM_BACK)
-            call ST_AddAndEquipStartingItem(ST_ITEM_BELT)
-            call ST_AddAndEquipStartingItem(ST_ITEM_BRACERS)
-            call ST_AddAndEquipStartingItem(ST_ITEM_CHEST)
-            call ST_AddAndEquipStartingItem(ST_ITEM_FOOT)
-            call ST_AddAndEquipStartingItem(ST_ITEM_HANDS)
-            call ST_AddAndEquipStartingItem(ST_ITEM_HEAD)
-            call ST_AddAndEquipStartingItem(ST_ITEM_LEGS)
-            call ST_AddAndEquipStartingItem(ST_ITEM_NECK)
-            call ST_AddAndEquipStartingItem(ST_ITEM_RING)
-            call ST_AddAndEquipStartingItem(ST_ITEM_SHOULDERS)
-            call ST_AddAndEquipStartingItem(ST_ITEM_TRINKET)
+            call ST_AddAndEquipStartingItem(udg_Nazgrek, ST_ITEM_NAZGREKS_AXE)
+            call ST_AddAndEquipStartingItem(udg_Nazgrek, ST_ITEM_BACK)
+            call ST_AddAndEquipStartingItem(udg_Nazgrek, ST_ITEM_BELT)
+            call ST_AddAndEquipStartingItem(udg_Nazgrek, ST_ITEM_BRACERS)
+            call ST_AddAndEquipStartingItem(udg_Nazgrek, ST_ITEM_CHEST)
+            call ST_AddAndEquipStartingItem(udg_Nazgrek, ST_ITEM_FOOT)
+            call ST_AddAndEquipStartingItem(udg_Nazgrek, ST_ITEM_HANDS)
+            call ST_AddAndEquipStartingItem(udg_Nazgrek, ST_ITEM_HEAD)
+            call ST_AddAndEquipStartingItem(udg_Nazgrek, ST_ITEM_LEGS)
+            call ST_AddAndEquipStartingItem(udg_Nazgrek, ST_ITEM_NECK)
+            call ST_AddAndEquipStartingItem(udg_Nazgrek, ST_ITEM_RING)
+            call ST_AddAndEquipStartingItem(udg_Nazgrek, ST_ITEM_SHOULDERS)
+            call ST_AddAndEquipStartingItem(udg_Nazgrek, ST_ITEM_TRINKET)
 
             // consumables
-            call ST_AddStartingConsumable(ST_ITEM_HEALING_SALVE)
-            call ST_AddStartingConsumable(ST_ITEM_SPRING_WATER)
+            call ST_AddStartingConsumable(udg_Nazgrek, ST_ITEM_HEALING_SALVE)
+            call ST_AddStartingConsumable(udg_Nazgrek, ST_ITEM_SPRING_WATER)
         endif
+    endfunction
+
+    public function SetupZulkisStartingItems takes nothing returns nothing
+        if ST_ZulkisStartingItemsAdded or udg_Zulkis == null or GetUnitTypeId(udg_Zulkis) == 0 then
+            return
+        endif
+
+        set ST_ZulkisStartingItemsAdded = true
+
+        call ST_AddAndEquipStartingItem(udg_Zulkis, ST_ITEM_SHADOWCASTERS_SCEPTER)
+        call ST_AddAndEquipStartingItem(udg_Zulkis, ST_ITEM_ZULKIS_HEAD)
+        call ST_AddAndEquipStartingItem(udg_Zulkis, ST_ITEM_ZULKIS_CHEST)
+        call ST_AddAndEquipStartingItem(udg_Zulkis, ST_ITEM_ZULKIS_HANDS)
+        call ST_AddAndEquipStartingItem(udg_Zulkis, ST_ITEM_ZULKIS_BELT)
+        call ST_AddAndEquipStartingItem(udg_Zulkis, ST_ITEM_ZULKIS_LEGS)
+        call ST_AddAndEquipStartingItem(udg_Zulkis, ST_ITEM_ZULKIS_FOOT)
+        call ST_AddAndEquipStartingItem(udg_Zulkis, ST_ITEM_ZULKIS_NECK)
+        call ST_AddAndEquipStartingItem(udg_Zulkis, ST_ITEM_ZULKIS_TRINKET)
+
+        call ST_AddStartingConsumable(udg_Zulkis, ST_ITEM_MANA_POTION)
+        call ST_AddStartingConsumable(udg_Zulkis, ST_ITEM_MANA_POTION)
+        call ST_AddStartingConsumable(udg_Zulkis, ST_ITEM_HEALING_POTION)
+        call ST_AddStartingConsumable(udg_Zulkis, ST_ITEM_PURIFIED_WATER)
     endfunction
 
     private function ST_SetStartingResources takes nothing returns nothing
