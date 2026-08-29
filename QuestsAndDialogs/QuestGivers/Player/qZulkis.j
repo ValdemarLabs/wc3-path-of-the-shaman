@@ -2,7 +2,7 @@
     qZulkis
 
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.1.1
 
     Description:
 
@@ -55,6 +55,7 @@ library qZulkis initializer Init requires QuestGiver, QuestMaster, DialogInterac
         private constant real PROGRESS_PERIOD = 0.25
         private constant real SHIP_ARRIVAL_RANGE = 160.00
         private constant real SHIP_ARRIVAL_TIMEOUT = 14.00
+        private constant real SHIP_CAMERA_START_DELAY = 0.10
         private constant real SHIP_CAMERA_PAN_DURATION = 10.00
         private constant real SHORE_RETURN_RANGE = 450.00
         private constant real THORK_INTERACTION_RANGE = 600.00
@@ -62,7 +63,9 @@ library qZulkis initializer Init requires QuestGiver, QuestMaster, DialogInterac
         private constant real FADE_DURATION = 1.00
         private constant real WOUNDED_BLOOD_MIN_DELAY = 2.00
         private constant real WOUNDED_BLOOD_MAX_DELAY = 4.00
+        private constant real WOUNDED_DEATH_DELAY = 1.50
         private constant string WOUNDED_BLOOD_EFFECT = "Objects\\Spawnmodels\\Orc\\OrcBlood\\OrcBloodGrunt.mdl"
+        private constant string WOUNDED_DEATH_SOUND = "WitchDoctorDeath"
         private constant boolean DEBUG = false
 
         // Runtime state
@@ -79,6 +82,7 @@ library qZulkis initializer Init requires QuestGiver, QuestMaster, DialogInterac
         private timer ProgressTimer = null
         private timer TransitionTimer = null
         private timer WoundedBloodTimer = null
+        private timer WoundedDeathTimer = null
         private integer PrologueState = STATE_DORMANT
         private real ShipTravelElapsed = 0.00
         private real NazgrekSavedX = 0.00
@@ -175,12 +179,31 @@ private function StageLivingLandingParty takes nothing returns nothing
     call PrepareLivingTroll(6, UNIT_DARKSPEAR_HEADHUNTER, gg_rct_CorpseTroll06)
 endfunction
 
-private function CreatePermanentCorpse takes integer unitTypeId, rect whichRect returns nothing
-    local unit corpse = CreateCorpse(Player(DARKSPEAR_PLAYER_ID), unitTypeId, GetRectCenterX(whichRect), GetRectCenterY(whichRect), GetRandomReal(0.00, 360.00))
+private function CreatePermanentCorpse takes integer index, integer unitTypeId, rect whichRect returns nothing
+    local location corpsePoint = Location(GetRectCenterX(whichRect), GetRectCenterY(whichRect))
 
-    if corpse != null then
-        call UnitSuspendDecay(corpse, true)
+    set LandingTroll[index] = CreatePermanentCorpseLocBJ(bj_CORPSETYPE_FLESH, unitTypeId, Player(DARKSPEAR_PLAYER_ID), corpsePoint, GetRandomReal(0.00, 360.00))
+    if LandingTroll[index] != null then
+        call UnitSuspendDecay(LandingTroll[index], true)
     endif
+    call RemoveLocation(corpsePoint)
+    set corpsePoint = null
+endfunction
+
+private function ResumeLandingCorpseDecay takes nothing returns nothing
+    local integer index = 1
+    local unit corpse
+
+    loop
+        exitwhen index > 6
+        set corpse = LandingTroll[index]
+        if corpse != null and GetUnitTypeId(corpse) != 0 and GetWidgetLife(corpse) <= 0.405 then
+            call UnitSuspendDecay(corpse, false)
+            call SetUnitTimeScale(corpse, 1.00)
+        endif
+        set LandingTroll[index] = null
+        set index = index + 1
+    endloop
     set corpse = null
 endfunction
 
@@ -189,7 +212,24 @@ private function ReplaceLandingTrollWithCorpse takes integer index, integer unit
         call RemoveUnit(LandingTroll[index])
         set LandingTroll[index] = null
     endif
-    call CreatePermanentCorpse(unitTypeId, whichRect)
+    call CreatePermanentCorpse(index, unitTypeId, whichRect)
+endfunction
+
+private function FinishWoundedTrollDeath takes boolean playDeathSound returns nothing
+    local real deathX
+    local real deathY
+
+    if LandingTroll[3] == null or GetUnitTypeId(LandingTroll[3]) == 0 or GetWidgetLife(LandingTroll[3]) <= 0.405 then
+        return
+    endif
+    call PauseTimer(WoundedBloodTimer)
+    if playDeathSound then
+        set deathX = GetUnitX(LandingTroll[3])
+        set deathY = GetUnitY(LandingTroll[3])
+        call ExSound_Stop()
+        call ExSound_PlayLabelAtPoint(WOUNDED_DEATH_SOUND, deathX, deathY, false)
+    endif
+    call ReplaceLandingTrollWithCorpse(3, UNIT_DARKSPEAR_WITCH_DOCTOR, gg_rct_CorpseTroll03)
 endfunction
 
 private function RemoveIntroShip takes nothing returns nothing
@@ -379,6 +419,14 @@ private function StageBrokenLandingView takes nothing returns nothing
     call CameraSetupApplyForPlayer(true, gg_cam_IntroZulkisCam4, Player(0), 0.00)
 endfunction
 
+private function OnWoundedDeath takes nothing returns nothing
+    call FinishWoundedTrollDeath(true)
+endfunction
+
+private function ScheduleWoundedDeath takes nothing returns nothing
+    call TimerStart(WoundedDeathTimer, WOUNDED_DEATH_DELAY, false, function OnWoundedDeath)
+endfunction
+
 private function FinishBrokenLanding takes nothing returns nothing
     local boolean skippedBeforeStaging = not BrokenLandingViewStaged
 
@@ -386,7 +434,8 @@ private function FinishBrokenLanding takes nothing returns nothing
         call StageBrokenLandingView()
     endif
     call PauseTimer(WoundedBloodTimer)
-    call ReplaceLandingTrollWithCorpse(3, UNIT_DARKSPEAR_WITCH_DOCTOR, gg_rct_CorpseTroll03)
+    call PauseTimer(WoundedDeathTimer)
+    call FinishWoundedTrollDeath(false)
     if MeetThorkQuest != 0 and MeetThorkQuest.active and not MeetThorkQuest.completed then
         call QuestGiver_SetRequirementCompleted(MeetThorkQuest.id, 2, true)
         call QuestGiver_CompleteQuest(MeetThorkQuest.id)
@@ -413,6 +462,7 @@ endfunction
 
 private function PlayBrokenLandingSequence takes nothing returns nothing
     local integer seq = DialogInteraction_CreateBaseSequence(LandingTroll[3], "Darkspear Witch Doctor")
+    local integer deathLine
 
     set BrokenLandingViewStaged = false
     call DialogSystem_SetSequenceCallbacks(seq, function OnBrokenLandingSequenceStart, function OnBrokenLandingSequenceEnd)
@@ -420,7 +470,8 @@ private function PlayBrokenLandingSequence takes nothing returns nothing
     call DialogSystem_AddDelay(seq, 0.50)
     call DialogSystem_AddLine(seq, LandingTroll[3], "Darkspear Witch Doctor", VL_GENERICTROLL_0001_TEXT, VL_GENERICTROLL_0001_KEY, true)
     call DialogSystem_AddLine(seq, LandingTroll[3], "Darkspear Witch Doctor", VL_GENERICTROLL_0002_TEXT, VL_GENERICTROLL_0002_KEY, true)
-    call DialogSystem_AddLine(seq, LandingTroll[3], "Darkspear Witch Doctor", VL_GENERICTROLL_0003_TEXT, VL_GENERICTROLL_0003_KEY, true)
+    set deathLine = DialogSystem_AddLine(seq, LandingTroll[3], "Darkspear Witch Doctor", VL_GENERICTROLL_0003_TEXT, VL_GENERICTROLL_0003_KEY, true)
+    call DialogSystem_BindLineAction(seq, deathLine, function ScheduleWoundedDeath)
     call DialogSystem_PlaySequence(seq, Player(0), LandingTroll[3])
 endfunction
 
@@ -433,6 +484,8 @@ private function CompletePrologue takes nothing returns nothing
     call CleanupShoreFire()
     call RemoveIntroShip()
     call PauseTimer(WoundedBloodTimer)
+    call PauseTimer(WoundedDeathTimer)
+    call ResumeLandingCorpseDecay()
     call DialogSystem_ClearEscapeAction()
     set PrologueState = STATE_COMPLETE
     set PrologueCompleted = true
@@ -520,16 +573,22 @@ private function OnProgress takes nothing returns nothing
     endif
 endfunction
 
+private function StartShipCameraPan takes nothing returns nothing
+    if PrologueState == STATE_SHIP_ARRIVAL then
+        call CameraSetupApplyForPlayer(true, gg_cam_IntroZulkisCam2, Player(0), SHIP_CAMERA_PAN_DURATION)
+    endif
+endfunction
+
 private function StartShipArrival takes nothing returns nothing
     if PrologueState != STATE_SHIP_ARRIVAL then
         return
     endif
     call CameraSetupApplyForPlayer(true, gg_cam_IntroZulkisCam1, Player(0), 0.00)
-    call CameraSetupApplyForPlayer(true, gg_cam_IntroZulkisCam2, Player(0), SHIP_CAMERA_PAN_DURATION)
     call RemoveIntroShip()
     set IntroShip = CreateUnit(Player(DARKSPEAR_PLAYER_ID), UNIT_INTRO_SHIP, GetRectCenterX(gg_rct_ZulkisShipWP1), GetRectCenterY(gg_rct_ZulkisShipWP1), bj_UNIT_FACING)
     call IssuePointOrder(IntroShip, "move", GetRectCenterX(gg_rct_ZulkisShipWP2), GetRectCenterY(gg_rct_ZulkisShipWP2))
     call CinematicFadeBJ(bj_CINEFADETYPE_FADEIN, FADE_DURATION, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
+    call TimerStart(TransitionTimer, SHIP_CAMERA_START_DELAY, false, function StartShipCameraPan)
     call TimerStart(ProgressTimer, PROGRESS_PERIOD, true, function OnProgress)
 endfunction
 
@@ -660,6 +719,7 @@ private function Init takes nothing returns nothing
     set ProgressTimer = CreateTimer()
     set TransitionTimer = CreateTimer()
     set WoundedBloodTimer = CreateTimer()
+    set WoundedDeathTimer = CreateTimer()
     call TimerStart(InitTimer, 0.00, false, function InitDelayed)
 endfunction
 
