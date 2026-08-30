@@ -2,7 +2,7 @@
     VoicelinesOrcGrunt
 
     Author: Valdemar
-    Version: 1.1.1
+    Version: 1.1.2
 
     Description:
     Speaker-owned voiceline key/text constants migrated from legacy
@@ -128,6 +128,13 @@ globals
     constant string VL_ORCGRUNT_0165_TEXT = "Not only did you manage to bring back quality wood, but you also didn't lose our nearly-blind peon in the process."
     constant string VL_ORCGRUNT_0166_KEY = "OrcGrunt_0166"
     constant string VL_ORCGRUNT_0166_TEXT = "I suppose that deserves some recognition."
+
+    // Zul'kis prologue patrol.
+
+    constant string VL_ORCGRUNT_0167_KEY = "OrcGrunt_0167"
+    constant string VL_ORCGRUNT_0167_TEXT = "Hold there! We heard shouting by the river. What happened here?"
+    constant string VL_ORCGRUNT_0168_KEY = "OrcGrunt_0168"
+    constant string VL_ORCGRUNT_0168_TEXT = "Then our patrol goes with you. We'll break the forest trolls' line; you keep us on our feet."
 endglobals
 
 endlibrary
