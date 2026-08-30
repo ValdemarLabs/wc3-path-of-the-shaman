@@ -2,7 +2,7 @@
     qZulkis
 
     Author: Valdemar
-    Version: 1.2.0
+    Version: 1.3.0
 
     Description:
 
@@ -20,8 +20,9 @@
 
     Import after the listed quest, dialog, inventory, equipment, and
     voiceline libraries. Keep the confirmed IntroZulkis cameras and Zulkis,
-    CorpseTroll, Bramblehide, HavenwoodsShip, HavenwoodsOrcPatrol, captive,
-    and Horde-stage rects in World Editor.
+    CorpseTroll, Bramblehide, HavenwoodsShip, HavenwoodsOrcPatrol,
+    NazgrekOnHill, NazgrekDecision cameras, captive, and Horde-stage rects
+    in World Editor.
     Disable the legacy elapsed-time corpse trigger. Call
     qZulkis_StartPrologue() after Protect the Outpost.
 
@@ -34,7 +35,7 @@
     qZulkis_IsPrologueCompleted() gates Call of the Horde convergence.
 
 **/
-library qZulkis initializer Init requires QuestGiver, QuestMaster, DialogInteraction, DialogSystem, CameraControl, Companions, Death, HintsUI, DInventory, DEquipment, Start, VoicelinesNarrator, VoicelinesZulkis, VoicelinesThork, VoicelinesZulkarak, VoicelinesGenericTroll, VoicelinesOrcGrunt, optional Pet
+library qZulkis initializer Init requires QuestGiver, QuestMaster, DialogInteraction, DialogSystem, CameraControl, Companions, Death, HintsUI, DInventory, DEquipment, Start, VoicelinesNarrator, VoicelinesNazgrek, VoicelinesZulkis, VoicelinesThork, VoicelinesZulkarak, VoicelinesGenericTroll, VoicelinesOrcGrunt, optional Pet
     globals
         // Quest and staging configuration
         public constant string QUEST_MEET_CHIEFTAIN_THORK = "Meet with Chieftain Thork"
@@ -67,6 +68,7 @@ library qZulkis initializer Init requires QuestGiver, QuestMaster, DialogInterac
         private constant real SHIP_CAMERA_FIRST_PAN_DURATION = 20.00
         private constant real SHIP_CAMERA_SECOND_PAN_DURATION = 15.00
         private constant real SHORE_CAMERA_PAN_DURATION = 20.00
+        private constant real NAZGREK_DECISION_CAMERA_DURATION = 30.00
         private constant real SHORE_RETURN_RANGE = 450.00
         private constant real THORK_INTERACTION_RANGE = 600.00
         private constant real ZULKARAK_RESCUE_RANGE = 350.00
@@ -103,9 +105,6 @@ library qZulkis initializer Init requires QuestGiver, QuestMaster, DialogInterac
         private real ShipTravelElapsed = 0.00
         private real ForestTrollBarkElapsed = 0.00
         private real ForestTrollNextBark = 0.00
-        private real NazgrekSavedX = 0.00
-        private real NazgrekSavedY = 0.00
-        private real NazgrekSavedFacing = 0.00
         private player NazgrekSavedOwner = null
         private boolean NazgrekSavedInvulnerable = false
         private boolean NazgrekWasUnitHiderReference = false
@@ -457,6 +456,7 @@ private function PlayThorkMeetingSequence takes nothing returns nothing
     local integer seq = DialogInteraction_CreateBaseSequence(Thork, "Chieftain Thork")
 
     call DialogSystem_AddMakeFaceEachOther(seq, Thork, Zulkis, 0.75, 0.00)
+    call DialogSystem_AddLine(seq, Zulkis, "Zul'kis", VL_ZULKIS_0014_TEXT, VL_ZULKIS_0014_KEY, true)
     call DialogSystem_AddLine(seq, Thork, "Chieftain Thork", VL_THORK_0013_TEXT, VL_THORK_0013_KEY, true)
     call DialogSystem_AddLine(seq, Zulkis, "Zul'kis", VL_ZULKIS_0006_TEXT, VL_ZULKIS_0006_KEY, true)
     call DialogSystem_AddLine(seq, Thork, "Chieftain Thork", VL_THORK_0014_TEXT, VL_THORK_0014_KEY, true)
@@ -730,6 +730,102 @@ private function PlayBrokenLandingSequence takes nothing returns nothing
     call DialogSystem_PlaySequence(seq, Player(0), LandingTroll[3])
 endfunction
 
+private function StageNazgrekDecisionActors takes nothing returns nothing
+    local unit ragno = udg_Ragno
+    local unit shadowclaw = udg_Shadowclaw
+    local real facing = GetUnitFacing(Nazgrek)
+    local real sideAngle
+
+    call SetUnitPosition(Nazgrek, GetRectCenterX(gg_rct_NazgrekOnHill), GetRectCenterY(gg_rct_NazgrekOnHill))
+    if ragno != null and GetUnitTypeId(ragno) != 0 then
+        set facing = Atan2(GetUnitY(ragno) - GetUnitY(Nazgrek), GetUnitX(ragno) - GetUnitX(Nazgrek)) * bj_RADTODEG
+    endif
+    call SetUnitFacing(Nazgrek, facing)
+    call IssueImmediateOrder(Nazgrek, "stop")
+    call PauseUnit(Nazgrek, true)
+
+    if shadowclaw != null and GetUnitTypeId(shadowclaw) != 0 then
+        set sideAngle = (facing + 90.00) * bj_DEGTORAD
+        if udg_UnitHider_ReferenceGroup != null then
+            call GroupRemoveUnit(udg_UnitHider_ReferenceGroup, shadowclaw)
+        endif
+        call SetUnitPosition(shadowclaw, GetUnitX(Nazgrek) + 140.00 * Cos(sideAngle), GetUnitY(Nazgrek) + 140.00 * Sin(sideAngle))
+        call SetUnitFacing(shadowclaw, facing)
+        call IssueImmediateOrder(shadowclaw, "stop")
+        call PauseUnit(shadowclaw, true)
+        call ShowUnit(shadowclaw, true)
+    endif
+
+    set ragno = null
+    set shadowclaw = null
+endfunction
+
+private function FinishNazgrekDecision takes nothing returns nothing
+    local unit shadowclaw = udg_Shadowclaw
+
+    set PrologueCompleted = true
+    call PauseUnit(Nazgrek, false)
+    if shadowclaw != null and GetUnitTypeId(shadowclaw) != 0 then
+        call PauseUnit(shadowclaw, false)
+        if udg_UnitHider_ReferenceGroup != null then
+            call GroupAddUnit(udg_UnitHider_ReferenceGroup, shadowclaw)
+        endif
+    endif
+    if NazgrekWasUnitHiderReference and udg_UnitHider_ReferenceGroup != null then
+        call GroupAddUnit(udg_UnitHider_ReferenceGroup, Nazgrek)
+    endif
+
+    set ScenePlaying = false
+    call DialogInteraction_EndCinematicSequence(true)
+    call SelectUnitForPlayerSingle(Nazgrek, Player(0))
+    call ResumeGameplayCamera(Nazgrek)
+    call ExecuteFunc("qChieftainThork_RefreshAvailability")
+    call ExecuteFunc("qRagno_RefreshAvailability")
+    call QuestMaster_RefreshUnitSpecificQuests()
+    call DebugMsg("Completed Zul'kis prologue.")
+
+    set shadowclaw = null
+endfunction
+
+private function OnNazgrekDecisionSequenceEnd takes nothing returns nothing
+    call FinishNazgrekDecision()
+endfunction
+
+private function PlayNazgrekDecisionSequence takes nothing returns nothing
+    local integer seq = DialogInteraction_CreateBaseSequence(Nazgrek, "Nazgrek")
+    local integer shadowclawGlanceLine = GetRandomInt(2, 4)
+    local unit ragno = udg_Ragno
+    local unit shadowclaw = udg_Shadowclaw
+
+    call DialogSystem_SetSequenceCallbacks(seq, null, function OnNazgrekDecisionSequenceEnd)
+    call DialogSystem_AddDelay(seq, FADE_DURATION)
+    call DialogSystem_AddLookAtUnit(seq, Nazgrek, ragno, 0.35)
+    call DialogSystem_AddLine(seq, Nazgrek, "Nazgrek", VL_NAZGREK_0385_TEXT, VL_NAZGREK_0385_KEY, true)
+    if shadowclawGlanceLine == 2 then
+        call DialogSystem_AddLookAtUnit(seq, Nazgrek, shadowclaw, 0.35)
+    endif
+    call DialogSystem_AddLine(seq, Nazgrek, "Nazgrek", VL_NAZGREK_0386_TEXT, VL_NAZGREK_0386_KEY, true)
+    if shadowclawGlanceLine == 2 then
+        call DialogSystem_AddLookAtUnit(seq, Nazgrek, ragno, 0.25)
+    elseif shadowclawGlanceLine == 3 then
+        call DialogSystem_AddLookAtUnit(seq, Nazgrek, shadowclaw, 0.35)
+    endif
+    call DialogSystem_AddLine(seq, Nazgrek, "Nazgrek", VL_NAZGREK_0387_TEXT, VL_NAZGREK_0387_KEY, true)
+    if shadowclawGlanceLine == 3 then
+        call DialogSystem_AddLookAtUnit(seq, Nazgrek, ragno, 0.25)
+    elseif shadowclawGlanceLine == 4 then
+        call DialogSystem_AddLookAtUnit(seq, Nazgrek, shadowclaw, 0.35)
+    endif
+    call DialogSystem_AddLine(seq, Nazgrek, "Nazgrek", VL_NAZGREK_0388_TEXT, VL_NAZGREK_0388_KEY, true)
+    if shadowclawGlanceLine == 4 then
+        call DialogSystem_AddLookAtUnit(seq, Nazgrek, ragno, 0.25)
+    endif
+    call DialogSystem_PlaySequence(seq, Player(0), Nazgrek)
+
+    set ragno = null
+    set shadowclaw = null
+endfunction
+
 private function CompletePrologue takes nothing returns nothing
     if RescueBrotherQuest != 0 and RescueBrotherQuest.active and not RescueBrotherQuest.completed then
         call QuestGiver_SetRequirementCompleted(RescueBrotherQuest.id, 1, true)
@@ -745,8 +841,7 @@ private function CompletePrologue takes nothing returns nothing
     call ResumeLandingCorpseDecay()
     call DialogSystem_ClearEscapeAction()
     set PrologueState = STATE_COMPLETE
-    set PrologueCompleted = true
-    set ScenePlaying = false
+    set ScenePlaying = true
     call PauseTimer(ProgressTimer)
     call RestorePlayerGraveyard()
 
@@ -762,29 +857,21 @@ private function CompletePrologue takes nothing returns nothing
     call PauseUnit(Zulkarak, false)
     call ShowUnit(Zulkarak, true)
 
-    call SetUnitPosition(Nazgrek, NazgrekSavedX, NazgrekSavedY)
-    call SetUnitFacing(Nazgrek, NazgrekSavedFacing)
     if NazgrekSavedOwner == null then
         set NazgrekSavedOwner = Player(0)
     endif
     call SetUnitOwner(Nazgrek, NazgrekSavedOwner, true)
     call SetUnitInvulnerable(Nazgrek, NazgrekSavedInvulnerable)
     call ShowUnit(Nazgrek, true)
-    call PauseUnit(Nazgrek, false)
-    if NazgrekWasUnitHiderReference and udg_UnitHider_ReferenceGroup != null then
-        call GroupAddUnit(udg_UnitHider_ReferenceGroup, Nazgrek)
-    endif
     static if LIBRARY_Pet then
         call Pet_RestoreShadowclawAfterStory()
     endif
+
+    call StageNazgrekDecisionActors()
+    call ApplyCameraSetupInstant(gg_cam_NazgrekDecision1)
+    call CameraSetupApplyForPlayer(true, gg_cam_NazgrekDecision2, Player(0), NAZGREK_DECISION_CAMERA_DURATION)
     call CinematicFadeBJ(bj_CINEFADETYPE_FADEIN, FADE_DURATION, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
-    call DialogInteraction_EndCinematicSequence(true)
-    call SelectUnitForPlayerSingle(Nazgrek, Player(0))
-    call ResumeGameplayCamera(Nazgrek)
-    call ExecuteFunc("qChieftainThork_RefreshAvailability")
-    call ExecuteFunc("qRagno_RefreshAvailability")
-    call QuestMaster_RefreshUnitSpecificQuests()
-    call DebugMsg("Completed Zul'kis prologue.")
+    call PlayNazgrekDecisionSequence()
 endfunction
 
 private function OnRescueSequenceEnd takes nothing returns nothing
@@ -942,9 +1029,6 @@ private function StartPrologueInternal takes nothing returns nothing
     set PrologueStarted = true
     set ScenePlaying = true
     call OverridePrologueGraveyard()
-    set NazgrekSavedX = GetUnitX(Nazgrek)
-    set NazgrekSavedY = GetUnitY(Nazgrek)
-    set NazgrekSavedFacing = GetUnitFacing(Nazgrek)
     set NazgrekSavedOwner = GetOwningPlayer(Nazgrek)
     set NazgrekSavedInvulnerable = BlzIsUnitInvulnerable(Nazgrek)
     set NazgrekWasUnitHiderReference = udg_UnitHider_ReferenceGroup != null and IsUnitInGroup(Nazgrek, udg_UnitHider_ReferenceGroup)
@@ -1102,9 +1186,6 @@ public function HandleThorkSelection takes nothing returns boolean
 endfunction
 
 public function IsPrologueCompleted takes nothing returns boolean
-    if PrologueCompleted then
-        return true
-    endif
-    return RescueBrotherQuest != 0 and RescueBrotherQuest.completed
+    return PrologueCompleted
 endfunction
 endlibrary
