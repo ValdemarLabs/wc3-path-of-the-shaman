@@ -2,7 +2,7 @@
     qZulkis
 
     Author: Valdemar
-    Version: 1.1.6
+    Version: 1.1.7
 
     Description:
 
@@ -152,6 +152,7 @@ private function SyncUnitReferences takes nothing returns nothing
 endfunction
 
 private function ApplyCameraSetupInstant takes camerasetup whichSetup returns nothing
+    call CameraControl_PrepareScriptedCamera(Player(0))
     call CameraSetupApplyForPlayer(true, whichSetup, Player(0), 0.00)
 endfunction
 
