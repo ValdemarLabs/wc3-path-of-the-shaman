@@ -2,7 +2,7 @@
     QuestMaster
 
     Author: Valdemar
-    Version: 1.3.1
+    Version: 1.3.2
 
     Description:
     Owns PotS quest data, state transitions, rewards, availability, custom
@@ -91,24 +91,26 @@ globals
 	private trigger QuestLevelRefreshTrigger = null
 	private boolean array QuestEventFlags
 	
-	// Quest update message queue
-	private constant integer QUEST_UPDATE_QUEUE_MAX = 32
+	// Quest presentation queue
+	private constant integer QUEST_PRESENTATION_QUEUE_MAX = 32
+	private constant integer QUEST_PRESENTATION_UPDATED = 1
+	private constant integer QUEST_PRESENTATION_NEW_OBJECTIVE = 2
+	private constant integer QUEST_PRESENTATION_DISCOVERED = 3
+	private constant integer QUEST_PRESENTATION_COMPLETED = 4
 	private constant real QUEST_UPDATE_MESSAGE_GAP = 3.00
-	private constant real QUEST_UPDATE_INITIAL_DELAY = 5.00
-	private constant real QUEST_DISCOVERED_DELAY = 5.00
-	private constant real QUEST_COMPLETED_DELAY = 5.00
+	private constant real QUEST_PRESENTATION_DELAY = 5.00
 	private constant string QUEST_UPDATE_COLOR_OBJECTIVE_COMPLETE = "|cff80ff80"
 	private constant string QUEST_UPDATE_COLOR_OBJECTIVE_UPDATE = "|cff80a0ff"
 	private constant string QUEST_UPDATE_COLOR_OBJECTIVE_FAIL = "|cffff4040"
 	private constant string QUEST_UPDATE_COLOR_NEW_OBJECTIVE = "|cffffdd00"
-	private timer QuestUpdateQueueTimer = null
-	private integer QuestUpdateQueueHead = 0
-	private integer QuestUpdateQueueTail = 0
-	private integer QuestUpdateQueueSize = 0
-	private string array QuestUpdateQueue
-	private boolean QuestUpdateQueueActive = false
-	private Table QuestDiscoveredTimerData = 0
-	private Table QuestCompletedTimerData = 0
+	private timer QuestPresentationQueueTimer = null
+	private integer QuestPresentationQueueHead = 0
+	private integer QuestPresentationQueueTail = 0
+	private integer QuestPresentationQueueSize = 0
+	private integer array QuestPresentationQueueQuestId
+	private integer array QuestPresentationQueueType
+	private string array QuestPresentationQueueMessage
+	private boolean QuestPresentationQueueActive = false
 
 	// Quest save keys (handle id based)
 	private constant integer QUEST_SAVE_ID_KEY = 0
@@ -187,8 +189,17 @@ private function AwardCompanionRewardXPEnum takes nothing returns nothing
 endfunction
 
 //===========================================================================
-// Quest update message queue
+// Quest presentation queue
 //===========================================================================
+private function FireQuestDataChanged takes integer questId, integer questState returns nothing
+	if QuestMaster_OnDataChanged == null then
+		return
+	endif
+	set QuestMaster_EventQuestId = questId
+	set QuestMaster_EventState = questState
+	call TriggerExecute(QuestMaster_OnDataChanged)
+endfunction
+
 private function FireDelayedQuestDiscovered takes integer questId, integer questState returns nothing
 	if QuestMaster_OnDelayedDiscovered == null then
 		return
@@ -205,17 +216,18 @@ private function FlashQuestLogButton takes nothing returns nothing
 	endif
 endfunction
 
-private function ShowDelayedQuestDiscovered takes nothing returns nothing
-	local timer t = GetExpiredTimer()
-	local integer tId = GetHandleId(t)
-	local QuestData q = QuestDiscoveredTimerData[tId]
+private function ShowQuestDiscovered takes QuestData q returns nothing
 	local string msg
 	local string objectives
 	
 	// Safety: validate quest data exists and is discovered
 	if q != 0 and q.discovered and q.title != "" then
-		// Update icons now (delayed to match message)
+		set q.discoveryPending = false
+		if q.wcQuest != null then
+			call QuestSetDiscovered(q.wcQuest, true)
+		endif
 		call q.updateIcons()
+		call FireQuestDataChanged(q.id, q.state)
 		
 		set msg = "|cffffcc00QUEST DISCOVERED|r\n" + q.title
 		set objectives = q.formatObjectivesList()
@@ -230,20 +242,9 @@ private function ShowDelayedQuestDiscovered takes nothing returns nothing
 		endif
 		call FireDelayedQuestDiscovered(q.id, q.state)
 	endif
-	
-	// Clean up timer data
-	if QuestDiscoveredTimerData.has(tId) then
-		call QuestDiscoveredTimerData.remove(tId)
-	endif
-	call DestroyTimer(t)
-	set t = null
 endfunction
 
-private function ShowDelayedQuestCompleted takes nothing returns nothing
-	local timer t = GetExpiredTimer()
-	local integer tId = GetHandleId(t)
-	local QuestData q = QuestCompletedTimerData[tId]
-	
+private function ShowQuestCompleted takes QuestData q returns nothing
 	// Safety: validate quest data exists and is completed
 	if q != 0 and q.completed and q.title != "" then
 		// Rewards are intentionally delayed with the completion message so dialog/cinematic turn-ins finish first.
@@ -254,86 +255,113 @@ private function ShowDelayedQuestCompleted takes nothing returns nothing
 		
 		call q.showCompletedMessage()
 	endif
-	
-	// Clean up timer data
-	if QuestCompletedTimerData.has(tId) then
-		call QuestCompletedTimerData.remove(tId)
-	endif
-	call DestroyTimer(t)
-	set t = null
 endfunction
 
-private function ShowNextQuestUpdate takes nothing returns nothing
+private function IsDelayedPresentationType takes integer presentationType returns boolean
+	return presentationType == QUEST_PRESENTATION_NEW_OBJECTIVE or presentationType == QUEST_PRESENTATION_DISCOVERED or presentationType == QUEST_PRESENTATION_COMPLETED
+endfunction
+
+private function ShowNextQuestPresentation takes nothing returns nothing
+	local integer questId
+	local integer presentationType
 	local string msg
+	local QuestData q
+	local boolean shown = false
+	local real nextDelay = QUEST_UPDATE_MESSAGE_GAP
 	
-	// Safety: validate queue state
-	if QuestUpdateQueueSize <= 0 or QuestUpdateQueueHead <= 0 or QuestUpdateQueueHead > QUEST_UPDATE_QUEUE_MAX then
-		set QuestUpdateQueueActive = false
+	if QuestPresentationQueueSize <= 0 or QuestPresentationQueueHead <= 0 or QuestPresentationQueueHead > QUEST_PRESENTATION_QUEUE_MAX then
+		set QuestPresentationQueueActive = false
 		return
 	endif
 	
-	set msg = QuestUpdateQueue[QuestUpdateQueueHead]
-	set QuestUpdateQueue[QuestUpdateQueueHead] = "" // Clear after reading
-	
-	set QuestUpdateQueueHead = QuestUpdateQueueHead + 1
-	if QuestUpdateQueueHead > QUEST_UPDATE_QUEUE_MAX then
-		set QuestUpdateQueueHead = 1
-	endif
-	set QuestUpdateQueueSize = QuestUpdateQueueSize - 1
-	
-	// Safety: only show non-empty messages
-	if msg != "" then
-		call ClearTextMessages()
-		call QuestMessageBJ(bj_FORCE_ALL_PLAYERS, bj_QUESTMESSAGE_UPDATED, msg)
-		call FlashQuestLogButton()
-	endif
-	
-	if QuestUpdateQueueSize > 0 then
-		if QuestUpdateQueueTimer == null then
-			set QuestUpdateQueueTimer = CreateTimer()
+	loop
+		exitwhen shown or QuestPresentationQueueSize <= 0
+		set questId = QuestPresentationQueueQuestId[QuestPresentationQueueHead]
+		set presentationType = QuestPresentationQueueType[QuestPresentationQueueHead]
+		set msg = QuestPresentationQueueMessage[QuestPresentationQueueHead]
+		set QuestPresentationQueueQuestId[QuestPresentationQueueHead] = 0
+		set QuestPresentationQueueType[QuestPresentationQueueHead] = 0
+		set QuestPresentationQueueMessage[QuestPresentationQueueHead] = ""
+
+		set QuestPresentationQueueHead = QuestPresentationQueueHead + 1
+		if QuestPresentationQueueHead > QUEST_PRESENTATION_QUEUE_MAX then
+			set QuestPresentationQueueHead = 1
 		endif
-		call TimerStart(QuestUpdateQueueTimer, QUEST_UPDATE_MESSAGE_GAP, false, function ShowNextQuestUpdate)
+		set QuestPresentationQueueSize = QuestPresentationQueueSize - 1
+		set q = QuestById.integer[questId]
+
+		if presentationType == QUEST_PRESENTATION_DISCOVERED then
+			if q != 0 and q.discovered and q.title != "" then
+				call ShowQuestDiscovered(q)
+				set shown = true
+				set nextDelay = QUEST_PRESENTATION_DELAY
+			endif
+		elseif presentationType == QUEST_PRESENTATION_COMPLETED then
+			if q != 0 and q.completed and q.title != "" then
+				call ShowQuestCompleted(q)
+				set shown = true
+				set nextDelay = QUEST_PRESENTATION_DELAY
+			endif
+		elseif msg != "" and q != 0 and not q.completed then
+			call ClearTextMessages()
+			call QuestMessageBJ(bj_FORCE_ALL_PLAYERS, bj_QUESTMESSAGE_UPDATED, msg)
+			call FlashQuestLogButton()
+			set shown = true
+			if presentationType == QUEST_PRESENTATION_NEW_OBJECTIVE then
+				set nextDelay = QUEST_PRESENTATION_DELAY
+			endif
+		endif
+	endloop
+
+	if QuestPresentationQueueSize > 0 then
+		if IsDelayedPresentationType(QuestPresentationQueueType[QuestPresentationQueueHead]) then
+			set nextDelay = QUEST_PRESENTATION_DELAY
+		endif
+		call TimerStart(QuestPresentationQueueTimer, nextDelay, false, function ShowNextQuestPresentation)
 	else
-		set QuestUpdateQueueActive = false
+		set QuestPresentationQueueActive = false
 	endif
+	set q = 0
 endfunction
 
-private function EnqueueQuestUpdateMessage takes string msg returns nothing
-	// Safety: validate message and queue bounds
-	if msg == "" then
+private function EnqueueQuestPresentation takes integer questId, integer presentationType, string msg returns nothing
+	if questId <= 0 or presentationType < QUEST_PRESENTATION_UPDATED or presentationType > QUEST_PRESENTATION_COMPLETED then
 		return
 	endif
-	if QuestUpdateQueueSize >= QUEST_UPDATE_QUEUE_MAX then
-		// Queue full - drop oldest message or skip
+	if presentationType <= QUEST_PRESENTATION_NEW_OBJECTIVE and msg == "" then
 		return
 	endif
-	
-	// Initialize queue indices if needed
-	if QuestUpdateQueueHead == 0 then
-		set QuestUpdateQueueHead = 1
-		set QuestUpdateQueueTail = 0
-	endif
-	
-	// Always queue updates so requirement completion messages do not interrupt the moment of completion.
-	set QuestUpdateQueueTail = QuestUpdateQueueTail + 1
-	if QuestUpdateQueueTail > QUEST_UPDATE_QUEUE_MAX then
-		set QuestUpdateQueueTail = 1
-	endif
-	
-	// Safety: validate tail index before writing
-	if QuestUpdateQueueTail < 1 or QuestUpdateQueueTail > QUEST_UPDATE_QUEUE_MAX then
+	if QuestPresentationQueueSize >= QUEST_PRESENTATION_QUEUE_MAX then
 		return
 	endif
 	
-	set QuestUpdateQueue[QuestUpdateQueueTail] = msg
-	set QuestUpdateQueueSize = QuestUpdateQueueSize + 1
+	if QuestPresentationQueueHead == 0 then
+		set QuestPresentationQueueHead = 1
+		set QuestPresentationQueueTail = 0
+	endif
+	
+	set QuestPresentationQueueTail = QuestPresentationQueueTail + 1
+	if QuestPresentationQueueTail > QUEST_PRESENTATION_QUEUE_MAX then
+		set QuestPresentationQueueTail = 1
+	endif
+	
+	if QuestPresentationQueueTail < 1 or QuestPresentationQueueTail > QUEST_PRESENTATION_QUEUE_MAX then
+		return
+	endif
+	
+	set QuestPresentationQueueQuestId[QuestPresentationQueueTail] = questId
+	set QuestPresentationQueueType[QuestPresentationQueueTail] = presentationType
+	set QuestPresentationQueueMessage[QuestPresentationQueueTail] = msg
+	set QuestPresentationQueueSize = QuestPresentationQueueSize + 1
 
-	if not QuestUpdateQueueActive then
-		set QuestUpdateQueueActive = true
-		if QuestUpdateQueueTimer == null then
-			set QuestUpdateQueueTimer = CreateTimer()
-		endif
-		call TimerStart(QuestUpdateQueueTimer, QUEST_UPDATE_INITIAL_DELAY, false, function ShowNextQuestUpdate)
+	if QuestPresentationQueueTimer == null then
+		set QuestPresentationQueueTimer = CreateTimer()
+	endif
+	if not QuestPresentationQueueActive then
+		set QuestPresentationQueueActive = true
+		call TimerStart(QuestPresentationQueueTimer, QUEST_PRESENTATION_DELAY, false, function ShowNextQuestPresentation)
+	elseif IsDelayedPresentationType(presentationType) and TimerGetRemaining(QuestPresentationQueueTimer) < QUEST_PRESENTATION_DELAY then
+		call TimerStart(QuestPresentationQueueTimer, QUEST_PRESENTATION_DELAY, false, function ShowNextQuestPresentation)
 	endif
 endfunction
 
@@ -1025,6 +1053,7 @@ struct QuestData
 
 	// State flags
 	boolean discovered
+	boolean discoveryPending
 	boolean active
 	boolean completed
 	boolean failed
@@ -1101,6 +1130,7 @@ struct QuestData
 		endif
 
 		set this.discovered = false
+		set this.discoveryPending = false
 		set this.active = false
 		set this.completed = false
 		set this.failed = false
@@ -1310,6 +1340,7 @@ struct QuestData
 		endif
 		call QuestSetDiscovered(this.wcQuest, flag)
 		set this.discovered = flag
+		set this.discoveryPending = false
 	endmethod
 
 	method setCompleted takes boolean flag returns nothing
@@ -1559,8 +1590,8 @@ struct QuestData
 			set this.hasReturnReq = true
 			
 			// Show quest update message with new return objective
-			if this.title != "" then
-				call EnqueueQuestUpdateMessage("|cffffcc00QUEST UPDATED|r\n" + this.title + "\n\n" + QUEST_UPDATE_COLOR_NEW_OBJECTIVE + "New objective:|r " + reqText)
+			if this.title != "" and not this.discoveryPending then
+				call EnqueueQuestPresentation(this.id, QUEST_PRESENTATION_NEW_OBJECTIVE, "|cffffcc00QUEST UPDATED|r\n" + this.title + "\n\n" + QUEST_UPDATE_COLOR_NEW_OBJECTIVE + "New objective:|r " + reqText)
 			endif
 			
 			call DebugMsg("Added return requirement at index " + I2S(targetIndex) + ": " + reqText)
@@ -1701,70 +1732,6 @@ struct QuestData
 		if this.requirement8 != "" then
 			if not hasObjectives then
 				set msg = "|cffffcc00Objectives:|r\n"
-				set hasObjectives = true
-			endif
-			set msg = msg + "- " + this.requirement8 + "\n"
-		endif
-
-		return msg
-	endmethod
-
-	method formatActiveObjectivesList takes nothing returns string
-		local string msg = ""
-		local boolean hasObjectives = false
-
-		if this.requirement1 != "" and not this.req1Completed then
-			if not hasObjectives then
-				set msg = QUEST_UPDATE_COLOR_NEW_OBJECTIVE + "New objectives:|r\n"
-				set hasObjectives = true
-			endif
-			set msg = msg + "- " + this.requirement1 + "\n"
-		endif
-		if this.requirement2 != "" and not this.req2Completed then
-			if not hasObjectives then
-				set msg = QUEST_UPDATE_COLOR_NEW_OBJECTIVE + "New objectives:|r\n"
-				set hasObjectives = true
-			endif
-			set msg = msg + "- " + this.requirement2 + "\n"
-		endif
-		if this.requirement3 != "" and not this.req3Completed then
-			if not hasObjectives then
-				set msg = QUEST_UPDATE_COLOR_NEW_OBJECTIVE + "New objectives:|r\n"
-				set hasObjectives = true
-			endif
-			set msg = msg + "- " + this.requirement3 + "\n"
-		endif
-		if this.requirement4 != "" and not this.req4Completed then
-			if not hasObjectives then
-				set msg = QUEST_UPDATE_COLOR_NEW_OBJECTIVE + "New objectives:|r\n"
-				set hasObjectives = true
-			endif
-			set msg = msg + "- " + this.requirement4 + "\n"
-		endif
-		if this.requirement5 != "" and not this.req5Completed then
-			if not hasObjectives then
-				set msg = QUEST_UPDATE_COLOR_NEW_OBJECTIVE + "New objectives:|r\n"
-				set hasObjectives = true
-			endif
-			set msg = msg + "- " + this.requirement5 + "\n"
-		endif
-		if this.requirement6 != "" and not this.req6Completed then
-			if not hasObjectives then
-				set msg = QUEST_UPDATE_COLOR_NEW_OBJECTIVE + "New objectives:|r\n"
-				set hasObjectives = true
-			endif
-			set msg = msg + "- " + this.requirement6 + "\n"
-		endif
-		if this.requirement7 != "" and not this.req7Completed then
-			if not hasObjectives then
-				set msg = QUEST_UPDATE_COLOR_NEW_OBJECTIVE + "New objectives:|r\n"
-				set hasObjectives = true
-			endif
-			set msg = msg + "- " + this.requirement7 + "\n"
-		endif
-		if this.requirement8 != "" and not this.req8Completed then
-			if not hasObjectives then
-				set msg = QUEST_UPDATE_COLOR_NEW_OBJECTIVE + "New objectives:|r\n"
 				set hasObjectives = true
 			endif
 			set msg = msg + "- " + this.requirement8 + "\n"
@@ -2131,8 +2098,6 @@ struct QuestData
 	endmethod
 
 	method accept takes nothing returns nothing
-		local timer t
-		
 		// Safety: prevent double-accept or accepting already active quests
 		if this.active or this.completed then
 			return
@@ -2147,8 +2112,13 @@ struct QuestData
 			set this.failReasonText = ""
 		endif
 		
+		if this.wcQuest == null then
+			call this.createQuestLog()
+		endif
 		set this.active = true
-		call this.setDiscovered(true)
+		set this.discovered = true
+		set this.discoveryPending = true
+		call QuestSetDiscovered(this.wcQuest, false)
 		call QuestSetFailed(this.wcQuest, false)
 		call this.refreshQuestLog()
 		
@@ -2161,11 +2131,8 @@ struct QuestData
 		// Accepted quests should update giver effects immediately; the message remains delayed.
 		call this.setState(QUEST_STATE_IN_PROGRESS)
 		
-		// Delay quest discovered message by 5 seconds (icons will update at the same time)
-		set t = CreateTimer()
-		set QuestDiscoveredTimerData[GetHandleId(t)] = this
-		call TimerStart(t, QUEST_DISCOVERED_DELAY, false, function ShowDelayedQuestDiscovered)
-		set t = null
+		// Queue discovery so a preceding completion is presented first.
+		call EnqueueQuestPresentation(this.id, QUEST_PRESENTATION_DISCOVERED, "")
 	endmethod
 
 	method update takes nothing returns nothing
@@ -2174,9 +2141,6 @@ struct QuestData
 	endmethod
 
 	method complete takes nothing returns nothing
-		local timer t
-		local integer tId
-		
 		// Safety: prevent double-completion
 		if this.completed or this.state == QUEST_STATE_COMPLETE then
 			return
@@ -2200,11 +2164,8 @@ struct QuestData
 			call DebugMsg("complete: " + this.title + " giver=" + this.giverDisplayName)
 		endif
 		
-		// Award rewards and show completion message after 5 seconds.
-		set t = CreateTimer()
-		set tId = GetHandleId(t)
-		set QuestCompletedTimerData[tId] = this
-		call TimerStart(t, QUEST_COMPLETED_DELAY, false, function ShowDelayedQuestCompleted)
+		// Award rewards and show completion after queued objective updates are discarded.
+		call EnqueueQuestPresentation(this.id, QUEST_PRESENTATION_COMPLETED, "")
 	endmethod
 
 	method fail takes string reason returns nothing
@@ -2358,15 +2319,19 @@ endfunction
 
 public function Discover takes integer questId returns nothing
 	local QuestData q = GetById(questId)
-	if q != 0 then
-		call q.setDiscovered(true)
+	if q != 0 and not q.discovered and not q.discoveryPending then
+		if q.wcQuest == null then
+			call q.createQuestLog()
+		endif
+		set q.discovered = true
+		set q.discoveryPending = true
+		call QuestSetDiscovered(q.wcQuest, false)
 		call q.refreshQuestLog()
 		call q.applyRequirementsToLog()
-		call q.showDiscoveredMessage()
 		if q.state == QUEST_STATE_UNAVAILABLE then
 			call q.setState(QUEST_STATE_AVAILABLE)
 		endif
-		call NotifyDataChanged(questId)
+		call EnqueueQuestPresentation(q.id, QUEST_PRESENTATION_DISCOVERED, "")
 	endif
 endfunction
 
@@ -2449,15 +2414,17 @@ endfunction
 
 public function SetRequirement takes integer questId, integer index, string text returns nothing
 	local QuestData q = GetById(questId)
-	local string objectivesList
+	local string oldText
 	
 	if q != 0 and q.title != "" then
+		set oldText = q.getRequirementText(index)
 		call q.updateRequirementText(index, text)
 		call q.refreshQuestLog()
-		if text != "" then
-			set objectivesList = q.formatActiveObjectivesList()
-			if objectivesList != "" then
-				call EnqueueQuestUpdateMessage("|cffffcc00QUEST UPDATED|r\n" + q.title + "\n\n" + objectivesList)
+		if text != "" and not q.discoveryPending then
+			if oldText == "" then
+				call EnqueueQuestPresentation(q.id, QUEST_PRESENTATION_NEW_OBJECTIVE, "|cffffcc00QUEST UPDATED|r\n" + q.title + "\n\n" + QUEST_UPDATE_COLOR_NEW_OBJECTIVE + "New objective:|r " + text)
+			else
+				call EnqueueQuestPresentation(q.id, QUEST_PRESENTATION_UPDATED, "|cffffcc00QUEST UPDATED|r\n" + q.title + "\n\n" + QUEST_UPDATE_COLOR_OBJECTIVE_UPDATE + "Objective updated:|r " + text)
 			endif
 		endif
 	endif
@@ -2465,17 +2432,13 @@ endfunction
 
 public function AddRequirement takes integer questId, integer index, string text returns nothing
 	local QuestData q = GetById(questId)
-	local string objectivesList
 	
 	if q != 0 and q.title != "" then
 		call q.setRequirement(index, text)
 		call q.addRequirement(index, text)
 		call q.refreshQuestLog()
-		if text != "" then
-			set objectivesList = q.formatActiveObjectivesList()
-			if objectivesList != "" then
-				call EnqueueQuestUpdateMessage("|cffffcc00QUEST UPDATED|r\n" + q.title + "\n\n" + objectivesList)
-			endif
+		if text != "" and not q.discoveryPending then
+			call EnqueueQuestPresentation(q.id, QUEST_PRESENTATION_NEW_OBJECTIVE, "|cffffcc00QUEST UPDATED|r\n" + q.title + "\n\n" + QUEST_UPDATE_COLOR_NEW_OBJECTIVE + "New objective:|r " + text)
 		endif
 	endif
 endfunction
@@ -2487,15 +2450,17 @@ public function SetRequirementCompleted takes integer questId, integer index, bo
 	if q != 0 and q.title != "" then
 		call q.markRequirementCompleted(index, flag)
 		call q.refreshQuestLog()
-		if flag then
+		if q.discoveryPending then
+			return
+		elseif flag then
 			set reqText = q.getRequirementText(index)
 			if reqText != "" then
-				call EnqueueQuestUpdateMessage("|cffffcc00QUEST UPDATED|r\n" + q.title + "\n\n" + QUEST_UPDATE_COLOR_OBJECTIVE_COMPLETE + "Objective completed:|r " + reqText)
+				call EnqueueQuestPresentation(q.id, QUEST_PRESENTATION_UPDATED, "|cffffcc00QUEST UPDATED|r\n" + q.title + "\n\n" + QUEST_UPDATE_COLOR_OBJECTIVE_COMPLETE + "Objective completed:|r " + reqText)
 			endif
 		else
 			set reqText = q.getRequirementText(index)
 			if reqText != "" then
-				call EnqueueQuestUpdateMessage("|cffffcc00QUEST UPDATED|r\n" + q.title + "\n\n" + QUEST_UPDATE_COLOR_OBJECTIVE_FAIL + "Objective failed:|r " + reqText)
+				call EnqueueQuestPresentation(q.id, QUEST_PRESENTATION_UPDATED, "|cffffcc00QUEST UPDATED|r\n" + q.title + "\n\n" + QUEST_UPDATE_COLOR_OBJECTIVE_FAIL + "Objective failed:|r " + reqText)
 			endif
 		endif
 	endif
@@ -2727,16 +2692,16 @@ public function UpdateRequirementText takes integer questId, integer index, stri
 	if q != 0 and q.title != "" then
 		call q.updateRequirementText(index, text)
 		call q.refreshQuestLog()
-		if text != "" then
-			call EnqueueQuestUpdateMessage("|cffffcc00QUEST UPDATED|r\n" + q.title + "\n\n" + QUEST_UPDATE_COLOR_OBJECTIVE_UPDATE + "Objective updated:|r " + text)
+		if text != "" and not q.discoveryPending then
+			call EnqueueQuestPresentation(q.id, QUEST_PRESENTATION_UPDATED, "|cffffcc00QUEST UPDATED|r\n" + q.title + "\n\n" + QUEST_UPDATE_COLOR_OBJECTIVE_UPDATE + "Objective updated:|r " + text)
 		endif
 	endif
 endfunction
 
 public function ShowUpdateMessage takes integer questId, string msg returns nothing
 	local QuestData q = GetById(questId)
-	if q != 0 and msg != "" then
-		call EnqueueQuestUpdateMessage(msg)
+	if q != 0 and msg != "" and not q.discoveryPending then
+		call EnqueueQuestPresentation(q.id, QUEST_PRESENTATION_UPDATED, msg)
 	endif
 endfunction
 
@@ -3268,6 +3233,7 @@ private function ResetDailyQuest takes QuestData q returns nothing
 	set q.returnReqIndex = 0
 	set q.hasReturnReq = false
 	set q.discovered = false
+	set q.discoveryPending = false
 	set q.active = false
 	set q.completed = false
 	set q.failed = false
@@ -3359,8 +3325,6 @@ private function Init takes nothing returns nothing
 	set QuestIconTable = Table.create()
 	set QuestIconSuppressedUnit = Table.create()
 	set QuestIconSuppressionConfigured = Table.create()
-	set QuestDiscoveredTimerData = Table.create()
-	set QuestCompletedTimerData = Table.create()
 	set QuestMaster_OnStateChanged = CreateTrigger()
 	set QuestMaster_OnDataChanged = CreateTrigger()
 	set QuestMaster_OnDelayedDiscovered = CreateTrigger()

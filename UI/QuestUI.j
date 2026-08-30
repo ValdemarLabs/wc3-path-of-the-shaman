@@ -2,7 +2,7 @@
     QuestUI
 
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.1.1
 
     Description:
     Replaces the native Quests button with a TasQuestBox-styled quest journal
@@ -189,7 +189,7 @@ private function QUI_MatchesCategory takes QuestData q, integer category returns
 endfunction
 
 private function QUI_ShouldList takes QuestData q returns boolean
-    return q != 0 and q.title != "" and (q.discovered or q.active or q.completed or q.failed)
+    return q != 0 and q.title != "" and not q.discoveryPending and (q.discovered or q.active or q.completed or q.failed)
 endfunction
 
 private function QUI_GetStatusLabel takes QuestData q returns string
