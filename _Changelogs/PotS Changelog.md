@@ -19,6 +19,8 @@
 
 ### Player-Facing Updates
 
+- Quest completions and their follow-up notifications now appear in order: the completion presentation waits five seconds, then the follow-up quest or new-objective notice waits another five seconds; newly accepted follow-up quests remain hidden from both journals until their reveal.
+- New-objective chat updates now show only the objective that was added or changed instead of repeating every other active objective.
 - Fixed Ragno dialogue ESC handling across entry fades, spoken sequences, and visible choices so skipping cannot leave the player without dialogue, choices, or a working exit; completed Protect the Outpost state now also restores Ragno's letter handoff and follow-up availability during initialization.
 - Restored the one-time Orc Grunt conversations at the western Horde scout base and southern mountain camp; the mountain exchange unlocks after Protect the Outpost as before.
 - Added the Elemental Master's ordered Summon Elemental covenant quests: Air, Earth, Fire, and Water. Any Elemental Master can begin a rank, but its essence must be returned to that same trainer; Stormcaller remains required, and rank 5 Greater Elementals remain the final AP upgrade.
@@ -35,10 +37,17 @@
 - After the wounded witch doctor's death, a four-grunt orc patrol now crosses the broken landing, speaks briefly with Zul'kis in the continuing cinematic, and joins him as temporary companions for Rescue the Brother.
 - Added a companion-support hint explaining patrol modes and group orders, and recommending that Zul'kis remain behind the grunts to heal and support them.
 - Fixed Zul'kis's zero-second cinematic camera setups inheriting queued gameplay-camera movement or target smoothing; cameras 2, 5, and 3 now hard-cut before their existing timed pans without changing camera order or timing.
+- Expanded the broken-landing reveal so Zul'kis reacts to the dead Darkspear, searches for Zul'karak, approaches the wounded witch doctor, and angrily asks what happened before the survivor gives his testimony.
+- The placed orc frigate in `HavenwoodsShip` now appears at 35% life, and the orc patrol enters from its off-camera staging rect while pretending it only heard the shoreline battle.
+- Zul'kis begins his playable prologue with two temporary Darkspear headhunter companions; during Rescue the Brother, nearby forest trolls can voice brief alarmed reactions while a patrol grunt remains alive, without exposing Thork's false flag.
+- Reworked the rescue reunion with one new line from each brother and a more serious Zul'karak account that recognizes the attack was meant to kill every Darkspear at the shore.
+- Zul'kis now hails Chieftain Thork and introduces himself before their first conversation.
+- Returning from Zul'kis's prologue now reveals Nazgrek and Shadowclaw on the hill in a slow decision-scene camera pan. Nazgrek agrees to help only with Thork's urgent mission, voices his unease about clouded elemental visions, and resolves to refresh his neglected shamanic practice.
 - Fixed Graknar's bag-trade dialogue becoming stuck without choices in fullscreen cinematic mode when leaving through Farewell, including after returning from trade; Kribugs now uses the same corrected custom-vendor exit.
 
 ### Technical Updates
 
+- Updated `QuestsAndDialogs/QuestMaster.j` with one ordered presentation queue for quest updates, discoveries, and completions, stale completion-objective suppression, and delayed native/custom journal visibility; updated `UI/QuestUI.j` to keep pending discoveries hidden until their presentation fires.
 - Updated `_developer/Design Plans/Story and Quest Design.md` to organize Act I into explicit Nazgrek intro, Zul'kis intro, and convergence sections, and planned Wolf Hunt I to remain undiscovered until two spawned Timber Wolves attack Nazgrek from `gg_rct_WolfAttack` after the intro returns player control.
 - Updated `_developer/Design Plans/Story and Quest Design.md` from the current story design guide with a preserve/refine/build boundary, a defined spiritual-disturbance spine, recurring clues, character and causal checkpoints, a source-file implementation plan, and a selective voiceline revision/addition plan centered on Nazgrek's existing prologue and early Horde content.
 - Updated `QuestsAndDialogs/QuestGivers/Orcs/qRagno.j` with scoped ESC ownership, safe entry-transition cancellation, normal choice-dialog exit cleanup, failed-greeting fallback, escape cleanup before Protect the Outpost interrupts an active interaction, and initialization recovery for its completed prerequisite chain.
@@ -58,19 +67,31 @@
 - Updated `_developer/Design Plans/Story and Quest Design.md` with the temporary patrol's story timing, companion behavior, hint, and cleanup contract.
 - Updated `UI/CameraControl.j` with an explicit scripted-camera takeover that clears stale target bindings, stops queued camera movement, and disables smoothing even when CameraControl was already suspended; updated `QuestsAndDialogs/QuestGivers/Player/qZulkis.j` to use it immediately before each zero-second camera setup.
 - Updated `QuestsAndDialogs/QuestGivers/Orcs/qGraknar.j` and `QuestsAndDialogs/QuestGivers/Goblins/qKribugs.j` to restore gameplay immediately on vendor farewell and play the farewell as a non-blocking field line, matching normal vendors; updated `QuestsAndDialogs/DialogInteraction.j` so configured dialog exit transitions also explicitly show and unpause the restored hero.
+- Updated `QuestsAndDialogs/QuestGivers/Player/qZulkis.j` with the expanded shore blocking, placed-frigate damage, rect-based patrol entrance, two temporary headhunters, conditional Bramblehide barks, revised rescue exchange, and complete companion cleanup.
+- Updated `Voicelines/Voicelines_Zulkis.j`, `Voicelines_Zulkarak.j`, `Voicelines_GenericTroll.j`, and `Voicelines_OrcGrunt.j` with the new broken-shore, patrol-cover, forest-troll, and rescue dialogue.
+- Updated `Voicelines/FishAudioVoiceIds.md` with the `ForestTroll` prefix's shared TrollMale1 voice reference.
+- Updated `_developer/Design Plans/Story and Quest Design.md` to identify the patrol as Thork's forest-troll intermediaries while preserving that truth as hidden story state during the prologue.
+- Updated `QuestsAndDialogs/QuestGivers/Player/qZulkis.j` with Zul'kis's Thork introduction and a black-screen-staged Nazgrek return scene using `NazgrekOnHill` and the `NazgrekDecision1`-to-`NazgrekDecision2` camera pan.
+- Updated `Voicelines/Voicelines_Zulkis.j` and `Voicelines/Voicelines_Nazgrek.j` with the Thork greeting and Nazgrek's conditional-cooperation decision dialogue.
+- Updated `_developer/Design Plans/Story and Quest Design.md` with the implemented Nazgrek decision handoff and its role in preserving conditional Horde cooperation.
 
 ### Imports
 
 - Generated FishAudio review MP3s for `Zulkis_0009` and `OrcGrunt_0167`–`0168`; the files remain under `tools/temp/fishaudio-review` pending listening and promotion to the master audio folder.
+- Generated 11 FishAudio review MP3s for `Zulkis_0010`–`0013`, `GenericTroll_0004`, `ForestTroll_0001`–`0003`, `Zulkarak_0003` and `0005`, and the revised `OrcGrunt_0167`; the files remain under `tools/temp/fishaudio-review` pending listening and promotion.
+- Generated five FishAudio review MP3s for `Zulkis_0014` and `Nazgrek_0385`–`0388`; the files remain under `tools/temp/fishaudio-review` pending listening and promotion.
 
 ### Actions Remaining
 
+- Compile and runtime-test an automatic quest follow-up and a newly added objective; confirm the completion appears after five seconds, the follow-up appears five seconds later, both native and custom journals reveal the follow-up at that time, and the update text contains only the changed objective.
 - Import `World/AmbientEvents/AmbientEvents.j` before `World/AmbientEvents/HordeUnitsRandomChat.j`, import the Horde chat library before `qRagno.j`, disable the three legacy Horde Units Random Chat GUI triggers, then compile and runtime-test both one-shot regions and the delayed mountain follow-up.
 - Disable the four old Quest Elemental GUI trigger groups, import `qElementalMaster`, export the refreshed generic and unit-specific loot definitions from WC3 Manager, then compile and runtime-test every trainer start/turn-in pairing, inventory consumption, Stormcaller gating, ranks 1–4, the rank-5 AP upgrade, configured essence chances, and save/load behavior. Add the Colossus Earth Essence drop after its final rawcode replaces `XXXX`.
 - Disable Erduk's old GUI trigger group, then compile and runtime-test the `gg_rct_LakeAmbient042` reveal, 40-head tracking across both inventories, turn-in consumption, rewards, camera restoration, and respawned selection hooks in Ghostwalk Ridge `19` outside Ironspine Post `1901`.
 - Compile and runtime-test Protect the Outpost's delayed intro, both wave spawn exits, ESC timing, completion staging, and Shadowclaw's post-Zul'kis return position.
 - Compile the full map with World Editor/JassHelper and runtime-test the zero-second camera snaps, both river pans, the shore pan, Thork's temporary question mark, and Zul'kis's death-camera release after revival.
 - Review and import the new `Zulkis_0009` and `OrcGrunt_0167`–`0168` audio, then runtime-test patrol entry timing, companion orders, combat deaths, ESC skipping, the tactical hint queue, and complete patrol removal after Rescue the Brother.
+- Review and import the 11 new broken-landing and rescue MP3s, then runtime-test Zul'kis's corpse-looking and move beside the witch doctor, the 35%-life placed frigate, patrol entrance from `HavenwoodsOrcPatrol`, both starting headhunters, conditional forest-troll barks, and all six temporary companions being removed at convergence.
+- Review and import `Zulkis_0014` and `Nazgrek_0385`–`0388`, then runtime-test the first Thork exchange, black-screen actor placement, Shadowclaw's restored pet state, the decision-camera pan, random Shadowclaw glance, ESC skip, and gameplay-camera handoff.
 - Runtime-test Graknar and Kribugs by leaving directly through Farewell and by opening trade, returning to their choices, and then leaving through Farewell; confirm fullscreen mode, camera, selection, and hero control all restore.
 
 ## [29.8.2026]
