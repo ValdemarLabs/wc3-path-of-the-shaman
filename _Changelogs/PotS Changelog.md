@@ -33,6 +33,7 @@
 - Fixed the death-camera motion remaining active after Zul'kis is revived.
 - After the wounded witch doctor's death, a four-grunt orc patrol now crosses the broken landing, speaks briefly with Zul'kis in the continuing cinematic, and joins him as temporary companions for Rescue the Brother.
 - Added a companion-support hint explaining patrol modes and group orders, and recommending that Zul'kis remain behind the grunts to heal and support them.
+- Fixed Zul'kis's zero-second cinematic camera setups inheriting queued gameplay-camera movement or target smoothing; cameras 2, 5, and 3 now hard-cut before their existing timed pans without changing camera order or timing.
 - Fixed Graknar's bag-trade dialogue becoming stuck without choices in fullscreen cinematic mode when leaving through Farewell, including after returning from trade; Kribugs now uses the same corrected custom-vendor exit.
 
 ### Technical Updates
@@ -51,6 +52,7 @@
 - Updated `UI/HintsUI.j` with dedicated guidance for controlling and supporting Zul'kis's temporary orc patrol.
 - Updated `Voicelines/Voicelines_Zulkis.j` and `Voicelines/Voicelines_OrcGrunt.j` with the broken-landing patrol exchange.
 - Updated `_developer/Design Plans/Story and Quest Design.md` with the temporary patrol's story timing, companion behavior, hint, and cleanup contract.
+- Updated `UI/CameraControl.j` with an explicit scripted-camera takeover that clears stale target bindings, stops queued camera movement, and disables smoothing even when CameraControl was already suspended; updated `QuestsAndDialogs/QuestGivers/Player/qZulkis.j` to use it immediately before each zero-second camera setup.
 - Updated `QuestsAndDialogs/QuestGivers/Orcs/qGraknar.j` and `QuestsAndDialogs/QuestGivers/Goblins/qKribugs.j` to restore gameplay immediately on vendor farewell and play the farewell as a non-blocking field line, matching normal vendors; updated `QuestsAndDialogs/DialogInteraction.j` so configured dialog exit transitions also explicitly show and unpause the restored hero.
 
 ### Imports
