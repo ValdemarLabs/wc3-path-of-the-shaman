@@ -21,7 +21,7 @@
 
 - Restored the one-time Orc Grunt conversations at the western Horde scout base and southern mountain camp; the mountain exchange unlocks after Protect the Outpost as before.
 - Added the Elemental Master's ordered Summon Elemental covenant quests: Air, Earth, Fire, and Water. Any Elemental Master can begin a rank, but its essence must be returned to that same trainer; Stormcaller remains required, and rank 5 Greater Elementals remain the final AP upgrade.
-- Elemental Essences now come only from their matching hostile elementals; generic creature loot, gathering nodes, vendors, and player-summoned elementals no longer provide them.
+- Configured Elemental Essences as WC3 Manager unit-specific drops from their matching Air, Earth, Fire, and Water elementals, with guaranteed drops reserved for the listed powerful sources.
 - Added Erduk's one-time Heads of the Murlocs quest for Nazgrek, tracking and consuming 40 Murloc Heads before rewarding experience, gold, and Horde reputation.
 - Updated Protect the Outpost's first grunt warning, added a four-second pause before the overwhelmed response, and shifted the remaining dialogue and camera timing with it.
 - Protect the Outpost now periodically sends idle gnolls and gnolls lingering in their spawn regions toward the Horde mountain outpost.
@@ -31,13 +31,15 @@
 - Zul'kis's narrator introduction now begins with the river cinematic instead of waiting for the shore conversation.
 - Chieftain Thork now shows the objective question mark while Zul'kis is assigned to meet him.
 - Fixed the death-camera motion remaining active after Zul'kis is revived.
+- After the wounded witch doctor's death, a four-grunt orc patrol now crosses the broken landing, speaks briefly with Zul'kis in the continuing cinematic, and joins him as temporary companions for Rescue the Brother.
+- Added a companion-support hint explaining patrol modes and group orders, and recommending that Zul'kis remain behind the grunts to heal and support them.
 - Fixed Graknar's bag-trade dialogue becoming stuck without choices in fullscreen cinematic mode when leaving through Farewell, including after returning from trade; Kribugs now uses the same corrected custom-vendor exit.
 
 ### Technical Updates
 
 - Added `World/AmbientEvents/AmbientEvents.j` with reusable one-shot region-entry and ambient unit-type transmission helpers, and added `World/AmbientEvents/HordeUnitsRandomChat.j` to convert the three legacy Horde chat triggers with `Voicelines/Voicelines_OrcGrunt.j` keys and text; updated `QuestsAndDialogs/QuestGivers/Orcs/qRagno.j` and `_developer/Design Plans/Story and Quest Design.md` with the Protect the Outpost unlock contract.
 - Added `QuestsAndDialogs/QuestGivers/Shaman/qElementalMaster.j` with per-trainer quest identity, ordered rank conditions, shared item tracking, class metadata, and quest-granted Summon Elemental ranks; updated `Abilities/AbilitiesPlayer.j`, `Abilities/Abilities.j`, `Abilities/AbilityPoints.j`, and `Abilities/AbilityTrainerDialogs.j` with rank-aware quest locks, exact quest-rank grants, reset preservation for earned quest ranks, and trainer-dialog refresh support.
-- Added `ItemLootSystems/ElementalEssenceDrops.j`; updated `ItemLootSystems/ItemLootSystem.j`, `GatherSystems/GatherNodeUnits.j`, `Vendors/VendorCatalogs.j`, and `Abilities/Shaman/ShamanSummonElemental.j` to enforce matching-element-only essence acquisition and suppress summoned-elemental loot.
+- Added `WC3_Database/WC3ItemManager/elemental_essence_drops_20260830.sql` with the configured essence source units and chances; corrected the manager's `specific_drop_only` handling and label so Specific Drops Only items stay out of generic pools while enabled unit-specific drops still export.
 - Updated `_developer/Design Plans/Story and Quest Design.md` with the implemented elemental covenant order, trainer binding, rawcodes, specialization dependency, and rank-5 boundary.
 - Added `QuestsAndDialogs/QuestGivers/Orcs/qErduk.j` to convert Erduk's legacy GUI dialogue and quest to the shared quest, item-tracking, objective-reveal, dialogue, camera, and respawn systems; updated `CreepRespawn/CreepUnitAssignment.j`, its test-map respawn dispatcher, and `_developer/Design Plans/Story and Quest Design.md` with Erduk's respawn hook and confirmed Ghostwalk Ridge placement outside Ironspine Post.
 - Updated `QuestsAndDialogs/QuestGivers/Orcs/qRagno.j` with synchronized intro-delay timing, periodic gnoll attack-order recovery, and completion-position preservation for active Shadowclaw, and updated `Voicelines/Voicelines_OrcGrunt.j` with the corrected attack warning.
@@ -45,15 +47,24 @@
 - Updated `QuestsAndDialogs/QuestGivers/Player/qZulkis.j` with GUI-equivalent zero-second camera setup application, the intended six-camera arrival flow, opening narration timing, and Thork objective-target registration.
 - Updated `Death/Revival.j` to stop the active camera motion and restore the revived hero as CameraControl's target before releasing the death camera.
 - Updated `_developer/Design Plans/Story and Quest Design.md` with the corrected Zul'kis arrival-camera and narration sequence.
+- Updated `QuestsAndDialogs/QuestGivers/Player/qZulkis.j` with the chance patrol arrival, uninterrupted dialogue extension, four temporary grunt companions, and end-of-prologue cleanup that also releases retained fallen-companion state.
+- Updated `UI/HintsUI.j` with dedicated guidance for controlling and supporting Zul'kis's temporary orc patrol.
+- Updated `Voicelines/Voicelines_Zulkis.j` and `Voicelines/Voicelines_OrcGrunt.j` with the broken-landing patrol exchange.
+- Updated `_developer/Design Plans/Story and Quest Design.md` with the temporary patrol's story timing, companion behavior, hint, and cleanup contract.
 - Updated `QuestsAndDialogs/QuestGivers/Orcs/qGraknar.j` and `QuestsAndDialogs/QuestGivers/Goblins/qKribugs.j` to restore gameplay immediately on vendor farewell and play the farewell as a non-blocking field line, matching normal vendors; updated `QuestsAndDialogs/DialogInteraction.j` so configured dialog exit transitions also explicitly show and unpause the restored hero.
+
+### Imports
+
+- Generated FishAudio review MP3s for `Zulkis_0009` and `OrcGrunt_0167`–`0168`; the files remain under `tools/temp/fishaudio-review` pending listening and promotion to the master audio folder.
 
 ### Actions Remaining
 
 - Import `World/AmbientEvents/AmbientEvents.j` before `World/AmbientEvents/HordeUnitsRandomChat.j`, import the Horde chat library before `qRagno.j`, disable the three legacy Horde Units Random Chat GUI triggers, then compile and runtime-test both one-shot regions and the delayed mountain follow-up.
-- Disable the four old Quest Elemental GUI trigger groups, import `qElementalMaster` and `ElementalEssenceDrops`, then compile and runtime-test every trainer start/turn-in pairing, inventory consumption, Stormcaller gating, ranks 1–4, the rank-5 AP upgrade, essence drop ownership, and save/load behavior.
+- Disable the four old Quest Elemental GUI trigger groups, import `qElementalMaster`, export the refreshed generic and unit-specific loot definitions from WC3 Manager, then compile and runtime-test every trainer start/turn-in pairing, inventory consumption, Stormcaller gating, ranks 1–4, the rank-5 AP upgrade, configured essence chances, and save/load behavior. Add the Colossus Earth Essence drop after its final rawcode replaces `XXXX`.
 - Disable Erduk's old GUI trigger group, then compile and runtime-test the `gg_rct_LakeAmbient042` reveal, 40-head tracking across both inventories, turn-in consumption, rewards, camera restoration, and respawned selection hooks in Ghostwalk Ridge `19` outside Ironspine Post `1901`.
 - Compile and runtime-test Protect the Outpost's delayed intro, both wave spawn exits, ESC timing, completion staging, and Shadowclaw's post-Zul'kis return position.
 - Compile the full map with World Editor/JassHelper and runtime-test the zero-second camera snaps, both river pans, the shore pan, Thork's temporary question mark, and Zul'kis's death-camera release after revival.
+- Review and import the new `Zulkis_0009` and `OrcGrunt_0167`–`0168` audio, then runtime-test patrol entry timing, companion orders, combat deaths, ESC skipping, the tactical hint queue, and complete patrol removal after Rescue the Brother.
 - Runtime-test Graknar and Kribugs by leaving directly through Farewell and by opening trade, returning to their choices, and then leaving through Farewell; confirm fullscreen mode, camera, selection, and hero control all restore.
 
 ## [29.8.2026]
