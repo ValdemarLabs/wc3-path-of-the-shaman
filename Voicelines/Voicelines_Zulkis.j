@@ -2,7 +2,7 @@
     VoicelinesZulkis
 
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.1.1
 
     Description:
     Speaker-owned story and reusable generic quest voicelines for Zul'kis.
@@ -122,6 +122,8 @@ globals
     constant string VL_ZULKIS_0007_TEXT = "Save ya strength, brother. We be gettin' out of here."
     constant string VL_ZULKIS_0008_KEY = "Zulkis_0008"
     constant string VL_ZULKIS_0008_TEXT = "Come. Da Horde camp be safer than these woods."
+    constant string VL_ZULKIS_0009_KEY = "Zulkis_0009"
+    constant string VL_ZULKIS_0009_TEXT = "Forest trolls took my brother. I be findin' him before dey finish what dey started."
 
     // Excel draft: Zulkis lines | Quest: Magical Eye | Event: Random discussion | Done: x
     constant string VL_ZULKIS_0044_KEY = "Zulkis_0044"
