@@ -2,7 +2,7 @@
     qRagno
 
     Author: Valdemar
-    Version: 1.1.5
+    Version: 1.1.6
 
     Description:
     Implements Ragno's quest dialogue, daily outpost tasks, Protect the
@@ -157,6 +157,7 @@ globals
     private boolean LumberPeonHarvestOrderPending = false
     private boolean LumberPeonHarvesting = false
     private boolean RagnoGreeted = false
+    private boolean RagnoDialogEntryPending = false
     private boolean RagnoInitWaitingLogged = false
 endglobals
 
@@ -192,7 +193,21 @@ private function ResolveDialogHero takes nothing returns unit
 endfunction
 
 private function StartExitFadeOut takes nothing returns nothing
+    set RagnoDialogEntryPending = false
+    call DialogSystem_ClearEscapeAction()
     call DialogInteraction_StartConfiguredDialogExitTransition(Ragno, SelectedHero, RagnoDialogCooldown, DIALOG_COOLDOWN, USE_DIALOG_CAMERA, CINEMATIC)
+endfunction
+
+private function OnRagnoEscape takes nothing returns nothing
+    call DialogSystem_ClearEscapeAction()
+    call DialogInteraction_CloseActiveDialog()
+    if RagnoDialogEntryPending then
+        set RagnoDialogEntryPending = false
+        call DialogInteraction_AbortActiveTransition()
+        set RagnoDialogCooldown = DialogInteraction_StartCooldown(RagnoDialogCooldown, DIALOG_COOLDOWN)
+        return
+    endif
+    call StartExitFadeOut()
 endfunction
 
 private function GetRagnoQuest takes string questName returns QuestData
@@ -1470,6 +1485,8 @@ private function OnProtectOutpostSecondWaveTimer takes nothing returns nothing
 endfunction
 
 private function PrepareProtectOutpostCinematic takes nothing returns nothing
+    set RagnoDialogEntryPending = false
+    call DialogSystem_ClearEscapeAction()
     call DialogSystem_SkipActiveSequence()
     call DialogInteraction_CloseActiveDialog()
     call DialogInteraction_AbortActiveTransition()
@@ -1851,6 +1868,10 @@ private function PlayDialogGreeting takes unit hero returns nothing
     call DialogSystem_AddDelay(seq, DIALOG_FADE_OUT)
     call AddPreDialogBark(seq, hero)
     call DialogInteraction_PlayGreetSequenceEx(seq, Ragno, Player(0), RagnoDialog, CINEMATIC)
+    if not DialogSystem_IsSequenceActive() and not DialogSystem_IsDialogVisible() then
+        call DialogSystem_SetContext(Ragno, Player(0))
+        call DialogSystem_ShowDialog(RagnoDialog, Player(0))
+    endif
 endfunction
 
 private function ContinueToDialogInternal takes nothing returns nothing
@@ -1870,12 +1891,14 @@ private function ContinueToDialogInternal takes nothing returns nothing
 
     call RefreshRagnoAvailabilityInternal()
     call BuildDialog()
+    call DialogSystem_SetEscapeAction(function OnRagnoEscape)
     call PlayDialogGreeting(hero)
 
     set hero = null
 endfunction
 
 public function ContinueToDialogAfterSelection takes nothing returns nothing
+    set RagnoDialogEntryPending = false
     call ContinueToDialogInternal()
 endfunction
 
@@ -1892,6 +1915,8 @@ private function OnSelected takes nothing returns nothing
         return
     endif
 
+    set RagnoDialogEntryPending = true
+    call DialogSystem_SetEscapeAction(function OnRagnoEscape)
     call DialogInteraction_StartConfiguredDialogEntryTransition(Ragno, SelectedHero, true, USE_DIALOG_CAMERA, CINEMATIC, "qRagno_ContinueToDialogAfterSelection")
 endfunction
 
@@ -1990,6 +2015,9 @@ private function InitDelayed takes nothing returns nothing
     call RegisterBaseGnollHeadDrops()
     call CreateQuests()
     if QuestGiver_IsQuestCompletedByNameAndGiver(QUEST_PROTECT_OUTPOST, Ragno) then
+        set ProtectOutpostCompleted = true
+        set MountainDefenseActive = false
+        call UnlockGivingLetterInternal()
         call HordeUnitsRandomChat_EnableMountainChat()
     endif
     call RegisterProtectOutpostStartTrigger()
