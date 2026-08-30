@@ -14,7 +14,9 @@ The plan does not replace the map, current JASS, or recovered GUI triggers. It c
 The immediate design goals are:
 
 - preserve already implemented quests and their working dependencies;
+- refine existing story content through context, callbacks, and selective dialogue changes before considering mechanical rewrites;
 - turn the strongest Articy and legacy GUI ideas into one coherent story arc;
+- make Nazgrek's personal journey the viewpoint through which the wider regional crisis is understood;
 - give every major zone a useful mix of story, normal, daily, repeatable, and dungeon content;
 - connect generic quests to characters, factions, dungeons, and later story payoffs;
 - avoid gating the main story behind daily or repeatable grinding;
@@ -45,6 +47,7 @@ An unexported GUI trigger is missing evidence, not permission to invent its exac
 - `_developer/_articyExports/Articy XML/Path of the shaman.xml` and the companion document export for flow hierarchy, quest banks, entities, and connections.
 - `_developer/_Other/WC3 Pots notes.odt` and `_developer/_Other/WC3 Pots notes other.odt` for older prologue, Shadowclaw, Ghostwalk/Deadwoods, Crypt, and character concepts. The first document has a May 2024 creation timestamp; the second is user-identified as 2024/2025 legacy material.
 - `_developer/gui-variables.md` and unit-assignment evidence for named map globals/rawcodes.
+- `_developer/Design Plans/PotS_Story_Design_Guide.md` for the current narrative-development direction: preserve the existing world and quests, strengthen causality and consequence, and make Nazgrek's arc the central lens.
 
 The Articy export was useful as a graph, but its story and quest records are marked `Outdated`. Act I contains the densest connected flow, Act II is mostly a loose quest bank, and Act III is empty. Most exported dialogue is placeholder-level except for recoverable Granis material. Articy therefore informs missing intent; it does not certify current names, placement, or implementation.
 
@@ -205,6 +208,47 @@ Graknar `o61S` is a named quest giver as well as the original bag merchant. Do n
 
 Nazgrek is an outcast shaman who refused Mannoroth's blood while his clan fell. He enters Sereneglade with Shadowclaw seeking spiritual and natural sanctuary, then has to decide what strength, loyalty, and Horde identity mean without surrendering to corruption.
 
+### Development boundary: preserve, refine, build
+
+The story is not being rebuilt from zero. Use the following boundary when planning work:
+
+- **Preserve:** implemented quest objectives, stable QuestData identities, zone progression, the two playable prologues, existing companion handoffs, and working encounter contracts unless a concrete contradiction or runtime problem requires change.
+- **Refine:** quest framing, short pre/post lines, journal descriptions, environmental clues, companion reactions, and later callbacks. This is the default treatment for Nazgrek's intro, Protect the Outpost, Duty For The Horde, the Granis/Garthork proof quests, and Jin'Zun's implemented chain.
+- **Build:** Wolf Hunt II–III, the recurring-clue payoffs, Zul'kis and Zul'karak's post-prologue arc, Thork's false-flag investigation, Thork's Act I judgement, Ghostwalk/Deadwoods bridges, remaining class-story beats, and later consequence scenes.
+- **Do not expand by accumulation:** before adding a new quest, first test whether one field line, one changed reaction, one investigation objective, or one later consequence can make an existing quest carry the intended story beat.
+
+For implemented content, dialogue rewrites must preserve the existing event order and public quest contracts unless the owning qXXX plan below explicitly calls for a structural change. Re-recording or replacing audio is a separate production task; text must not silently diverge from imported audio.
+
+### Current internal mystery answer
+
+The working developer answer to “what is going wrong?” is:
+
+> The region's spiritual balance is failing because several factions are exploiting already-wounded land, spirits, beasts, and elemental forces at the same time. Satyr coercion, necromancy, fel and Dark Horde extraction, and unstable magical rifts reinforce one another; the void presence exploits the resulting fractures rather than secretly controlling every faction.
+
+The final central antagonist's identity remains open, but the thematic opposition is fixed: **communion and restraint versus binding, extraction, and domination**. Early content shows symptoms. Midgame content distinguishes causes, consequences, opportunists, and unrelated conflicts. Late content reveals the organized methods connecting the most important disturbances.
+
+### Recurring clue vocabulary
+
+Reuse a small set of clues so players can recognize a pattern without every quest naming the same villain:
+
+| Clue family | Early use | Later escalation | Constraint |
+|---|---|---|---|
+| Spiritual dissonance | Spirits fall silent, answer late, or contradict one another around the wolves and damaged trees | Bound ancestors, elemental refusal, and broken covenants | Do not make every spirit omniscient or uniformly helpful. |
+| Displaced or altered life | Wolves leave normal territory; predators attack without feeding; plants and prey show unusual wounds | Mana wraiths, fel warbeasts, diseased growth, and altered dragons | Ordinary hunger and territorial behavior must still exist. |
+| Binding and extraction traces | Unfamiliar cuts, residue, ritual marks, drained sites, or stolen reagents | Satyr coercion, necromantic wards, Dark Horde forges, and enslaved elementals | Vary the material evidence by faction; avoid one universal symbol. |
+| False or incomplete explanations | The Wolf Mother appears to be the cause; Thork blames humans; local factions blame rivals | Testimony, ledgers, survivors, and magical analysis revise the first account | A reveal should add causality, not erase faction agency. |
+| Consequence echoes | NPC concern, changed greetings, a quiet grove, or a rebuilt/ruined site | Support units, patrol ownership, faction standing, and finale allies | Prefer one visible callback over a new exposition scene. |
+
+### Character anchors
+
+| Character | Want | Need / pressure | Fear and flaw | Non-negotiable voice boundary |
+|---|---|---|---|---|
+| Nazgrek | A self-directed shamanic life and sanctuary outside Horde control | Accept responsibility and connection without surrendering his principles | Repeating the Horde's corruption; pride and isolation make him reject help too quickly | He may be bitter, dry, and forceful, but he does not celebrate domination of spirits or immediately swear renewed obedience to the Horde. |
+| Zul'kis | Safety, continuity, and a home for his surviving people | Learn that compromise without scrutiny can hand power to manipulators | Losing family or another tribe; practicality can become over-accommodation | Humor and warmth remain, but grief, family duty, and independent judgement must survive recruitment. |
+| Chieftain Thork | Keep his Horde alive, useful, and under control | Face that survival choices create debts and enemies that force cannot erase | Losing authority or being proved weak; he justifies coercion too easily | He is not a simple penitent mentor. Respect is reluctant, apology incomplete, and his false-flag crime remains compatible with his protective self-image. |
+| Garthork | Restore shamanic knowledge and prove the Horde can learn | Distinguish study and stewardship from merely extracting useful power | Repeating the old Horde's instrumental view of living forces | His revised Magical Eye dialogue must sound investigative and restrained, not like natural magic is loot for the Horde to harness. |
+| Jin'Zun | Understand and protect the strange life around his refuge | Turn scattered observations into evidence others can act on | Being dismissed as comic or unreliable | Keep the humor and unusual cadence, but let his milestone observations be correct often enough to carry the mystery. |
+
 The main themes are:
 
 - **Belonging without obedience:** Nazgrek earns trust but is not required to accept every cruel or shortsighted order.
@@ -215,6 +259,20 @@ The main themes are:
 
 Daily and repeatable quests should reinforce these themes locally, but they are gameplay texture rather than mandatory canon.
 
+### Narrative function and causal checkpoints
+
+Use the following checkpoints when refining existing story content. They implement the “before / revelation / after” rule without replacing the current quests.
+
+| Quest or arc | Primary function | Before | Revelation | After / callback |
+|---|---|---|---|---|
+| Wolf Hunt I → Nazgrek's Flask → Wolf Hunt II | MAIN + CHARACTER + MYSTERY | Nazgrek expects a dangerous but ordinary territorial wolf problem | The wolves and Wolf Mother are reacting to or suffering from a wider spiritual disturbance; the flask is inherited shamanic preparation, not a generic power-up | Nazgrek names Sereneglade itself as threatened; Jin'Zun can recognize a related symptom later. |
+| Protect the Outpost | CHARACTER + FACTION | Nazgrek claims he owes the Horde nothing | He still chooses to protect people in immediate danger | Ragno's summons and later Horde dialogue acknowledge that he acted by principle, not obedience. |
+| Zul'kis prologue | CHARACTER + FACTION + MYSTERY | Zul'kis believes Thork offers a quick alliance and safety | The landing is destroyed and his brother's account is incomplete | Zul'kis joins for survival and answers, while later inconsistencies keep the loss active after recruitment. |
+| Duty For The Horde / Granis / Garthork | FACTION + CHARACTER | Nazgrek treats “the Horde” as one unchanged institution | Granis and Garthork represent different lessons, methods, and degrees of change | Thork's judgement reflects what Nazgrek learned and grants conditional cooperation, not full reconciliation. |
+| Jin'Zun nature-to-undeath chain | MYSTERY + WORLD | Local corruption appears eccentric and disconnected | Repeated symptoms escalate from trees and wildlife into intentional ritual and restless death | Evidence becomes a bridge to Deadwoods, the Crypt, Garthork, and Dawnhold. |
+| Elemental covenants | CLASS + CHARACTER | Power is treated as an ability rank to acquire | Each element tests one aspect of a reciprocal covenant | Short completion dialogue records growth that later dark-shaman encounters can challenge. |
+| Shadowclaw / Ghostwalk | CHARACTER + MAIN | Nazgrek believes self-reliance can protect the small life he has built | Personal loss exposes the organized use of fel and spiritual domination | Grief drives investigation and alliance, but the player still resolves the campaign through play. |
+
 ## 7. Proposed coherent story arc
 
 The following is the recommended canonical synthesis. Existing quest titles are retained where practical. Design IDs are planning references, not current QuestData IDs.
@@ -223,6 +281,7 @@ The following is the recommended canonical synthesis. Existing quest titles are 
 
 ```text
 Nazgrek prologue: Shadowclaw -> Wolf Hunt I -> Nazgrek's Flask -> Wolf Hunt II
+    -> Wolf Mother is revealed as a victim/symptom, not the originating cause
     -> optional Wolf Hunt III crafting epilogue
     -> Protect the Outpost -> fade to Zul'kis
 Zul'kis prologue: Darkspear landing -> Thork -> destroyed landing camp
@@ -243,14 +302,14 @@ Nazgrek: Call of the Horde -> Nazgrek and Zul'kis meet at Thork
 
 | Design ID | Quest / beat | Status | Purpose and connection |
 |---|---|---|---|
-| ST-P-01 | Intro cinematic: Nazgrek and Shadowclaw | **Partial / current voice + legacy ODT evidence** | Establish the blood-refusal backstory, the bond with Shadowclaw, and Sereneglade as sanctuary. The old sequence adds a dismissive orc patrol, the walk to Nazgrek's hut, and a successful rabbit hunt; retain only the beats that fit the current opening's pace and staging. |
-| ST-P-02 | Wolf Hunt I | **Implemented JASS; WE intro-finish hook required** | The shared normal/ESC completion path of Nazgrek's intro cinematic calls `qNazgrek_StartIntroQuestChain()` to begin the self-discovered hunt only after gameplay returns. The quest kills six wolves across the current Sereneglade wolf/alpha-wolf rawcodes and gathers six Wolf Skin `I61F`. It is a compact player-control beat rather than a separate quest-giver conversation, and its completion starts Nazgrek's Flask without consuming the skins needed by the later cowl. |
-| ST-P-03 | Nazgrek's Flask | **Implemented JASS; runtime balance pending** | Nazgrek realizes ordinary preparation may not be enough for the Wolf Mother. The converted quest uses the recovered six Forest Flower, three Agave, two Earth Roots, six Stag Hair, two Frog Slime, and one delayed Empty Flask requirements, then completes on acquisition of existing flask `I61L`. The existing alchemy recipe is deliberately reused at skill 0 and remains a reusable item; define/test what advantage it gives in the Wolf Mother encounter. |
-| ST-P-04 | Wolf Hunt II | **Planned; object/encounter work required** | Enter Wolf Den `12111` in northern Sereneglade, defeat Wolf Mother `n648`, and recover one unique trophy. Use a dedicated Wolf Mother's Head or Pelt item; ordinary Wolf Skin cannot distinguish this kill from Wolf Hunt I. The trophy naming decision must also satisfy Wolf Hunt III. |
-| ST-P-05 | Wolf Hunt III | **Planned optional crafting epilogue** | Create a Shamanic Cowl from the Wolf Mother trophy, the retained six Wolf Skin `I61F`, two Light Leather `I6A6`, and one Thread `I66L`. It should be a skill-0 introductory Leatherworking recipe and must not delay Protect the Outpost or the Zul'kis handoff. Define the cowl/trophy rawcodes, confirm early Light Leather and Thread acquisition, and decide whether the trophy is the head, pelt, or both before implementation. |
+| ST-P-01 | Intro cinematic: Nazgrek and Shadowclaw | **Partial / current voice + legacy ODT evidence** | Establish the blood-refusal backstory, the bond with Shadowclaw, and Sereneglade as sanctuary without retelling Nazgrek's whole history. Preserve the patrol/Shadowclaw restraint, walk to the hut, and rabbit-hunt beats if current WE staging supports them. Refine the closing lines so Nazgrek notices that the forest and wolves are behaving incorrectly; the intro still ends through one shared normal/ESC hook into `qNazgrek_StartIntroQuestChain()`. |
+| ST-P-02 | Wolf Hunt I | **Implemented JASS; narrative line pass and WE intro-finish hook required** | Preserve the six kills, six Wolf Skin `I61F`, self-discovered structure, and automatic transition. Reframe the journal and brief field lines as an investigation of wolves ranging outside normal territory and attacking without ordinary hunting behavior. The quest remains the first player-control beat and does not gain another cinematic or quest giver. |
+| ST-P-03 | Nazgrek's Flask | **Implemented JASS; narrative line pass and runtime balance pending** | Preserve every recovered ingredient, the delayed Empty Flask requirement, the skill-0 recipe, and reusable `I61L`. Rewrite the start/reminder/completion framing so the flask is an inherited shamanic preparation that sharpens communion or protects Nazgrek from spiritual contamination. It prepares investigation of the Wolf Mother; it does not “guarantee” victory. |
+| ST-P-04 | Wolf Hunt II | **Planned; object/encounter and reveal work required** | Enter Wolf Den `12111`, confront Wolf Mother `n648`, and recover one unique trophy without expanding the prologue with another errand chain. Before or during the fight Nazgrek attempts to read her condition; after the fight he discovers she was affected by the disturbance rather than its source. Preserve the boss encounter even if the exact reveal uses a spirit echo, residue, or post-death examination. |
+| ST-P-05 | Wolf Hunt III | **Planned optional crafting epilogue** | Create a Shamanic Cowl from the unique trophy, retained six Wolf Skin `I61F`, two Light Leather `I6A6`, and one Thread `I66L`. Frame the cowl as respectful shamanic use and remembrance rather than a victory trinket. It remains skill-0, optional, and non-gating. Define the cowl/trophy rawcodes, confirm early material acquisition, and settle head versus pelt naming before implementation. |
 | ST-P-06 | Protect the Outpost | **Implemented JASS** | First visible act of service. The gnoll-attack cinematic completes before quest acceptance, leaving the shared five-second discovery delay to present the objective after the scene. Ragno survives, notices Nazgrek, and gives the Call of the Horde letter. Its completion ends the separate Nazgrek section with a fade to Zul'kis's intro. |
 
-Legacy intro beats worth retaining are Shadowclaw reacting defensively when the patrol mocks Nazgrek, Nazgrek choosing restraint, and the hut serving as the first quiet player-controlled space. Keep new cinematics short: the wolf/flask objectives carry the playable introduction, Wolf Hunt III is optional, and no extra Nazgrek quest should be inserted before Protect the Outpost without replacing an existing beat.
+Legacy intro beats worth retaining are Shadowclaw reacting defensively when the patrol mocks Nazgrek, Nazgrek choosing restraint, and the hut serving as the first quiet player-controlled space. Keep new cinematics short: the wolf/flask objectives carry the playable introduction, Wolf Hunt III is optional, and no extra Nazgrek quest should be inserted before Protect the Outpost without replacing an existing beat. Jin'Zun may supply an optional early callback to the Wolf Mother clue, but his chain must not be inserted as a new mandatory gate before Ragno.
 
 Current self-discovered scope is limited to Wolf Hunt I–III and Nazgrek's Flask. No other Nazgrek-owned self-discovered quest is approved in this plan. The later elemental and ancestral shaman progression may contain spontaneous spirit encounters, but those class quests still need confirmed trainers/spirits, ability rewards, and rawcodes and should not be treated as additional prologue errands.
 
@@ -391,12 +450,13 @@ Act III in Articy is empty. The Act IV–V structure above is therefore a new sy
 
 The Articy bank contains Elemental Fire, Water, Air, Earth, Ghost Wolf, Ancestral Ward, and Totemic Resurgence. The four elemental covenants are implemented as an ordered Elemental Master chain—Air, Earth, Fire, then Water—because they directly unlock Summon Elemental ranks 1–4. They use `normal` + `class` metadata and can begin at any Elemental Master, while turn-in remains bound to the trainer who started that rank. Future dialogue or regional objectives may connect the hunts more tightly to the story without changing this trainer contract. Ghost Wolf, Ancestral Ward, and Totemic Resurgence should still be tied to story revelations rather than becoming disconnected trainer errands.
 
-| Stage | Class quest | Recommended story connection |
-|---|---|---|
-| Early | Water / Earth | Jin'Zun's damaged trees and Garthork's spirit-sight lesson |
-| Mid | Air / Ghost Wolf | Ghostwalk tracking and Shadowclaw's spiritual bond |
-| Mid-late | Ancestral Ward / Totemic Resurgence | Shadowclaw aftermath, Deadwoods spirits, and Elarindor rifts |
-| Late | Fire | Emberpeak and Firelands; master fire without repeating the enemy's exploitation |
+| Ordered stage | Class quest | Character lesson | Recommended story connection |
+|---|---|---|---|
+| 1 | Air | Freedom and adaptability without detachment | The first covenant introduces listening and response; later Ghostwalk tracking can echo it. |
+| 2 | Earth | Endurance joined to responsibility | Jin'Zun's damaged trees, Garthork's spirit-sight lesson, and defending a place rather than merely surviving alone. |
+| 3 | Fire | Power governed by restraint | Foreshadow Emberpeak and Firelands without repeating the enemy's exploitation. |
+| 4 | Water | Change, healing, and restoration | Connect Zul'kis's restorative practice and the need to repair—not only destroy—damaged covenants. |
+| Later | Ghost Wolf / Ancestral Ward / Totemic Resurgence | Memory, relationship, and legacy | Shadowclaw's bond and aftermath, Deadwoods spirits, and Elarindor rifts. |
 
 The elemental chain now uses Elemental Master `o627`, Summon Elemental `A67Q`, and essences Air `I6C7`, Earth `I6C8`, Fire `I6C5`, and Water `I6C6`. Stormcaller `A6A3` remains required. Essence sources and chances are owned by WC3 Manager's unit-specific drop data rather than quest-specific JASS: Zephyros and Aqualon are the limited guaranteed Air and Water sources; the configured Lava and golem units provide Earth; and the configured Fire Lords, Fire Spawn, Ragnaros, Scorchion, and Enslaved Fire Spirit provide Fire. The Colossus Earth drop remains pending until its placeholder `XXXX` rawcode is finalized. Ability rewards, rawcodes, and actual trainer ownership for the remaining class quests still require separate design against the current ability system.
 
@@ -600,21 +660,67 @@ Resolve these deliberately and record the answer here:
 2. **Shadowclaw's fate:** the old notes explicitly use permanent death by a fel-orc warrior; decide whether current canon keeps that direct murder, adds a failed cleansing attempt, or allows a player-influenced outcome. Define what replaces gameplay dependencies and whether Shadowclaw later appears only as a spirit motif.
 3. **Zaekolaerr branch limits:** which dark actions are playable, threatened, or discarded, and how can the main hub remain usable?
 4. **Velyssara's allegiance and fate:** Zaekolaerr's agent, independent corrupter, coerced ally, or rival—and can she be cleansed, spared, or only defeated?
-5. **Main antagonist:** which force connects gnolls, satyrs, undead, void rifts, Dark Horde, and elemental exploitation without making every faction secretly identical?
+5. **Main antagonist identity:** the coalition/exploitation structure and domination-versus-communion theme are resolved, but the central dark-mirror character is not. Decide who embodies that philosophy, which operations they directly organize, which forces merely exploit the same fractures, and why Nazgrek matters to them without making every faction secretly identical.
 6. **Resolved - Granis/Garthork task ownership:** `qChieftainThork` requires Granis's `Punish` and Garthork's `The Magical Eye`; each producer exposes proof-state queries and sends an explicit completion report, while Thork also recovers from QuestData state.
 7. **Act III settlement `1704`:** final name, faction, services, and narrative purpose.
 8. **Gar's encounter and outcome:** Gar is unit `n60Z` in Deadwoods `11`. His quest-controlled spawn at `gg_rct_GarWP01`, six-point patrol, and simple frenzy phase are implemented in `BossGar.j`; decide the explosives mechanic, quest owner, reward, and whether destruction or another resolution is canonical.
 9. **Grum and the eggs:** protective plan, reckless weaponization, betrayal, or misunderstanding?
 10. **Dungeon reset policy:** which objectives are daily versus freely repeatable, and how boss/instance state resets safely.
 11. **Boom Mine access benefit:** the converted chain exposes semantic reclaimed/access state, but `DungeonBoomBrothersMine.j` does not yet gate entry or create the promised renewable ore access. Decide whether entry is ever locked and what post-completion mining benefit is safe for the economy.
-12. **Wolf Mother trophy and flask effect:** decide whether Wolf Hunt II awards a Head, Pelt, or both; create the Shamanic Cowl output around the planned trophy + six Wolf Skin + two Light Leather + one Thread recipe; and choose a clear encounter mechanic for Nazgrek's reusable flask that does not make the boss impossible after the flask buff expires or the item is lost.
+12. **Wolf Mother trophy, reveal, and flask effect:** decide whether Wolf Hunt II awards a Head, Pelt, or both; create the Shamanic Cowl output around the planned trophy + six Wolf Skin + two Light Leather + one Thread recipe; frame that use as respectful remembrance; choose the post-fight evidence that proves the Wolf Mother was affected rather than the source; and choose a clear encounter mechanic for Nazgrek's reusable flask that does not make the boss impossible after the flask buff expires or the item is lost.
 13. **Thork's false-flag reveal:** the premise is resolved: Thork directly paid local forest trolls to kill every Darkspear at the landing and stage the attack as human work, intending to manipulate the bereaved Zul'kis into serving his Horde. Zul'karak's survival/capture and the witch doctor's testimony were unintended loose ends. Decide the evidence trail, when Zul'kis learns the truth, whether the forest trolls remain available as witnesses, and whether confrontation changes Horde standing or only later support/dialogue.
 
 Recommended antagonist structure: use a coalition or chain of exploitation rather than one controller behind everything. Satyrs exploit local division, necromancers exploit death, the Dark Horde and demons industrialize fel/elemental power, and the void presence opportunistically amplifies the damage. This preserves faction identity while giving Nazgrek one thematic conflict.
 
 ## 14. Recommended implementation order
 
-1. Import and runtime-test `qNazgrek.j`, the intro cinematic's shared normal/ESC Wolf Hunt I start hook, the skill-0 `I61L` recipe, delayed Empty Flask objective, and legacy GUI replacement; then create the unique Wolf Mother trophy and Shamanic Cowl data needed for Wolf Hunt II–III.
+### Planned source-file passes
+
+This is a planning map, not authorization to rewrite every listed file at once. Work in small story passes, preserve public APIs and objectives, and update statuses here after each pass.
+
+| Priority | Source owner | Planned change | Preserve / do not change |
+|---|---|---|---|
+| 1 | World Editor Nazgrek intro triggers (unexported), `Voicelines/Voicelines_Narrator.j`, `Voicelines/Voicelines_Nazgrek.j`, `Voicelines/Voicelines_OrcGrunt.j` | Export/inspect the active intro first. Tighten the opening exposition, retain the patrol/Shadowclaw restraint and hut/rabbit beats, seed unusual wolf behavior, and ensure normal and ESC completion both call `qNazgrek_StartIntroQuestChain()`. | Do not edit `_MISC/war3map.wts`; do not add another opening quest or a long cinematic. |
+| 1 | `QuestsAndDialogs/QuestGivers/Player/qNazgrek.j` | Refine Wolf Hunt I and Flask descriptions; add only short start, transition, flask-completion, den-entry, and Wolf Mother aftermath field beats needed for the mystery. Add Wolf Hunt II–III only after the trophy/cowl and encounter decisions are complete. | Preserve current objectives, ingredients, item rawcodes, delayed Empty Flask behavior, auto-completion, and public APIs. |
+| 1 | Future Wolf Mother encounter owner, likely `qNazgrek.j` plus the existing boss/zone trigger selected after WE inspection | Make Wolf Mother the first reveal: apparent cause → affected victim → evidence of a wider disturbance. Define the reusable flask's clear but non-mandatory advantage and a post-encounter clue. | Preserve Wolf Mother `n648`, Wolf Den `12111`, and a playable boss fight; do not create a separate exposition quest. |
+| 2 | `QuestsAndDialogs/QuestGivers/Orcs/qRagno.j` | Add a minimal callback that Nazgrek defended lives by choice, and keep the blood-signed summons emotionally ambiguous. | Preserve Protect the Outpost encounter, letter handoff, Zul'kis fade, current follow-up prerequisites, and camera/ESC behavior. |
+| 2 | `QuestsAndDialogs/QuestGivers/Player/qZulkis.j` | Runtime-test only, then add no prologue material unless it seeds one recoverable inconsistency for the later false-flag investigation. Plan post-prologue Zul'kis/Zul'karak conversations in their later owning quest file. | Preserve the complete landing, massacre, rescue, temporary patrol, hero handoff, and convergence sequence. |
+| 2 | `QuestsAndDialogs/QuestGivers/Orcs/qChieftainThork.j` | Refine the first Nazgrek meeting so cooperation is conditional and the old conflict remains unresolved. Later add Thork's judgement and false-flag evidence consumers through semantic state, not dialogue-string checks. | Preserve Call of the Horde/Duty For The Horde gates and Zul'kis convergence. Do not expose the false flag in the prologue. |
+| 2 | `QuestsAndDialogs/QuestGivers/Orcs/qGarthork.j` | Reframe The Magical Eye as investigation of abnormal magic and evidence, not extraction of a lesser creature's natural power for Horde use. Let Garthork model a changed but imperfect Horde shaman. | Preserve Mur'gal `n607`, Eye `I601`, reward `I66R`, proof completion, and Thork report contract. |
+| 2 | `QuestsAndDialogs/QuestGivers/Orcs/qGranis.j` | Keep Granis as the harder military contrast; selectively revise only lines that make Nazgrek sound eager for slaughter or uncomplicated Horde service. Add later acknowledgement of the player's method/outcome where useful. | Preserve Punish, Mountain Defense, Ragno's field ownership, wave/failure rules, and proof report. |
+| 3 | `QuestsAndDialogs/QuestGivers/Troll/qOutcastJinzun.j` | Audit rather than rewrite the chain. Add Wolf Mother recognition and milestone callbacks that turn tree, wildlife, entity, and undead observations into an accumulating pattern. Remove premature certainty that every anomaly is Legion or literal void activity. | Preserve quest order, objectives, humor, existing progression, and Crypt-facing escalation. |
+| 3 | `QuestsAndDialogs/QuestGivers/Shaman/qElementalMaster.j`, `Abilities/AbilityTrainerLines.j`, and a future speaker-owned Elemental Master voice library if needed | Add one short covenant premise and completion lesson per element in the implemented Air → Earth → Fire → Water order. Use quest text first; add voiced lines only after trainer/speaker ownership is settled. | Preserve trainer binding, essence items/sources, Stormcaller gating, rank grants, and rank-5 AP behavior. |
+| 4 | A future small shared story-state owner, after consumers are known | Own recurring mystery milestones, Wolf Mother evidence, Thork false-flag evidence, and later consequence queries when more than one qXXX file consumes them. | Do not create a global state library for flags that still have only one owner/consumer. |
+| 4 | Later Act II–V qXXX owners | Add consequences and companion comments when implementing Ghostwalk, Deadwoods/Crypt, Elarindor aftermath, Dragonfire, and the finale. | Do not retrofit every side quest into the main conspiracy or make daily/repeatable quests mandatory. |
+
+### Voiceline revision and addition plan
+
+Voiceline work is intentionally selective. Keep stable keys where a line occupies the same event slot, but treat changed text as requiring new/re-recorded audio. Add new keys for genuinely new beats. Confirm the active World Editor consumer before deleting, renumbering, or repurposing any legacy draft key.
+
+| Priority | Voice files / current line families | Action | Narrative target |
+|---|---|---|---|
+| 1 | `Voicelines_Narrator.j` `VL_NARRATOR_0001`–`0005`; `Voicelines_Nazgrek.j` `VL_NAZGREK_0250`–`0256`; relevant intro patrol lines in `Voicelines_OrcGrunt.j` after WE export | **Tighten and selectively re-record.** Keep the exile, Shadowclaw, restraint, sanctuary, and rabbit/hut material. Reduce full-history exposition and close on observable wrongness in the wolves/forest. | Put Nazgrek's wound on screen in the first 5–10 minutes without explaining his entire arc before play begins. |
+| 1 | `Voicelines_Nazgrek.j` `VL_NAZGREK_0008`–`0009` and unused Flask draft `0001` | **Rewrite active Flask lines; repurpose an unused line only after confirming no WE consumer.** Replace inventory/“guaranteed success” wording with heritage, preparation, spiritual clarity, and uncertainty. | Make the same gathering quest reveal character and shamanic practice. |
+| 1 | New `Voicelines_Nazgrek.j` keys owned by Wolf Hunt I/II | **Add:** one short observation at hunt start, one transition into Flask preparation, one den/communion attempt, and one aftermath realization. Avoid a line on every kill or ingredient. | Establish apparent cause, investigation, and “Wolf Mother was also a victim” reveal with minimal interruption. |
+| 2 | `Voicelines_Nazgrek.j` `0057`–`0062`; `Voicelines_OrcGrunt.j` `0012`–`0017` used by `qRagno` | **Mostly retain; polish only if re-recording the scene.** Keep Nazgrek's reflex to help, his claim that he owes the Horde nothing, and his uncertainty over the letter. Add at most one Ragno/grunt callback about service by choice. | Protect the Outpost should challenge Nazgrek's isolation without resolving it. |
+| 2 | `Voicelines_Thork.j` `0001`–`0006`, `0008`, `0010`–`0012`; `Voicelines_Nazgrek.j` `0005`–`0006`, `0064`–`0069`; `Voicelines_Zulkis.j` `0001`–`0003` used by `qChieftainThork` | **Focused rewrite and re-record.** Break up the exposition, change Nazgrek's immediate “join the Horde once again” into conditional cooperation, keep Thork defensive and morally complicated, and give Zul'kis an explicit practical reason to walk with Nazgrek. | Preserve conflict after the first meeting and establish the three-way debate over principle, survival, and compromise. |
+| 2 | `Voicelines_Garthork.j` `0002`–`0005`, `0010`–`0017`; `Voicelines_Nazgrek.j` `0072`–`0087` used by `qGarthork` | **Substantial text rewrite and re-record while preserving event slots.** Keep shared old-Horde history and the Mur'gal objective, but replace “harness their power for the Horde” with diagnosis of abnormal magic, respectful study, and evidence of imbalance. | Make Garthork credible evidence that some Horde shamans learned restraint. |
+| 2 | `Voicelines_Granis.j` active Punish/Mountain Defense families; `Voicelines_Nazgrek.j` `0130`, `0140`–`0144`, `0153`–`0166` | **Selective polish.** Retain Granis's direct military voice. Revise only obsolete `Hellscream` naming and lines where Nazgrek revels in killing rather than accepting a hard necessity. | Granis remains a genuine harsher Horde contrast, not a second Garthork. |
+| 3 | `Voicelines_Jinzun.j` and the Nazgrek lines used throughout `qOutcastJinzun` | **Audit in quest order; do not wholesale rewrite.** Add references to the Wolf Mother clue and later pattern recognition; soften lines that prematurely identify the Burning Legion or literal void as the answer. | Turn an already-strong escalation chain into the early mystery's evidence trail. |
+| 3 | `Voicelines_Narrator.j` `0006`–`0007`, `Voicelines_Zulkis.j` `0005`–`0009`, `Voicelines_Zulkarak.j` `0001`–`0004`, `Voicelines_Thork.j` `0013`–`0014`, and `qZulkis` patrol/survivor lines | **Retain the implemented prologue.** Add later keys—rather than expanding these scenes—for Zul'kis's grief, Zul'karak's doubts, conflicting evidence, and reactions to Thork. | Keep the strong parallel opening intact and carry its momentum beyond recruitment. |
+| 3 | Elemental Master / trainer voice support | **Add later, after speaker ownership is decided:** one premise and one completion response per Air, Earth, Fire, and Water covenant; optional short Nazgrek/Zul'kis response variants. | Make class progression visible as character development without turning trainers into long cinematic quest givers. |
+
+### Production order for dialogue
+
+1. Export/inspect active WE dialogue and record every current key consumer.
+2. Approve text in context with the owning quest sequence and character anchors above.
+3. Update speaker-owned voiceline constants and qXXX consumers together.
+4. Generate review audio only after text stabilizes; do not promote it to the master audio folder until it has been listened to.
+5. Runtime-test subtitle/audio agreement, line duration, ESC paths, camera timing, and quest state transitions.
+
+### Implementation sequence
+
+1. Export and inspect Nazgrek's active World Editor intro, approve the focused prologue text pass, then import and runtime-test `qNazgrek.j`, the shared normal/ESC Wolf Hunt I start hook, the skill-0 `I61L` recipe, delayed Empty Flask objective, and legacy GUI replacement. After the stable content works unchanged, add the Wolf Mother reveal plus unique trophy and Shamanic Cowl data needed for Wolf Hunt II–III.
 2. Import and runtime-test `qZulkis.j`, Bramblehide Village `701`, all camera/fade/ownership transitions, the removed intro ship, Thork selection redirect, shore corpse swap, Rescue the Brother, Nazgrek return, and Call of the Horde gate. Then design Zul'karak's Horde-base quest set before implementing his recruit unlock, simple berserker AI, and dismissal/home-return behavior.
 3. Runtime-validate the implemented second Mountain Defense as distinct from Protect the Outpost and keep their completion/failure state separate while adding the new prologue handoff.
 4. Finish Satyr Negotiations outcome state and one convergent follow-up per choice.
