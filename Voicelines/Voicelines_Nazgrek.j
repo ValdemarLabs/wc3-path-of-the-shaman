@@ -2,7 +2,7 @@
     VoicelinesNazgrek
 
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.1.1
 
     Description:
     Speaker-owned story and reusable generic quest voicelines for Nazgrek.
@@ -709,6 +709,16 @@ globals
     constant string VL_NAZGREK_0383_TEXT = "Valeria, I am not certain how to say this... but watch him closely."
     constant string VL_NAZGREK_0384_KEY = "Nazgrek_0384"
     constant string VL_NAZGREK_0384_TEXT = "This place seems to have tendency to take a grip of even the kindest people..."
+
+    // Return from Zul'kis's parallel prologue.
+    constant string VL_NAZGREK_0385_KEY = "Nazgrek_0385"
+    constant string VL_NAZGREK_0385_TEXT = "So it is decided, then..."
+    constant string VL_NAZGREK_0386_KEY = "Nazgrek_0386"
+    constant string VL_NAZGREK_0386_TEXT = "We will help with the chieftain's urgent mission—but that is all. This does not make me Horde again."
+    constant string VL_NAZGREK_0387_KEY = "Nazgrek_0387"
+    constant string VL_NAZGREK_0387_TEXT = "Still... something is not right. I feel it in my gut, but the visions the elements grant me are clouded."
+    constant string VL_NAZGREK_0388_KEY = "Nazgrek_0388"
+    constant string VL_NAZGREK_0388_TEXT = "While I am at it, I could use some practice in the old shamanic ways. They have grown rusty over the years we spent in the forest."
 endglobals
 
 private function RegisterGenericQuestLines takes nothing returns nothing
