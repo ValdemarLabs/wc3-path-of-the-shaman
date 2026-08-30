@@ -1,0 +1,8 @@
+﻿[2026-08-30 14.37.16] [INFO] Cleaned up 4 old log file(s)
+[2026-08-30 14.37.16] [INFO] ============================================================
+[2026-08-30 14.37.16] [INFO] ItemManager session started
+[2026-08-30 14.37.16] [INFO] Log file: H:\Pelit\PotS_JASS\WC3_Database\WC3ItemManager\bin\Debug\net8.0-windows\logs\ItemManager_2026-08-30_143716.log
+[2026-08-30 14.37.16] [INFO] ============================================================
+[2026-08-30 14.37.16] [INFO] Loaded tooltip phrases: 6 rarities, 7 classes, 24 stats
+[2026-08-30 14.37.36] [INFO] Exported W3T file: H:\Pelit\PotS_JASS\WC3_Database\exports\ItemData_20260830_143735.w3t
+[2026-08-30 14.37.38] [INFO] Exported DEquipment JASS file: H:\Pelit\PotS_JASS\WC3_Export\DEquipmentItemDefinitions\DEquipmentItemDefinitions_20260830-1437.j
