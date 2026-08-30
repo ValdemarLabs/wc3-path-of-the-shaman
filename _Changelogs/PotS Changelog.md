@@ -19,6 +19,7 @@
 
 ### Player-Facing Updates
 
+- Fixed Ragno dialogue ESC handling across entry fades, spoken sequences, and visible choices so skipping cannot leave the player without dialogue, choices, or a working exit; completed Protect the Outpost state now also restores Ragno's letter handoff and follow-up availability during initialization.
 - Restored the one-time Orc Grunt conversations at the western Horde scout base and southern mountain camp; the mountain exchange unlocks after Protect the Outpost as before.
 - Added the Elemental Master's ordered Summon Elemental covenant quests: Air, Earth, Fire, and Water. Any Elemental Master can begin a rank, but its essence must be returned to that same trainer; Stormcaller remains required, and rank 5 Greater Elementals remain the final AP upgrade.
 - Configured Elemental Essences as WC3 Manager unit-specific drops from their matching Air, Earth, Fire, and Water elementals, with guaranteed drops reserved for the listed powerful sources.
@@ -38,6 +39,8 @@
 
 ### Technical Updates
 
+- Updated `_developer/Design Plans/Story and Quest Design.md` from the current story design guide with a preserve/refine/build boundary, a defined spiritual-disturbance spine, recurring clues, character and causal checkpoints, a source-file implementation plan, and a selective voiceline revision/addition plan centered on Nazgrek's existing prologue and early Horde content.
+- Updated `QuestsAndDialogs/QuestGivers/Orcs/qRagno.j` with scoped ESC ownership, safe entry-transition cancellation, normal choice-dialog exit cleanup, failed-greeting fallback, escape cleanup before Protect the Outpost interrupts an active interaction, and initialization recovery for its completed prerequisite chain.
 - Added `World/AmbientEvents/AmbientEvents.j` with reusable one-shot region-entry and ambient unit-type transmission helpers, and added `World/AmbientEvents/HordeUnitsRandomChat.j` to convert the three legacy Horde chat triggers with `Voicelines/Voicelines_OrcGrunt.j` keys and text; updated `QuestsAndDialogs/QuestGivers/Orcs/qRagno.j` and `_developer/Design Plans/Story and Quest Design.md` with the Protect the Outpost unlock contract.
 - Added `QuestsAndDialogs/QuestGivers/Shaman/qElementalMaster.j` with per-trainer quest identity, ordered rank conditions, shared item tracking, class metadata, and quest-granted Summon Elemental ranks; updated `Abilities/AbilitiesPlayer.j`, `Abilities/Abilities.j`, `Abilities/AbilityPoints.j`, and `Abilities/AbilityTrainerDialogs.j` with rank-aware quest locks, exact quest-rank grants, reset preservation for earned quest ranks, and trainer-dialog refresh support.
 - Added `WC3_Database/WC3ItemManager/elemental_essence_drops_20260830.sql` with the configured essence source units and chances; corrected the manager's `specific_drop_only` handling and label so Specific Drops Only items stay out of generic pools while enabled unit-specific drops still export.
