@@ -3,7 +3,7 @@ library HintsUI initializer AutoInit requires Table, MasterUI, Interface
     HintsUI
 
     Author: [Valdemar]
-    Version: 1.0
+    Version: 1.1.0
 
     Purpose:
     - Stores predefined hints in one JASS library.
@@ -55,6 +55,7 @@ globals
     public integer HINT_SPIRIT_SHARDS = 0
     public integer HINT_COMPANION_CONTROLS = 0
     public integer HINT_COMPANION_PARTY_SIZE = 0
+    public integer HINT_ZULKIS_PATROL = 0
     public integer HINT_FALLEN_COMPANIONS = 0
     public integer HINT_PET_FATIGUE = 0
     public integer HINT_REPUTATION = 0
@@ -226,6 +227,11 @@ private function HUI_InitDefinitions takes nothing returns nothing
 
     set HINT_COMPANION_PARTY_SIZE = HUI_RegisterHint("Companion Party Size", "Hint", "ReplaceableTextures\\CommandButtons\\BTNSelectHeroOn.blp", false)
     call HUI_SetHintText(HINT_COMPANION_PARTY_SIZE, "Companion capacity is based on the party's highest-level hero. It increases at levels 5, 10, 15, 20, and 25.")
+
+    set HINT_ZULKIS_PATROL = HUI_RegisterHint("Supporting the Orc Patrol", "Hint", "ReplaceableTextures\\CommandButtons\\BTNHealingWave.blp", false)
+    call HUI_SetHintText(HINT_ZULKIS_PATROL, "Use companion commands to set the patrol to Passive, Normal, Aggressive, or Hold. Companion Move and Attack orders direct all four grunts together.")
+    call HUI_SetHintText(HINT_ZULKIS_PATROL, "Zul'kis can remain behind the front line: let the grunts engage the forest trolls while he heals and supports them.")
+    call HUI_SetHintText(HINT_ZULKIS_PATROL, "This patrol temporarily exceeds the normal companion limit and leaves when Zul'kis's rescue mission ends.")
 
     set HINT_FALLEN_COMPANIONS = HUI_RegisterHint("Fallen Companions", "Hint", "ReplaceableTextures\\CommandButtons\\BTNResurrection.blp", false)
     call HUI_SetHintText(HINT_FALLEN_COMPANIONS, "Spirit Shards can revive fallen companions. Hired non-hero companions remain revivable for 60 seconds before dying permanently.")
