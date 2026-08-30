@@ -26,6 +26,7 @@ the same voice profile used by their shop dialogue.
 | `GenericOrcMale8` | Shaman | Orc shaman | `dab87e7b8c7549d691a90076609bc317` | Forest/Sirensong spirit speakers, reagents, and Sirensong quartermaster |
 | `GenericOrcMale9` | Shaman (fighter) | Orc fighter | `90a80ffccde247c69af75edf5d66cad2` | Fiery Mountain and Sirensong weapons merchants |
 | `GenericTrollMale1` | TrollMale1 | Troll male | `749a792a18654ac19c8668fe9ceb6a31` | Horde Troll jeweller |
+| `ForestTroll` | TrollMale1 | Forest-troll combat barks; shared TrollMale1 profile | `749a792a18654ac19c8668fe9ceb6a31` | Bramblehide Village Rescue the Brother reactions |
 | `GenericTroll` / `GenericTrollMale2` | Troll Witch Doctor | Troll witch doctor | `11573f63b7cb42cd919a0ebd0f74aa84` | Darkspear wounded-survivor testimony and Horde Troll voodoo merchant |
 | `GenericGoblinMale1` | Goblin2 | Goblin male | `b3e77482cd444ad09b04a33fe6817c32` | Riverbane weapons/professions, travelling trade, reagents, and expedition supplies |
 | `GenericGoblinMale2` | Goblin1 | Goblin male | `c8fe49fa32b245c786a26ad2a28e771f` | Riverbane armor/potions, travelling trade, Stormhaven bartender, Sirensong beast supplies |
