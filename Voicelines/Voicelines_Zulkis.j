@@ -2,7 +2,7 @@
     VoicelinesZulkis
 
     Author: Valdemar
-    Version: 1.1.1
+    Version: 1.1.2
 
     Description:
     Speaker-owned story and reusable generic quest voicelines for Zul'kis.
@@ -124,6 +124,14 @@ globals
     constant string VL_ZULKIS_0008_TEXT = "Come. Da Horde camp be safer than these woods."
     constant string VL_ZULKIS_0009_KEY = "Zulkis_0009"
     constant string VL_ZULKIS_0009_TEXT = "Forest trolls took my brother. I be findin' him before dey finish what dey started."
+    constant string VL_ZULKIS_0010_KEY = "Zulkis_0010"
+    constant string VL_ZULKIS_0010_TEXT = "No... Spirits, no. My people..."
+    constant string VL_ZULKIS_0011_KEY = "Zulkis_0011"
+    constant string VL_ZULKIS_0011_TEXT = "Zul'karak! Brother, where are ya?"
+    constant string VL_ZULKIS_0012_KEY = "Zulkis_0012"
+    constant string VL_ZULKIS_0012_TEXT = "What happened here? Where be my brother? Tell me!"
+    constant string VL_ZULKIS_0013_KEY = "Zulkis_0013"
+    constant string VL_ZULKIS_0013_TEXT = "Zul'karak! Spirits preserve ya... Can ya stand?"
 
     // Excel draft: Zulkis lines | Quest: Magical Eye | Event: Random discussion | Done: x
     constant string VL_ZULKIS_0044_KEY = "Zulkis_0044"
