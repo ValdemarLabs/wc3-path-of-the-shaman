@@ -2,7 +2,7 @@
     VoicelinesZulkarak
 
     Author: Valdemar
-    Version: 1.0.1
+    Version: 1.0.2
 
     Description:
 
@@ -29,9 +29,11 @@ library VoicelinesZulkarak initializer Init requires Voicelines
         constant string VL_ZULKARAK_0002_KEY = "Zulkarak_0002"
         constant string VL_ZULKARAK_0002_TEXT = "Stay on ya guard. I be protectin' da ship and our people till ya return."
         constant string VL_ZULKARAK_0003_KEY = "Zulkarak_0003"
-        constant string VL_ZULKARAK_0003_TEXT = "Took ya long enough, little brother. All dis time, I been wonderin’ what dis tribe had against us. But now I got me answer. Guess we were just rivals in their eyes... and truth be told, we did step into their territory."
+        constant string VL_ZULKARAK_0003_TEXT = "Dey struck without warning. But dis was no border raid, brother. Dey wanted every Darkspear at da shore dead, and dey kept askin' what I saw before dey dragged me here."
         constant string VL_ZULKARAK_0004_KEY = "Zulkarak_0004"
         constant string VL_ZULKARAK_0004_TEXT = "Good. I had enough of their hospitality."
+        constant string VL_ZULKARAK_0005_KEY = "Zulkarak_0005"
+        constant string VL_ZULKARAK_0005_TEXT = "Brother... ya came. I feared I be da last one left."
     endglobals
 
 private function Init takes nothing returns nothing
