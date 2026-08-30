@@ -43,7 +43,7 @@ the same voice profile used by their shop dialogue.
 | `GenericElarindorFemale1` | Elf (VereesaWindrunner) | Elarindor female | `eefc6b82be3d4907bf419c640d021b0b` | Armor, potions, and jewellery; matched vendor quests |
 | `GenericElarindorFemale2` | BloodElfFemale | Elarindor female | `b02accf6560f41419210b67f9431fd5f` | Enchanting and quartermaster; matched vendor quests |
 | `GenericOgreBonecrusherMale1` | OgreMale | Bonecrusher ogre male | `065c2be6b4814fe59916ece73d6660b3` | Bonecrusher vendors, bag merchant, and generic quests |
-| `NazgrekGeneric` | Nazgrek2 | Nazgrek reusable replies | `82895e2c2e62463bb023c0c858a55b9d` | Generic quests plus matched LastNight responses |
+| `Nazgrek` / `NazgrekGeneric` | Nazgrek2 | Nazgrek story voice and reusable replies | `82895e2c2e62463bb023c0c858a55b9d` | Story dialogue, generic quests, and matched LastNight responses |
 | `Zulkis` / `ZulkisGeneric` | Shadowhunter | Zul'kis story voice and reusable replies | `139c8b251a2f4a97a2dbce510e1f94cf` | Story dialogue, generic quests, and matched LastNight responses |
 | `Thork` | Thork | Chieftain Thork | `da8c8f301eea4e9fab1fdd64557e109d` | Chieftain Thork story and quest dialogue |
 | `Zulkarak` | TrollMale1 | Zul'karak story voice; shared TrollMale1 profile | `749a792a18654ac19c8668fe9ceb6a31` | Darkspear landing and Rescue the Brother dialogue |
