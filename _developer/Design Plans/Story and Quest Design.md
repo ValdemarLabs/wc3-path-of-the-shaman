@@ -130,7 +130,7 @@ Valeria and other characters still have unexported GUI triggers in the map. Reco
 
 | Level band | Zone IDs and hubs | Narrative and quest use |
 |---|---|---|
-| 1–9 | Sereneglade `2`, Twilight Grove `1` | Prologue, Ragno, Jin'Zun, Kribugs, early Horde contact, wildlife and local-threat quests |
+| 1–9 | Sereneglade `2`, Twilight Grove `1` | Act I-A Nazgrek intro, Ragno, Jin'Zun, Kribugs, early Horde contact, wildlife and local-threat quests |
 | 1–10 | Thornwoods `6`, Stonetooth Camp `601`, Bloodtusk Tribe `602`, Horde Scout Base `8810` | Chieftain Thork, Granis, Garthork, Rol'jin, murloc and gnoll pressure, Horde acceptance |
 | 1–5 | Bramblehide Village `701` | Bloodtusk forest-troll village in Havenwoods; Zul'kis rescues Zul'karak here during the parallel prologue |
 | 5–15 | Havenwoods `7`, Bonecrush Stronghold `8`, Riverbane `10`, inns/cellars `12010`–`12021` | Alliance/Ogre/Bonecrusher relations, patrols, trade, and faction consequences |
@@ -154,7 +154,7 @@ This section records current qXXX content at the time this plan was created. Upd
 
 | Library / giver | Current quests | Status and important dependencies |
 |---|---|---|
-| `qNazgrek.j` | Wolf Hunt I; Nazgrek's Flask | **Partial prologue JASS.** Two self-discovered Normal + Story quests in Sereneglade `2`. Nazgrek's intro cinematic must call `qNazgrek_StartIntroQuestChain()` from its shared normal/ESC completion path so Wolf Hunt I begins only after the cinematic. Killing six current wolf/alpha-wolf units and collecting six Wolf Skin `I61F` auto-completes it and starts the converted legacy flask quest. The flask tracks six Forest Flower `I60Y`, three Agave `I60W`, two Earth Roots `I60X`, six Stag Hair `I614`, two Frog Slime `I615`, and the delayed Empty Flask `I61M` reminder, then auto-completes when existing flask `I61L` is crafted or acquired. Wolf Hunt II–III remain planned until their unique trophy and Shamanic Cowl objects/recipe are defined. |
+| `qNazgrek.j` | Wolf Hunt I; Nazgrek's Flask | **Partial prologue JASS; opening ambush update planned.** Two self-discovered Normal + Story quests in Sereneglade `2`. The intro must return control with Wolf Hunt I still unavailable and undiscovered. Its shared normal/ESC completion path then calls `qNazgrek_StartIntroQuestChain()`, whose revised contract stages the opening event: create exactly two hostile Timber Wolves `nwlt` at `gg_rct_WolfAttack`, order both to attack `udg_Nazgrek`, and only then accept/discover Wolf Hunt I. The ambush makes the wolves' strange aggression the cause of the quest instead of presenting a journal objective without an inciting event. Both spawned wolves count toward the existing six wolf kills; confirm their Wolf Skin `I61F` drop path during implementation. Six kills and six Wolf Skin still auto-complete the hunt and start the converted legacy flask quest. The flask retains its existing ingredient and delayed Empty Flask requirements. Wolf Hunt II–III remain planned until their unique trophy and Shamanic Cowl objects/recipe are defined. |
 | `qZulkis.j` | Meet with Chieftain Thork; Rescue the Brother | **Implemented prologue JASS; runtime validation pending.** `qZulkis_StartPrologue()` owns the six-camera river arrival, temporary `'odes'` ship, living Darkspear shore party, Thork meeting, off-screen corpse/captive staging immediately after Thork's return order, wounded-witch-doctor testimony and interrupted death vocal, the chance arrival of a four-grunt orc patrol, Zul'karak relocation through `udg_Zulkarak`, rescue in Bramblehide Village `701`, Horde-base staging, and fade back to Nazgrek. Each cinematic suspends the gameplay camera controller; the arrival snaps to `IntroZulkisCam2` before its timed movement toward camera 1, then cuts to camera 5 and moves toward camera 6, while the landing snaps to camera 3 before its timed movement toward camera 4. Darkspear corpses use the recovered GUI permanent-flesh staging throughout Zul'kis gameplay, while the wounded witch doctor dies as the same unit and joins their suspended-decay lifecycle; all six resume normal decay when the prologue ends. The patrol joins as four temporary companion grunts for Rescue the Brother, bypasses the ordinary low-level companion cap for this scripted section, and is unregistered and removed when Zul'kis's prologue ends. When his playable section begins, `Start.j` equips Zul'kis with Shadowcaster's Scepter and a mostly common, deliberately weak Darkspear travel set, plus two Mana Potions, one Healing Potion, and Purified Water in his native inventory. Graveyard `2` (`Graveyard02`) temporarily replaces the player's stored revival point for Zul'kis gameplay, and the exact prior graveyard selection is restored at prologue completion. Nazgrek is hidden, invulnerable, paused, and neutral-passive while Zul'kis is playable; Shadowclaw is likewise removed from the active pet/companion state and hidden, then both are restored from their saved state only after the prologue. Its completion query gates the existing Call of the Horde convergence. Zul'karak's later quest-giver quests, recruit unlock, and dedicated combat/home AI remain planned separately. |
 | `qRagno.j` | Protect the Outpost; Gnoll Headcount; Lumberjack Duties; Kobold Thieves; Satyr Negotiations; Call of the Horde | **Implemented JASS.** Protect the Outpost is externally started and auto-completed by its scripted defense. Its intro plays the `OrcGrunt_0012` attack warning, waits four seconds, and then continues with the `OrcGrunt_0013` overwhelmed response and Nazgrek's reply; its independent camera shots include the same delay. Active gnolls left idle or inside a wave spawn region are periodically ordered to attack the Horde mountain outpost. The intro restores CameraControl to the player's pre-cinematic camera unit on both normal completion and ESC skip. Quest acceptance occurs when the gnoll-attack intro cinematic ends, so the shared five-second discovery delay presents the quest after the scene instead of interrupting it. Delayed initialization also starts the encounter when an owned hero is already inside one of its entry regions, preventing its completion-gated follow-up quests from remaining unavailable after a missed region-enter event. If the encounter interrupts a Ragno interaction, it first skips the active sequence and closes its menu so no pending-dialog state survives into the cinematic. Gnoll Headcount, Lumberjack Duties, Kobold Thieves, and Satyr Negotiations all require its completion and become available afterward. Ragno's ordinary greeting, quest, and farewell sequences use the shared DialogSystem ESC skipper and exit callbacks without a quest-giver-specific transition escape override. Its legacy `QUEST_MOUNTAIN_DEFENSE` alias still points to Protect the Outpost internally. Granis owns the separate QuestData for the later Mountain Defense, but Ragno remains that quest's field commander, encounter anchor, required survivor, and principal battlefield speaker. Satyr Negotiations reaches Zaekolaerr; its arena outcome now waits for a successful Coliseum challenge started through satyr arena master `n62V`, while the escape, betrayal, and trust follow-ups remain partial. Call of the Horde requires Protect the Outpost and an external unlock, and is unit-specific to Nazgrek so its giver/receiver markers stay inactive while Nazgrek is neither owned nor a companion. Protect the Outpost stages active Shadowclaw beside Nazgrek for its completion and preserves that position through the Zul'kis prologue before returning to Nazgrek gameplay. Its completion explicitly unlocks the one-shot southern mountain-camp grunt exchange through `HordeUnitsRandomChat_EnableMountainChat()`, then hands its black-screen completion directly to `qZulkis_StartPrologue()`. |
 | `qChieftainThork.j` | Duty For The Horde | **Implemented JASS with Zul'kis convergence gate.** Tracks Granis's Punish and Garthork's The Magical Eye as separate proof requirements, receives explicit completion reports, and recovers their state from completed QuestData. During the separate Zul'kis section, Thork selection is consumed and redirected to `qZulkis` so generic selection dialogue cannot overlap the prologue meeting; Call of the Horde cannot become ready or complete until Rescue the Brother is complete, after which the existing meeting positions Nazgrek in front of Thork and enables Zul'kis. Later Thork branches remain external/legacy. |
@@ -265,7 +265,7 @@ Use the following checkpoints when refining existing story content. They impleme
 
 | Quest or arc | Primary function | Before | Revelation | After / callback |
 |---|---|---|---|---|
-| Wolf Hunt I → Nazgrek's Flask → Wolf Hunt II | MAIN + CHARACTER + MYSTERY | Nazgrek expects a dangerous but ordinary territorial wolf problem | The wolves and Wolf Mother are reacting to or suffering from a wider spiritual disturbance; the flask is inherited shamanic preparation, not a generic power-up | Nazgrek names Sereneglade itself as threatened; Jin'Zun can recognize a related symptom later. |
+| Timber Wolf ambush → Wolf Hunt I → Nazgrek's Flask → Wolf Hunt II | MAIN + CHARACTER + MYSTERY | Nazgrek returns to ordinary life in Sereneglade with no quest or reason to hunt the wolves | Two Timber Wolves attack him without normal provocation; the later hunt shows the wolves and Wolf Mother are reacting to or suffering from a wider spiritual disturbance, while the flask is inherited shamanic preparation rather than a generic power-up | Nazgrek names Sereneglade itself as threatened; Jin'Zun can recognize a related symptom later. |
 | Protect the Outpost | CHARACTER + FACTION | Nazgrek claims he owes the Horde nothing | He still chooses to protect people in immediate danger | Ragno's summons and later Horde dialogue acknowledge that he acted by principle, not obedience. |
 | Zul'kis prologue | CHARACTER + FACTION + MYSTERY | Zul'kis believes Thork offers a quick alliance and safety | The landing is destroyed and his brother's account is incomplete | Zul'kis joins for survival and answers, while later inconsistencies keep the loss active after recruitment. |
 | Duty For The Horde / Granis / Garthork | FACTION + CHARACTER | Nazgrek treats “the Horde” as one unchanged institution | Granis and Garthork represent different lessons, methods, and degrees of change | Thork's judgement reflects what Nazgrek learned and grants conditional cooperation, not full reconciliation. |
@@ -277,33 +277,61 @@ Use the following checkpoints when refining existing story content. They impleme
 
 The following is the recommended canonical synthesis. Existing quest titles are retained where practical. Design IDs are planning references, not current QuestData IDs.
 
+### Act and playable-section map
+
+Act I contains both separate character introductions and their convergence. “Intro” identifies a temporarily separate playable section; it does not place that content outside the numbered story acts.
+
+| Act | Internal section | Playable focus | Section ending |
+|---|---|---|---|
+| **Act I — The outcast and the Horde's call** | **I-A: Nazgrek intro** | Nazgrek and Shadowclaw in Sereneglade; wolf mystery, Flask, Wolf Mother, and Protect the Outpost | Protect the Outpost fades into Zul'kis's playable intro. |
+|  | **I-B: Zul'kis intro** | Zul'kis's landing, Thork meeting, broken shore, and rescue of Zul'karak | Rescue the Brother stages Zul'kis at the Horde base and fades back to Nazgrek. |
+|  | **I-C: Convergence and earning a place** | Nazgrek returns, meets Zul'kis at Thork, and tests whether the Horde has changed | Thork grants conditional standing and sends the story toward Ghostwalk Ridge. |
+| **Act II — The wolf and the wound** | Shadowclaw / Ghostwalk campaign | Nazgrek, Shadowclaw, and earned allies | The personal loss exposes an organized fel threat and opens the Deadwoods road. |
+| **Act III — Roads, islands, and uneasy allies** | Ironspine, Deadwoods, Dawnhold, Stormhaven, and Sirensong | Shared party and regional allies | Undeath, fel, and regional evidence point toward wider exploitation. |
+| **Act IV — Rifts of Elarindor** | Aradion, Valeria, Kaelthir, and the rifts | Shared party and Elarindor allies | The rift convergence reveals the endgame route and consequences. |
+| **Act V — Fire, blood, and balance** | Emberpeak, Dragonfire, and endgame dungeons | Nazgrek's final alliances and shamanic identity | Nazgrek defines his path and restores a damaged covenant. |
+
 ### Story flow overview
 
 ```text
-Nazgrek prologue: Shadowclaw -> Wolf Hunt I -> Nazgrek's Flask -> Wolf Hunt II
+ACT I-A — NAZGREK INTRO
+Nazgrek and Shadowclaw intro -> player control returns with no Wolf Hunt quest
+    -> two Timber Wolves spawn at gg_rct_WolfAttack and attack Nazgrek
+    -> the strange attack discovers Wolf Hunt I -> Nazgrek's Flask -> Wolf Hunt II
     -> Wolf Mother is revealed as a victim/symptom, not the originating cause
     -> optional Wolf Hunt III crafting epilogue
     -> Protect the Outpost -> fade to Zul'kis
-Zul'kis prologue: Darkspear landing -> Thork -> destroyed landing camp
+ACT I-B — ZUL'KIS INTRO
+Darkspear landing -> Thork -> destroyed landing camp
     -> Rescue the Brother -> return to the Horde base -> fade to Nazgrek
-Nazgrek: Call of the Horde -> Nazgrek and Zul'kis meet at Thork
+ACT I-C — CONVERGENCE AND EARNING A PLACE
+Call of the Horde -> Nazgrek and Zul'kis meet at Thork
     -> Duty For The Horde
        -> Granis military task ----\
        -> Garthork spirit task -----+-> Gnoll / satyr truth -> accepted but tested
        -> Satyr choice -------------/
+ACT II — THE WOLF AND THE WOUND
     -> Ghostwalk and Deadwoods: Shadowclaw + corruption
+ACT III — ROADS, ISLANDS, AND UNEASY ALLIES
     -> Stormhaven / Sirensong: allies, ship, Boom Mine, regional threats
+ACT IV — RIFTS OF ELARINDOR
     -> Elarindor: Aradion + Valeria + mana rifts
+ACT V — FIRE, BLOOD, AND BALANCE
     -> Emberpeak / Dragonfire: dragons, Dark Horde, elemental exploitation
     -> Wyrmhold / Firelands / Dreadforge finale and Nazgrek's choice
 ```
 
-### Prologue — The outcast and the wolf (levels 1–3)
+### Act I — The outcast and the Horde's call (levels 1–10)
+
+Act I deliberately changes playable viewpoints once. Nazgrek's intro establishes the protagonist and first mystery, Protect the Outpost provides the handoff, Zul'kis's intro establishes the companion independently, and Call of the Horde converges them into the shared campaign. The switches are act structure, not optional side prologues.
+
+#### Act I-A — Nazgrek intro: the outcast and the wolf (levels 1–3)
 
 | Design ID | Quest / beat | Status | Purpose and connection |
 |---|---|---|---|
-| ST-P-01 | Intro cinematic: Nazgrek and Shadowclaw | **Partial / current voice + legacy ODT evidence** | Establish the blood-refusal backstory, the bond with Shadowclaw, and Sereneglade as sanctuary without retelling Nazgrek's whole history. Preserve the patrol/Shadowclaw restraint, walk to the hut, and rabbit-hunt beats if current WE staging supports them. Refine the closing lines so Nazgrek notices that the forest and wolves are behaving incorrectly; the intro still ends through one shared normal/ESC hook into `qNazgrek_StartIntroQuestChain()`. |
-| ST-P-02 | Wolf Hunt I | **Implemented JASS; narrative line pass and WE intro-finish hook required** | Preserve the six kills, six Wolf Skin `I61F`, self-discovered structure, and automatic transition. Reframe the journal and brief field lines as an investigation of wolves ranging outside normal territory and attacking without ordinary hunting behavior. The quest remains the first player-control beat and does not gain another cinematic or quest giver. |
+| ST-P-01 | Intro cinematic: Nazgrek and Shadowclaw | **Partial / current voice + legacy ODT evidence** | Establish the blood-refusal backstory, the bond with Shadowclaw, and Sereneglade as sanctuary without retelling Nazgrek's whole history. Preserve the patrol/Shadowclaw restraint, walk to the hut, and rabbit-hunt beats if current WE staging supports them. The cinematic returns full player control with no Wolf Hunt quest visible. From the shared normal/ESC completion path, call `qNazgrek_StartIntroQuestChain()` to stage the attack event rather than accepting the quest directly. |
+| ST-P-01A | Timber Wolf ambush | **Planned `qNazgrek` opening event; rect confirmed by map author** | Create exactly two hostile Timber Wolves `nwlt` at `gg_rct_WolfAttack` and issue both an attack order targeting `udg_Nazgrek`. The start hook must be idempotent so the normal and ESC completion paths cannot duplicate the wolves. Once the wolves are created and their attack orders are issued, accept/discover Wolf Hunt I and play only a short field observation that their behavior is strange. Do not turn the ambush into another cinematic. |
+| ST-P-02 | Wolf Hunt I | **Implemented JASS; ambush activation and narrative line pass required** | Preserve the total objective of six wolf kills and six Wolf Skin `I61F`, the self-discovered structure, and automatic transition. The two ambush Timber Wolves count toward the six kills; add `nwlt` to the tracked wolf types and confirm that they can supply Wolf Skin through the current loot system. The first attack establishes that wolves are ranging aggressively and targeting Nazgrek without normal hunting behavior, turning the remaining hunt into an investigation rather than an unexplained cull. |
 | ST-P-03 | Nazgrek's Flask | **Implemented JASS; narrative line pass and runtime balance pending** | Preserve every recovered ingredient, the delayed Empty Flask requirement, the skill-0 recipe, and reusable `I61L`. Rewrite the start/reminder/completion framing so the flask is an inherited shamanic preparation that sharpens communion or protects Nazgrek from spiritual contamination. It prepares investigation of the Wolf Mother; it does not “guarantee” victory. |
 | ST-P-04 | Wolf Hunt II | **Planned; object/encounter and reveal work required** | Enter Wolf Den `12111`, confront Wolf Mother `n648`, and recover one unique trophy without expanding the prologue with another errand chain. Before or during the fight Nazgrek attempts to read her condition; after the fight he discovers she was affected by the disturbance rather than its source. Preserve the boss encounter even if the exact reveal uses a spirit echo, residue, or post-death examination. |
 | ST-P-05 | Wolf Hunt III | **Planned optional crafting epilogue** | Create a Shamanic Cowl from the unique trophy, retained six Wolf Skin `I61F`, two Light Leather `I6A6`, and one Thread `I66L`. Frame the cowl as respectful shamanic use and remembrance rather than a victory trinket. It remains skill-0, optional, and non-gating. Define the cowl/trophy rawcodes, confirm early material acquisition, and settle head versus pelt naming before implementation. |
@@ -313,7 +341,7 @@ Legacy intro beats worth retaining are Shadowclaw reacting defensively when the 
 
 Current self-discovered scope is limited to Wolf Hunt I–III and Nazgrek's Flask. No other Nazgrek-owned self-discovered quest is approved in this plan. The later elemental and ancestral shaman progression may contain spontaneous spirit encounters, but those class quests still need confirmed trainers/spirits, ability rewards, and rawcodes and should not be treated as additional prologue errands.
 
-### Parallel prologue — Zul'kis and the broken landing (levels 1–3)
+#### Act I-B — Zul'kis intro: the broken landing (levels 1–3)
 
 Zul'kis's separate playable opening begins only after Nazgrek completes Protect the Outpost. It ends before Nazgrek turns in Call of the Horde, so the two heroes first meet during that existing completion scene at Chieftain Thork. This parallel section is deliberately short and linear.
 
@@ -332,11 +360,11 @@ Zul'karak's post-rescue arc uses two phases. First he gives a short, non-gating 
 
 Use the witch doctor at `gg_rct_CorpseTroll03` as the dying survivor, so every visible arrival troll has a return-scene outcome and the sixth corpse appears naturally after the testimony. Move or hide `udg_Zulkarak` when the landing is destroyed, then relocate that same unit to captivity; never leave a shore copy behind, search for another `n65F`, or create a second brother for the rescue.
 
-### Act I — Earning a place (levels 3–10)
+#### Act I-C — Convergence and earning a place (levels 3–10)
 
 | Design ID | Quest / beat | Status | Purpose and connection |
 |---|---|---|---|
-| ST-A1-01 | Call of the Horde | **Implemented JASS with Zul'kis gate** | After both separate prologues, carry Ragno's blood-signed letter to Chieftain Thork. Its completion is the first Nazgrek/Zul'kis meeting and the point where shared gameplay begins; `qChieftainThork` now requires `qZulkis_IsPrologueCompleted()` before readiness, completion, or enabling Zul'kis. |
+| ST-A1-01 | Call of the Horde | **Implemented JASS with Zul'kis gate** | After both Act I intro sections, carry Ragno's blood-signed letter to Chieftain Thork. Its completion is the first Nazgrek/Zul'kis meeting and the point where shared gameplay begins; `qChieftainThork` now requires `qZulkis_IsPrologueCompleted()` before readiness, completion, or enabling Zul'kis. |
 | ST-A1-02 | Duty For The Horde | **Implemented JASS** | Thork requires the separately tracked completion of Granis's Punish and Garthork's The Magical Eye. It is the Act I spine, not a generic reputation grind. |
 | ST-A1-03 | Punish / Rol'jin's Head | **Implemented JASS** | Granis sends Nazgrek to kill the existing Rol'jin boss and return item `I600`; completion reports Granis's proof to Thork. |
 | ST-A1-04 | The Magical Eye | **Implemented JASS** | Garthork identifies Nazgrek's Thunderlord past, requests Mur'gal's eye `I601`, and reports the proof to Thork. The later spiritual-sight follow-up remains proposed. |
@@ -483,7 +511,7 @@ These are candidates, not promises. Before implementation, search the vendor REA
 | GQ-004 | Roots That Remember | Normal | New Twilight spirit tender | Twilight Grove ancient trees | Place wards or listen at roots; hints that beasts are reacting to distant corruption. |
 | GQ-005 | Predators in the Mist | Daily | Existing Grove sentinel | Twilight Grove wolf/bear areas | Rescue travelers or kill marked predators without targeting Shadowclaw's pack identity. |
 | GQ-006 | Twilight Samples | Repeatable | Existing herbalist | Twilight Grove | Gather non-unique samples used by Garthork/Jin'Zun research. |
-| GQ-017 | Wolf Hunt I–III | Normal + Story chain | Nazgrek (self-discovered) | Sereneglade / Wolf Den `12111` | Promoted into Nazgrek's prologue. Wolf Hunt I and the interposed Nazgrek's Flask quest are implemented in `qNazgrek`; Wolf Hunt II targets Wolf Mother `n648`, and optional Wolf Hunt III crafts the Shamanic Cowl once its trophy and recipe objects are defined. |
+| GQ-017 | Wolf Hunt I–III | Normal + Story chain | Nazgrek (self-discovered) | Sereneglade / `gg_rct_WolfAttack` / Wolf Den `12111` | Promoted into Act I-A, Nazgrek's intro. Wolf Hunt I is initially unavailable and undiscovered; after the intro returns control, two spawned Timber Wolves `nwlt` attack Nazgrek from `gg_rct_WolfAttack`, causing discovery. Wolf Hunt I and the interposed Nazgrek's Flask quest are implemented in `qNazgrek`; Wolf Hunt II targets Wolf Mother `n648`, and optional Wolf Hunt III crafts the Shamanic Cowl once its trophy and recipe objects are defined. |
 
 ### Thornwoods and Gnoll Hideout
 
@@ -609,7 +637,8 @@ Future qXXX libraries should expose explicit hooks rather than reading one anoth
 
 | Producer | Consumer | Required contract |
 |---|---|---|
-| Nazgrek intro cinematic | `qNazgrek` | Call `qNazgrek_StartIntroQuestChain()` when player control begins; do not start the quest during the opening fade/camera sequence. |
+| Nazgrek intro cinematic | `qNazgrek` | Return player control with Wolf Hunt I unavailable and undiscovered, then call `qNazgrek_StartIntroQuestChain()` from the shared normal/ESC completion path. The revised hook stages the attack; it does not directly reveal a quest before the event. |
+| `qNazgrek` intro hook | Wolf Hunt I | Idempotently create exactly two hostile Timber Wolves `nwlt` at `gg_rct_WolfAttack`, order both to attack `udg_Nazgrek`, then accept/discover Wolf Hunt I after the ambush has successfully begun. Both spawned wolves count toward the six-kill objective; verify their Wolf Skin `I61F` loot integration. |
 | Wolf Hunt I | Nazgrek's Flask | `qNazgrek` owns the automatic transition and preserves the six Wolf Skin for the later Shamanic Cowl. |
 | Nazgrek's Flask | Wolf Hunt II | Add a semantic flask-completion query/encounter gate; decide whether possession, consumption, or a temporary encounter effect overcomes Wolf Mother. |
 | Protect the Outpost | Zul'kis prologue | After Ragno's defense and letter award, fade out and transfer active control to Zul'kis without completing or consuming Call of the Horde. |
@@ -680,8 +709,8 @@ This is a planning map, not authorization to rewrite every listed file at once. 
 
 | Priority | Source owner | Planned change | Preserve / do not change |
 |---|---|---|---|
-| 1 | World Editor Nazgrek intro triggers (unexported), `Voicelines/Voicelines_Narrator.j`, `Voicelines/Voicelines_Nazgrek.j`, `Voicelines/Voicelines_OrcGrunt.j` | Export/inspect the active intro first. Tighten the opening exposition, retain the patrol/Shadowclaw restraint and hut/rabbit beats, seed unusual wolf behavior, and ensure normal and ESC completion both call `qNazgrek_StartIntroQuestChain()`. | Do not edit `_MISC/war3map.wts`; do not add another opening quest or a long cinematic. |
-| 1 | `QuestsAndDialogs/QuestGivers/Player/qNazgrek.j` | Refine Wolf Hunt I and Flask descriptions; add only short start, transition, flask-completion, den-entry, and Wolf Mother aftermath field beats needed for the mystery. Add Wolf Hunt II–III only after the trophy/cowl and encounter decisions are complete. | Preserve current objectives, ingredients, item rawcodes, delayed Empty Flask behavior, auto-completion, and public APIs. |
+| 1 | World Editor Nazgrek intro triggers (unexported), `Voicelines/Voicelines_Narrator.j`, `Voicelines/Voicelines_Nazgrek.j`, `Voicelines/Voicelines_OrcGrunt.j` | Export/inspect the active intro first. Tighten the opening exposition and retain the patrol/Shadowclaw restraint plus hut/rabbit beats. Ensure both normal and ESC completion restore player control with no Wolf Hunt quest, then call `qNazgrek_StartIntroQuestChain()` once to hand the opening event to `qNazgrek`. | Do not edit `_MISC/war3map.wts`; do not create the wolves independently in both WE paths; do not add another opening quest or cinematic. |
+| 1 | `QuestsAndDialogs/QuestGivers/Player/qNazgrek.j` | Change `qNazgrek_StartIntroQuestChain()` from direct quest acceptance into an idempotent ambush starter: create two hostile Timber Wolves `nwlt` at `gg_rct_WolfAttack`, order them to attack `udg_Nazgrek`, and only then accept/discover Wolf Hunt I. Track `nwlt`, retain the six-kill/six-skin totals, refine the hunt/Flask descriptions, and add only the short field beats needed for the mystery. | Preserve existing ingredient rawcodes, delayed Empty Flask behavior, automatic hunt-to-Flask transition, and existing public API name unless implementation finds a compatibility reason to add a clearer alias. |
 | 1 | Future Wolf Mother encounter owner, likely `qNazgrek.j` plus the existing boss/zone trigger selected after WE inspection | Make Wolf Mother the first reveal: apparent cause → affected victim → evidence of a wider disturbance. Define the reusable flask's clear but non-mandatory advantage and a post-encounter clue. | Preserve Wolf Mother `n648`, Wolf Den `12111`, and a playable boss fight; do not create a separate exposition quest. |
 | 2 | `QuestsAndDialogs/QuestGivers/Orcs/qRagno.j` | Add a minimal callback that Nazgrek defended lives by choice, and keep the blood-signed summons emotionally ambiguous. | Preserve Protect the Outpost encounter, letter handoff, Zul'kis fade, current follow-up prerequisites, and camera/ESC behavior. |
 | 2 | `QuestsAndDialogs/QuestGivers/Player/qZulkis.j` | Runtime-test only, then add no prologue material unless it seeds one recoverable inconsistency for the later false-flag investigation. Plan post-prologue Zul'kis/Zul'karak conversations in their later owning quest file. | Preserve the complete landing, massacre, rescue, temporary patrol, hero handoff, and convergence sequence. |
@@ -720,7 +749,7 @@ Voiceline work is intentionally selective. Keep stable keys where a line occupie
 
 ### Implementation sequence
 
-1. Export and inspect Nazgrek's active World Editor intro, approve the focused prologue text pass, then import and runtime-test `qNazgrek.j`, the shared normal/ESC Wolf Hunt I start hook, the skill-0 `I61L` recipe, delayed Empty Flask objective, and legacy GUI replacement. After the stable content works unchanged, add the Wolf Mother reveal plus unique trophy and Shamanic Cowl data needed for Wolf Hunt II–III.
+1. Export and inspect Nazgrek's active World Editor intro, approve the focused Act I-A text pass, then update and runtime-test `qNazgrek.j`: the shared normal/ESC path must return control with no quest, call one idempotent start hook, spawn exactly two hostile Timber Wolves `nwlt` at `gg_rct_WolfAttack`, order them to attack Nazgrek, and discover Wolf Hunt I only as the ambush begins. Verify both wolves count toward six kills and can supply Wolf Skin, then validate the skill-0 `I61L` recipe, delayed Empty Flask objective, and legacy GUI replacement. After that stable content works, add the Wolf Mother reveal plus unique trophy and Shamanic Cowl data needed for Wolf Hunt II–III.
 2. Import and runtime-test `qZulkis.j`, Bramblehide Village `701`, all camera/fade/ownership transitions, the removed intro ship, Thork selection redirect, shore corpse swap, Rescue the Brother, Nazgrek return, and Call of the Horde gate. Then design Zul'karak's Horde-base quest set before implementing his recruit unlock, simple berserker AI, and dismissal/home-return behavior.
 3. Runtime-validate the implemented second Mountain Defense as distinct from Protect the Outpost and keep their completion/failure state separate while adding the new prologue handoff.
 4. Finish Satyr Negotiations outcome state and one convergent follow-up per choice.

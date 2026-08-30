@@ -39,6 +39,7 @@
 
 ### Technical Updates
 
+- Updated `_developer/Design Plans/Story and Quest Design.md` to organize Act I into explicit Nazgrek intro, Zul'kis intro, and convergence sections, and planned Wolf Hunt I to remain undiscovered until two spawned Timber Wolves attack Nazgrek from `gg_rct_WolfAttack` after the intro returns player control.
 - Updated `_developer/Design Plans/Story and Quest Design.md` from the current story design guide with a preserve/refine/build boundary, a defined spiritual-disturbance spine, recurring clues, character and causal checkpoints, a source-file implementation plan, and a selective voiceline revision/addition plan centered on Nazgrek's existing prologue and early Horde content.
 - Updated `QuestsAndDialogs/QuestGivers/Orcs/qRagno.j` with scoped ESC ownership, safe entry-transition cancellation, normal choice-dialog exit cleanup, failed-greeting fallback, escape cleanup before Protect the Outpost interrupts an active interaction, and initialization recovery for its completed prerequisite chain.
 - Added `World/AmbientEvents/AmbientEvents.j` with reusable one-shot region-entry and ambient unit-type transmission helpers, and added `World/AmbientEvents/HordeUnitsRandomChat.j` to convert the three legacy Horde chat triggers with `Voicelines/Voicelines_OrcGrunt.j` keys and text; updated `QuestsAndDialogs/QuestGivers/Orcs/qRagno.j` and `_developer/Design Plans/Story and Quest Design.md` with the Protect the Outpost unlock contract.
