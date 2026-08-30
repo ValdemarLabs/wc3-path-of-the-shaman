@@ -2,7 +2,7 @@
     qZulkis
 
     Author: Valdemar
-    Version: 1.3.0
+    Version: 1.3.1
 
     Description:
 
@@ -949,13 +949,19 @@ private function PlayForestTrollBark takes nothing returns nothing
     if ForestTrollBarkSpeaker == null then
         return
     endif
-    set roll = GetRandomInt(1, 3)
+    set roll = GetRandomInt(1, 6)
     if roll == 1 then
         call DialogSystem_QueueFieldLine(ForestTrollBarkSpeaker, "Forest Troll", VL_FORESTTROLL_0001_KEY, VL_FORESTTROLL_0001_TEXT)
     elseif roll == 2 then
         call DialogSystem_QueueFieldLine(ForestTrollBarkSpeaker, "Forest Troll", VL_FORESTTROLL_0002_KEY, VL_FORESTTROLL_0002_TEXT)
-    else
+    elseif roll == 3 then
         call DialogSystem_QueueFieldLine(ForestTrollBarkSpeaker, "Forest Troll", VL_FORESTTROLL_0003_KEY, VL_FORESTTROLL_0003_TEXT)
+    elseif roll == 4 then
+        call DialogSystem_QueueFieldLine(ForestTrollBarkSpeaker, "Forest Troll", VL_FORESTTROLL_0004_KEY, VL_FORESTTROLL_0004_TEXT)
+    elseif roll == 5 then
+        call DialogSystem_QueueFieldLine(ForestTrollBarkSpeaker, "Forest Troll", VL_FORESTTROLL_0005_KEY, VL_FORESTTROLL_0005_TEXT)
+    else
+        call DialogSystem_QueueFieldLine(ForestTrollBarkSpeaker, "Forest Troll", VL_FORESTTROLL_0006_KEY, VL_FORESTTROLL_0006_TEXT)
     endif
     set ForestTrollBarkSpeaker = null
 endfunction
