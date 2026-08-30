@@ -2,7 +2,7 @@
     VoicelinesZulkis
 
     Author: Valdemar
-    Version: 1.1.2
+    Version: 1.1.3
 
     Description:
     Speaker-owned story and reusable generic quest voicelines for Zul'kis.
@@ -132,6 +132,8 @@ globals
     constant string VL_ZULKIS_0012_TEXT = "What happened here? Where be my brother? Tell me!"
     constant string VL_ZULKIS_0013_KEY = "Zulkis_0013"
     constant string VL_ZULKIS_0013_TEXT = "Zul'karak! Spirits preserve ya... Can ya stand?"
+    constant string VL_ZULKIS_0014_KEY = "Zulkis_0014"
+    constant string VL_ZULKIS_0014_TEXT = "Hail, Chieftain Thork. I be Zul'kis of da Darkspear."
 
     // Excel draft: Zulkis lines | Quest: Magical Eye | Event: Random discussion | Done: x
     constant string VL_ZULKIS_0044_KEY = "Zulkis_0044"
