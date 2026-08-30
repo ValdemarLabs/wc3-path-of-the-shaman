@@ -43,6 +43,7 @@
 - Reworked the rescue reunion with one new line from each brother and a more serious Zul'karak account that recognizes the attack was meant to kill every Darkspear at the shore.
 - Zul'kis now hails Chieftain Thork and introduces himself before their first conversation.
 - Returning from Zul'kis's prologue now reveals Nazgrek and Shadowclaw on the hill in a slow decision-scene camera pan. Nazgrek agrees to help only with Thork's urgent mission, voices his unease about clouded elemental visions, and resolves to refresh his neglected shamanic practice.
+- Expanded the Bramblehide forest-troll combat reactions with three additional angry lines about killing or driving out the outsiders.
 - Fixed Graknar's bag-trade dialogue becoming stuck without choices in fullscreen cinematic mode when leaving through Farewell, including after returning from trade; Kribugs now uses the same corrected custom-vendor exit.
 
 ### Technical Updates
@@ -74,12 +75,14 @@
 - Updated `QuestsAndDialogs/QuestGivers/Player/qZulkis.j` with Zul'kis's Thork introduction and a black-screen-staged Nazgrek return scene using `NazgrekOnHill` and the `NazgrekDecision1`-to-`NazgrekDecision2` camera pan.
 - Updated `Voicelines/Voicelines_Zulkis.j` and `Voicelines/Voicelines_Nazgrek.j` with the Thork greeting and Nazgrek's conditional-cooperation decision dialogue.
 - Updated `_developer/Design Plans/Story and Quest Design.md` with the implemented Nazgrek decision handoff and its role in preserving conditional Horde cooperation.
+- Updated `Voicelines/Voicelines_GenericTroll.j` and `QuestsAndDialogs/QuestGivers/Player/qZulkis.j` to expand the conditional Bramblehide bark pool from three lines to six.
 
 ### Imports
 
 - Generated FishAudio review MP3s for `Zulkis_0009` and `OrcGrunt_0167`–`0168`; the files remain under `tools/temp/fishaudio-review` pending listening and promotion to the master audio folder.
 - Generated 11 FishAudio review MP3s for `Zulkis_0010`–`0013`, `GenericTroll_0004`, `ForestTroll_0001`–`0003`, `Zulkarak_0003` and `0005`, and the revised `OrcGrunt_0167`; the files remain under `tools/temp/fishaudio-review` pending listening and promotion.
 - Generated five FishAudio review MP3s for `Zulkis_0014` and `Nazgrek_0385`–`0388`; the files remain under `tools/temp/fishaudio-review` pending listening and promotion.
+- Generated `ForestTroll_0004`–`0006` and regenerated `Zulkarak_0003`–`0004`, `OrcGrunt_0167`–`0168`, and `Zulkis_0012` as eight FishAudio review MP3s pending listening and promotion.
 
 ### Actions Remaining
 
