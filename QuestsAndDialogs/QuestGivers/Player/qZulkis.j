@@ -2,7 +2,7 @@
     qZulkis
 
     Author: Valdemar
-    Version: 1.1.5
+    Version: 1.1.6
 
     Description:
 
@@ -33,7 +33,7 @@
     qZulkis_IsPrologueCompleted() gates Call of the Horde convergence.
 
 **/
-library qZulkis initializer Init requires QuestGiver, QuestMaster, DialogInteraction, DialogSystem, CameraControl, DInventory, DEquipment, Start, VoicelinesNarrator, VoicelinesZulkis, VoicelinesThork, VoicelinesZulkarak, VoicelinesGenericTroll, optional Pet
+library qZulkis initializer Init requires QuestGiver, QuestMaster, DialogInteraction, DialogSystem, CameraControl, Companions, Death, HintsUI, DInventory, DEquipment, Start, VoicelinesNarrator, VoicelinesZulkis, VoicelinesThork, VoicelinesZulkarak, VoicelinesGenericTroll, VoicelinesOrcGrunt, optional Pet
     globals
         // Quest and staging configuration
         public constant string QUEST_MEET_CHIEFTAIN_THORK = "Meet with Chieftain Thork"
@@ -42,8 +42,12 @@ library qZulkis initializer Init requires QuestGiver, QuestMaster, DialogInterac
         private constant integer UNIT_DARKSPEAR_HEADHUNTER = 'ohun'
         private constant integer UNIT_DARKSPEAR_WITCH_DOCTOR = 'odoc'
         private constant integer UNIT_INTRO_SHIP = 'odes'
+        private constant integer UNIT_ORC_PATROL_GRUNT = 'o62Y'
         private constant integer DARKSPEAR_PLAYER_ID = 1
+        private constant integer COMPANION_PLAYER_ID = 18
         private constant integer ZULKIS_GRAVEYARD_ID = 2
+        private constant integer ORC_PATROL_SIZE = 4
+        private constant string ORC_PATROL_ICON = "ReplaceableTextures\\CommandButtons\\BTNGrunt.blp"
 
         private constant integer STATE_DORMANT = 0
         private constant integer STATE_SHIP_ARRIVAL = 1
@@ -77,6 +81,7 @@ library qZulkis initializer Init requires QuestGiver, QuestMaster, DialogInterac
         private unit Thork = null
         private unit IntroShip = null
         private unit array LandingTroll
+        private unit array OrcPatrolGrunt
         private effect array ShoreFire
         private QuestData MeetThorkQuest = 0
         private QuestData RescueBrotherQuest = 0
@@ -102,6 +107,8 @@ library qZulkis initializer Init requires QuestGiver, QuestMaster, DialogInterac
         private boolean ScenePlaying = false
         private boolean BrokenLandingStaged = false
         private boolean BrokenLandingViewStaged = false
+        private boolean OrcPatrolStaged = false
+        private boolean OrcPatrolActive = false
         private boolean InitWaitingLogged = false
     endglobals
 
@@ -459,8 +466,97 @@ private function StageBrokenLandingView takes nothing returns nothing
     call ApplyCameraSetupInstant(gg_cam_IntroZulkisCam4)
 endfunction
 
+private function PrepareOrcPatrol takes nothing returns nothing
+    local integer index = 1
+
+    loop
+        exitwhen index > ORC_PATROL_SIZE
+        if OrcPatrolGrunt[index] == null or GetUnitTypeId(OrcPatrolGrunt[index]) == 0 then
+            set OrcPatrolGrunt[index] = CreateUnit(Player(COMPANION_PLAYER_ID), UNIT_ORC_PATROL_GRUNT, GetUnitX(Zulkis), GetUnitY(Zulkis), bj_UNIT_FACING)
+        endif
+        call SetUnitCreepGuard(OrcPatrolGrunt[index], false)
+        call SetUnitInvulnerable(OrcPatrolGrunt[index], true)
+        call PauseUnit(OrcPatrolGrunt[index], true)
+        call ShowUnit(OrcPatrolGrunt[index], false)
+        set index = index + 1
+    endloop
+endfunction
+
+private function StageOrcPatrol takes nothing returns nothing
+    local integer index = 1
+    local real zulkisX
+    local real zulkisY
+    local real approachAngle
+    local real sideAngle
+    local real spawnDistance
+    local real targetDistance
+    local real sideOffset
+
+    if OrcPatrolStaged then
+        return
+    endif
+    call PrepareOrcPatrol()
+    set OrcPatrolStaged = true
+    set zulkisX = GetUnitX(Zulkis)
+    set zulkisY = GetUnitY(Zulkis)
+    set approachAngle = Atan2(GetUnitY(Thork) - zulkisY, GetUnitX(Thork) - zulkisX)
+    set sideAngle = approachAngle + bj_PI * 0.50
+
+    loop
+        exitwhen index > ORC_PATROL_SIZE
+        set spawnDistance = 800.00 + 55.00 * I2R(index - 1)
+        set targetDistance = 230.00 + 45.00 * I2R(index - 1)
+        set sideOffset = 90.00 * (I2R(index) - 2.50)
+        call SetUnitPosition(OrcPatrolGrunt[index], zulkisX + Cos(approachAngle) * spawnDistance + Cos(sideAngle) * sideOffset, zulkisY + Sin(approachAngle) * spawnDistance + Sin(sideAngle) * sideOffset)
+        call SetUnitFacing(OrcPatrolGrunt[index], approachAngle * bj_RADTODEG + 180.00)
+        call ShowUnit(OrcPatrolGrunt[index], true)
+        call PauseUnit(OrcPatrolGrunt[index], false)
+        call IssuePointOrder(OrcPatrolGrunt[index], "move", zulkisX + Cos(approachAngle) * targetDistance + Cos(sideAngle) * sideOffset, zulkisY + Sin(approachAngle) * targetDistance + Sin(sideAngle) * sideOffset)
+        set index = index + 1
+    endloop
+endfunction
+
+private function ActivateOrcPatrol takes nothing returns nothing
+    local integer index = 1
+
+    call StageOrcPatrol()
+    if OrcPatrolActive then
+        return
+    endif
+    set OrcPatrolActive = true
+    loop
+        exitwhen index > ORC_PATROL_SIZE
+        if OrcPatrolGrunt[index] != null and GetUnitTypeId(OrcPatrolGrunt[index]) != 0 then
+            call SetUnitInvulnerable(OrcPatrolGrunt[index], false)
+            call PauseUnit(OrcPatrolGrunt[index], false)
+            call Companions_Add(OrcPatrolGrunt[index], ORC_PATROL_ICON, Zulkis, COMPANION_MODE_NORMAL)
+        endif
+        set index = index + 1
+    endloop
+endfunction
+
+private function CleanupOrcPatrol takes nothing returns nothing
+    local integer index = 1
+
+    loop
+        exitwhen index > ORC_PATROL_SIZE
+        if OrcPatrolGrunt[index] != null then
+            if Death_IsFallen(OrcPatrolGrunt[index]) then
+                call Death_ReviveAt(OrcPatrolGrunt[index], GetUnitX(OrcPatrolGrunt[index]), GetUnitY(OrcPatrolGrunt[index]), 1.00, 0.00, false)
+            endif
+            call Companions_Remove(OrcPatrolGrunt[index])
+            call RemoveUnit(OrcPatrolGrunt[index])
+            set OrcPatrolGrunt[index] = null
+        endif
+        set index = index + 1
+    endloop
+    set OrcPatrolActive = false
+    set OrcPatrolStaged = false
+endfunction
+
 private function OnWoundedDeath takes nothing returns nothing
     call FinishWoundedTrollDeath(true)
+    call StageOrcPatrol()
 endfunction
 
 private function ScheduleWoundedDeath takes nothing returns nothing
@@ -480,6 +576,7 @@ private function FinishBrokenLanding takes nothing returns nothing
         call QuestGiver_SetRequirementCompleted(MeetThorkQuest.id, 2, true)
         call QuestGiver_CompleteQuest(MeetThorkQuest.id)
     endif
+    call ActivateOrcPatrol()
     call StartRescueBrotherQuest()
     call DialogInteraction_EndCinematicSequence(true)
     if skippedBeforeStaging then
@@ -489,6 +586,7 @@ private function FinishBrokenLanding takes nothing returns nothing
     call SelectUnitForPlayerSingle(Zulkis, Player(0))
     call ResumeGameplayCamera(Zulkis)
     set ScenePlaying = false
+    call HintsUI_PublishForUnit(HintsUI_HINT_ZULKIS_PATROL, Zulkis)
 endfunction
 
 private function OnBrokenLandingSequenceEnd takes nothing returns nothing
@@ -502,9 +600,11 @@ private function OnBrokenLandingSequenceStart takes nothing returns nothing
 endfunction
 
 private function PlayBrokenLandingSequence takes nothing returns nothing
-    local integer seq = DialogInteraction_CreateBaseSequence(LandingTroll[3], "Darkspear Witch Doctor")
+    local integer seq
     local integer deathLine
 
+    call PrepareOrcPatrol()
+    set seq = DialogInteraction_CreateBaseSequence(LandingTroll[3], "Darkspear Witch Doctor")
     set BrokenLandingViewStaged = false
     call DialogSystem_SetSequenceCallbacks(seq, function OnBrokenLandingSequenceStart, function OnBrokenLandingSequenceEnd)
     call DialogSystem_AddFadeTransition(seq, FADE_DURATION, FADE_DURATION, function StageBrokenLandingView)
@@ -513,6 +613,11 @@ private function PlayBrokenLandingSequence takes nothing returns nothing
     call DialogSystem_AddLine(seq, LandingTroll[3], "Darkspear Witch Doctor", VL_GENERICTROLL_0002_TEXT, VL_GENERICTROLL_0002_KEY, true)
     set deathLine = DialogSystem_AddLine(seq, LandingTroll[3], "Darkspear Witch Doctor", VL_GENERICTROLL_0003_TEXT, VL_GENERICTROLL_0003_KEY, true)
     call DialogSystem_BindLineAction(seq, deathLine, function ScheduleWoundedDeath)
+    call DialogSystem_AddDelay(seq, 0.75)
+    call DialogSystem_AddMakeFaceEachOther(seq, OrcPatrolGrunt[1], Zulkis, 0.75, 0.00)
+    call DialogSystem_AddLine(seq, OrcPatrolGrunt[1], "Orc Grunt", VL_ORCGRUNT_0167_TEXT, VL_ORCGRUNT_0167_KEY, true)
+    call DialogSystem_AddLine(seq, Zulkis, "Zul'kis", VL_ZULKIS_0009_TEXT, VL_ZULKIS_0009_KEY, true)
+    call DialogSystem_AddLine(seq, OrcPatrolGrunt[1], "Orc Grunt", VL_ORCGRUNT_0168_TEXT, VL_ORCGRUNT_0168_KEY, true)
     call DialogSystem_PlaySequence(seq, Player(0), LandingTroll[3])
 endfunction
 
@@ -526,6 +631,7 @@ private function CompletePrologue takes nothing returns nothing
     call RemoveIntroShip()
     call PauseTimer(WoundedBloodTimer)
     call PauseTimer(WoundedDeathTimer)
+    call CleanupOrcPatrol()
     call ResumeLandingCorpseDecay()
     call DialogSystem_ClearEscapeAction()
     set PrologueState = STATE_COMPLETE
