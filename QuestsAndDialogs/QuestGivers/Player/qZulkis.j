@@ -2,7 +2,7 @@
     qZulkis
 
     Author: Valdemar
-    Version: 1.1.7
+    Version: 1.2.0
 
     Description:
 
@@ -20,7 +20,8 @@
 
     Import after the listed quest, dialog, inventory, equipment, and
     voiceline libraries. Keep the confirmed IntroZulkis cameras and Zulkis,
-    CorpseTroll, Bramblehide, captive, and Horde-stage rects in World Editor.
+    CorpseTroll, Bramblehide, HavenwoodsShip, HavenwoodsOrcPatrol, captive,
+    and Horde-stage rects in World Editor.
     Disable the legacy elapsed-time corpse trigger. Call
     qZulkis_StartPrologue() after Protect the Outpost.
 
@@ -46,7 +47,9 @@ library qZulkis initializer Init requires QuestGiver, QuestMaster, DialogInterac
         private constant integer DARKSPEAR_PLAYER_ID = 1
         private constant integer COMPANION_PLAYER_ID = 18
         private constant integer ZULKIS_GRAVEYARD_ID = 2
+        private constant integer STARTING_HEADHUNTER_SIZE = 2
         private constant integer ORC_PATROL_SIZE = 4
+        private constant string STARTING_HEADHUNTER_ICON = "ReplaceableTextures\\CommandButtons\\BTNHeadHunterBerserker.blp"
         private constant string ORC_PATROL_ICON = "ReplaceableTextures\\CommandButtons\\BTNGrunt.blp"
 
         private constant integer STATE_DORMANT = 0
@@ -71,6 +74,10 @@ library qZulkis initializer Init requires QuestGiver, QuestMaster, DialogInterac
         private constant real WOUNDED_BLOOD_MIN_DELAY = 2.00
         private constant real WOUNDED_BLOOD_MAX_DELAY = 4.00
         private constant real WOUNDED_DEATH_DELAY = 1.50
+        private constant real DAMAGED_SHIP_LIFE_FACTOR = 0.35
+        private constant real FOREST_TROLL_BARK_MIN_DELAY = 8.00
+        private constant real FOREST_TROLL_BARK_MAX_DELAY = 15.00
+        private constant real FOREST_TROLL_BARK_RANGE = 900.00
         private constant string WOUNDED_BLOOD_EFFECT = "Objects\\Spawnmodels\\Orc\\OrcBlood\\OrcBloodGrunt.mdl"
         private constant boolean DEBUG = false
 
@@ -81,7 +88,9 @@ library qZulkis initializer Init requires QuestGiver, QuestMaster, DialogInterac
         private unit Thork = null
         private unit IntroShip = null
         private unit array LandingTroll
+        private unit array StartingHeadhunter
         private unit array OrcPatrolGrunt
+        private unit ForestTrollBarkSpeaker = null
         private effect array ShoreFire
         private QuestData MeetThorkQuest = 0
         private QuestData RescueBrotherQuest = 0
@@ -92,6 +101,8 @@ library qZulkis initializer Init requires QuestGiver, QuestMaster, DialogInterac
         private timer WoundedDeathTimer = null
         private integer PrologueState = STATE_DORMANT
         private real ShipTravelElapsed = 0.00
+        private real ForestTrollBarkElapsed = 0.00
+        private real ForestTrollNextBark = 0.00
         private real NazgrekSavedX = 0.00
         private real NazgrekSavedY = 0.00
         private real NazgrekSavedFacing = 0.00
@@ -218,6 +229,55 @@ private function StageLivingLandingParty takes nothing returns nothing
     call PrepareLivingTroll(6, UNIT_DARKSPEAR_HEADHUNTER, gg_rct_CorpseTroll06)
 endfunction
 
+private function PrepareStartingHeadhunters takes nothing returns nothing
+    local integer index = 1
+    local real angle
+
+    loop
+        exitwhen index > STARTING_HEADHUNTER_SIZE
+        if StartingHeadhunter[index] != null then
+            call RemoveUnit(StartingHeadhunter[index])
+        endif
+        set angle = GetUnitFacing(Zulkis) + 120.00 + 120.00 * I2R(index - 1)
+        set StartingHeadhunter[index] = CreateUnit(Player(COMPANION_PLAYER_ID), UNIT_DARKSPEAR_HEADHUNTER, GetUnitX(Zulkis) + 150.00 * Cos(angle * bj_DEGTORAD), GetUnitY(Zulkis) + 150.00 * Sin(angle * bj_DEGTORAD), angle + 180.00)
+        call SetUnitCreepGuard(StartingHeadhunter[index], false)
+        call SetUnitInvulnerable(StartingHeadhunter[index], true)
+        call PauseUnit(StartingHeadhunter[index], true)
+        set index = index + 1
+    endloop
+endfunction
+
+private function ActivateStartingHeadhunters takes nothing returns nothing
+    local integer index = 1
+
+    loop
+        exitwhen index > STARTING_HEADHUNTER_SIZE
+        if StartingHeadhunter[index] != null and GetUnitTypeId(StartingHeadhunter[index]) != 0 then
+            call SetUnitInvulnerable(StartingHeadhunter[index], false)
+            call PauseUnit(StartingHeadhunter[index], false)
+            call Companions_Add(StartingHeadhunter[index], STARTING_HEADHUNTER_ICON, Zulkis, COMPANION_MODE_NORMAL)
+        endif
+        set index = index + 1
+    endloop
+endfunction
+
+private function CleanupStartingHeadhunters takes nothing returns nothing
+    local integer index = 1
+
+    loop
+        exitwhen index > STARTING_HEADHUNTER_SIZE
+        if StartingHeadhunter[index] != null then
+            if Death_IsFallen(StartingHeadhunter[index]) then
+                call Death_ReviveAt(StartingHeadhunter[index], GetUnitX(StartingHeadhunter[index]), GetUnitY(StartingHeadhunter[index]), 1.00, 0.00, false)
+            endif
+            call Companions_Remove(StartingHeadhunter[index])
+            call RemoveUnit(StartingHeadhunter[index])
+            set StartingHeadhunter[index] = null
+        endif
+        set index = index + 1
+    endloop
+endfunction
+
 private function CreatePermanentCorpse takes integer index, integer unitTypeId, rect whichRect returns nothing
     local location corpsePoint = Location(GetRectCenterX(whichRect), GetRectCenterY(whichRect))
 
@@ -309,6 +369,7 @@ private function PlayOpeningNarratorSequence takes nothing returns nothing
 endfunction
 
 private function OnShoreIntroSequenceEnd takes nothing returns nothing
+    call ActivateStartingHeadhunters()
     call DialogInteraction_EndCinematicSequence(true)
     call PauseUnit(Zulkis, false)
     call SelectUnitForPlayerSingle(Zulkis, Player(0))
@@ -329,8 +390,9 @@ private function PlayShoreIntroSequence takes nothing returns nothing
 endfunction
 
 private function StageShoreIntro takes nothing returns nothing
-    call StageLivingLandingParty()
     call SetUnitPosition(Zulkis, GetRectCenterX(gg_rct_ZulkisStart), GetRectCenterY(gg_rct_ZulkisStart))
+    call StageLivingLandingParty()
+    call PrepareStartingHeadhunters()
     call ShowUnit(Zulkis, true)
     call PauseUnit(Zulkis, true)
     call SetUnitOwner(Zulkarak, Player(DARKSPEAR_PLAYER_ID), true)
@@ -408,6 +470,8 @@ private function StartRescueBrotherQuest takes nothing returns nothing
     endif
 
     set PrologueState = STATE_RESCUE_BROTHER
+    set ForestTrollBarkElapsed = 0.00
+    set ForestTrollNextBark = GetRandomReal(FOREST_TROLL_BARK_MIN_DELAY, FOREST_TROLL_BARK_MAX_DELAY)
     if RescueBrotherQuest.active then
         return
     endif
@@ -426,6 +490,25 @@ private function OnWoundedBlood takes nothing returns nothing
     set blood = null
 endfunction
 
+private function DamageShoreFrigate takes nothing returns nothing
+    local group shipGroup = CreateGroup()
+    local unit ship
+
+    call GroupEnumUnitsInRect(shipGroup, gg_rct_HavenwoodsShip, null)
+    loop
+        set ship = FirstOfGroup(shipGroup)
+        exitwhen ship == null
+        call GroupRemoveUnit(shipGroup, ship)
+        if GetUnitTypeId(ship) == UNIT_INTRO_SHIP then
+            call SetWidgetLife(ship, RMaxBJ(1.00, GetUnitState(ship, UNIT_STATE_MAX_LIFE) * DAMAGED_SHIP_LIFE_FACTOR))
+            exitwhen true
+        endif
+    endloop
+    call DestroyGroup(shipGroup)
+    set ship = null
+    set shipGroup = null
+endfunction
+
 private function StageBrokenLanding takes nothing returns nothing
     local real shipX = GetRectCenterX(gg_rct_ZulkisShipWP2)
     local real shipY = GetRectCenterY(gg_rct_ZulkisShipWP2)
@@ -434,6 +517,7 @@ private function StageBrokenLanding takes nothing returns nothing
         return
     endif
     set BrokenLandingStaged = true
+    call DamageShoreFrigate()
     call ReplaceLandingTrollWithCorpse(1, UNIT_DARKSPEAR_HEADHUNTER, gg_rct_CorpseTroll01)
     call ReplaceLandingTrollWithCorpse(2, UNIT_DARKSPEAR_HEADHUNTER, gg_rct_CorpseTroll02)
     call ReplaceLandingTrollWithCorpse(4, UNIT_DARKSPEAR_HEADHUNTER, gg_rct_CorpseTroll04)
@@ -469,11 +553,13 @@ endfunction
 
 private function PrepareOrcPatrol takes nothing returns nothing
     local integer index = 1
+    local real spawnX = GetRectCenterX(gg_rct_HavenwoodsOrcPatrol)
+    local real spawnY = GetRectCenterY(gg_rct_HavenwoodsOrcPatrol)
 
     loop
         exitwhen index > ORC_PATROL_SIZE
         if OrcPatrolGrunt[index] == null or GetUnitTypeId(OrcPatrolGrunt[index]) == 0 then
-            set OrcPatrolGrunt[index] = CreateUnit(Player(COMPANION_PLAYER_ID), UNIT_ORC_PATROL_GRUNT, GetUnitX(Zulkis), GetUnitY(Zulkis), bj_UNIT_FACING)
+            set OrcPatrolGrunt[index] = CreateUnit(Player(COMPANION_PLAYER_ID), UNIT_ORC_PATROL_GRUNT, spawnX, spawnY, bj_UNIT_FACING)
         endif
         call SetUnitCreepGuard(OrcPatrolGrunt[index], false)
         call SetUnitInvulnerable(OrcPatrolGrunt[index], true)
@@ -489,9 +575,10 @@ private function StageOrcPatrol takes nothing returns nothing
     local real zulkisY
     local real approachAngle
     local real sideAngle
-    local real spawnDistance
     local real targetDistance
     local real sideOffset
+    local real spawnX
+    local real spawnY
 
     if OrcPatrolStaged then
         return
@@ -500,19 +587,20 @@ private function StageOrcPatrol takes nothing returns nothing
     set OrcPatrolStaged = true
     set zulkisX = GetUnitX(Zulkis)
     set zulkisY = GetUnitY(Zulkis)
-    set approachAngle = Atan2(GetUnitY(Thork) - zulkisY, GetUnitX(Thork) - zulkisX)
+    set spawnX = GetRectCenterX(gg_rct_HavenwoodsOrcPatrol)
+    set spawnY = GetRectCenterY(gg_rct_HavenwoodsOrcPatrol)
+    set approachAngle = Atan2(zulkisY - spawnY, zulkisX - spawnX)
     set sideAngle = approachAngle + bj_PI * 0.50
 
     loop
         exitwhen index > ORC_PATROL_SIZE
-        set spawnDistance = 800.00 + 55.00 * I2R(index - 1)
         set targetDistance = 230.00 + 45.00 * I2R(index - 1)
         set sideOffset = 90.00 * (I2R(index) - 2.50)
-        call SetUnitPosition(OrcPatrolGrunt[index], zulkisX + Cos(approachAngle) * spawnDistance + Cos(sideAngle) * sideOffset, zulkisY + Sin(approachAngle) * spawnDistance + Sin(sideAngle) * sideOffset)
-        call SetUnitFacing(OrcPatrolGrunt[index], approachAngle * bj_RADTODEG + 180.00)
+        call SetUnitPosition(OrcPatrolGrunt[index], spawnX + Cos(sideAngle) * sideOffset, spawnY + Sin(sideAngle) * sideOffset)
+        call SetUnitFacing(OrcPatrolGrunt[index], approachAngle * bj_RADTODEG)
         call ShowUnit(OrcPatrolGrunt[index], true)
         call PauseUnit(OrcPatrolGrunt[index], false)
-        call IssuePointOrder(OrcPatrolGrunt[index], "move", zulkisX + Cos(approachAngle) * targetDistance + Cos(sideAngle) * sideOffset, zulkisY + Sin(approachAngle) * targetDistance + Sin(sideAngle) * sideOffset)
+        call IssuePointOrder(OrcPatrolGrunt[index], "move", zulkisX - Cos(approachAngle) * targetDistance + Cos(sideAngle) * sideOffset, zulkisY - Sin(approachAngle) * targetDistance + Sin(sideAngle) * sideOffset)
         set index = index + 1
     endloop
 endfunction
@@ -564,6 +652,16 @@ private function ScheduleWoundedDeath takes nothing returns nothing
     call TimerStart(WoundedDeathTimer, WOUNDED_DEATH_DELAY, false, function OnWoundedDeath)
 endfunction
 
+private function MoveZulkisBesideWounded takes nothing returns nothing
+    local real angle
+
+    if Zulkis == null or LandingTroll[3] == null then
+        return
+    endif
+    set angle = Atan2(GetUnitY(Zulkis) - GetUnitY(LandingTroll[3]), GetUnitX(Zulkis) - GetUnitX(LandingTroll[3]))
+    call IssuePointOrder(Zulkis, "move", GetUnitX(LandingTroll[3]) + 110.00 * Cos(angle), GetUnitY(LandingTroll[3]) + 110.00 * Sin(angle))
+endfunction
+
 private function FinishBrokenLanding takes nothing returns nothing
     local boolean skippedBeforeStaging = not BrokenLandingViewStaged
 
@@ -603,6 +701,7 @@ endfunction
 private function PlayBrokenLandingSequence takes nothing returns nothing
     local integer seq
     local integer deathLine
+    local integer woundedCallLine
 
     call PrepareOrcPatrol()
     set seq = DialogInteraction_CreateBaseSequence(LandingTroll[3], "Darkspear Witch Doctor")
@@ -610,6 +709,15 @@ private function PlayBrokenLandingSequence takes nothing returns nothing
     call DialogSystem_SetSequenceCallbacks(seq, function OnBrokenLandingSequenceStart, function OnBrokenLandingSequenceEnd)
     call DialogSystem_AddFadeTransition(seq, FADE_DURATION, FADE_DURATION, function StageBrokenLandingView)
     call DialogSystem_AddDelay(seq, 0.50)
+    call DialogSystem_AddLookAtUnit(seq, Zulkis, LandingTroll[1], 0.35)
+    call DialogSystem_AddLine(seq, Zulkis, "Zul'kis", VL_ZULKIS_0010_TEXT, VL_ZULKIS_0010_KEY, true)
+    call DialogSystem_AddLookAtUnit(seq, Zulkis, LandingTroll[5], 0.35)
+    call DialogSystem_AddLine(seq, Zulkis, "Zul'kis", VL_ZULKIS_0011_TEXT, VL_ZULKIS_0011_KEY, true)
+    set woundedCallLine = DialogSystem_AddLine(seq, LandingTroll[3], "Darkspear Witch Doctor", VL_GENERICTROLL_0004_TEXT, VL_GENERICTROLL_0004_KEY, true)
+    call DialogSystem_BindLineAction(seq, woundedCallLine, function MoveZulkisBesideWounded)
+    call DialogSystem_AddDelay(seq, 0.75)
+    call DialogSystem_AddMakeFaceEachOther(seq, Zulkis, LandingTroll[3], 0.50, 0.00)
+    call DialogSystem_AddLine(seq, Zulkis, "Zul'kis", VL_ZULKIS_0012_TEXT, VL_ZULKIS_0012_KEY, true)
     call DialogSystem_AddLine(seq, LandingTroll[3], "Darkspear Witch Doctor", VL_GENERICTROLL_0001_TEXT, VL_GENERICTROLL_0001_KEY, true)
     call DialogSystem_AddLine(seq, LandingTroll[3], "Darkspear Witch Doctor", VL_GENERICTROLL_0002_TEXT, VL_GENERICTROLL_0002_KEY, true)
     set deathLine = DialogSystem_AddLine(seq, LandingTroll[3], "Darkspear Witch Doctor", VL_GENERICTROLL_0003_TEXT, VL_GENERICTROLL_0003_KEY, true)
@@ -632,6 +740,7 @@ private function CompletePrologue takes nothing returns nothing
     call RemoveIntroShip()
     call PauseTimer(WoundedBloodTimer)
     call PauseTimer(WoundedDeathTimer)
+    call CleanupStartingHeadhunters()
     call CleanupOrcPatrol()
     call ResumeLandingCorpseDecay()
     call DialogSystem_ClearEscapeAction()
@@ -693,12 +802,87 @@ private function PlayRescueSequence takes nothing returns nothing
 
     call DialogSystem_SetSequenceCallbacks(seq, function OnRescueSequenceStart, function OnRescueSequenceEnd)
     call DialogSystem_AddMakeFaceEachOther(seq, Zulkarak, Zulkis, 0.75, 0.00)
+    call DialogSystem_AddLine(seq, Zulkis, "Zul'kis", VL_ZULKIS_0013_TEXT, VL_ZULKIS_0013_KEY, true)
+    call DialogSystem_AddLine(seq, Zulkarak, "Zul'karak", VL_ZULKARAK_0005_TEXT, VL_ZULKARAK_0005_KEY, true)
     call DialogSystem_AddLine(seq, Zulkarak, "Zul'karak", VL_ZULKARAK_0003_TEXT, VL_ZULKARAK_0003_KEY, true)
     call DialogSystem_AddLine(seq, Zulkis, "Zul'kis", VL_ZULKIS_0007_TEXT, VL_ZULKIS_0007_KEY, true)
     call DialogSystem_AddLine(seq, Zulkarak, "Zul'karak", VL_ZULKARAK_0004_TEXT, VL_ZULKARAK_0004_KEY, true)
     call DialogSystem_AddLine(seq, Zulkis, "Zul'kis", VL_ZULKIS_0008_TEXT, VL_ZULKIS_0008_KEY, true)
     call DialogSystem_AddFadeOut(seq, FADE_DURATION)
     call DialogSystem_PlaySequence(seq, Player(0), Zulkarak)
+endfunction
+
+private function HasLivingOrcPatrolCompanion takes nothing returns boolean
+    local integer index = 1
+
+    loop
+        exitwhen index > ORC_PATROL_SIZE
+        if OrcPatrolGrunt[index] != null and GetUnitTypeId(OrcPatrolGrunt[index]) != 0 and GetWidgetLife(OrcPatrolGrunt[index]) > 0.405 and not Death_IsFallen(OrcPatrolGrunt[index]) and udg_Companion_Group != null and IsUnitInGroup(OrcPatrolGrunt[index], udg_Companion_Group) then
+            return true
+        endif
+        set index = index + 1
+    endloop
+    return false
+endfunction
+
+private function IsForestTrollType takes integer unitTypeId returns boolean
+    return unitTypeId == 'nftr' or unitTypeId == 'nftt' or unitTypeId == 'nftb' or unitTypeId == 'nfsp' or unitTypeId == 'nftk' or unitTypeId == 'n001'
+endfunction
+
+private function SelectRandomForestTrollBarkSpeaker takes nothing returns nothing
+    local group villageUnits = CreateGroup()
+    local unit candidate
+    local integer candidateCount = 0
+
+    set ForestTrollBarkSpeaker = null
+    call GroupEnumUnitsInRect(villageUnits, gg_rct_BramblehideVillage, null)
+    loop
+        set candidate = FirstOfGroup(villageUnits)
+        exitwhen candidate == null
+        call GroupRemoveUnit(villageUnits, candidate)
+        if IsForestTrollType(GetUnitTypeId(candidate)) and GetWidgetLife(candidate) > 0.405 and not IsUnitType(candidate, UNIT_TYPE_HERO) and not IsUnitType(candidate, UNIT_TYPE_STRUCTURE) and IsUnitEnemy(candidate, Player(0)) and IsUnitVisible(candidate, Player(0)) and IsUnitNearUnit(candidate, Zulkis, FOREST_TROLL_BARK_RANGE) then
+            set candidateCount = candidateCount + 1
+            if GetRandomInt(1, candidateCount) == 1 then
+                set ForestTrollBarkSpeaker = candidate
+            endif
+        endif
+    endloop
+    call DestroyGroup(villageUnits)
+    set candidate = null
+    set villageUnits = null
+endfunction
+
+private function PlayForestTrollBark takes nothing returns nothing
+    local integer roll
+
+    if DialogSystem_IsFieldLineQueueActive() then
+        return
+    endif
+    call SelectRandomForestTrollBarkSpeaker()
+    if ForestTrollBarkSpeaker == null then
+        return
+    endif
+    set roll = GetRandomInt(1, 3)
+    if roll == 1 then
+        call DialogSystem_QueueFieldLine(ForestTrollBarkSpeaker, "Forest Troll", VL_FORESTTROLL_0001_KEY, VL_FORESTTROLL_0001_TEXT)
+    elseif roll == 2 then
+        call DialogSystem_QueueFieldLine(ForestTrollBarkSpeaker, "Forest Troll", VL_FORESTTROLL_0002_KEY, VL_FORESTTROLL_0002_TEXT)
+    else
+        call DialogSystem_QueueFieldLine(ForestTrollBarkSpeaker, "Forest Troll", VL_FORESTTROLL_0003_KEY, VL_FORESTTROLL_0003_TEXT)
+    endif
+    set ForestTrollBarkSpeaker = null
+endfunction
+
+private function UpdateForestTrollBarks takes nothing returns nothing
+    if not RectContainsUnit(gg_rct_BramblehideVillage, Zulkis) or not HasLivingOrcPatrolCompanion() then
+        return
+    endif
+    set ForestTrollBarkElapsed = ForestTrollBarkElapsed + PROGRESS_PERIOD
+    if ForestTrollBarkElapsed >= ForestTrollNextBark then
+        set ForestTrollBarkElapsed = 0.00
+        set ForestTrollNextBark = GetRandomReal(FOREST_TROLL_BARK_MIN_DELAY, FOREST_TROLL_BARK_MAX_DELAY)
+        call PlayForestTrollBark()
+    endif
 endfunction
 
 private function OnProgress takes nothing returns nothing
@@ -718,9 +902,14 @@ private function OnProgress takes nothing returns nothing
             set ScenePlaying = true
             call PlayBrokenLandingSequence()
         endif
-    elseif PrologueState == STATE_RESCUE_BROTHER and not ScenePlaying and RectContainsUnit(gg_rct_BramblehideVillage, Zulkis) and IsUnitNearUnit(Zulkis, Zulkarak, ZULKARAK_RESCUE_RANGE) then
-        set ScenePlaying = true
-        call PlayRescueSequence()
+    elseif PrologueState == STATE_RESCUE_BROTHER then
+        if not ScenePlaying then
+            call UpdateForestTrollBarks()
+            if RectContainsUnit(gg_rct_BramblehideVillage, Zulkis) and IsUnitNearUnit(Zulkis, Zulkarak, ZULKARAK_RESCUE_RANGE) then
+                set ScenePlaying = true
+                call PlayRescueSequence()
+            endif
+        endif
     endif
 endfunction
 
