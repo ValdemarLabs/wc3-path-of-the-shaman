@@ -75,18 +75,13 @@ library VendorCatalogs initializer Init requires Shop, VendorLines, VoicelinesVe
     endfunction
 
     private function AddStock takes integer catalogType, integer itemTypeId, integer price, string category returns integer
-        if itemTypeId == 'I6C7' or itemTypeId == 'I6C8' or itemTypeId == 'I6C5' or itemTypeId == 'I6C6' then
-            return 0
-        endif
         return Shop_AddStock(VC_VendorId[catalogType], itemTypeId, price, category)
     endfunction
 
     private function AddZoneStock takes integer catalogType, integer itemTypeId, integer price, string category, integer zoneId returns nothing
         local integer stockId = AddStock(catalogType, itemTypeId, price, category)
 
-        if stockId > 0 then
-            call Shop_SetStockZone(stockId, zoneId, true)
-        endif
+        call Shop_SetStockZone(stockId, zoneId, true)
     endfunction
 
     private function RegisterVendorName takes integer unitTypeId, string displayName returns nothing

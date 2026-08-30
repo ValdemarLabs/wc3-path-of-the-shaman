@@ -1229,7 +1229,7 @@ namespace WC3ItemManager
                             dgvItems.Columns["hotkey"].Visible = false;
                             dgvItems.Columns["wc3_abilities"].Visible = false;
                             dgvItems.Columns["wc3_classification"].Visible = false;
-                            dgvItems.Columns["specific_drop_only"].HeaderText = "Ignore Loot";
+                            dgvItems.Columns["specific_drop_only"].HeaderText = "Specific Only";
 
                             // Apply saved column widths or defaults
                             ApplyColumnWidth("item_code", 80);

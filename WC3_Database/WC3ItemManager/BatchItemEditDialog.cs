@@ -292,8 +292,8 @@ namespace WC3ItemManager
             AddEditorRow(contentPanel, chkApplyDroppedOnDeath, "Dropped On Death:", chkDroppedOnDeath, ref y);
 
             chkApplySpecificDropOnly = CreateApplyCheckBox();
-            chkSpecificDropOnly = CreateValueCheckBox("Ignore Loot Tables");
-            AddEditorRow(contentPanel, chkApplySpecificDropOnly, "Ignore Loot Tables:", chkSpecificDropOnly, ref y);
+            chkSpecificDropOnly = CreateValueCheckBox("Specific Drops Only");
+            AddEditorRow(contentPanel, chkApplySpecificDropOnly, "Specific Drops Only:", chkSpecificDropOnly, ref y);
         }
 
         private CheckBox CreateApplyCheckBox()

@@ -111,7 +111,6 @@ namespace WC3ItemManager.Repositories
                     JOIN items i ON usd.item_code = i.item_code
                     LEFT JOIN item_rarities r ON i.rarity_id = r.id
                     WHERE usd.enabled = true
-                      AND COALESCE(i.specific_drop_only, false) = false
                     ORDER BY usd.unit_code, usd.is_guaranteed DESC, usd.drop_chance DESC", conn))
                 {
                     using (var reader = cmd.ExecuteReader())

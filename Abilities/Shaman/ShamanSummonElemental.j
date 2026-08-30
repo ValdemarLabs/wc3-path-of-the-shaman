@@ -15,11 +15,10 @@
 
     How to install:
     Requires `Table`, `Events`, `UnitDeathEvent`, `Companions`, and
-    `ShamanCommon`. Import `ItemLootSystem` to suppress loot from summoned
-    elementals.
+    `ShamanCommon`.
 
 **/
-library ShamanSummonElemental initializer Init requires Table, Events, UnitDeathEvent, Companions, ShamanCommon, optional ItemLootSystem
+library ShamanSummonElemental initializer Init requires Table, Events, UnitDeathEvent, Companions, ShamanCommon
 
 globals
     private constant real SUMMON_DELAY = 3.00
@@ -376,9 +375,6 @@ private function SpawnPendingElemental takes nothing returns nothing
         set x = ShamanCommon_PolarX(GetUnitX(hero), SUMMON_OFFSET, GetUnitFacing(hero))
         set y = ShamanCommon_PolarY(GetUnitY(hero), SUMMON_OFFSET, GetUnitFacing(hero))
         set elemental = CreateUnit(GetOwningPlayer(hero), unitTypeId, x, y, GetUnitFacing(hero))
-        static if LIBRARY_ItemLootSystem then
-            call ItemLoot_RegisterExcludedUnit(elemental)
-        endif
         call SetUnitOwner(elemental, Player(ShamanCommon_COMPANION_OWNER_PLAYER_INDEX), false)
         call ApplyElementalTalent(hero, elemental, unitTypeId, summonRank)
         set ElementalBySlot.unit[heroSlot] = elemental

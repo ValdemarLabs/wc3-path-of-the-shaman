@@ -417,7 +417,7 @@ namespace WC3ItemManager
                 { "hotkey", "Hotkey" },
                 { "wc3_abilities", "WC3 Abilities" },
                 { "wc3_classification", "WC3 Classification" },
-                { "specific_drop_only", "Ignore Loot Tables" }
+                { "specific_drop_only", "Specific Drops Only" }
             };
             
             return mapping.ContainsKey(columnName) ? mapping[columnName] : columnName;
@@ -446,6 +446,7 @@ namespace WC3ItemManager
                 { "Hotkey", "hotkey" },
                 { "WC3 Abilities", "wc3_abilities" },
                 { "WC3 Classification", "wc3_classification" },
+                { "Specific Drops Only", "specific_drop_only" },
                 { "Ignore Loot Tables", "specific_drop_only" }
             };
             

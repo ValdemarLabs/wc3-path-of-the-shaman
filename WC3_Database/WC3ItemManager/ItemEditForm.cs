@@ -1096,7 +1096,7 @@ namespace WC3ItemManager
 
             chkSpecificDropOnly = new CheckBox 
             { 
-                Text = "Ignore Loot Tables",
+                Text = "Specific Drops Only",
                 Location = new Point(labelX, y), 
                 AutoSize = true,
                 ForeColor = Color.Orange
