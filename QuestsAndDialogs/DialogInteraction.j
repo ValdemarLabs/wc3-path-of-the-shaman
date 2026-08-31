@@ -2,7 +2,7 @@
     DialogInteraction
 
     Author: Valdemar
-    Version: 1.2.2
+    Version: 1.3.0
 
     Description:
     Generic selectable-NPC dialog interaction layer. This owns NPC selection
@@ -25,6 +25,8 @@
     - call DialogInteraction_RegisterAnySelectionHandler(function OnAnySelected)
     - call DialogInteraction_ConfigureDialogTransition(...)
     - call DialogInteraction_StartConfiguredDialogEntryTransition(...)
+    Configured interactions install a default ESC action that advances entry,
+    skips exit, or closes visible choices unless the caller supplied its own.
     - call DialogInteraction_CancelActiveTransition()
     - call DialogInteraction_AbortActiveTransition()
     - call DialogInteraction_PlayGreetSequenceEx(...)
@@ -80,6 +82,8 @@ library DialogInteraction initializer Init requires Table, DialogSystem, CameraC
         private boolean TransitionCameraBlockCheck = false
         private string TransitionContinueFuncName = ""
         private timer TransitionTimer = null
+        private boolean TransitionEntryActive = false
+        private boolean TransitionEntryStaged = false
 
         private constant real DIALOGINTERACTION_COMBAT_CHECK_INTERVAL = 0.10
         private trigger DialogInteraction_CombatAttackTrigger = null
@@ -870,6 +874,12 @@ library DialogInteraction initializer Init requires Table, DialogSystem, CameraC
         set TransitionCameraBlockRadius = 0.00
         set TransitionCameraBlockCheck = false
         set TransitionContinueFuncName = ""
+        set TransitionEntryActive = false
+        set TransitionEntryStaged = false
+    endfunction
+
+    private function RunDefaultEscapeProxy takes nothing returns nothing
+        call ExecuteFunc("DialogInteraction_RunDefaultEscape")
     endfunction
 
     private function StopTransitionTimer takes nothing returns nothing
@@ -941,6 +951,7 @@ library DialogInteraction initializer Init requires Table, DialogSystem, CameraC
             call SelectUnitForPlayerSingle(TransitionHero, Player(0))
         endif
 
+        call DialogSystem_ClearEscapeAction()
         call ClearTransitionState()
         call DestroyTimer(t)
         set t = null
@@ -973,6 +984,12 @@ library DialogInteraction initializer Init requires Table, DialogSystem, CameraC
         set TransitionUseCamera = useCamera
         set TransitionRunCinematicTrigger = runCinematicTrigger
         set TransitionUseCinematicMode = useCinematicMode
+        set TransitionEntryActive = false
+        set TransitionEntryStaged = false
+
+        if not DialogSystem_HasEscapeAction() then
+            call DialogSystem_SetEscapeAction(function RunDefaultEscapeProxy)
+        endif
 
         call CinematicFadeBJ(bj_CINEFADETYPE_FADEOUT, 1.0, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
         set TransitionTimer = t
@@ -994,6 +1011,8 @@ library DialogInteraction initializer Init requires Table, DialogSystem, CameraC
         call DestroyTimer(t)
         set t = null
         set TransitionContinueFuncName = ""
+        set TransitionEntryActive = false
+        set TransitionEntryStaged = false
         if continueFuncName != "" then
             call ExecuteFunc(continueFuncName)
         endif
@@ -1020,19 +1039,20 @@ library DialogInteraction initializer Init requires Table, DialogSystem, CameraC
         return false
     endfunction
 
-    private function ContinueDialogEntryTransition takes nothing returns nothing
-        local timer t = GetExpiredTimer()
+    private function ApplyDialogEntryStage takes nothing returns nothing
         local location p1
         local location p2
         local unit hero = TransitionHero
         local real x
         local real y
 
-        if t == TransitionTimer then
-            set TransitionTimer = null
+        if TransitionEntryStaged then
+            set p1 = null
+            set p2 = null
+            set hero = null
+            return
         endif
-        call DestroyTimer(t)
-        set t = null
+        set TransitionEntryStaged = true
 
         if hero == null then
             set hero = TransitionGiver
@@ -1067,10 +1087,22 @@ library DialogInteraction initializer Init requires Table, DialogSystem, CameraC
             call DialogSystem_StartDialogCamera(Player(0), TransitionGiver, TransitionCameraDist, TransitionCameraZOffset, TransitionCameraAngle, TransitionCameraRotOffset, TransitionCameraFarZ, TransitionCameraFov, TransitionCameraBlockRadius, TransitionCameraBlockCheck, TransitionUseCamera)
         endif
 
-        call FinishDialogEntryTransition()
         set p1 = null
         set p2 = null
         set hero = null
+    endfunction
+
+    private function ContinueDialogEntryTransition takes nothing returns nothing
+        local timer t = GetExpiredTimer()
+
+        if t == TransitionTimer then
+            set TransitionTimer = null
+        endif
+        call DestroyTimer(t)
+        set t = null
+
+        call ApplyDialogEntryStage()
+        call FinishDialogEntryTransition()
     endfunction
 
     public function StartDialogEntryTransition takes unit npc, unit hero, integer moveMode, real moveOffset, real moveAngle, boolean runCinematicTrigger, boolean useCamera, real cameraDist, real cameraZOffset, real cameraAngle, real cameraRotOffset, real cameraFarZ, real cameraFov, real cameraBlockRadius, boolean cameraBlockCheck, boolean useCinematicMode, string continueFuncName returns nothing
@@ -1094,6 +1126,12 @@ library DialogInteraction initializer Init requires Table, DialogSystem, CameraC
         set TransitionCameraBlockCheck = cameraBlockCheck
         set TransitionUseCinematicMode = useCinematicMode
         set TransitionContinueFuncName = continueFuncName
+        set TransitionEntryActive = true
+        set TransitionEntryStaged = false
+
+        if not DialogSystem_HasEscapeAction() then
+            call DialogSystem_SetEscapeAction(function RunDefaultEscapeProxy)
+        endif
 
         if hero != null then
             call CameraControl_SetTargetUnit(Player(0), hero)
@@ -1235,6 +1273,62 @@ library DialogInteraction initializer Init requires Table, DialogSystem, CameraC
             call DestroyTrigger(handler)
         endif
         set handler = null
+    endfunction
+
+    private function FinishConfiguredInteractionImmediately takes nothing returns nothing
+        local unit hero = TransitionHero
+
+        call StopTransitionTimer()
+        call CloseActiveDialog()
+        call EndCombatSensitiveInteraction()
+        if TransitionCooldownTimer != null and TransitionCooldownDuration > 0.00 then
+            call StartCooldown(TransitionCooldownTimer, TransitionCooldownDuration)
+        endif
+        if TransitionUseCamera then
+            call DialogSystem_StopDialogCamera(Player(0), 0.00, true)
+        endif
+        if TransitionRunCinematicTrigger then
+            call TriggerExecute(gg_trg_Cinematic_OFF)
+        endif
+        if TransitionUseCinematicMode then
+            call FullscreenUI_SetEnabled(false)
+        endif
+        if TransitionRunCinematicTrigger or TransitionUseCinematicMode then
+            call ExecuteFunc("MasterUI_ShowGameButton")
+        endif
+        call EnableUserControl(true)
+        if FallenHeroState_IsAlive(hero) then
+            call ShowUnit(hero, true)
+            call PauseUnit(hero, false)
+            call CameraControl_SetTargetUnit(Player(0), hero)
+            call SelectUnitForPlayerSingle(hero, Player(0))
+        endif
+
+        call ClearPendingDialogState()
+        call DialogSystem_ClearEscapeAction()
+        call ClearTransitionState()
+        set hero = null
+    endfunction
+
+    public function RunDefaultEscape takes nothing returns nothing
+        local string continueFuncName
+
+        if TransitionEntryActive then
+            set continueFuncName = TransitionContinueFuncName
+            call StopTransitionTimer()
+            call ApplyDialogEntryStage()
+            call CinematicFadeBJ(bj_CINEFADETYPE_FADEIN, 0.00, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
+            set TransitionContinueFuncName = ""
+            set TransitionEntryActive = false
+            if continueFuncName != "" then
+                call ExecuteFunc(continueFuncName)
+            endif
+            return
+        endif
+
+        if TransitionTimer != null or DialogSystem_IsDialogVisible() then
+            call FinishConfiguredInteractionImmediately()
+        endif
     endfunction
 
     private function InterruptCombatSensitiveInteraction takes nothing returns nothing

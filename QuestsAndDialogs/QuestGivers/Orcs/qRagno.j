@@ -2,7 +2,7 @@
     qRagno
 
     Author: Valdemar
-    Version: 1.1.6
+    Version: 1.1.8
 
     Description:
     Implements Ragno's quest dialogue, daily outpost tasks, Protect the
@@ -157,7 +157,6 @@ globals
     private boolean LumberPeonHarvestOrderPending = false
     private boolean LumberPeonHarvesting = false
     private boolean RagnoGreeted = false
-    private boolean RagnoDialogEntryPending = false
     private boolean RagnoInitWaitingLogged = false
 endglobals
 
@@ -193,7 +192,6 @@ private function ResolveDialogHero takes nothing returns unit
 endfunction
 
 private function StartExitFadeOut takes nothing returns nothing
-    set RagnoDialogEntryPending = false
     call DialogSystem_ClearEscapeAction()
     call DialogInteraction_StartConfiguredDialogExitTransition(Ragno, SelectedHero, RagnoDialogCooldown, DIALOG_COOLDOWN, USE_DIALOG_CAMERA, CINEMATIC)
 endfunction
@@ -201,12 +199,6 @@ endfunction
 private function OnRagnoEscape takes nothing returns nothing
     call DialogSystem_ClearEscapeAction()
     call DialogInteraction_CloseActiveDialog()
-    if RagnoDialogEntryPending then
-        set RagnoDialogEntryPending = false
-        call DialogInteraction_AbortActiveTransition()
-        set RagnoDialogCooldown = DialogInteraction_StartCooldown(RagnoDialogCooldown, DIALOG_COOLDOWN)
-        return
-    endif
     call StartExitFadeOut()
 endfunction
 
@@ -336,12 +328,39 @@ private function IsRagnoDialogEnabled takes nothing returns boolean
     return not MountainDefenseActive
 endfunction
 
+private function RestorePostOutpostQuestAvailability takes string questName returns nothing
+    local QuestData q = GetRagnoQuest(questName)
+
+    if q != 0 and (ProtectOutpostCompleted or QuestGiver_IsQuestCompletedByNameAndGiver(QUEST_PROTECT_OUTPOST, Ragno)) and not q.discovered and not q.active and not q.completed and not q.failed then
+        if q.state != QUEST_STATE_AVAILABLE then
+            call q.setState(QUEST_STATE_AVAILABLE)
+            call DebugMsg("Restored post-outpost availability for " + questName + ".")
+        endif
+    endif
+
+    set q = 0
+endfunction
+
+private function ApplyRagnoQuestAccessRule takes string questName returns nothing
+    local QuestData q = GetRagnoQuest(questName)
+
+    if q != 0 then
+        call QuestGiver_SetQuestRequiredReputation(q, Reputation_REP_ENEMY)
+    endif
+
+    set q = 0
+endfunction
+
 private function RefreshRagnoAvailabilityInternal takes nothing returns nothing
     if Ragno == null then
         return
     endif
 
     call QuestGiver_RefreshAvailabilityForGiver(Ragno)
+    call RestorePostOutpostQuestAvailability(QUEST_GNOLL_HEADCOUNT)
+    call RestorePostOutpostQuestAvailability(QUEST_LUMBERJACK_DUTIES)
+    call RestorePostOutpostQuestAvailability(QUEST_KOBOLD_THIEVES)
+    call RestorePostOutpostQuestAvailability(QUEST_SATYR_NEGOTIATIONS)
     if QuestGiver_QuestExistsByNameAndGiver(QUEST_GIVING_LETTER, Ragno) and not GivingLetterUnlocked and not QuestGiver_IsQuestDiscoveredByNameAndGiver(QUEST_GIVING_LETTER, Ragno) and not QuestGiver_IsQuestCompletedByNameAndGiver(QUEST_GIVING_LETTER, Ragno) then
         call QuestGiver_SetStateByNameAndGiver(QUEST_GIVING_LETTER, Ragno, QUEST_STATE_UNAVAILABLE)
     endif
@@ -1485,7 +1504,6 @@ private function OnProtectOutpostSecondWaveTimer takes nothing returns nothing
 endfunction
 
 private function PrepareProtectOutpostCinematic takes nothing returns nothing
-    set RagnoDialogEntryPending = false
     call DialogSystem_ClearEscapeAction()
     call DialogSystem_SkipActiveSequence()
     call DialogInteraction_CloseActiveDialog()
@@ -1898,7 +1916,6 @@ private function ContinueToDialogInternal takes nothing returns nothing
 endfunction
 
 public function ContinueToDialogAfterSelection takes nothing returns nothing
-    set RagnoDialogEntryPending = false
     call ContinueToDialogInternal()
 endfunction
 
@@ -1915,8 +1932,6 @@ private function OnSelected takes nothing returns nothing
         return
     endif
 
-    set RagnoDialogEntryPending = true
-    call DialogSystem_SetEscapeAction(function OnRagnoEscape)
     call DialogInteraction_StartConfiguredDialogEntryTransition(Ragno, SelectedHero, true, USE_DIALOG_CAMERA, CINEMATIC, "qRagno_ContinueToDialogAfterSelection")
 endfunction
 
@@ -1930,7 +1945,6 @@ private function CreateQuests takes nothing returns nothing
 
     if not QuestGiver_QuestExistsByNameAndGiver(QUEST_PROTECT_OUTPOST, Ragno) then
         set q = QuestGiver_CreateConfiguredQuest(QUEST_PROTECT_OUTPOST, Ragno, "normal", 1, null, QUEST_PROTECT_OUTPOST, "ReplaceableTextures\\CommandButtons\\BTNGnoll.blp", "Gnolls are attacking the mountain outpost.\n\n", "", "", 1, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Horde", "")
-        call QuestGiver_SetQuestRequiredReputation(q, Reputation_REP_NEUTRAL)
         call QuestGiver_SetQuestRewards(q, true, 0, false, 0, false, 0, true, 0, false)
         call QuestGiver_SetRequirements(q.id, "", "Protect the mountain outpost from the gnoll attack", "", "", "", "", "", "", "")
         call q.setAutoComplete(true)
@@ -1942,7 +1956,6 @@ private function CreateQuests takes nothing returns nothing
 
     if not QuestGiver_QuestExistsByNameAndGiver(QUEST_GNOLL_HEADCOUNT, Ragno) then
         set q = QuestGiver_CreateConfiguredQuest(QUEST_GNOLL_HEADCOUNT, Ragno, "daily", 1, null, QUEST_GNOLL_HEADCOUNT, "ReplaceableTextures\\CommandButtons\\BTNGnoll.blp", "Ragno wants you to thin out the gnolls threatening the mountain outpost.\n\n", infoText, info2DailyText, 1, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Horde", giverName)
-        call QuestGiver_SetQuestRequiredReputation(q, Reputation_REP_NEUTRAL)
         call QuestGiver_SetQuestRewards(q, true, 0, true, 200, false, 0, true, 0, false)
         call QuestGiver_AddQuestPrerequisite(q, QUEST_PROTECT_OUTPOST, Ragno)
         call QuestGiver_SetRequirements(q.id, "", "Bring 20 Gnoll Heads to Ragno", "", "", "", "", "", "", "")
@@ -1951,7 +1964,6 @@ private function CreateQuests takes nothing returns nothing
 
     if not QuestGiver_QuestExistsByNameAndGiver(QUEST_LUMBERJACK_DUTIES, Ragno) then
         set q = QuestGiver_CreateConfiguredQuest(QUEST_LUMBERJACK_DUTIES, Ragno, "daily", 1, null, QUEST_LUMBERJACK_DUTIES, "ReplaceableTextures\\CommandButtons\\BTNBundleOfLumber.blp", "Harvest 10 Pile Of Wood for the mountain outpost. A peon will help, but he must survive.\n\n", infoText, info2DailyText, 1, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Horde", giverName)
-        call QuestGiver_SetQuestRequiredReputation(q, Reputation_REP_NEUTRAL)
         call QuestGiver_SetQuestRewards(q, true, 0, true, 200, false, 0, true, 0, false)
         call QuestGiver_AddQuestPrerequisite(q, QUEST_PROTECT_OUTPOST, Ragno)
         call QuestGiver_SetRequirements(q.id, "", "Harvest 10 Pile Of Wood", "Peon must survive", "", "", "", "", "", "")
@@ -1960,7 +1972,6 @@ private function CreateQuests takes nothing returns nothing
 
     if not QuestGiver_QuestExistsByNameAndGiver(QUEST_KOBOLD_THIEVES, Ragno) then
         set q = QuestGiver_CreateConfiguredQuest(QUEST_KOBOLD_THIEVES, Ragno, "daily", 1, null, QUEST_KOBOLD_THIEVES, "ReplaceableTextures\\CommandButtons\\BTNKobold.blp", "Kill the kobold leader and recover the stolen goods taken from the Horde.\n\n", infoText, info2DailyText, 1, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Horde", giverName)
-        call QuestGiver_SetQuestRequiredReputation(q, Reputation_REP_NEUTRAL)
         call QuestGiver_SetQuestRewards(q, true, 0, true, 200, false, 0, true, 0, false)
         call QuestGiver_AddQuestPrerequisite(q, QUEST_PROTECT_OUTPOST, Ragno)
         call QuestGiver_SetRequirements(q.id, "", "Kill Razzlewhip Mudgrubber", "Retrieve 6 Stolen Goods", "", "", "", "", "", "")
@@ -1969,7 +1980,6 @@ private function CreateQuests takes nothing returns nothing
 
     if not QuestGiver_QuestExistsByNameAndGiver(QUEST_SATYR_NEGOTIATIONS, Ragno) then
         set q = QuestGiver_CreateConfiguredQuest(QUEST_SATYR_NEGOTIATIONS, Ragno, "normal", 1, null, QUEST_SATYR_NEGOTIATIONS, "ReplaceableTextures\\CommandButtons\\BTNForestTroll.blp", "The relations between the Horde and the satyrs are unstable. Meet with them and learn whether diplomacy is still possible.\n\n", infoText, info2MainText, 1, true, ALLOW_NAZGREK, ALLOW_ZULKIS, "Horde", giverName)
-        call QuestGiver_SetQuestRequiredReputation(q, Reputation_REP_NEUTRAL)
         call QuestGiver_SetQuestRewards(q, true, 0, true, 150, false, 0, true, 0, false)
         call QuestGiver_AddQuestPrerequisite(q, QUEST_PROTECT_OUTPOST, Ragno)
         call QuestGiver_SetRequirements(q.id, "", "Meet with the satyrs and learn what they want", "", "", "", "", "", "", "")
@@ -1977,7 +1987,6 @@ private function CreateQuests takes nothing returns nothing
 
     if not QuestGiver_QuestExistsByNameAndGiver(QUEST_GIVING_LETTER, Ragno) then
         set q = QuestGiver_CreateConfiguredQuest(QUEST_GIVING_LETTER, Ragno, "normal", 1, Thork, QUEST_GIVING_LETTER, "ReplaceableTextures\\CommandButtons\\BTNOrcCaptureFlag.blp", "Ragno has given Nazgrek a blood-signed summon letter. Bring it to Chieftain Thork at the Horde camp.\n\n", infoText, "|cffffcc00Quest receiver:|r Chieftain Thork\n\n", 1, true, ALLOW_NAZGREK, false, "Horde", "Chieftain Thork")
-        call QuestGiver_SetQuestRequiredReputation(q, Reputation_REP_NEUTRAL)
         call QuestGiver_SetQuestRewards(q, true, 0, false, 0, false, 0, true, 0, false)
         call QuestGiver_AddQuestPrerequisite(q, QUEST_PROTECT_OUTPOST, Ragno)
         set availabilityCondition = CreateTrigger()
@@ -1988,6 +1997,13 @@ private function CreateQuests takes nothing returns nothing
     endif
     set q = QuestGiver_GetByNameAndGiver(QUEST_GIVING_LETTER, Ragno)
     call QuestGiver_SetQuestUnitSpecificHero(q, Nazgrek)
+
+    call ApplyRagnoQuestAccessRule(QUEST_PROTECT_OUTPOST)
+    call ApplyRagnoQuestAccessRule(QUEST_GNOLL_HEADCOUNT)
+    call ApplyRagnoQuestAccessRule(QUEST_LUMBERJACK_DUTIES)
+    call ApplyRagnoQuestAccessRule(QUEST_KOBOLD_THIEVES)
+    call ApplyRagnoQuestAccessRule(QUEST_SATYR_NEGOTIATIONS)
+    call ApplyRagnoQuestAccessRule(QUEST_GIVING_LETTER)
 
     set availabilityCondition = null
     set q = 0

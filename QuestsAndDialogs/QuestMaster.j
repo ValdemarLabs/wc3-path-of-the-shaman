@@ -2,7 +2,7 @@
     QuestMaster
 
     Author: Valdemar
-    Version: 1.3.2
+    Version: 1.3.4
 
     Description:
     Owns PotS quest data, state transitions, rewards, availability, custom
@@ -368,12 +368,16 @@ endfunction
 //===========================================================================
 // Key helpers
 //===========================================================================
+private function NameGiverKeyById takes string questName, integer giverId returns integer
+	return StringHash(questName + "#" + I2S(giverId))
+endfunction
+
 private function NameGiverKey takes string questName, unit questGiver returns integer
 	local integer giverId = 0
 	if questGiver != null then
 		set giverId = GetHandleId(questGiver)
 	endif
-	return StringHash(questName + "#" + I2S(giverId))
+	return NameGiverKeyById(questName, giverId)
 endfunction
 
 //===========================================================================
@@ -1221,7 +1225,8 @@ struct QuestData
 		set this.unitSpecificRegistered = false
 		set this.questUnit = null
 		set this.faction = ""
-		set this.requiredReputation = 0
+		// Faction metadata selects rewards/display; reputation gates are opt-in.
+		set this.requiredReputation = Reputation_REP_ENEMY
 		set this.customCondition = null
 		set this.eventFlagIndex = 0
 		set this.failReasonText = ""
@@ -2293,7 +2298,28 @@ public function GetByGiver takes unit questGiver returns QuestData
 endfunction
 
 public function GetByNameAndGiver takes string questName, unit questGiver returns QuestData
-	return QuestByNameGiver.integer[ NameGiverKey(questName, questGiver) ]
+	local integer key = NameGiverKey(questName, questGiver)
+	local QuestData q = QuestByNameGiver.integer[key]
+	local integer i = 1
+	local integer questId
+
+	if q != 0 or questGiver == null then
+		return q
+	endif
+
+	// Recover and repair a stale secondary index after a quest-giver replacement.
+	loop
+		exitwhen i > QuestCount
+		set questId = QuestIdList[i]
+		set q = QuestById.integer[questId]
+		if q != 0 and q.name == questName and q.giver == questGiver then
+			set QuestByNameGiver.integer[key] = q
+			return q
+		endif
+		set i = i + 1
+	endloop
+
+	return 0
 endfunction
 
 public function AddRequiredCompletedQuest takes integer questId, string prereqQuestName, unit prereqQuestGiver returns nothing
@@ -2547,7 +2573,9 @@ public function UpdateGiverUnitReference takes unit oldUnit, unit newUnit return
 		set q = QuestById.integer[questId]
 		if q != 0 then
 			if q.giver == oldUnit then
+				call QuestByNameGiver.remove(NameGiverKeyById(q.name, oldId))
 				set q.giver = newUnit
+				set QuestByNameGiver.integer[NameGiverKeyById(q.name, newId)] = q
 			endif
 			if q.receiver == oldUnit then
 				set q.receiver = newUnit
@@ -2560,19 +2588,6 @@ public function UpdateGiverUnitReference takes unit oldUnit, unit newUnit return
 		set i = i + 1
 	endloop
 	
-	// Update QuestByNameGiver table entries
-	set i = 1
-	loop
-		exitwhen i > QuestCount
-		set questId = QuestIdList[i]
-		set q = QuestById.integer[questId]
-		if q != 0 and (q.giver == newUnit or q.receiver == newUnit) then
-			// Remove old key and add new key
-			call QuestByNameGiver.remove(NameGiverKey(q.name, oldUnit))
-			set QuestByNameGiver.integer[NameGiverKey(q.name, newUnit)] = q
-		endif
-		set i = i + 1
-	endloop
 endfunction
 
 private function UpdateGiverUnitReferenceByHandleId takes integer oldId, unit newUnit returns nothing
@@ -2617,10 +2632,12 @@ private function UpdateGiverUnitReferenceByHandleId takes integer oldId, unit ne
 		set q = QuestById.integer[questId]
 		if q != 0 then
 			// Check if this quest's giver handle matches old ID
-			if GetHandleId(q.giver) == oldId then
+			if q.giver != null and GetHandleId(q.giver) == oldId then
+				call QuestByNameGiver.remove(NameGiverKeyById(q.name, oldId))
 				set q.giver = newUnit
+				set QuestByNameGiver.integer[NameGiverKeyById(q.name, newId)] = q
 			endif
-			if GetHandleId(q.receiver) == oldId then
+			if q.receiver != null and GetHandleId(q.receiver) == oldId then
 				set q.receiver = newUnit
 			endif
 			if q.questUnit != null and GetHandleId(q.questUnit) == oldId then
@@ -2631,8 +2648,6 @@ private function UpdateGiverUnitReferenceByHandleId takes integer oldId, unit ne
 		set i = i + 1
 	endloop
 	
-	// Note: QuestByNameGiver table cannot be updated without old unit reference
-	// This is acceptable since quest lookups by name+giver will naturally point to new unit
 endfunction
 
 public function UpdateGiverUnitReferenceByType takes integer unitTypeId, unit newUnit returns nothing
@@ -3023,7 +3038,7 @@ private function HasCompletedRequiredQuest takes string questName, unit questGiv
 	if questName == "" then
 		return true
 	endif
-	set q = QuestByNameGiver.integer[ NameGiverKey(questName, questGiver) ]
+	set q = GetByNameAndGiver(questName, questGiver)
 	if q == 0 then
 		return false
 	endif

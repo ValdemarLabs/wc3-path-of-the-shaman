@@ -2,7 +2,7 @@
     DialogSystem
 
     Author: Valdemar
-    Version:
+    Version: 1.1.0
 
     Description:
     Owns PotS dialog creation, button routing, spoken-line sequences,
@@ -19,6 +19,7 @@
     ordered cinematics.
     Call DialogSystem_CancelActiveSpeech to immediately stop the active
     sequence, queued field lines, transmissions, and ExSound dialogue audio.
+    Use SetEscapeAction/HasEscapeAction for scoped non-sequence ESC behavior.
 
 **/
 library DialogSystem initializer Init requires Table, ExSound, DialogCamera, Interface, FallenHeroState
@@ -1329,6 +1330,10 @@ public function SetEscapeAction takes code actionFunc returns nothing
 	set t = CreateTrigger()
 	call TriggerAddAction(t, actionFunc)
 	set DialogSystem_EscapeActionTrigger = t
+endfunction
+
+public function HasEscapeAction takes nothing returns boolean
+	return DialogSystem_EscapeActionTrigger != null
 endfunction
 
 // ESC skip handler
