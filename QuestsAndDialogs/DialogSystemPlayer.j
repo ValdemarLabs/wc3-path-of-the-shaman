@@ -1,4 +1,4 @@
-library DialogSystemPlayer initializer Init requires DialogSystem
+library DialogSystemPlayer initializer Init requires DialogSystem, VoicelinesZulkis
 //===========================================================================
 // DialogSystemPlayer
 // Player-specific dialog line registration.
@@ -14,32 +14,31 @@ private function LinesZulkis takes nothing returns nothing
 	call DialogSystem_RegisterFarewellLine("Zulkis", "Stay sharp, mon!", "Zulkis_Farewell3", true)
 	call DialogSystem_RegisterFarewellLine("Zulkis", "Be seeing ya.", "Zulkis_Farewell4", true)
 
-	call DialogSystem_RegisterGreetTrainerLine("Zulkis", "What lessons ya got for me, mon?", "", true)
-	call DialogSystem_RegisterGreetTrainerLine("Zulkis", "Da spirits send me for training.", "", true)
-	call DialogSystem_RegisterGreetTrainerLine("Zulkis", "Teach me what ya know, mon.", "", true)
-	call DialogSystem_RegisterGreetTrainerLine("Zulkis", "I be ready ta learn.", "", true)
+	call DialogSystem_RegisterGreetTrainerLine("Zulkis", VL_ZULKISDIALOG_GREET_TRAINER_1_TEXT, VL_ZULKISDIALOG_GREET_TRAINER_1_KEY, true)
+	call DialogSystem_RegisterGreetTrainerLine("Zulkis", VL_ZULKISDIALOG_GREET_TRAINER_2_TEXT, VL_ZULKISDIALOG_GREET_TRAINER_2_KEY, true)
+	call DialogSystem_RegisterGreetTrainerLine("Zulkis", VL_ZULKISDIALOG_GREET_TRAINER_3_TEXT, VL_ZULKISDIALOG_GREET_TRAINER_3_KEY, true)
+	call DialogSystem_RegisterGreetTrainerLine("Zulkis", VL_ZULKISDIALOG_GREET_TRAINER_4_TEXT, VL_ZULKISDIALOG_GREET_TRAINER_4_KEY, true)
 
-	call DialogSystem_RegisterFarewellTrainerLine("Zulkis", "I be back when da spirits call, mon.", "", true)
-	call DialogSystem_RegisterFarewellTrainerLine("Zulkis", "Thanks for da lesson.", "", true)
-	call DialogSystem_RegisterFarewellTrainerLine("Zulkis", "May da spirits keep ya, mon.", "", true)
+	call DialogSystem_RegisterFarewellTrainerLine("Zulkis", VL_ZULKISDIALOG_FAREWELL_TRAINER_1_TEXT, VL_ZULKISDIALOG_FAREWELL_TRAINER_1_KEY, true)
+	call DialogSystem_RegisterFarewellTrainerLine("Zulkis", VL_ZULKISDIALOG_FAREWELL_TRAINER_2_TEXT, VL_ZULKISDIALOG_FAREWELL_TRAINER_2_KEY, true)
+	call DialogSystem_RegisterFarewellTrainerLine("Zulkis", VL_ZULKISDIALOG_FAREWELL_TRAINER_3_TEXT, VL_ZULKISDIALOG_FAREWELL_TRAINER_3_KEY, true)
 
-	call DialogSystem_RegisterInfoLine("Zulkis", "What happened here, mon?", "", true)
-	call DialogSystem_RegisterInfoLine("Zulkis", "Tell me about this place.", "", true)
-	call DialogSystem_RegisterInfoLine("Zulkis", "What be your knowledge of this?", "", true)
-	call DialogSystem_RegisterInfoLine("Zulkis", "Can you help me understand?", "", true)
+	call DialogSystem_RegisterInfoLine("Zulkis", VL_ZULKISDIALOG_INFO_1_TEXT, VL_ZULKISDIALOG_INFO_1_KEY, true)
+	call DialogSystem_RegisterInfoLine("Zulkis", VL_ZULKISDIALOG_INFO_2_TEXT, VL_ZULKISDIALOG_INFO_2_KEY, true)
+	call DialogSystem_RegisterInfoLine("Zulkis", VL_ZULKISDIALOG_INFO_3_TEXT, VL_ZULKISDIALOG_INFO_3_KEY, true)
+	call DialogSystem_RegisterInfoLine("Zulkis", VL_ZULKISDIALOG_INFO_4_TEXT, VL_ZULKISDIALOG_INFO_4_KEY, true)
 
-	// sound files not created for these
-	call DialogSystem_RegisterTradeLine("Zulkis", "Let's trade.", "", true)
+	call DialogSystem_RegisterTradeLine("Zulkis", VL_ZULKISDIALOG_TRADE_1_TEXT, VL_ZULKISDIALOG_TRADE_1_KEY, true)
 
-	call DialogSystem_RegisterExitLine("Zulkis", "Farewell.", "", true)
+	call DialogSystem_RegisterExitLine("Zulkis", VL_ZULKISDIALOG_EXIT_1_TEXT, VL_ZULKISDIALOG_EXIT_1_KEY, true)
 
-	call DialogSystem_RegisterFollowLine("Zulkis", "Follow me.", "", true)
+	call DialogSystem_RegisterFollowLine("Zulkis", VL_ZULKISDIALOG_FOLLOW_1_TEXT, VL_ZULKISDIALOG_FOLLOW_1_KEY, true)
 
-	call DialogSystem_RegisterStopLine("Zulkis", "Stay here.", "", true)
+	call DialogSystem_RegisterStopLine("Zulkis", VL_ZULKISDIALOG_STOP_1_TEXT, VL_ZULKISDIALOG_STOP_1_KEY, true)
 
-	call DialogSystem_RegisterDeclineLine("Zulkis", "No.", "", true)
+	call DialogSystem_RegisterDeclineLine("Zulkis", VL_ZULKISDIALOG_DECLINE_1_TEXT, VL_ZULKISDIALOG_DECLINE_1_KEY, true)
 
-	call DialogSystem_RegisterAcceptLine("Zulkis", "Yes.", "", true)
+	call DialogSystem_RegisterAcceptLine("Zulkis", VL_ZULKISDIALOG_ACCEPT_1_TEXT, VL_ZULKISDIALOG_ACCEPT_1_KEY, true)
 
 	call DialogSystem_RegisterCompanionCommandLine("Zulkis", "Invite", "Come with us, mon.", "Zulkis_CompanionInvite1", true)
 	call DialogSystem_RegisterCompanionCommandLine("Zulkis", "Invite", "Join on our quest, mon.", "Zulkis_CompanionInvite2", true)

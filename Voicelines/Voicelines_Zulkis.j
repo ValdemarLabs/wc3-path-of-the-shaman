@@ -17,7 +17,8 @@
     library directly.
 
     API:
-    Global `VL_ZULKIS_*` and `VL_ZULKIS_GENERIC_####_*` constants.
+    Global `VL_ZULKIS_*`, `VL_ZULKIS_GENERIC_####_*`, and
+    `VL_ZULKISDIALOG_*` constants.
 
 **/
 library VoicelinesZulkis initializer Init requires Voicelines, QuestsGeneric
@@ -26,6 +27,7 @@ globals
     constant string VL_ZULKIS_FOLDER = "Zulkis"
     constant string VL_ZULKIS_GENERIC_FOLDER = "ZulkisGeneric"
     constant string VL_ZULKIS_GENERIC_TYPE = "ZulkisGeneric_"
+    constant string VL_ZULKISDIALOG_FOLDER = "Zulkis\\ZulkisEventLines"
 
     // Reusable generic quest replies: accept.
     constant string VL_ZULKIS_GENERIC_0001_KEY = "ZulkisGeneric_0001"
@@ -96,6 +98,45 @@ globals
     constant string VL_ZULKIS_GENERIC_0027_TEXT = "Dis commission needs somethin' from ya stock."
     constant string VL_ZULKIS_GENERIC_0028_KEY = "ZulkisGeneric_0028"
     constant string VL_ZULKIS_GENERIC_0028_TEXT = "I be here to buy what da quest requires."
+
+    // Reusable player-dialog and ability-trainer replies.
+    constant string VL_ZULKISDIALOG_GREET_TRAINER_1_KEY = "Zulkis_GreetTrainer1"
+    constant string VL_ZULKISDIALOG_GREET_TRAINER_1_TEXT = "What lessons ya got for me, mon?"
+    constant string VL_ZULKISDIALOG_GREET_TRAINER_2_KEY = "Zulkis_GreetTrainer2"
+    constant string VL_ZULKISDIALOG_GREET_TRAINER_2_TEXT = "Da spirits send me for training."
+    constant string VL_ZULKISDIALOG_GREET_TRAINER_3_KEY = "Zulkis_GreetTrainer3"
+    constant string VL_ZULKISDIALOG_GREET_TRAINER_3_TEXT = "Teach me what ya know, mon."
+    constant string VL_ZULKISDIALOG_GREET_TRAINER_4_KEY = "Zulkis_GreetTrainer4"
+    constant string VL_ZULKISDIALOG_GREET_TRAINER_4_TEXT = "I be ready ta learn."
+
+    constant string VL_ZULKISDIALOG_FAREWELL_TRAINER_1_KEY = "Zulkis_FarewellTrainer1"
+    constant string VL_ZULKISDIALOG_FAREWELL_TRAINER_1_TEXT = "I be back when da spirits call, mon."
+    constant string VL_ZULKISDIALOG_FAREWELL_TRAINER_2_KEY = "Zulkis_FarewellTrainer2"
+    constant string VL_ZULKISDIALOG_FAREWELL_TRAINER_2_TEXT = "Thanks for da lesson."
+    constant string VL_ZULKISDIALOG_FAREWELL_TRAINER_3_KEY = "Zulkis_FarewellTrainer3"
+    constant string VL_ZULKISDIALOG_FAREWELL_TRAINER_3_TEXT = "May da spirits keep ya, mon."
+
+    constant string VL_ZULKISDIALOG_INFO_1_KEY = "Zulkis_Info1"
+    constant string VL_ZULKISDIALOG_INFO_1_TEXT = "What happened here, mon?"
+    constant string VL_ZULKISDIALOG_INFO_2_KEY = "Zulkis_Info2"
+    constant string VL_ZULKISDIALOG_INFO_2_TEXT = "Tell me about this place."
+    constant string VL_ZULKISDIALOG_INFO_3_KEY = "Zulkis_Info3"
+    constant string VL_ZULKISDIALOG_INFO_3_TEXT = "What be your knowledge of this?"
+    constant string VL_ZULKISDIALOG_INFO_4_KEY = "Zulkis_Info4"
+    constant string VL_ZULKISDIALOG_INFO_4_TEXT = "Can you help me understand?"
+
+    constant string VL_ZULKISDIALOG_TRADE_1_KEY = "Zulkis_Trade1"
+    constant string VL_ZULKISDIALOG_TRADE_1_TEXT = "Let's trade."
+    constant string VL_ZULKISDIALOG_EXIT_1_KEY = "Zulkis_Exit1"
+    constant string VL_ZULKISDIALOG_EXIT_1_TEXT = "Farewell."
+    constant string VL_ZULKISDIALOG_FOLLOW_1_KEY = "Zulkis_Follow1"
+    constant string VL_ZULKISDIALOG_FOLLOW_1_TEXT = "Follow me."
+    constant string VL_ZULKISDIALOG_STOP_1_KEY = "Zulkis_Stop1"
+    constant string VL_ZULKISDIALOG_STOP_1_TEXT = "Stay here."
+    constant string VL_ZULKISDIALOG_DECLINE_1_KEY = "Zulkis_Decline1"
+    constant string VL_ZULKISDIALOG_DECLINE_1_TEXT = "No."
+    constant string VL_ZULKISDIALOG_ACCEPT_1_KEY = "Zulkis_Accept1"
+    constant string VL_ZULKISDIALOG_ACCEPT_1_TEXT = "Yes."
 
     // Legacy Excel draft/reference rows.
 
