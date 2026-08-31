@@ -73,9 +73,10 @@ endlibrary
     Intercepts configured lethal damage and presents heroes and hired units as
     frozen corpses at one life, preventing immediate decay. A Revive item restores the nearest
     allied fallen unit or fatigued pet within 250 range. Hired non-hero companions remain
-    revivable for 60 seconds before receiving a real death. Companion AI and AI party
+    revivable for 60 seconds before being removed. Companion AI and AI party
     members can approach and use their own Revive items without a map-wide
-    periodic unit scan. Other hero corpses receive the same visual protection
+    periodic unit scan. Expired fake companion corpses are removed without
+    restarting their death animation. Other hero corpses receive the same visual protection
     but are removed after 60 seconds and cannot be revived through this system.
 
     Credits:
@@ -473,15 +474,12 @@ private function Death_ExpireRetainedCorpse takes nothing returns nothing
             endif
         endif
         call FallenHeroState_SetFallen(whichHero, false)
-        call UnitSuspendDecay(whichHero, false)
-        call SetUnitInvulnerable(whichHero, false)
         if expiringHired then
-            call PauseUnit(whichHero, false)
-            call SetUnitTimeScale(whichHero, 1.00)
-            call SetUnitPathing(whichHero, true)
             call AI_UnregisterUnit(whichHero)
-            call KillUnit(whichHero)
+            call RemoveUnit(whichHero)
         else
+            call UnitSuspendDecay(whichHero, false)
+            call SetUnitInvulnerable(whichHero, false)
             call RemoveUnit(whichHero)
         endif
     endif
