@@ -2,7 +2,7 @@
     qZulkis
 
     Author: Valdemar
-    Version: 1.4.0
+    Version: 1.5.0
 
     Description:
 
@@ -68,10 +68,12 @@ library qZulkis initializer Init requires QuestGiver, QuestMaster, DialogInterac
         private constant real SHIP_CAMERA_FIRST_PAN_DURATION = 20.00
         private constant real SHIP_CAMERA_SECOND_PAN_DURATION = 15.00
         private constant real SHORE_CAMERA_PAN_DURATION = 20.00
+        private constant real RESCUE_CAMERA_PAN_DURATION = 30.00
         private constant real NAZGREK_DECISION_CAMERA_DURATION = 30.00
         private constant real SHORE_RETURN_RANGE = 450.00
         private constant real THORK_INTERACTION_RANGE = 600.00
         private constant real ZULKARAK_RESCUE_RANGE = 350.00
+        private constant real ZULKARAK_RESCUE_CLEAR_RANGE = 700.00
         private constant real FADE_DURATION = 1.00
         private constant real WOUNDED_BLOOD_MIN_DELAY = 2.00
         private constant real WOUNDED_BLOOD_MAX_DELAY = 4.00
@@ -117,6 +119,7 @@ library qZulkis initializer Init requires QuestGiver, QuestMaster, DialogInterac
         private boolean NazgrekSavedInvulnerable = false
         private boolean NazgrekWasUnitHiderReference = false
         private integer SavedGraveyardId = 0
+        private boolean NazgrekGraveyardStored = false
         private boolean GraveyardOverrideActive = false
         private boolean Initialized = false
         private boolean StartRequested = false
@@ -129,6 +132,7 @@ library qZulkis initializer Init requires QuestGiver, QuestMaster, DialogInterac
         private boolean OrcPatrolActive = false
         private boolean OrcPatrolArrivalPending = false
         private boolean WoundedDeathScheduled = false
+        private boolean WoundedTrollFakeDead = false
         private boolean InitWaitingLogged = false
     endglobals
 
@@ -138,24 +142,32 @@ private function DebugMsg takes string msg returns nothing
     endif
 endfunction
 
+private function StoreNazgrekGraveyardSelection takes nothing returns nothing
+    if not NazgrekGraveyardStored then
+        set SavedGraveyardId = Revival_GetSelectedGraveyard()
+        set NazgrekGraveyardStored = true
+    endif
+endfunction
+
 private function OverridePrologueGraveyard takes nothing returns nothing
     if not PrologueStarted or PrologueCompleted then
         return
     endif
     if not GraveyardOverrideActive then
-        set SavedGraveyardId = Revival_GetSelectedGraveyard()
+        call StoreNazgrekGraveyardSelection()
         set GraveyardOverrideActive = true
-        call Revival_SelectGraveyard(ZULKIS_GRAVEYARD_ID)
-    elseif udg_GraveyardSelect != ZULKIS_GRAVEYARD_ID then
+    endif
+    if udg_GraveyardSelect != ZULKIS_GRAVEYARD_ID then
         call Revival_SelectGraveyard(ZULKIS_GRAVEYARD_ID)
     endif
 endfunction
 
 private function RestorePlayerGraveyard takes nothing returns nothing
-    if GraveyardOverrideActive then
+    if NazgrekGraveyardStored then
         call Revival_SelectGraveyard(SavedGraveyardId)
-        set GraveyardOverrideActive = false
     endif
+    set NazgrekGraveyardStored = false
+    set GraveyardOverrideActive = false
 endfunction
 
 private function SyncUnitReferences takes nothing returns nothing
@@ -171,11 +183,6 @@ private function SyncUnitReferences takes nothing returns nothing
     if udg_Thork != null and udg_Thork != Thork then
         set Thork = udg_Thork
     endif
-endfunction
-
-private function ApplyCameraSetupInstant takes camerasetup whichSetup returns nothing
-    call CameraControl_PrepareScriptedCamera(Player(0))
-    call CameraSetupApplyForPlayer(true, whichSetup, Player(0), 0.00)
 endfunction
 
 private function ResumeGameplayCamera takes unit target returns nothing
@@ -310,6 +317,12 @@ private function ResumeLandingCorpseDecay takes nothing returns nothing
     loop
         exitwhen index > 6
         set corpse = LandingTroll[index]
+        if index == 3 and WoundedTrollFakeDead and corpse != null and GetUnitTypeId(corpse) != 0 then
+            call RemoveUnit(corpse)
+            set LandingTroll[index] = null
+            call CreatePermanentCorpse(index, UNIT_DARKSPEAR_WITCH_DOCTOR, gg_rct_CorpseTroll03)
+            set corpse = LandingTroll[index]
+        endif
         if corpse != null and GetUnitTypeId(corpse) != 0 and GetWidgetLife(corpse) <= 0.405 then
             call UnitSuspendDecay(corpse, false)
             call SetUnitTimeScale(corpse, 1.00)
@@ -317,6 +330,7 @@ private function ResumeLandingCorpseDecay takes nothing returns nothing
         set LandingTroll[index] = null
         set index = index + 1
     endloop
+    set WoundedTrollFakeDead = false
     set corpse = null
 endfunction
 
@@ -328,19 +342,35 @@ private function ReplaceLandingTrollWithCorpse takes integer index, integer unit
     call CreatePermanentCorpse(index, unitTypeId, whichRect)
 endfunction
 
-private function FinishWoundedTrollDeath takes boolean stopVoice returns nothing
-    if LandingTroll[3] == null or GetUnitTypeId(LandingTroll[3]) == 0 or GetWidgetLife(LandingTroll[3]) <= 0.405 then
+private function PlayWoundedTrollDeathSound takes nothing returns nothing
+    local sound deathSound
+
+    if LandingTroll[3] == null or GetUnitTypeId(LandingTroll[3]) == 0 then
         return
     endif
+    set deathSound = CreateSound("Units\\Orc\\WitchDoctor\\WitchDoctorDeath.wav", false, true, true, 10, 10, "DefaultEAXON")
+    call AttachSoundToUnit(deathSound, LandingTroll[3])
+    call SetSoundDistances(deathSound, 600.00, 10000.00)
+    call SetSoundVolume(deathSound, 127)
+    call StartSound(deathSound)
+    call KillSoundWhenDone(deathSound)
+    set deathSound = null
+endfunction
+
+private function FinishWoundedTrollFakeDeath takes boolean stopVoice returns nothing
+    if WoundedTrollFakeDead or LandingTroll[3] == null or GetUnitTypeId(LandingTroll[3]) == 0 then
+        return
+    endif
+    set WoundedTrollFakeDead = true
     call PauseTimer(WoundedBloodTimer)
     if stopVoice then
         call ExSound_Stop()
     endif
-    call SetUnitTimeScale(LandingTroll[3], 1.00)
-    call SetUnitInvulnerable(LandingTroll[3], false)
-    call PauseUnit(LandingTroll[3], false)
-    call KillUnit(LandingTroll[3])
-    call UnitSuspendDecay(LandingTroll[3], true)
+    call SetUnitInvulnerable(LandingTroll[3], true)
+    call SetUnitTimeScale(LandingTroll[3], 0.00)
+    call PauseUnit(LandingTroll[3], true)
+    call SetUnitPathing(LandingTroll[3], false)
+    call PlayWoundedTrollDeathSound()
 endfunction
 
 private function RemoveIntroShip takes nothing returns nothing
@@ -375,11 +405,11 @@ private function StartMeetThorkQuest takes nothing returns nothing
 endfunction
 
 private function PlayOpeningNarratorSequence takes nothing returns nothing
-    local integer seq = DialogInteraction_CreateBaseSequence(Zulkarak, "Narrator")
+    local integer seq = DialogInteraction_CreateBaseSequence(null, "Narrator")
 
     call DialogSystem_AddLine(seq, null, "Narrator", VL_NARRATOR_0006_TEXT, VL_NARRATOR_0006_KEY, false)
     call DialogSystem_AddLine(seq, null, "Narrator", VL_NARRATOR_0007_TEXT, VL_NARRATOR_0007_KEY, false)
-    call DialogSystem_PlaySequence(seq, Player(0), Zulkarak)
+    call DialogSystem_PlaySequence(seq, Player(0), null)
 endfunction
 
 private function OnShoreIntroSequenceEnd takes nothing returns nothing
@@ -414,7 +444,7 @@ private function StageShoreIntro takes nothing returns nothing
     call SetUnitInvulnerable(Zulkarak, true)
     call ShowUnit(Zulkarak, true)
     call PauseUnit(Zulkarak, true)
-    call ApplyCameraSetupInstant(gg_cam_IntroZulkisCam3)
+    call CameraSetupApplyForPlayer(true, gg_cam_IntroZulkisCam3, Player(0), 0.00)
     call CameraSetupApplyForPlayer(true, gg_cam_IntroZulkisCam4, Player(0), SHORE_CAMERA_PAN_DURATION)
     call CinematicFadeBJ(bj_CINEFADETYPE_FADEIN, FADE_DURATION, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
     call PlayShoreIntroSequence()
@@ -533,6 +563,7 @@ private function StageBrokenLanding takes nothing returns nothing
         return
     endif
     set BrokenLandingStaged = true
+    set WoundedTrollFakeDead = false
     call DamageShoreFrigate()
     call ReplaceLandingTrollWithCorpse(1, UNIT_DARKSPEAR_HEADHUNTER, gg_rct_CorpseTroll01)
     call ReplaceLandingTrollWithCorpse(2, UNIT_DARKSPEAR_HEADHUNTER, gg_rct_CorpseTroll02)
@@ -566,7 +597,7 @@ endfunction
 private function StageBrokenLandingView takes nothing returns nothing
     call StageBrokenLanding()
     set BrokenLandingViewStaged = true
-    call ApplyCameraSetupInstant(gg_cam_IntroZulkisCam4)
+    call CameraSetupApplyForPlayer(true, gg_cam_IntroZulkisCam4, Player(0), 0.00)
 endfunction
 
 private function PrepareOrcPatrol takes nothing returns nothing
@@ -677,16 +708,6 @@ private function CleanupOrcPatrol takes nothing returns nothing
     set OrcPatrolStaged = false
 endfunction
 
-private function OnWoundedDeath takes nothing returns nothing
-    call FinishWoundedTrollDeath(true)
-    call StageOrcPatrol()
-endfunction
-
-private function ScheduleWoundedDeath takes nothing returns nothing
-    set WoundedDeathScheduled = true
-    call TimerStart(WoundedDeathTimer, WOUNDED_DEATH_DELAY, false, function OnWoundedDeath)
-endfunction
-
 private function MoveZulkisBesideWounded takes nothing returns nothing
     local real angle
 
@@ -707,7 +728,7 @@ private function FinishBrokenLanding takes nothing returns nothing
     endif
     call PauseTimer(WoundedBloodTimer)
     call PauseTimer(WoundedDeathTimer)
-    call FinishWoundedTrollDeath(false)
+    call FinishWoundedTrollFakeDeath(false)
     if MeetThorkQuest != 0 and MeetThorkQuest.active and not MeetThorkQuest.completed then
         call QuestGiver_SetRequirementCompleted(MeetThorkQuest.id, 2, true)
         call QuestGiver_CompleteQuest(MeetThorkQuest.id)
@@ -744,21 +765,12 @@ private function FinishOrcPatrolArrival takes nothing returns nothing
     call PauseTimer(OrcPatrolArrivalTimer)
     set OrcPatrolArrivalPending = false
     call StopOrcPatrolAtZulkis()
-    call ApplyCameraSetupInstant(gg_cam_IntroZulkisCam7)
+    call CameraSetupApplyForPlayer(true, gg_cam_IntroZulkisCam7, Player(0), 0.00)
     call PlayOrcPatrolDialogue()
 endfunction
 
 private function HasOrcPatrolArrived takes nothing returns boolean
-    local integer index = 1
-
-    loop
-        exitwhen index > ORC_PATROL_SIZE
-        if not IsUnitNearUnit(OrcPatrolGrunt[index], Zulkis, ORC_PATROL_STOP_RANGE + ORC_PATROL_ARRIVAL_TOLERANCE) then
-            return false
-        endif
-        set index = index + 1
-    endloop
-    return true
+    return IsUnitNearUnit(OrcPatrolGrunt[1], Zulkis, ORC_PATROL_STOP_RANGE + ORC_PATROL_ARRIVAL_TOLERANCE)
 endfunction
 
 private function OnOrcPatrolArrivalCheck takes nothing returns nothing
@@ -773,15 +785,31 @@ private function OnOrcPatrolArrivalCheck takes nothing returns nothing
 endfunction
 
 private function BeginOrcPatrolArrival takes nothing returns nothing
-    call FinishWoundedTrollDeath(false)
+    if OrcPatrolArrivalPending then
+        return
+    endif
+    call FinishWoundedTrollFakeDeath(false)
     call StageOrcPatrol()
     set OrcPatrolArrivalElapsed = 0.00
     set OrcPatrolArrivalPending = true
     call TimerStart(OrcPatrolArrivalTimer, ORC_PATROL_ARRIVAL_CHECK_INTERVAL, true, function OnOrcPatrolArrivalCheck)
 endfunction
 
+private function OnWoundedDeath takes nothing returns nothing
+    call FinishWoundedTrollFakeDeath(true)
+    call DialogSystem_CancelActiveSequence()
+    call BeginOrcPatrolArrival()
+endfunction
+
+private function ScheduleWoundedDeath takes nothing returns nothing
+    set WoundedDeathScheduled = true
+    call TimerStart(WoundedDeathTimer, WOUNDED_DEATH_DELAY, false, function OnWoundedDeath)
+endfunction
+
 private function OnBrokenLandingSequenceEnd takes nothing returns nothing
-    if WoundedDeathScheduled then
+    if OrcPatrolArrivalPending then
+        return
+    elseif WoundedDeathScheduled then
         call BeginOrcPatrolArrival()
     else
         call FinishBrokenLanding()
@@ -961,7 +989,7 @@ private function CompletePrologue takes nothing returns nothing
     endif
 
     call StageNazgrekDecisionActors()
-    call ApplyCameraSetupInstant(gg_cam_NazgrekDecision1)
+    call CameraSetupApplyForPlayer(true, gg_cam_NazgrekDecision1, Player(0), 0.00)
     call CameraSetupApplyForPlayer(true, gg_cam_NazgrekDecision2, Player(0), NAZGREK_DECISION_CAMERA_DURATION)
     call CinematicFadeBJ(bj_CINEFADETYPE_FADEIN, FADE_DURATION, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
     call PlayNazgrekDecisionSequence()
@@ -975,6 +1003,8 @@ private function OnRescueSequenceStart takes nothing returns nothing
     call CameraControl_Suspend(Player(0))
     call DialogInteraction_BeginCinematicSequence(true)
     call IssueImmediateOrder(Zulkis, "stop")
+    call CameraSetupApplyForPlayer(true, gg_cam_IntroZulkisCam8, Player(0), 0.00)
+    call CameraSetupApplyForPlayer(true, gg_cam_IntroZulkisCam9, Player(0), RESCUE_CAMERA_PAN_DURATION)
 endfunction
 
 private function PlayRescueSequence takes nothing returns nothing
@@ -1007,6 +1037,33 @@ endfunction
 
 private function IsForestTrollType takes integer unitTypeId returns boolean
     return unitTypeId == 'nftr' or unitTypeId == 'nftt' or unitTypeId == 'nftb' or unitTypeId == 'nfsp' or unitTypeId == 'nftk' or unitTypeId == 'n001'
+endfunction
+
+private function HasLivingHostileForestTrollNearZulkarak takes nothing returns boolean
+    local group nearbyUnits = CreateGroup()
+    local unit candidate
+    local boolean found = false
+
+    if Zulkarak == null or GetUnitTypeId(Zulkarak) == 0 then
+        call DestroyGroup(nearbyUnits)
+        set candidate = null
+        set nearbyUnits = null
+        return false
+    endif
+    call GroupEnumUnitsInRange(nearbyUnits, GetUnitX(Zulkarak), GetUnitY(Zulkarak), ZULKARAK_RESCUE_CLEAR_RANGE, null)
+    loop
+        set candidate = FirstOfGroup(nearbyUnits)
+        exitwhen candidate == null
+        call GroupRemoveUnit(nearbyUnits, candidate)
+        if IsForestTrollType(GetUnitTypeId(candidate)) and GetWidgetLife(candidate) > 0.405 and not Death_IsFallen(candidate) and IsUnitEnemy(candidate, Player(0)) then
+            set found = true
+        endif
+        exitwhen found
+    endloop
+    call DestroyGroup(nearbyUnits)
+    set candidate = null
+    set nearbyUnits = null
+    return found
 endfunction
 
 private function SelectRandomForestTrollBarkSpeaker takes nothing returns nothing
@@ -1042,7 +1099,7 @@ private function PlayForestTrollBark takes nothing returns nothing
     if ForestTrollBarkSpeaker == null then
         return
     endif
-    set roll = GetRandomInt(1, 6)
+    set roll = GetRandomInt(1, 9)
     if roll == 1 then
         call DialogSystem_QueueFieldLine(ForestTrollBarkSpeaker, "Forest Troll", VL_FORESTTROLL_0001_KEY, VL_FORESTTROLL_0001_TEXT)
     elseif roll == 2 then
@@ -1053,8 +1110,14 @@ private function PlayForestTrollBark takes nothing returns nothing
         call DialogSystem_QueueFieldLine(ForestTrollBarkSpeaker, "Forest Troll", VL_FORESTTROLL_0004_KEY, VL_FORESTTROLL_0004_TEXT)
     elseif roll == 5 then
         call DialogSystem_QueueFieldLine(ForestTrollBarkSpeaker, "Forest Troll", VL_FORESTTROLL_0005_KEY, VL_FORESTTROLL_0005_TEXT)
-    else
+    elseif roll == 6 then
         call DialogSystem_QueueFieldLine(ForestTrollBarkSpeaker, "Forest Troll", VL_FORESTTROLL_0006_KEY, VL_FORESTTROLL_0006_TEXT)
+    elseif roll == 7 then
+        call DialogSystem_QueueFieldLine(ForestTrollBarkSpeaker, "Forest Troll", VL_FORESTTROLL_0007_KEY, VL_FORESTTROLL_0007_TEXT)
+    elseif roll == 8 then
+        call DialogSystem_QueueFieldLine(ForestTrollBarkSpeaker, "Forest Troll", VL_FORESTTROLL_0008_KEY, VL_FORESTTROLL_0008_TEXT)
+    else
+        call DialogSystem_QueueFieldLine(ForestTrollBarkSpeaker, "Forest Troll", VL_FORESTTROLL_0009_KEY, VL_FORESTTROLL_0009_TEXT)
     endif
     set ForestTrollBarkSpeaker = null
 endfunction
@@ -1091,7 +1154,7 @@ private function OnProgress takes nothing returns nothing
     elseif PrologueState == STATE_RESCUE_BROTHER then
         if not ScenePlaying then
             call UpdateForestTrollBarks()
-            if RectContainsUnit(gg_rct_BramblehideVillage, Zulkis) and IsUnitNearUnit(Zulkis, Zulkarak, ZULKARAK_RESCUE_RANGE) then
+            if RectContainsUnit(gg_rct_BramblehideVillage, Zulkis) and IsUnitNearUnit(Zulkis, Zulkarak, ZULKARAK_RESCUE_RANGE) and not HasLivingHostileForestTrollNearZulkarak() then
                 set ScenePlaying = true
                 call PlayRescueSequence()
             endif
@@ -1101,7 +1164,7 @@ endfunction
 
 private function StartShipSecondCameraShot takes nothing returns nothing
     if PrologueState == STATE_SHIP_ARRIVAL then
-        call ApplyCameraSetupInstant(gg_cam_IntroZulkisCam5)
+        call CameraSetupApplyForPlayer(true, gg_cam_IntroZulkisCam5, Player(0), 0.00)
         call CameraSetupApplyForPlayer(true, gg_cam_IntroZulkisCam6, Player(0), SHIP_CAMERA_SECOND_PAN_DURATION)
     endif
 endfunction
@@ -1110,7 +1173,7 @@ private function StartShipArrival takes nothing returns nothing
     if PrologueState != STATE_SHIP_ARRIVAL then
         return
     endif
-    call ApplyCameraSetupInstant(gg_cam_IntroZulkisCam2)
+    call CameraSetupApplyForPlayer(true, gg_cam_IntroZulkisCam2, Player(0), 0.00)
     call CameraSetupApplyForPlayer(true, gg_cam_IntroZulkisCam1, Player(0), SHIP_CAMERA_FIRST_PAN_DURATION)
     call RemoveIntroShip()
     set IntroShip = CreateUnit(Player(DARKSPEAR_PLAYER_ID), UNIT_INTRO_SHIP, GetRectCenterX(gg_rct_ZulkisShipWP1), GetRectCenterY(gg_rct_ZulkisShipWP1), bj_UNIT_FACING)
@@ -1125,6 +1188,7 @@ private function StartPrologueInternal takes nothing returns nothing
         return
     endif
 
+    call StoreNazgrekGraveyardSelection()
     set PrologueStarted = true
     set ScenePlaying = true
     call OverridePrologueGraveyard()

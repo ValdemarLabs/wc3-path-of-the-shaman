@@ -2,7 +2,7 @@
     VoicelinesGenericTroll
 
     Author: Valdemar
-    Version: 1.1.1
+    Version: 1.2.0
 
     Description:
 
@@ -45,6 +45,12 @@ library VoicelinesGenericTroll initializer Init requires Voicelines
         constant string VL_FORESTTROLL_0005_TEXT = "Drive dem from our village!"
         constant string VL_FORESTTROLL_0006_KEY = "ForestTroll_0006"
         constant string VL_FORESTTROLL_0006_TEXT = "Dey brought orcs into our home! Tear dem apart!"
+        constant string VL_FORESTTROLL_0007_KEY = "ForestTroll_0007"
+        constant string VL_FORESTTROLL_0007_TEXT = "Orcs? Why are ya turnin' your axes on us?"
+        constant string VL_FORESTTROLL_0008_KEY = "ForestTroll_0008"
+        constant string VL_FORESTTROLL_0008_TEXT = "What is dis madness? Da Horde attacks our village?"
+        constant string VL_FORESTTROLL_0009_KEY = "ForestTroll_0009"
+        constant string VL_FORESTTROLL_0009_TEXT = "Why do da orcs shield Darkspear? Drive dem all out!"
     endglobals
 
 private function Init takes nothing returns nothing
