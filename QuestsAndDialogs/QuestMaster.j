@@ -2,7 +2,7 @@
     QuestMaster
 
     Author: Valdemar
-    Version: 1.3.4
+    Version: 1.3.6
 
     Description:
     Owns PotS quest data, state transitions, rewards, availability, custom
@@ -26,6 +26,8 @@
       quest-giver overhead and minimap markers without changing quest state.
     - QuestMaster_SetUnitSpecificHero(questId, hero) limits quest availability
       and quest markers to times when that hero is owned or a companion.
+    - QuestMaster_GetRegisteredGiverByType(unitTypeId) resolves the current
+      registered handle used by respawn transfer wrappers.
     - QuestMaster_AddDailyResetAction(handler) listens for daily resets.
     - QuestMaster_ResetDailyQuests() manually resets completed daily quests.
 
@@ -94,9 +96,10 @@ globals
 	// Quest presentation queue
 	private constant integer QUEST_PRESENTATION_QUEUE_MAX = 32
 	private constant integer QUEST_PRESENTATION_UPDATED = 1
-	private constant integer QUEST_PRESENTATION_NEW_OBJECTIVE = 2
-	private constant integer QUEST_PRESENTATION_DISCOVERED = 3
-	private constant integer QUEST_PRESENTATION_COMPLETED = 4
+	private constant integer QUEST_PRESENTATION_OBJECTIVE_COMPLETED = 2
+	private constant integer QUEST_PRESENTATION_NEW_OBJECTIVE = 3
+	private constant integer QUEST_PRESENTATION_DISCOVERED = 4
+	private constant integer QUEST_PRESENTATION_COMPLETED = 5
 	private constant real QUEST_UPDATE_MESSAGE_GAP = 3.00
 	private constant real QUEST_PRESENTATION_DELAY = 5.00
 	private constant string QUEST_UPDATE_COLOR_OBJECTIVE_COMPLETE = "|cff80ff80"
@@ -261,6 +264,49 @@ private function IsDelayedPresentationType takes integer presentationType return
 	return presentationType == QUEST_PRESENTATION_NEW_OBJECTIVE or presentationType == QUEST_PRESENTATION_DISCOVERED or presentationType == QUEST_PRESENTATION_COMPLETED
 endfunction
 
+private function NextPresentationQueueIndex takes integer index returns integer
+	set index = index + 1
+	if index > QUEST_PRESENTATION_QUEUE_MAX then
+		return 1
+	endif
+	return index
+endfunction
+
+private function PrioritizeObjectiveCompletion takes nothing returns nothing
+	local integer scanIndex
+	local integer remaining
+	local integer questId
+	local integer tempInteger
+	local string tempMessage
+
+	if QuestPresentationQueueSize <= 1 or QuestPresentationQueueType[QuestPresentationQueueHead] != QUEST_PRESENTATION_NEW_OBJECTIVE then
+		return
+	endif
+
+	set questId = QuestPresentationQueueQuestId[QuestPresentationQueueHead]
+	set scanIndex = NextPresentationQueueIndex(QuestPresentationQueueHead)
+	set remaining = QuestPresentationQueueSize - 1
+	loop
+		exitwhen remaining <= 0
+		if QuestPresentationQueueQuestId[scanIndex] == questId and QuestPresentationQueueType[scanIndex] == QUEST_PRESENTATION_OBJECTIVE_COMPLETED then
+			set tempInteger = QuestPresentationQueueQuestId[QuestPresentationQueueHead]
+			set QuestPresentationQueueQuestId[QuestPresentationQueueHead] = QuestPresentationQueueQuestId[scanIndex]
+			set QuestPresentationQueueQuestId[scanIndex] = tempInteger
+
+			set tempInteger = QuestPresentationQueueType[QuestPresentationQueueHead]
+			set QuestPresentationQueueType[QuestPresentationQueueHead] = QuestPresentationQueueType[scanIndex]
+			set QuestPresentationQueueType[scanIndex] = tempInteger
+
+			set tempMessage = QuestPresentationQueueMessage[QuestPresentationQueueHead]
+			set QuestPresentationQueueMessage[QuestPresentationQueueHead] = QuestPresentationQueueMessage[scanIndex]
+			set QuestPresentationQueueMessage[scanIndex] = tempMessage
+			return
+		endif
+		set scanIndex = NextPresentationQueueIndex(scanIndex)
+		set remaining = remaining - 1
+	endloop
+endfunction
+
 private function ShowNextQuestPresentation takes nothing returns nothing
 	local integer questId
 	local integer presentationType
@@ -276,6 +322,8 @@ private function ShowNextQuestPresentation takes nothing returns nothing
 	
 	loop
 		exitwhen shown or QuestPresentationQueueSize <= 0
+		// A transition may add its new objective before marking the previous one complete.
+		call PrioritizeObjectiveCompletion()
 		set questId = QuestPresentationQueueQuestId[QuestPresentationQueueHead]
 		set presentationType = QuestPresentationQueueType[QuestPresentationQueueHead]
 		set msg = QuestPresentationQueueMessage[QuestPresentationQueueHead]
@@ -401,9 +449,9 @@ private function RegisterGiverInternal takes unit u returns nothing
 	set QuestGiverList[QuestGiverCount] = u
 	set QuestGiverIndex.integer[id] = QuestGiverCount
 	
-	// Track unit type ID to handle ID mapping for respawn support
+	// Keep the existing owner until the respawn transfer explicitly replaces it.
 	set unitTypeId = GetUnitTypeId(u)
-	if unitTypeId != 0 then
+	if unitTypeId != 0 and QuestGiverByType.integer[unitTypeId] == 0 then
 		set QuestGiverByType.integer[unitTypeId] = id
 	endif
 endfunction
@@ -2297,27 +2345,61 @@ public function GetByGiver takes unit questGiver returns QuestData
 	return GetById(questId)
 endfunction
 
+public function GetRegisteredGiverByType takes integer unitTypeId returns unit
+	local integer giverId
+	local integer index
+
+	if unitTypeId == 0 then
+		return null
+	endif
+	set giverId = QuestGiverByType.integer[unitTypeId]
+	set index = QuestGiverIndex.integer[giverId]
+	if giverId == 0 or index == 0 then
+		return null
+	endif
+	return QuestGiverList[index]
+endfunction
+
 public function GetByNameAndGiver takes string questName, unit questGiver returns QuestData
 	local integer key = NameGiverKey(questName, questGiver)
 	local QuestData q = QuestByNameGiver.integer[key]
+	local QuestData uniqueMatch = 0
 	local integer i = 1
 	local integer questId
+	local integer matchCount = 0
 
 	if q != 0 or questGiver == null then
 		return q
 	endif
 
-	// Recover and repair a stale secondary index after a quest-giver replacement.
+	// Repair either a stale index or a quest that still owns the replaced handle.
 	loop
 		exitwhen i > QuestCount
 		set questId = QuestIdList[i]
 		set q = QuestById.integer[questId]
-		if q != 0 and q.name == questName and q.giver == questGiver then
-			set QuestByNameGiver.integer[key] = q
-			return q
+		if q != 0 and q.name == questName then
+			if q.giver == questGiver then
+				set QuestByNameGiver.integer[key] = q
+				return q
+			endif
+			set uniqueMatch = q
+			set matchCount = matchCount + 1
 		endif
 		set i = i + 1
 	endloop
+
+	// Quest titles are normally unique. This recovers a missed respawn transfer
+	// without binding an ambiguous duplicate title to the wrong NPC.
+	if matchCount == 1 then
+		if uniqueMatch.receiver == uniqueMatch.giver then
+			set uniqueMatch.receiver = questGiver
+		endif
+		set uniqueMatch.giver = questGiver
+		set QuestByNameGiver.integer[key] = uniqueMatch
+		call AddQuestToGiverList(questGiver, uniqueMatch.id)
+		call uniqueMatch.updateIcons()
+		return uniqueMatch
+	endif
 
 	return 0
 endfunction
@@ -2481,7 +2563,7 @@ public function SetRequirementCompleted takes integer questId, integer index, bo
 		elseif flag then
 			set reqText = q.getRequirementText(index)
 			if reqText != "" then
-				call EnqueueQuestPresentation(q.id, QUEST_PRESENTATION_UPDATED, "|cffffcc00QUEST UPDATED|r\n" + q.title + "\n\n" + QUEST_UPDATE_COLOR_OBJECTIVE_COMPLETE + "Objective completed:|r " + reqText)
+				call EnqueueQuestPresentation(q.id, QUEST_PRESENTATION_OBJECTIVE_COMPLETED, "|cffffcc00QUEST UPDATED|r\n" + q.title + "\n\n" + QUEST_UPDATE_COLOR_OBJECTIVE_COMPLETE + "Objective completed:|r " + reqText)
 			endif
 		else
 			set reqText = q.getRequirementText(index)
@@ -2530,6 +2612,29 @@ private function UpdatePrerequisiteGiverReferenceByHandleId takes QuestData q, i
 	endif
 endfunction
 
+private function PrepareRegisteredReplacement takes integer oldId, unit newUnit returns boolean
+	local integer newId
+
+	if oldId == 0 or newUnit == null then
+		return false
+	endif
+	set newId = GetHandleId(newUnit)
+	if newId == oldId or QuestGiverIndex.integer[oldId] == 0 then
+		return false
+	endif
+
+	// A respawn hook may register the new handle before the delayed transfer.
+	// Discard only that empty registration; never merge two real quest givers.
+	if QuestGiverIndex.integer[newId] != 0 then
+		if GetGiverQuestCountInternal(newUnit) != 0 then
+			return false
+		endif
+		call UnregisterGiverInternal(newUnit)
+	endif
+
+	return QuestGiverIndex.integer[oldId] != 0
+endfunction
+
 public function UpdateGiverUnitReference takes unit oldUnit, unit newUnit returns nothing
 	local integer oldId
 	local integer newId
@@ -2545,12 +2650,10 @@ public function UpdateGiverUnitReference takes unit oldUnit, unit newUnit return
 	
 	set oldId = GetHandleId(oldUnit)
 	set newId = GetHandleId(newUnit)
-	set index = QuestGiverIndex.integer[oldId]
-	
-	// Skip if old unit is not registered or new unit is already registered
-	if index == 0 or QuestGiverIndex.integer[newId] != 0 then
+	if not PrepareRegisteredReplacement(oldId, newUnit) then
 		return
 	endif
+	set index = QuestGiverIndex.integer[oldId]
 	
 	// Update QuestGiverList
 	set QuestGiverList[index] = newUnit
@@ -2603,12 +2706,10 @@ private function UpdateGiverUnitReferenceByHandleId takes integer oldId, unit ne
 	endif
 	
 	set newId = GetHandleId(newUnit)
-	set index = QuestGiverIndex.integer[oldId]
-	
-	// Skip if old ID is not registered or new unit is already registered
-	if index == 0 or QuestGiverIndex.integer[newId] != 0 then
+	if not PrepareRegisteredReplacement(oldId, newUnit) then
 		return
 	endif
+	set index = QuestGiverIndex.integer[oldId]
 	
 	// Update QuestGiverList
 	set QuestGiverList[index] = newUnit

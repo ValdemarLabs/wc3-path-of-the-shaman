@@ -2,7 +2,7 @@
     QuestGiver
 
     Author: Valdemar
-    Version: 1.2.0
+    Version: 1.2.1
 
     Description:
     Provides PotS quest creation helpers, objective tracking, quest-item
@@ -23,6 +23,8 @@
     - QuestGiver_SetQuestUnitSpecificHero(...) binds availability and markers
       to an owned/companion hero.
     - QuestGiver_SetQuestCategory(...) assigns story/content grouping.
+    - QuestGiver_UpdateGiverUnitReferenceByType(...) transfers QuestData and
+      all registered objective-owner references to a respawned giver.
     - QuestGiver_ResetRequirements(questId) clears objective progress.
 
 **/
@@ -482,12 +484,16 @@ public function UpdateGiverUnitReference takes unit oldUnit, unit newUnit return
 endfunction
 
 public function UpdateGiverUnitReferenceByType takes integer unitTypeId, unit newUnit returns nothing
-	// First update QuestMaster data structures by type
-	call QuestMaster_UpdateGiverUnitReferenceByType(unitTypeId, newUnit)
-	
-	// Note: Cannot update requirement arrays without old unit reference
-	// This is acceptable since most requirements are checked by quest state,
-	// and the quest data has been updated by QuestMaster
+	local unit oldUnit = QuestMaster_GetRegisteredGiverByType(unitTypeId)
+
+	if oldUnit != null and oldUnit != newUnit then
+		call UpdateGiverUnitReference(oldUnit, newUnit)
+		call QuestMaster_UpdateGiverUnitReferenceByType(unitTypeId, newUnit)
+	else
+		call QuestMaster_UpdateGiverUnitReferenceByType(unitTypeId, newUnit)
+	endif
+
+	set oldUnit = null
 endfunction
 
 //===========================================================================
@@ -1423,14 +1429,20 @@ public function ValidateItemRequirements takes integer questId returns boolean
 endfunction
 
 public function AddAvailableQuestAcceptButton takes dialog d, string questName, unit questGiver, integer actionId, code actionFunc, boolean noAutoPlay, boolean allowFailedRetry returns boolean
+	local QuestData q = GetByNameAndGiver(questName, questGiver)
 	local button b = null
-	if not QuestExistsByNameAndGiver(questName, questGiver) then
+	if q == 0 then
 		return false
 	endif
-	if GetStateByNameAndGiver(questName, questGiver) != QUEST_STATE_AVAILABLE then
+	if q.state != QUEST_STATE_AVAILABLE then
 		return false
 	endif
-	if IsQuestDiscoveredByNameAndGiver(questName, questGiver) and not (allowFailedRetry and IsQuestFailedByNameAndGiver(questName, questGiver)) then
+	// AVAILABLE cannot be active. Repair orphaned discovery state left by an
+	// interrupted reset/abandon so the quest can actually be selected again.
+	if q.discovered and not q.active and not q.completed and not q.failed then
+		call q.setDiscovered(false)
+	endif
+	if q.discovered and not (allowFailedRetry and q.failed) then
 		return false
 	endif
 	if noAutoPlay then

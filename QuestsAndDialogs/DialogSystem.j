@@ -2,7 +2,7 @@
     DialogSystem
 
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.1.1
 
     Description:
     Owns PotS dialog creation, button routing, spoken-line sequences,
@@ -34,6 +34,8 @@ globals
 	private trigger DialogSystem_EscapeActionTrigger = null
 	private trigger DialogSystem_EscapeActionExecutingTrigger = null
 	private boolean DialogSystem_EscapeActionExecuting = false
+	private timer DialogSystem_EscapeDebounceTimer = null
+	private boolean DialogSystem_EscapeDebounceActive = false
 
 	private Table DialogSequenceStore = 0
 	private integer DialogSequenceNextId = 1
@@ -105,6 +107,7 @@ globals
 	private constant real DIALOGSYSTEM_LOOK_THRESHOLD = 45.00
 	private constant real DIALOGSYSTEM_LOOK_FACE_DURATION = 0.25
 	private constant real DIALOGSYSTEM_LOOK_HEAD_DURATION = 1.50
+	private constant real DIALOGSYSTEM_ESCAPE_DEBOUNCE = 0.15
 	private constant string DIALOGSYSTEM_LOOK_BONE = "head"
 
 	private constant integer DIALOG_LINE_ACTION_NONE = 0
@@ -1304,6 +1307,7 @@ public function SkipActiveSequence takes nothing returns nothing
 			call PauseTimer(DialogSequenceTimer)
 		endif
 		// Clear any active transmission immediately
+		call ExSound_Stop()
 		call ClearTextMessages()
 		call EndSequence(true)
 	endif
@@ -1336,12 +1340,26 @@ public function HasEscapeAction takes nothing returns boolean
 	return DialogSystem_EscapeActionTrigger != null
 endfunction
 
+private function ResetEscapeDebounce takes nothing returns nothing
+	set DialogSystem_EscapeDebounceActive = false
+endfunction
+
 // ESC skip handler
 private function OnSkipKey takes nothing returns nothing
 	local trigger escTrigger
 	if DialogSystem_ActivePlayer != null and GetTriggerPlayer() != DialogSystem_ActivePlayer then
 		return
 	endif
+	// Warcraft can dispatch one physical ESC through both registered events.
+	// Consume the pair once so a skipped line cannot also close its new menu.
+	if DialogSystem_EscapeDebounceActive then
+		return
+	endif
+	set DialogSystem_EscapeDebounceActive = true
+	if DialogSystem_EscapeDebounceTimer == null then
+		set DialogSystem_EscapeDebounceTimer = CreateTimer()
+	endif
+	call TimerStart(DialogSystem_EscapeDebounceTimer, DIALOGSYSTEM_ESCAPE_DEBOUNCE, false, function ResetEscapeDebounce)
 	if DialogSequenceActiveId != 0 then
 		call SkipActiveSequence()
 	elseif DialogSystem_EscapeActionTrigger != null then

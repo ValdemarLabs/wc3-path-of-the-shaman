@@ -2,7 +2,7 @@
     qRagno
 
     Author: Valdemar
-    Version: 1.1.8
+    Version: 1.1.9
 
     Description:
     Implements Ragno's quest dialogue, daily outpost tasks, Protect the
@@ -331,7 +331,10 @@ endfunction
 private function RestorePostOutpostQuestAvailability takes string questName returns nothing
     local QuestData q = GetRagnoQuest(questName)
 
-    if q != 0 and (ProtectOutpostCompleted or QuestGiver_IsQuestCompletedByNameAndGiver(QUEST_PROTECT_OUTPOST, Ragno)) and not q.discovered and not q.active and not q.completed and not q.failed then
+    if q != 0 and (ProtectOutpostCompleted or QuestGiver_IsQuestCompletedByNameAndGiver(QUEST_PROTECT_OUTPOST, Ragno)) and not q.active and not q.completed and not q.failed then
+        if q.discovered then
+            call q.setDiscovered(false)
+        endif
         if q.state != QUEST_STATE_AVAILABLE then
             call q.setState(QUEST_STATE_AVAILABLE)
             call DebugMsg("Restored post-outpost availability for " + questName + ".")

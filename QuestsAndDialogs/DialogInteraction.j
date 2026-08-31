@@ -2,7 +2,7 @@
     DialogInteraction
 
     Author: Valdemar
-    Version: 1.3.0
+    Version: 1.3.1
 
     Description:
     Generic selectable-NPC dialog interaction layer. This owns NPC selection
@@ -987,9 +987,7 @@ library DialogInteraction initializer Init requires Table, DialogSystem, CameraC
         set TransitionEntryActive = false
         set TransitionEntryStaged = false
 
-        if not DialogSystem_HasEscapeAction() then
-            call DialogSystem_SetEscapeAction(function RunDefaultEscapeProxy)
-        endif
+        call DialogSystem_SetEscapeAction(function RunDefaultEscapeProxy)
 
         call CinematicFadeBJ(bj_CINEFADETYPE_FADEOUT, 1.0, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
         set TransitionTimer = t
@@ -1129,9 +1127,7 @@ library DialogInteraction initializer Init requires Table, DialogSystem, CameraC
         set TransitionEntryActive = true
         set TransitionEntryStaged = false
 
-        if not DialogSystem_HasEscapeAction() then
-            call DialogSystem_SetEscapeAction(function RunDefaultEscapeProxy)
-        endif
+        call DialogSystem_SetEscapeAction(function RunDefaultEscapeProxy)
 
         if hero != null then
             call CameraControl_SetTargetUnit(Player(0), hero)
