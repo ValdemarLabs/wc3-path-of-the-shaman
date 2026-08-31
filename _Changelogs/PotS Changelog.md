@@ -19,6 +19,9 @@
 
 ### Player-Facing Updates
 
+- Fixed the remaining Ragno/Graknar-style empty quest menu failure after an NPC respawn: available quests now recover their current giver binding, and an available quest stranded in a discovered-but-inactive state becomes selectable again.
+- Fixed one ESC press being handled twice during quest-giver cinematics. Skipping a spoken line now reaches its next dialogue/menu state without the same keypress immediately closing that state and leaving the camera locked.
+- Fixed staged quest updates showing a newly acquired objective before the objective that led to it was marked complete; the completion now appears first, followed by the new objective.
 - Fixed Graknar and other quest givers hiding quests whenever faction standing was below Neutral even though those quests had no authored reputation requirement.
 - ESC now advances configured quest-giver entry transitions, skips spoken lines through their normal completion callbacks, closes visible choices, and immediately completes exit transitions without leaving cinematic control stuck.
 - Fixed the graveyard death camera remaining at Zul'kis's death location after he revives; revival now clears the fixed-point rotation before restoring his gameplay camera.
@@ -26,12 +29,23 @@
 - Fixed the ability trainer frame allowing camera movement while learning or resetting abilities.
 - Added voiced Zul'kis replies for ability trainer greetings and farewells, information requests, trading, exiting, following, stopping, declining, and accepting.
 - Darkspear NPCs at Zul'kis's landing, including the two temporary headhunter companions and preserved dead trolls, are now Neutral Passive units with the purple Darkspear color.
-- Fixed the Zul'kis camera takeover resetting to the gameplay camera immediately before scripted setups. The camera 2-to-1, 5-to-6, 3-to-4, and Nazgrek decision flows now begin with their existing zero-second hard cuts.
+- Replaced Zul'kis's camera wrapper calls with the literal adjacent GUI/trailer pattern: camera 2-to-1, 5-to-6, 3-to-4, and the Nazgrek decision flow each apply their first setup over `0.00` seconds immediately before the timed second setup.
 - The broken-landing orc patrol now reaches a 400-range formation around Zul'kis before stopping and facing him; camera 7 cuts in only after the patrol arrives and before its dialogue begins.
 - Graveyard02 now displays the selected-graveyard effect while forced for Zul'kis's prologue, and the previous graveyard marker returns with the saved selection afterward.
+- Zul'kis's narrator introduction no longer uses Zul'karak or any other unit as its transmission source.
+- The wounded witch doctor now stops bleeding, freezes in his existing lying pose, and plays the Witch Doctor death sound when his testimony ends without being killed or restarting his death animation.
+- Expired fake companion corpses are now removed directly instead of standing back up to replay their death animation before removal.
+- The shore patrol now begins approaching as soon as the wounded witch doctor's interrupted testimony ends, removing the long silent delay before camera 7 and the grunt conversation.
+- Zul'kis's prologue now restores the exact graveyard selection captured from Nazgrek gameplay before the hero handoff.
+- Rescue the Brother now requires the hostile forest trolls near Zul'karak to be killed before its completion scene begins; that scene cuts to `IntroZulkisCam8` and pans to camera 9 over 30 seconds.
+- Added three forest-troll combat reactions expressing surprise and anger at the orc patrol attacking Bramblehide without exposing Thork's hidden arrangement.
 
 ### Technical Updates
 
+- Updated `QuestsAndDialogs/QuestMaster.j` so registering a replacement unit cannot overwrite the prior type owner before quest transfer, pre-registered empty replacements can still receive the old giver data, and a unique quest title can self-repair a missed giver-handle transfer; type-based transfers now also carry QuestGiver objective-owner references to the new unit.
+- Updated `QuestsAndDialogs/QuestGiver.j`, `QuestsAndDialogs/DialogSystem.j`, and `QuestsAndDialogs/DialogInteraction.j` to normalize orphaned available-quest discovery state, coalesce the ESC key/cinematic event pair, stop skipped audio, and replace stale transition escape actions with the shared lifecycle action.
+- Updated `QuestsAndDialogs/QuestGivers/Orcs/qRagno.j` to restore all four post-outpost quests whenever they are inactive and unfinished, including recovery from an orphaned discovered flag.
+- Updated `QuestsAndDialogs/QuestMaster.j` to classify objective-completion presentations separately and prioritize them ahead of already-queued new objectives for the same quest.
 - Updated `QuestsAndDialogs/QuestMaster.j` so faction metadata no longer creates an implicit Neutral reputation gate; explicit required-reputation settings remain authoritative.
 - Updated `QuestsAndDialogs/DialogSystem.j` and `QuestsAndDialogs/DialogInteraction.j` with a shared default ESC lifecycle for configured interactions, while preserving specialized qXXX escape actions.
 - Updated `QuestsAndDialogs/QuestGivers/Orcs/qRagno.j` to use the shared entry-transition ESC continuation and retain its scoped visible-menu exit cleanup; updated `_developer/Design Plans/Story and Quest Design.md` with the shared reputation and Graknar interaction contracts.
@@ -42,15 +56,25 @@
 - Updated `Death/Revival.j` with a public graveyard-selection API that keeps the selected ID, point, and marker effect synchronized.
 - Updated `QuestsAndDialogs/QuestGivers/Player/qZulkis.j` with Darkspear ownership/color staging, Revival-backed graveyard overrides, and arrival-gated patrol dialogue using `IntroZulkisCam7`.
 - Updated `_developer/Design Plans/Story and Quest Design.md` with the finalized Darkspear staging, graveyard marker, camera takeover, and patrol-arrival contracts.
+- Updated `QuestsAndDialogs/QuestGivers/Player/qZulkis.j` with unitless narrator context, literal adjacent camera setup pairs, and a sound-only witch-doctor fake death that converts to a decaying corpse after the prologue fade.
+- Updated `Death/Death.j` so retained fake hired-unit corpses are removed at expiry without unfreezing or receiving a real `KillUnit` death.
+- Updated `_developer/Design Plans/Story and Quest Design.md` with the narrator, literal camera-pair, and frozen witch-doctor body contracts.
+- Updated `QuestsAndDialogs/QuestGivers/Player/qZulkis.j` with immediate fake-death-to-patrol handoff, explicit Nazgrek graveyard storage, hostile-clear rescue gating, the camera 8-to-9 completion flow, and three additional forest-troll bark branches.
+- Updated `Voicelines/Voicelines_GenericTroll.j` with three non-revealing forest-troll reactions to the orc patrol fighting beside Darkspear.
+- Generated FishAudio review MP3s for `ForestTroll_0007` through `ForestTroll_0009` with the TrollMale1 voice; the files remain under `tools/temp/fishaudio-review/ForestTroll/` pending listening and promotion.
+- Updated `_developer/Design Plans/Story and Quest Design.md` with the patrol timing, graveyard ownership, rescue clearance radius, completion camera, and forest-troll reaction contracts.
 - Updated `Abilities/AbilityTrainerDialogs.j` to preserve the cinematic camera input lock while `UI/AbilitiesUI.j` is open.
 - Updated `Voicelines/Voicelines_Zulkis.j`, `QuestsAndDialogs/DialogSystemPlayer.j`, and `SoundAndMusic/ExSound.j` with centralized Zul'kis dialog keys, text, registrations, and voiceline-generation discovery metadata.
 
 ### Actions Remaining
 
-- Compile the full map with World Editor/JassHelper and runtime-test ESC during both entry fade phases, greetings, accept/complete/farewell lines, visible choices, and both exit fade phases for Graknar, Ragno, and Aradion; verify Mistaken Kin remains offered below Neutral Horde reputation.
+- Compile the full map with World Editor/JassHelper and repeat the reported path: complete Protect the Outpost and the Zul'kis prologue, confirm Ragno offers Gnoll Headcount, Lumberjack Duties, Kobold Thieves, and Satyr Negotiations, then test one ESC press during entry, speech, choices, and exit on Ragno and Graknar.
+- Runtime-test Meet with Chieftain Thork and other staged objective transitions; confirm the completed objective appears first and the newly acquired objective follows five seconds later.
+- Runtime-test Aradion's configured ESC path and verify Mistaken Kin remains offered below Neutral Horde reputation.
 - Runtime-test Zul'kis dying while actively tracked, reviving at the selected graveyard, and immediately regaining normal and advanced camera tracking without a mode toggle.
-- Compile the full map with World Editor/JassHelper and runtime-test respawned Ragno's four post-outpost quest choices, every Zul'kis prologue zero-second camera cut, Graveyard02 marker restoration, Neutral Passive companion commands/combat behavior, and the patrol's 400-range arrival formation plus camera 7 handoff.
+- Compile the full map with World Editor/JassHelper and runtime-test respawned Ragno's four post-outpost quest choices, every literal Zul'kis prologue zero-second camera pair, the unitless narrator display, Graveyard02 marker restoration, Neutral Passive companion commands/combat behavior, the witch doctor's frozen fake death and sound, retained-companion expiry, and the patrol's 400-range arrival formation plus camera 7 handoff.
 - Review and import the 17 generated Zul'kis dialog MP3s from `tools/temp/fishaudio-review/ZulkisEventLines/`, then runtime-test the ability trainer camera lock and every newly voiced reply.
+- Review and import `ForestTroll_0007` through `ForestTroll_0009`, then runtime-test the shortened shore patrol handoff, Nazgrek graveyard restoration, 700-range rescue clearance gate, and camera 8-to-9 completion pan.
 
 ## [30.8.2026]
 
