@@ -2,7 +2,7 @@
     qZulkis
 
     Author: Valdemar
-    Version: 1.3.1
+    Version: 1.4.0
 
     Description:
 
@@ -35,7 +35,7 @@
     qZulkis_IsPrologueCompleted() gates Call of the Horde convergence.
 
 **/
-library qZulkis initializer Init requires QuestGiver, QuestMaster, DialogInteraction, DialogSystem, CameraControl, Companions, Death, HintsUI, DInventory, DEquipment, Start, VoicelinesNarrator, VoicelinesNazgrek, VoicelinesZulkis, VoicelinesThork, VoicelinesZulkarak, VoicelinesGenericTroll, VoicelinesOrcGrunt, optional Pet
+library qZulkis initializer Init requires QuestGiver, QuestMaster, DialogInteraction, DialogSystem, CameraControl, Companions, Death, Revival, HintsUI, DInventory, DEquipment, Start, VoicelinesNarrator, VoicelinesNazgrek, VoicelinesZulkis, VoicelinesThork, VoicelinesZulkarak, VoicelinesGenericTroll, VoicelinesOrcGrunt, optional Pet
     globals
         // Quest and staging configuration
         public constant string QUEST_MEET_CHIEFTAIN_THORK = "Meet with Chieftain Thork"
@@ -76,6 +76,10 @@ library qZulkis initializer Init requires QuestGiver, QuestMaster, DialogInterac
         private constant real WOUNDED_BLOOD_MIN_DELAY = 2.00
         private constant real WOUNDED_BLOOD_MAX_DELAY = 4.00
         private constant real WOUNDED_DEATH_DELAY = 1.50
+        private constant real ORC_PATROL_STOP_RANGE = 400.00
+        private constant real ORC_PATROL_ARRIVAL_TOLERANCE = 75.00
+        private constant real ORC_PATROL_ARRIVAL_CHECK_INTERVAL = 0.10
+        private constant real ORC_PATROL_ARRIVAL_TIMEOUT = 20.00
         private constant real DAMAGED_SHIP_LIFE_FACTOR = 0.35
         private constant real FOREST_TROLL_BARK_MIN_DELAY = 8.00
         private constant real FOREST_TROLL_BARK_MAX_DELAY = 15.00
@@ -101,10 +105,14 @@ library qZulkis initializer Init requires QuestGiver, QuestMaster, DialogInterac
         private timer TransitionTimer = null
         private timer WoundedBloodTimer = null
         private timer WoundedDeathTimer = null
+        private timer OrcPatrolArrivalTimer = null
         private integer PrologueState = STATE_DORMANT
         private real ShipTravelElapsed = 0.00
         private real ForestTrollBarkElapsed = 0.00
         private real ForestTrollNextBark = 0.00
+        private real OrcPatrolArrivalElapsed = 0.00
+        private real array OrcPatrolStopX
+        private real array OrcPatrolStopY
         private player NazgrekSavedOwner = null
         private boolean NazgrekSavedInvulnerable = false
         private boolean NazgrekWasUnitHiderReference = false
@@ -119,6 +127,8 @@ library qZulkis initializer Init requires QuestGiver, QuestMaster, DialogInterac
         private boolean BrokenLandingViewStaged = false
         private boolean OrcPatrolStaged = false
         private boolean OrcPatrolActive = false
+        private boolean OrcPatrolArrivalPending = false
+        private boolean WoundedDeathScheduled = false
         private boolean InitWaitingLogged = false
     endglobals
 
@@ -133,15 +143,17 @@ private function OverridePrologueGraveyard takes nothing returns nothing
         return
     endif
     if not GraveyardOverrideActive then
-        set SavedGraveyardId = udg_GraveyardSelect
+        set SavedGraveyardId = Revival_GetSelectedGraveyard()
         set GraveyardOverrideActive = true
+        call Revival_SelectGraveyard(ZULKIS_GRAVEYARD_ID)
+    elseif udg_GraveyardSelect != ZULKIS_GRAVEYARD_ID then
+        call Revival_SelectGraveyard(ZULKIS_GRAVEYARD_ID)
     endif
-    set udg_GraveyardSelect = ZULKIS_GRAVEYARD_ID
 endfunction
 
 private function RestorePlayerGraveyard takes nothing returns nothing
     if GraveyardOverrideActive then
-        set udg_GraveyardSelect = SavedGraveyardId
+        call Revival_SelectGraveyard(SavedGraveyardId)
         set GraveyardOverrideActive = false
     endif
 endfunction
@@ -214,7 +226,8 @@ private function PrepareLivingTroll takes integer index, integer unitTypeId, rec
     if LandingTroll[index] != null then
         call RemoveUnit(LandingTroll[index])
     endif
-    set LandingTroll[index] = CreateUnit(Player(DARKSPEAR_PLAYER_ID), unitTypeId, GetRectCenterX(whichRect), GetRectCenterY(whichRect), GetRandomReal(0.00, 360.00))
+    set LandingTroll[index] = CreateUnit(Player(PLAYER_NEUTRAL_PASSIVE), unitTypeId, GetRectCenterX(whichRect), GetRectCenterY(whichRect), GetRandomReal(0.00, 360.00))
+    call SetUnitColor(LandingTroll[index], PLAYER_COLOR_PURPLE)
     call SetUnitInvulnerable(LandingTroll[index], true)
     call PauseUnit(LandingTroll[index], true)
 endfunction
@@ -238,7 +251,8 @@ private function PrepareStartingHeadhunters takes nothing returns nothing
             call RemoveUnit(StartingHeadhunter[index])
         endif
         set angle = GetUnitFacing(Zulkis) + 120.00 + 120.00 * I2R(index - 1)
-        set StartingHeadhunter[index] = CreateUnit(Player(COMPANION_PLAYER_ID), UNIT_DARKSPEAR_HEADHUNTER, GetUnitX(Zulkis) + 150.00 * Cos(angle * bj_DEGTORAD), GetUnitY(Zulkis) + 150.00 * Sin(angle * bj_DEGTORAD), angle + 180.00)
+        set StartingHeadhunter[index] = CreateUnit(Player(PLAYER_NEUTRAL_PASSIVE), UNIT_DARKSPEAR_HEADHUNTER, GetUnitX(Zulkis) + 150.00 * Cos(angle * bj_DEGTORAD), GetUnitY(Zulkis) + 150.00 * Sin(angle * bj_DEGTORAD), angle + 180.00)
+        call SetUnitColor(StartingHeadhunter[index], PLAYER_COLOR_PURPLE)
         call SetUnitCreepGuard(StartingHeadhunter[index], false)
         call SetUnitInvulnerable(StartingHeadhunter[index], true)
         call PauseUnit(StartingHeadhunter[index], true)
@@ -280,8 +294,9 @@ endfunction
 private function CreatePermanentCorpse takes integer index, integer unitTypeId, rect whichRect returns nothing
     local location corpsePoint = Location(GetRectCenterX(whichRect), GetRectCenterY(whichRect))
 
-    set LandingTroll[index] = CreatePermanentCorpseLocBJ(bj_CORPSETYPE_FLESH, unitTypeId, Player(DARKSPEAR_PLAYER_ID), corpsePoint, GetRandomReal(0.00, 360.00))
+    set LandingTroll[index] = CreatePermanentCorpseLocBJ(bj_CORPSETYPE_FLESH, unitTypeId, Player(PLAYER_NEUTRAL_PASSIVE), corpsePoint, GetRandomReal(0.00, 360.00))
     if LandingTroll[index] != null then
+        call SetUnitColor(LandingTroll[index], PLAYER_COLOR_PURPLE)
         call UnitSuspendDecay(LandingTroll[index], true)
     endif
     call RemoveLocation(corpsePoint)
@@ -394,7 +409,8 @@ private function StageShoreIntro takes nothing returns nothing
     call PrepareStartingHeadhunters()
     call ShowUnit(Zulkis, true)
     call PauseUnit(Zulkis, true)
-    call SetUnitOwner(Zulkarak, Player(DARKSPEAR_PLAYER_ID), true)
+    call SetUnitOwner(Zulkarak, Player(PLAYER_NEUTRAL_PASSIVE), true)
+    call SetUnitColor(Zulkarak, PLAYER_COLOR_PURPLE)
     call SetUnitInvulnerable(Zulkarak, true)
     call ShowUnit(Zulkarak, true)
     call PauseUnit(Zulkarak, true)
@@ -526,6 +542,7 @@ private function StageBrokenLanding takes nothing returns nothing
     if LandingTroll[3] != null then
         call SetWidgetLife(LandingTroll[3], RMaxBJ(1.00, GetUnitState(LandingTroll[3], UNIT_STATE_MAX_LIFE) * 0.10))
         call SetUnitOwner(LandingTroll[3], Player(PLAYER_NEUTRAL_PASSIVE), true)
+        call SetUnitColor(LandingTroll[3], PLAYER_COLOR_PURPLE)
         call SetUnitInvulnerable(LandingTroll[3], true)
         call PauseUnit(LandingTroll[3], false)
         call IssueImmediateOrder(LandingTroll[3], "stop")
@@ -535,6 +552,7 @@ private function StageBrokenLanding takes nothing returns nothing
     endif
 
     call SetUnitOwner(Zulkarak, Player(PLAYER_NEUTRAL_PASSIVE), true)
+    call SetUnitColor(Zulkarak, PLAYER_COLOR_PURPLE)
     call SetUnitPosition(Zulkarak, GetRectCenterX(gg_rct_ZulkarakCaptive), GetRectCenterY(gg_rct_ZulkarakCaptive))
     call SetUnitInvulnerable(Zulkarak, true)
     call PauseUnit(Zulkarak, true)
@@ -574,8 +592,7 @@ private function StageOrcPatrol takes nothing returns nothing
     local real zulkisX
     local real zulkisY
     local real approachAngle
-    local real sideAngle
-    local real targetDistance
+    local real stopAngle
     local real sideOffset
     local real spawnX
     local real spawnY
@@ -590,17 +607,32 @@ private function StageOrcPatrol takes nothing returns nothing
     set spawnX = GetRectCenterX(gg_rct_HavenwoodsOrcPatrol)
     set spawnY = GetRectCenterY(gg_rct_HavenwoodsOrcPatrol)
     set approachAngle = Atan2(zulkisY - spawnY, zulkisX - spawnX)
-    set sideAngle = approachAngle + bj_PI * 0.50
 
     loop
         exitwhen index > ORC_PATROL_SIZE
-        set targetDistance = 230.00 + 45.00 * I2R(index - 1)
+        set stopAngle = approachAngle + bj_PI + 0.16 * (I2R(index) - 2.50)
         set sideOffset = 90.00 * (I2R(index) - 2.50)
-        call SetUnitPosition(OrcPatrolGrunt[index], spawnX + Cos(sideAngle) * sideOffset, spawnY + Sin(sideAngle) * sideOffset)
+        set OrcPatrolStopX[index] = zulkisX + ORC_PATROL_STOP_RANGE * Cos(stopAngle)
+        set OrcPatrolStopY[index] = zulkisY + ORC_PATROL_STOP_RANGE * Sin(stopAngle)
+        call SetUnitPosition(OrcPatrolGrunt[index], spawnX + Cos(approachAngle + bj_PI * 0.50) * sideOffset, spawnY + Sin(approachAngle + bj_PI * 0.50) * sideOffset)
         call SetUnitFacing(OrcPatrolGrunt[index], approachAngle * bj_RADTODEG)
         call ShowUnit(OrcPatrolGrunt[index], true)
         call PauseUnit(OrcPatrolGrunt[index], false)
-        call IssuePointOrder(OrcPatrolGrunt[index], "move", zulkisX - Cos(approachAngle) * targetDistance + Cos(sideAngle) * sideOffset, zulkisY - Sin(approachAngle) * targetDistance + Sin(sideAngle) * sideOffset)
+        call IssuePointOrder(OrcPatrolGrunt[index], "move", OrcPatrolStopX[index], OrcPatrolStopY[index])
+        set index = index + 1
+    endloop
+endfunction
+
+private function StopOrcPatrolAtZulkis takes nothing returns nothing
+    local integer index = 1
+
+    loop
+        exitwhen index > ORC_PATROL_SIZE
+        if OrcPatrolGrunt[index] != null and GetUnitTypeId(OrcPatrolGrunt[index]) != 0 then
+            call IssueImmediateOrder(OrcPatrolGrunt[index], "stop")
+            call SetUnitPosition(OrcPatrolGrunt[index], OrcPatrolStopX[index], OrcPatrolStopY[index])
+            call SetUnitFacing(OrcPatrolGrunt[index], Atan2(GetUnitY(Zulkis) - GetUnitY(OrcPatrolGrunt[index]), GetUnitX(Zulkis) - GetUnitX(OrcPatrolGrunt[index])) * bj_RADTODEG)
+        endif
         set index = index + 1
     endloop
 endfunction
@@ -627,6 +659,8 @@ endfunction
 private function CleanupOrcPatrol takes nothing returns nothing
     local integer index = 1
 
+    call PauseTimer(OrcPatrolArrivalTimer)
+    set OrcPatrolArrivalPending = false
     loop
         exitwhen index > ORC_PATROL_SIZE
         if OrcPatrolGrunt[index] != null then
@@ -649,6 +683,7 @@ private function OnWoundedDeath takes nothing returns nothing
 endfunction
 
 private function ScheduleWoundedDeath takes nothing returns nothing
+    set WoundedDeathScheduled = true
     call TimerStart(WoundedDeathTimer, WOUNDED_DEATH_DELAY, false, function OnWoundedDeath)
 endfunction
 
@@ -665,6 +700,8 @@ endfunction
 private function FinishBrokenLanding takes nothing returns nothing
     local boolean skippedBeforeStaging = not BrokenLandingViewStaged
 
+    call PauseTimer(OrcPatrolArrivalTimer)
+    set OrcPatrolArrivalPending = false
     if skippedBeforeStaging then
         call StageBrokenLandingView()
     endif
@@ -688,8 +725,67 @@ private function FinishBrokenLanding takes nothing returns nothing
     call HintsUI_PublishForUnit(HintsUI_HINT_ZULKIS_PATROL, Zulkis)
 endfunction
 
-private function OnBrokenLandingSequenceEnd takes nothing returns nothing
+private function OnOrcPatrolDialogueEnd takes nothing returns nothing
     call FinishBrokenLanding()
+endfunction
+
+private function PlayOrcPatrolDialogue takes nothing returns nothing
+    local integer seq = DialogInteraction_CreateBaseSequence(OrcPatrolGrunt[1], "Orc Grunt")
+
+    call DialogSystem_SetSequenceCallbacks(seq, null, function OnOrcPatrolDialogueEnd)
+    call DialogSystem_AddMakeFaceEachOther(seq, OrcPatrolGrunt[1], Zulkis, 0.75, 0.00)
+    call DialogSystem_AddLine(seq, OrcPatrolGrunt[1], "Orc Grunt", VL_ORCGRUNT_0167_TEXT, VL_ORCGRUNT_0167_KEY, true)
+    call DialogSystem_AddLine(seq, Zulkis, "Zul'kis", VL_ZULKIS_0009_TEXT, VL_ZULKIS_0009_KEY, true)
+    call DialogSystem_AddLine(seq, OrcPatrolGrunt[1], "Orc Grunt", VL_ORCGRUNT_0168_TEXT, VL_ORCGRUNT_0168_KEY, true)
+    call DialogSystem_PlaySequence(seq, Player(0), OrcPatrolGrunt[1])
+endfunction
+
+private function FinishOrcPatrolArrival takes nothing returns nothing
+    call PauseTimer(OrcPatrolArrivalTimer)
+    set OrcPatrolArrivalPending = false
+    call StopOrcPatrolAtZulkis()
+    call ApplyCameraSetupInstant(gg_cam_IntroZulkisCam7)
+    call PlayOrcPatrolDialogue()
+endfunction
+
+private function HasOrcPatrolArrived takes nothing returns boolean
+    local integer index = 1
+
+    loop
+        exitwhen index > ORC_PATROL_SIZE
+        if not IsUnitNearUnit(OrcPatrolGrunt[index], Zulkis, ORC_PATROL_STOP_RANGE + ORC_PATROL_ARRIVAL_TOLERANCE) then
+            return false
+        endif
+        set index = index + 1
+    endloop
+    return true
+endfunction
+
+private function OnOrcPatrolArrivalCheck takes nothing returns nothing
+    if not OrcPatrolArrivalPending then
+        call PauseTimer(OrcPatrolArrivalTimer)
+        return
+    endif
+    set OrcPatrolArrivalElapsed = OrcPatrolArrivalElapsed + ORC_PATROL_ARRIVAL_CHECK_INTERVAL
+    if HasOrcPatrolArrived() or OrcPatrolArrivalElapsed >= ORC_PATROL_ARRIVAL_TIMEOUT then
+        call FinishOrcPatrolArrival()
+    endif
+endfunction
+
+private function BeginOrcPatrolArrival takes nothing returns nothing
+    call FinishWoundedTrollDeath(false)
+    call StageOrcPatrol()
+    set OrcPatrolArrivalElapsed = 0.00
+    set OrcPatrolArrivalPending = true
+    call TimerStart(OrcPatrolArrivalTimer, ORC_PATROL_ARRIVAL_CHECK_INTERVAL, true, function OnOrcPatrolArrivalCheck)
+endfunction
+
+private function OnBrokenLandingSequenceEnd takes nothing returns nothing
+    if WoundedDeathScheduled then
+        call BeginOrcPatrolArrival()
+    else
+        call FinishBrokenLanding()
+    endif
 endfunction
 
 private function OnBrokenLandingSequenceStart takes nothing returns nothing
@@ -706,6 +802,7 @@ private function PlayBrokenLandingSequence takes nothing returns nothing
     call PrepareOrcPatrol()
     set seq = DialogInteraction_CreateBaseSequence(LandingTroll[3], "Darkspear Witch Doctor")
     set BrokenLandingViewStaged = false
+    set WoundedDeathScheduled = false
     call DialogSystem_SetSequenceCallbacks(seq, function OnBrokenLandingSequenceStart, function OnBrokenLandingSequenceEnd)
     call DialogSystem_AddFadeTransition(seq, FADE_DURATION, FADE_DURATION, function StageBrokenLandingView)
     call DialogSystem_AddDelay(seq, 0.50)
@@ -722,11 +819,6 @@ private function PlayBrokenLandingSequence takes nothing returns nothing
     call DialogSystem_AddLine(seq, LandingTroll[3], "Darkspear Witch Doctor", VL_GENERICTROLL_0002_TEXT, VL_GENERICTROLL_0002_KEY, true)
     set deathLine = DialogSystem_AddLine(seq, LandingTroll[3], "Darkspear Witch Doctor", VL_GENERICTROLL_0003_TEXT, VL_GENERICTROLL_0003_KEY, true)
     call DialogSystem_BindLineAction(seq, deathLine, function ScheduleWoundedDeath)
-    call DialogSystem_AddDelay(seq, 0.75)
-    call DialogSystem_AddMakeFaceEachOther(seq, OrcPatrolGrunt[1], Zulkis, 0.75, 0.00)
-    call DialogSystem_AddLine(seq, OrcPatrolGrunt[1], "Orc Grunt", VL_ORCGRUNT_0167_TEXT, VL_ORCGRUNT_0167_KEY, true)
-    call DialogSystem_AddLine(seq, Zulkis, "Zul'kis", VL_ZULKIS_0009_TEXT, VL_ZULKIS_0009_KEY, true)
-    call DialogSystem_AddLine(seq, OrcPatrolGrunt[1], "Orc Grunt", VL_ORCGRUNT_0168_TEXT, VL_ORCGRUNT_0168_KEY, true)
     call DialogSystem_PlaySequence(seq, Player(0), LandingTroll[3])
 endfunction
 
@@ -853,6 +945,7 @@ private function CompletePrologue takes nothing returns nothing
 
     call SetUnitPosition(Zulkarak, GetRectCenterX(gg_rct_ZulkarakHordeHome), GetRectCenterY(gg_rct_ZulkarakHordeHome))
     call SetUnitOwner(Zulkarak, Player(PLAYER_NEUTRAL_PASSIVE), true)
+    call SetUnitColor(Zulkarak, PLAYER_COLOR_PURPLE)
     call SetUnitInvulnerable(Zulkarak, true)
     call PauseUnit(Zulkarak, false)
     call ShowUnit(Zulkarak, true)
@@ -1157,6 +1250,7 @@ private function Init takes nothing returns nothing
     set TransitionTimer = CreateTimer()
     set WoundedBloodTimer = CreateTimer()
     set WoundedDeathTimer = CreateTimer()
+    set OrcPatrolArrivalTimer = CreateTimer()
     call TimerStart(InitTimer, 0.00, false, function InitDelayed)
 endfunction
 
