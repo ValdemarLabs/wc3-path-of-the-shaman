@@ -2,7 +2,7 @@
     CameraControl
     
     Author: [Valdemar]
-    Version: 1.1.0
+    Version: 1.1.1
 
     Description: Keeps each player's camera behavior consistent, including modes, target tracking, and basic movement controls.
 
@@ -1462,21 +1462,11 @@ public function Suspend takes player whichPlayer returns nothing
 endfunction
 
 public function PrepareScriptedCamera takes player whichPlayer returns nothing
-    local integer pid = CC_GetPlayerIndex(whichPlayer)
-    local boolean wasSuspended = CC_Suspended[pid]
-
     call Suspend(whichPlayer)
-    // Suspend intentionally returns early when another cinematic already owns
-    // the camera. A new scripted setup must still remove any binding that was
-    // established after that earlier suspension.
-    if wasSuspended then
-        call FCL_Release(whichPlayer)
-        call ReleaseCameraUnit(whichPlayer)
-        call ReleaseMovementUnit(whichPlayer)
-    endif
     if GetLocalPlayer() == whichPlayer then
-        // Release helpers can queue ResetToGameCamera(0). Stop that movement
-        // and disable target smoothing before CameraSetupApply(..., 0.00).
+        // Suspension already releases gameplay bindings. Releasing them again
+        // here queues another ResetToGameCamera(0) immediately before the
+        // scripted setup and turns its intended hard cut into a visible pan.
         call StopCamera()
         call CameraSetSmoothingFactor(0)
     endif
