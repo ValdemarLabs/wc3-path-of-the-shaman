@@ -15,6 +15,43 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [31.8.2026]
+
+### Player-Facing Updates
+
+- Fixed Graknar and other quest givers hiding quests whenever faction standing was below Neutral even though those quests had no authored reputation requirement.
+- ESC now advances configured quest-giver entry transitions, skips spoken lines through their normal completion callbacks, closes visible choices, and immediately completes exit transitions without leaving cinematic control stuck.
+- Fixed the graveyard death camera remaining at Zul'kis's death location after he revives; revival now clears the fixed-point rotation before restoring his gameplay camera.
+- Fixed respawned Ragno showing a quest marker but only Farewell after Protect the Outpost and Zul'kis's prologue; Gnoll Headcount, Lumberjack Duties, Kobold Thieves, and Satyr Negotiations now reliably become available after the outpost defense regardless of Horde reputation.
+- Fixed the ability trainer frame allowing camera movement while learning or resetting abilities.
+- Added voiced Zul'kis replies for ability trainer greetings and farewells, information requests, trading, exiting, following, stopping, declining, and accepting.
+- Darkspear NPCs at Zul'kis's landing, including the two temporary headhunter companions and preserved dead trolls, are now Neutral Passive units with the purple Darkspear color.
+- Fixed the Zul'kis camera takeover resetting to the gameplay camera immediately before scripted setups. The camera 2-to-1, 5-to-6, 3-to-4, and Nazgrek decision flows now begin with their existing zero-second hard cuts.
+- The broken-landing orc patrol now reaches a 400-range formation around Zul'kis before stopping and facing him; camera 7 cuts in only after the patrol arrives and before its dialogue begins.
+- Graveyard02 now displays the selected-graveyard effect while forced for Zul'kis's prologue, and the previous graveyard marker returns with the saved selection afterward.
+
+### Technical Updates
+
+- Updated `QuestsAndDialogs/QuestMaster.j` so faction metadata no longer creates an implicit Neutral reputation gate; explicit required-reputation settings remain authoritative.
+- Updated `QuestsAndDialogs/DialogSystem.j` and `QuestsAndDialogs/DialogInteraction.j` with a shared default ESC lifecycle for configured interactions, while preserving specialized qXXX escape actions.
+- Updated `QuestsAndDialogs/QuestGivers/Orcs/qRagno.j` to use the shared entry-transition ESC continuation and retain its scoped visible-menu exit cleanup; updated `_developer/Design Plans/Story and Quest Design.md` with the shared reputation and Graknar interaction contracts.
+- Updated `Death/Revival.j` to reset Warcraft III's rotate-camera mode before CameraControl resumes tracking the revived hero.
+- Updated `QuestsAndDialogs/QuestMaster.j` to reindex and self-repair name-and-giver quest lookups when a dead or removed quest giver is replaced, and corrected the live-reference path so receiver-only quests do not gain false giver aliases.
+- Updated `QuestsAndDialogs/QuestGivers/Orcs/qRagno.j` to restore the original minimum reputation threshold and enforce Protect the Outpost completion as the post-outpost quest availability invariant; updated `_developer/Design Plans/Story and Quest Design.md` with that access contract.
+- Updated `UI/CameraControl.j` so repeated scripted-camera preparation remains suspended without re-running reset-producing release helpers.
+- Updated `Death/Revival.j` with a public graveyard-selection API that keeps the selected ID, point, and marker effect synchronized.
+- Updated `QuestsAndDialogs/QuestGivers/Player/qZulkis.j` with Darkspear ownership/color staging, Revival-backed graveyard overrides, and arrival-gated patrol dialogue using `IntroZulkisCam7`.
+- Updated `_developer/Design Plans/Story and Quest Design.md` with the finalized Darkspear staging, graveyard marker, camera takeover, and patrol-arrival contracts.
+- Updated `Abilities/AbilityTrainerDialogs.j` to preserve the cinematic camera input lock while `UI/AbilitiesUI.j` is open.
+- Updated `Voicelines/Voicelines_Zulkis.j`, `QuestsAndDialogs/DialogSystemPlayer.j`, and `SoundAndMusic/ExSound.j` with centralized Zul'kis dialog keys, text, registrations, and voiceline-generation discovery metadata.
+
+### Actions Remaining
+
+- Compile the full map with World Editor/JassHelper and runtime-test ESC during both entry fade phases, greetings, accept/complete/farewell lines, visible choices, and both exit fade phases for Graknar, Ragno, and Aradion; verify Mistaken Kin remains offered below Neutral Horde reputation.
+- Runtime-test Zul'kis dying while actively tracked, reviving at the selected graveyard, and immediately regaining normal and advanced camera tracking without a mode toggle.
+- Compile the full map with World Editor/JassHelper and runtime-test respawned Ragno's four post-outpost quest choices, every Zul'kis prologue zero-second camera cut, Graveyard02 marker restoration, Neutral Passive companion commands/combat behavior, and the patrol's 400-range arrival formation plus camera 7 handoff.
+- Review and import the 17 generated Zul'kis dialog MP3s from `tools/temp/fishaudio-review/ZulkisEventLines/`, then runtime-test the ability trainer camera lock and every newly voiced reply.
+
 ## [30.8.2026]
 
 ### Player-Facing Updates
