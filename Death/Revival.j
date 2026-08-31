@@ -27,6 +27,7 @@
     call Revival_SetDropItemsOnDeath(enabled)
     call Revival_GetGraveyardRect(graveyardId) returns rect
     call Revival_GetSelectedGraveyard() returns integer
+    call Revival_SelectGraveyard(graveyardId)
 
 **/
 library Revival initializer Init requires Death, Table, Events, UnitDeathEvent, ExSound, CameraControl, DEquipment, DialogInteraction, DialogSystem, optional HintsUI
@@ -168,6 +169,7 @@ private function Revival_StopDeathCamera takes nothing returns nothing
     call PauseTimer(Revival_DeathCameraTimer)
     set Revival_DeathCameraHero = null
     call StopCameraForPlayerBJ(Player(0))
+    call ResetToGameCameraForPlayer(Player(0), 0.00)
     call CameraControl_ResumeQuick(Player(0))
 endfunction
 
@@ -326,6 +328,13 @@ private function Revival_UpdateGraveyardLegacyState takes integer graveyardId re
     endif
     set udg_GraveyardSpecialEffect = AddSpecialEffect(REVIVAL_GRAVEYARD_EFFECT, x, y)
     set graveyardRect = null
+endfunction
+
+public function SelectGraveyard takes integer graveyardId returns nothing
+    if graveyardId < 1 or graveyardId > 9 then
+        return
+    endif
+    call Revival_UpdateGraveyardLegacyState(graveyardId)
 endfunction
 
 private function Revival_GetNearestGraveyardId takes unit healer returns integer
