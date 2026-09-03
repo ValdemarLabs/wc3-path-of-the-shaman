@@ -2,7 +2,7 @@
     ShopUI
 
     Author: Valdemar
-    Version: 1.1.1
+    Version: 1.1.2
 
     Description:
     Frame UI for PotS merchant vendors. The panel can browse merchant stock or
@@ -858,6 +858,7 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
         call BlzFrameSetAlpha(SUI_MainBackdrop, 255)
         call BlzFrameSetVertexColor(SUI_MainBackdrop, BlzConvertColor(255, 0, 0, 0))
         call BlzFrameSetEnable(SUI_MainBackdrop, false)
+        call BlzFrameSetLevel(SUI_MainBackdrop, 0)
 
         set SUI_Title = BlzCreateFrameByType("TEXT", "ShopUITitle", SUI_Parent, "", 0)
         call BlzFrameSetPoint(SUI_Title, FRAMEPOINT_TOPLEFT, SUI_Parent, FRAMEPOINT_TOPLEFT, 0.018, -0.018)
@@ -865,6 +866,7 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
         call BlzFrameSetTextAlignment(SUI_Title, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
         call BlzFrameSetScale(SUI_Title, 1.10)
         call BlzFrameSetEnable(SUI_Title, false)
+        call BlzFrameSetLevel(SUI_Title, 2)
 
         set SUI_ViewingText = BlzCreateFrameByType("TEXT", "ShopUIViewing", SUI_Parent, "", 0)
         call BlzFrameSetPoint(SUI_ViewingText, FRAMEPOINT_TOPLEFT, SUI_Parent, FRAMEPOINT_TOPLEFT, 0.018, -0.048)
@@ -872,11 +874,13 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
         call BlzFrameSetTextAlignment(SUI_ViewingText, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
         call BlzFrameSetScale(SUI_ViewingText, 0.96)
         call BlzFrameSetEnable(SUI_ViewingText, false)
+        call BlzFrameSetLevel(SUI_ViewingText, 2)
 
         set SUI_CloseButton = BlzCreateFrameByType("GLUETEXTBUTTON", "ShopUIClose", SUI_Parent, "ScriptDialogButton", 0)
         call BlzFrameSetSize(SUI_CloseButton, 0.064, 0.030)
         call BlzFrameSetText(SUI_CloseButton, "Close")
         call BlzFrameSetPoint(SUI_CloseButton, FRAMEPOINT_TOPRIGHT, SUI_Parent, FRAMEPOINT_TOPRIGHT, -0.010, -0.010)
+        call BlzFrameSetLevel(SUI_CloseButton, 3)
         call BlzTriggerRegisterFrameEvent(SUI_CloseTrigger, SUI_CloseButton, FRAMEEVENT_CONTROL_CLICK)
         call BlzTriggerRegisterFrameEvent(SUI_ClearFocusTrigger, SUI_CloseButton, FRAMEEVENT_CONTROL_CLICK)
 
@@ -884,6 +888,7 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
         call BlzFrameSetSize(SUI_ModeButton, 0.080, 0.030)
         call BlzFrameSetText(SUI_ModeButton, "Merchant")
         call BlzFrameSetPoint(SUI_ModeButton, FRAMEPOINT_TOPRIGHT, SUI_CloseButton, FRAMEPOINT_TOPLEFT, -0.008, 0.0)
+        call BlzFrameSetLevel(SUI_ModeButton, 3)
         call BlzTriggerRegisterFrameEvent(SUI_ModeTrigger, SUI_ModeButton, FRAMEEVENT_CONTROL_CLICK)
         call BlzTriggerRegisterFrameEvent(SUI_ClearFocusTrigger, SUI_ModeButton, FRAMEEVENT_CONTROL_CLICK)
 
@@ -892,6 +897,7 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
             set SUI_CategoryButton[categoryIndex] = BlzCreateFrameByType("GLUETEXTBUTTON", "ShopUICategory" + I2S(categoryIndex), SUI_Parent, "ScriptDialogButton", 0)
             call BlzFrameSetSize(SUI_CategoryButton[categoryIndex], 0.079, 0.024)
             call BlzFrameSetText(SUI_CategoryButton[categoryIndex], "")
+            call BlzFrameSetLevel(SUI_CategoryButton[categoryIndex], 3)
             if categoryIndex == 1 then
                 call BlzFrameSetPoint(SUI_CategoryButton[categoryIndex], FRAMEPOINT_TOPLEFT, SUI_Parent, FRAMEPOINT_TOPLEFT, 0.018, -0.074)
             else
@@ -904,6 +910,7 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
             call BlzFrameSetTextAlignment(SUI_CategoryText[categoryIndex], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_CENTER)
             call BlzFrameSetScale(SUI_CategoryText[categoryIndex], SUI_CATEGORY_TEXT_SCALE)
             call BlzFrameSetEnable(SUI_CategoryText[categoryIndex], false)
+            call BlzFrameSetLevel(SUI_CategoryText[categoryIndex], 4)
 
             call BlzTriggerRegisterFrameEvent(SUI_CategoryTrigger, SUI_CategoryButton[categoryIndex], FRAMEEVENT_CONTROL_CLICK)
             call BlzTriggerRegisterFrameEvent(SUI_ClearFocusTrigger, SUI_CategoryButton[categoryIndex], FRAMEEVENT_CONTROL_CLICK)
@@ -917,6 +924,7 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
         call BlzFrameSetTexture(SUI_LeftPane, SUI_PanelTexture, 0, true)
         call BlzFrameSetPoint(SUI_LeftPane, FRAMEPOINT_TOPLEFT, SUI_Parent, FRAMEPOINT_TOPLEFT, 0.014, -0.104)
         call BlzFrameSetPoint(SUI_LeftPane, FRAMEPOINT_BOTTOMRIGHT, SUI_Parent, FRAMEPOINT_BOTTOMLEFT, 0.215, 0.014)
+        call BlzFrameSetLevel(SUI_LeftPane, 1)
 
         set SUI_ListScroll = BlzCreateFrameByType("SLIDER", "ShopUIListScroll", SUI_LeftPane, "QuestMainListScrollBar", 0)
         call BlzFrameSetPoint(SUI_ListScroll, FRAMEPOINT_TOPLEFT, SUI_LeftPane, FRAMEPOINT_TOPRIGHT, 0.004, -0.002)
@@ -925,6 +933,7 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
         call BlzFrameSetStepSize(SUI_ListScroll, 1.0)
         call BlzFrameSetValue(SUI_ListScroll, 0.0)
         call BlzFrameSetVisible(SUI_ListScroll, false)
+        call BlzFrameSetLevel(SUI_ListScroll, 4)
         call BlzTriggerRegisterFrameEvent(SUI_ListScrollTrigger, SUI_ListScroll, FRAMEEVENT_SLIDER_VALUE_CHANGED)
         call BlzTriggerRegisterFrameEvent(SUI_WheelTrigger, SUI_ListScroll, FRAMEEVENT_MOUSE_WHEEL)
         call BlzTriggerRegisterFrameEvent(SUI_WheelTrigger, SUI_LeftPane, FRAMEEVENT_MOUSE_WHEEL)
@@ -933,10 +942,12 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
         call BlzFrameSetTexture(SUI_RightPane, SUI_PanelTexture, 0, true)
         call BlzFrameSetPoint(SUI_RightPane, FRAMEPOINT_TOPLEFT, SUI_ListScroll, FRAMEPOINT_TOPRIGHT, 0.010, 0.0)
         call BlzFrameSetPoint(SUI_RightPane, FRAMEPOINT_BOTTOMRIGHT, SUI_Parent, FRAMEPOINT_BOTTOMRIGHT, -0.014, 0.014)
+        call BlzFrameSetLevel(SUI_RightPane, 1)
 
         set SUI_DetailIcon = BlzCreateFrameByType("BACKDROP", "ShopUIDetailIcon", SUI_RightPane, "IconButtonTemplate", 0)
         call BlzFrameSetPoint(SUI_DetailIcon, FRAMEPOINT_TOPLEFT, SUI_RightPane, FRAMEPOINT_TOPLEFT, 0.018, -0.018)
         call BlzFrameSetSize(SUI_DetailIcon, 0.042, 0.042)
+        call BlzFrameSetLevel(SUI_DetailIcon, 4)
 
         set SUI_DetailCharges = BlzCreateFrameByType("TEXT", "ShopUIDetailCharges", SUI_DetailIcon, "", 0)
         call BlzFrameSetPoint(SUI_DetailCharges, FRAMEPOINT_BOTTOMRIGHT, SUI_DetailIcon, FRAMEPOINT_BOTTOMRIGHT, -0.002, 0.002)
@@ -944,6 +955,7 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
         call BlzFrameSetTextAlignment(SUI_DetailCharges, TEXT_JUSTIFY_BOTTOM, TEXT_JUSTIFY_RIGHT)
         call BlzFrameSetScale(SUI_DetailCharges, 0.82)
         call BlzFrameSetEnable(SUI_DetailCharges, false)
+        call BlzFrameSetLevel(SUI_DetailCharges, 5)
 
         set SUI_DetailTitle = BlzCreateFrameByType("TEXT", "ShopUIDetailTitle", SUI_RightPane, "", 0)
         call BlzFrameSetPoint(SUI_DetailTitle, FRAMEPOINT_TOPLEFT, SUI_DetailIcon, FRAMEPOINT_TOPRIGHT, 0.014, -0.002)
@@ -951,11 +963,13 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
         call BlzFrameSetTextAlignment(SUI_DetailTitle, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
         call BlzFrameSetScale(SUI_DetailTitle, 1.05)
         call BlzFrameSetEnable(SUI_DetailTitle, false)
+        call BlzFrameSetLevel(SUI_DetailTitle, 5)
 
         set SUI_DetailInfoBackdrop = BlzCreateFrameByType("BACKDROP", "ShopUIInfoBackdrop", SUI_RightPane, "", 0)
         call BlzFrameSetTexture(SUI_DetailInfoBackdrop, SUI_PanelTexture, 0, true)
         call BlzFrameSetPoint(SUI_DetailInfoBackdrop, FRAMEPOINT_TOPLEFT, SUI_DetailTitle, FRAMEPOINT_BOTTOMLEFT, -0.001, -0.008)
         call BlzFrameSetSize(SUI_DetailInfoBackdrop, 0.250, 0.018)
+        call BlzFrameSetLevel(SUI_DetailInfoBackdrop, 4)
 
         set SUI_DetailInfoText = BlzCreateFrameByType("TEXT", "ShopUIInfoText", SUI_DetailInfoBackdrop, "", 0)
         call BlzFrameSetPoint(SUI_DetailInfoText, FRAMEPOINT_TOPLEFT, SUI_DetailInfoBackdrop, FRAMEPOINT_TOPLEFT, 0.006, -0.001)
@@ -963,6 +977,7 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
         call BlzFrameSetTextAlignment(SUI_DetailInfoText, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
         call BlzFrameSetScale(SUI_DetailInfoText, 0.92)
         call BlzFrameSetEnable(SUI_DetailInfoText, false)
+        call BlzFrameSetLevel(SUI_DetailInfoText, 5)
 
         set SUI_DetailBodyText = BlzCreateFrameByType("TEXT", "ShopUIDetailBody", SUI_RightPane, "", 0)
         call BlzFrameSetPoint(SUI_DetailBodyText, FRAMEPOINT_TOPLEFT, SUI_RightPane, FRAMEPOINT_TOPLEFT, 0.018, -0.095)
@@ -970,6 +985,7 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
         call BlzFrameSetTextAlignment(SUI_DetailBodyText, TEXT_JUSTIFY_TOP, TEXT_JUSTIFY_LEFT)
         call BlzFrameSetScale(SUI_DetailBodyText, 0.90)
         call BlzFrameSetEnable(SUI_DetailBodyText, false)
+        call BlzFrameSetLevel(SUI_DetailBodyText, 5)
 
         set SUI_StatusText = BlzCreateFrameByType("TEXT", "ShopUIStatus", SUI_RightPane, "", 0)
         call BlzFrameSetPoint(SUI_StatusText, FRAMEPOINT_BOTTOMLEFT, SUI_RightPane, FRAMEPOINT_BOTTOMLEFT, 0.018, 0.038)
@@ -977,6 +993,7 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
         call BlzFrameSetTextAlignment(SUI_StatusText, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
         call BlzFrameSetScale(SUI_StatusText, 0.92)
         call BlzFrameSetEnable(SUI_StatusText, false)
+        call BlzFrameSetLevel(SUI_StatusText, 5)
 
         set SUI_GoldText = BlzCreateFrameByType("TEXT", "ShopUIGoldText", SUI_RightPane, "", 0)
         call BlzFrameSetPoint(SUI_GoldText, FRAMEPOINT_BOTTOMLEFT, SUI_RightPane, FRAMEPOINT_BOTTOMLEFT, 0.018, 0.017)
@@ -984,6 +1001,7 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
         call BlzFrameSetTextAlignment(SUI_GoldText, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
         call BlzFrameSetScale(SUI_GoldText, 0.82)
         call BlzFrameSetEnable(SUI_GoldText, false)
+        call BlzFrameSetLevel(SUI_GoldText, 5)
 
         set SUI_ArenaMarksText = BlzCreateFrameByType("TEXT", "ShopUIArenaMarksText", SUI_RightPane, "", 0)
         call BlzFrameSetPoint(SUI_ArenaMarksText, FRAMEPOINT_BOTTOMLEFT, SUI_RightPane, FRAMEPOINT_BOTTOMLEFT, 0.110, 0.017)
@@ -991,11 +1009,13 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
         call BlzFrameSetTextAlignment(SUI_ArenaMarksText, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
         call BlzFrameSetScale(SUI_ArenaMarksText, 0.82)
         call BlzFrameSetEnable(SUI_ArenaMarksText, false)
+        call BlzFrameSetLevel(SUI_ArenaMarksText, 5)
 
         set SUI_ActionButton = BlzCreateFrameByType("GLUETEXTBUTTON", "ShopUIAction", SUI_RightPane, "ScriptDialogButton", 0)
         call BlzFrameSetSize(SUI_ActionButton, 0.070, 0.030)
         call BlzFrameSetText(SUI_ActionButton, "Buy")
         call BlzFrameSetPoint(SUI_ActionButton, FRAMEPOINT_BOTTOMRIGHT, SUI_RightPane, FRAMEPOINT_BOTTOMRIGHT, -0.018, 0.012)
+        call BlzFrameSetLevel(SUI_ActionButton, 4)
         call BlzTriggerRegisterFrameEvent(SUI_ActionTrigger, SUI_ActionButton, FRAMEEVENT_CONTROL_CLICK)
         call BlzTriggerRegisterFrameEvent(SUI_ClearFocusTrigger, SUI_ActionButton, FRAMEEVENT_CONTROL_CLICK)
 
@@ -1010,6 +1030,7 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
             set SUI_RowButton[rowIndex] = BlzCreateFrameByType("GLUEBUTTON", "ShopUIRowButton" + I2S(rowIndex), SUI_LeftPane, "ScoreScreenTabButtonTemplate", 0)
             call BlzFrameSetPoint(SUI_RowButton[rowIndex], FRAMEPOINT_TOPLEFT, SUI_LeftPane, FRAMEPOINT_TOPLEFT, 0.006, rowTopOffset)
             call BlzFrameSetSize(SUI_RowButton[rowIndex], 0.190, rowHeight)
+            call BlzFrameSetLevel(SUI_RowButton[rowIndex], 3)
             call BlzTriggerRegisterFrameEvent(SUI_RowTrigger, SUI_RowButton[rowIndex], FRAMEEVENT_CONTROL_CLICK)
             call BlzTriggerRegisterFrameEvent(SUI_ClearFocusTrigger, SUI_RowButton[rowIndex], FRAMEEVENT_CONTROL_CLICK)
             call BlzTriggerRegisterFrameEvent(SUI_WheelTrigger, SUI_RowButton[rowIndex], FRAMEEVENT_MOUSE_WHEEL)
@@ -1019,6 +1040,7 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
             set SUI_RowIcon[rowIndex] = BlzCreateFrameByType("BACKDROP", "ShopUIRowIcon" + I2S(rowIndex), SUI_RowButton[rowIndex], "IconButtonTemplate", 0)
             call BlzFrameSetPoint(SUI_RowIcon[rowIndex], FRAMEPOINT_LEFT, SUI_RowButton[rowIndex], FRAMEPOINT_LEFT, 0.006, 0.0)
             call BlzFrameSetSize(SUI_RowIcon[rowIndex], 0.020, 0.020)
+            call BlzFrameSetLevel(SUI_RowIcon[rowIndex], 4)
 
             set SUI_RowCharges[rowIndex] = BlzCreateFrameByType("TEXT", "ShopUIRowCharges" + I2S(rowIndex), SUI_RowIcon[rowIndex], "", 0)
             call BlzFrameSetPoint(SUI_RowCharges[rowIndex], FRAMEPOINT_BOTTOMRIGHT, SUI_RowIcon[rowIndex], FRAMEPOINT_BOTTOMRIGHT, -0.001, 0.001)
@@ -1026,6 +1048,7 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
             call BlzFrameSetTextAlignment(SUI_RowCharges[rowIndex], TEXT_JUSTIFY_BOTTOM, TEXT_JUSTIFY_RIGHT)
             call BlzFrameSetScale(SUI_RowCharges[rowIndex], 0.72)
             call BlzFrameSetEnable(SUI_RowCharges[rowIndex], false)
+            call BlzFrameSetLevel(SUI_RowCharges[rowIndex], 5)
 
             set SUI_RowText[rowIndex] = BlzCreateFrameByType("TEXT", "ShopUIRowText" + I2S(rowIndex), SUI_RowButton[rowIndex], "", 0)
             call BlzFrameSetPoint(SUI_RowText[rowIndex], FRAMEPOINT_TOPLEFT, SUI_RowButton[rowIndex], FRAMEPOINT_TOPLEFT, 0.032, -0.004)
@@ -1033,6 +1056,7 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
             call BlzFrameSetTextAlignment(SUI_RowText[rowIndex], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
             call BlzFrameSetScale(SUI_RowText[rowIndex], 0.90)
             call BlzFrameSetEnable(SUI_RowText[rowIndex], false)
+            call BlzFrameSetLevel(SUI_RowText[rowIndex], 4)
 
             set SUI_RowPrice[rowIndex] = BlzCreateFrameByType("TEXT", "ShopUIRowPrice" + I2S(rowIndex), SUI_RowButton[rowIndex], "", 0)
             call BlzFrameSetPoint(SUI_RowPrice[rowIndex], FRAMEPOINT_TOPRIGHT, SUI_RowButton[rowIndex], FRAMEPOINT_TOPRIGHT, -0.008, -0.004)
@@ -1040,6 +1064,7 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
             call BlzFrameSetTextAlignment(SUI_RowPrice[rowIndex], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_RIGHT)
             call BlzFrameSetScale(SUI_RowPrice[rowIndex], 0.88)
             call BlzFrameSetEnable(SUI_RowPrice[rowIndex], false)
+            call BlzFrameSetLevel(SUI_RowPrice[rowIndex], 4)
 
             set SUI_RowHighlight[rowIndex] = BlzCreateFrameByType("SPRITE", "ShopUIRowHighlight" + I2S(rowIndex), SUI_RowButton[rowIndex], "", 0)
             call BlzFrameSetAllPoints(SUI_RowHighlight[rowIndex], SUI_RowButton[rowIndex])
@@ -1048,6 +1073,7 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
             set SUI_RowHighlightState[rowIndex] = -1
             call BlzFrameSetVisible(SUI_RowHighlight[rowIndex], false)
             call BlzFrameSetEnable(SUI_RowHighlight[rowIndex], false)
+            call BlzFrameSetLevel(SUI_RowHighlight[rowIndex], 5)
 
             set rowTopOffset = rowTopOffset - rowHeight - rowGap
             set rowIndex = rowIndex + 1

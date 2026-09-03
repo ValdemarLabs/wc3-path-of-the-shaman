@@ -83,9 +83,9 @@ library Shop initializer Init requires Table, DEquipment, Reputation, ZonesCore
         private constant string SHP_CATEGORY_ALL = "All"
         private constant string SHP_CATEGORY_GOODS = "Goods"
         private constant string SHP_CATEGORY_RECENTLY_SOLD = "Recent"
-        private constant string SHP_ICON_BAG_SMALL = "ReplaceableTextures\\CommandButtons\\BTNINV_Misc_Bag_09.blp"
-        private constant string SHP_ICON_BAG_LARGE = "ReplaceableTextures\\CommandButtons\\BTNINV_Misc_Bag_07.blp"
-        private constant string SHP_ICON_BACKPACK = "ReplaceableTextures\\CommandButtons\\BTNINV_Misc_Bag_08.blp"
+        private constant string SHP_ICON_BAG_SMALL = "ReplaceableTextures\\CommandButtons\\BTNINV_Misc_Bag_09.TGA"
+        private constant string SHP_ICON_BAG_LARGE = "ReplaceableTextures\\CommandButtons\\BTNINV_Misc_Bag_07.TGA"
+        private constant string SHP_ICON_BACKPACK = "ReplaceableTextures\\CommandButtons\\BTNINV_Misc_Bag_08.TGA"
 
         // Registered vendors and unit lookup.
         private Table SHP_VendorByUnit = 0
