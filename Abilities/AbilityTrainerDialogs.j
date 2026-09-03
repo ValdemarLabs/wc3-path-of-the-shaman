@@ -229,8 +229,9 @@ library AbilityTrainerDialogs initializer Init requires Table, DialogInteraction
                 call HintsUI_PublishForUnit(HintsUI_HINT_SPECIALIZATIONS, hero)
             endif
             call AbilitiesUI_ShowForTrainer(trainer, hero)
-            // Native dialogs suppress camera input while visible; preserve that lock for the custom trainer frame.
-            call EnableUserControl(false)
+            // Reassert the fixed trainer target after leaving the native dialog while keeping custom-frame input available.
+            call ATD_StartTrainerCamera(trainer, hero)
+            call EnableUserControl(true)
         endif
 
         set trainer = null
