@@ -4,7 +4,7 @@ library DynamicMinimap initializer Init requires Interface
     DynamicMinimap - Texture Chunks & Camera Bounds with Toggle
 
     Author: [Valdemar]
-    Version: 1.0
+    Version: 1.1
     
     Uses:
     - BlzChangeMinimapTerrainTex to swap minimap texture chunks
@@ -39,6 +39,8 @@ library DynamicMinimap initializer Init requires Interface
         DynamicMinimap_SetChunkSize(tiles) - Set chunk size (default 32)
         DynamicMinimap_SetGridStep(tiles) - Set grid step between chunks (default 8)
         DynamicMinimap_Enable(enable) - Enable/disable entire system (stops updates, useful for cinematics)
+        DynamicMinimap_SuspendForScriptedCamera() - Release chunk bounds while a scripted camera owns the view
+        DynamicMinimap_ResumeAfterScriptedCamera() - Restore the pre-cinematic enabled state and chunk tracking
         DynamicMinimap_ForceUpdate() - Manually trigger update
         DynamicMinimap_SetEnlargedPosition(x, y) - Set position when enlarged (default: 0.4, 0.3)
         DynamicMinimap_SetEnlargedScale(scale) - Set scale multiplier when enlarged (default: 3.0x)
@@ -115,6 +117,8 @@ globals
     private integer lastTileY = -1
     private rect currentBoundsRect = null
     private rect originalCameraBounds = null
+    private boolean scriptedCameraSuspended = false
+    private boolean scriptedCameraWasEnabled = false
     
     // Minimap size toggle functionality
     private framehandle minimapFrame = null
@@ -173,6 +177,12 @@ private function IsCameraRotationSafe takes nothing returns boolean
     endif
     
     return true  // Safe to call SetCameraBounds
+endfunction
+
+private function RestoreOriginalCameraBounds takes nothing returns nothing
+    if originalCameraBounds != null and IsCameraRotationSafe() then
+        call SetCameraBoundsToRect(originalCameraBounds)
+    endif
 endfunction
 
 private function UpdateMinimapAndBounds takes integer chunkCoordX, integer chunkCoordY returns nothing
@@ -353,10 +363,23 @@ function DynamicMinimap_SetGridStep takes integer tiles returns nothing
 endfunction
 
 function DynamicMinimap_Enable takes boolean enable returns nothing
+    if scriptedCameraSuspended then
+        set enabled = false
+        call RestoreOriginalCameraBounds()
+        return
+    endif
+
     set enabled = enable
+
+    // Stopping the update timer is not enough for a distant cinematic cut:
+    // the last chunk bounds otherwise remain active and make the camera walk
+    // across chunks instead of reaching the camerasetup in one frame.
+    if not enabled then
+        call RestoreOriginalCameraBounds()
+    endif
     
     // If re-enabling and in full map mode, switch back to chunked mode
-    if enable and fullMapMode then
+    if enabled and fullMapMode then
         set fullMapMode = false
         call DynamicMinimap_ForceUpdate()
     endif
@@ -367,6 +390,29 @@ function DynamicMinimap_Enable takes boolean enable returns nothing
         else
             call BJDebugMsg("DynamicMinimap: Disabled")
         endif
+    endif
+endfunction
+
+function DynamicMinimap_SuspendForScriptedCamera takes nothing returns nothing
+    if scriptedCameraSuspended then
+        return
+    endif
+
+    set scriptedCameraSuspended = true
+    set scriptedCameraWasEnabled = enabled
+    set enabled = false
+    call RestoreOriginalCameraBounds()
+endfunction
+
+function DynamicMinimap_ResumeAfterScriptedCamera takes nothing returns nothing
+    if not scriptedCameraSuspended then
+        return
+    endif
+
+    set scriptedCameraSuspended = false
+    set enabled = scriptedCameraWasEnabled
+    if enabled and not fullMapMode then
+        call DynamicMinimap_ForceUpdate()
     endif
 endfunction
 
