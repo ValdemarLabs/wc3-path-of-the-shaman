@@ -2,7 +2,7 @@
     qZulkis
 
     Author: Valdemar
-    Version: 1.5.1
+    Version: 1.5.2
 
     Description:
 
@@ -841,7 +841,8 @@ private function PlayBrokenLandingSequence takes nothing returns nothing
     set woundedCallLine = DialogSystem_AddLine(seq, LandingTroll[3], "Darkspear Witch Doctor", VL_GENERICTROLL_0004_TEXT, VL_GENERICTROLL_0004_KEY, true)
     call DialogSystem_BindLineAction(seq, woundedCallLine, function MoveZulkisBesideWounded)
     call DialogSystem_AddDelay(seq, 0.75)
-    call DialogSystem_AddMakeFaceEachOther(seq, Zulkis, LandingTroll[3], 0.50, 0.00)
+    // Keep the wounded troll's staged death pose untouched; only Zul'kis turns.
+    call DialogSystem_AddMakeUnitFaceUnit(seq, Zulkis, LandingTroll[3], 0.50, 0.00)
     call DialogSystem_AddLine(seq, Zulkis, "Zul'kis", VL_ZULKIS_0012_TEXT, VL_ZULKIS_0012_KEY, true)
     call DialogSystem_AddLine(seq, LandingTroll[3], "Darkspear Witch Doctor", VL_GENERICTROLL_0001_TEXT, VL_GENERICTROLL_0001_KEY, true)
     call DialogSystem_AddLine(seq, LandingTroll[3], "Darkspear Witch Doctor", VL_GENERICTROLL_0002_TEXT, VL_GENERICTROLL_0002_KEY, true)
