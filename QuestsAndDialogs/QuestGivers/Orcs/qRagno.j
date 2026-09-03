@@ -2,7 +2,7 @@
     qRagno
 
     Author: Valdemar
-    Version: 1.2.0
+    Version: 1.2.1
 
     Description:
     Implements Ragno's quest dialogue, daily outpost tasks, Protect the
@@ -194,12 +194,6 @@ endfunction
 private function StartExitFadeOut takes nothing returns nothing
     call DialogSystem_ClearEscapeAction()
     call DialogInteraction_StartConfiguredDialogExitTransition(Ragno, SelectedHero, RagnoDialogCooldown, DIALOG_COOLDOWN, USE_DIALOG_CAMERA, CINEMATIC)
-endfunction
-
-private function OnRagnoEscape takes nothing returns nothing
-    call DialogSystem_ClearEscapeAction()
-    call DialogInteraction_CloseActiveDialog()
-    call StartExitFadeOut()
 endfunction
 
 private function GetRagnoQuest takes string questName returns QuestData
@@ -1915,7 +1909,6 @@ private function ContinueToDialogInternal takes nothing returns nothing
 
     call RefreshRagnoAvailabilityInternal()
     call BuildDialog()
-    call DialogSystem_SetEscapeAction(function OnRagnoEscape)
     call PlayDialogGreeting(hero)
 
     set hero = null

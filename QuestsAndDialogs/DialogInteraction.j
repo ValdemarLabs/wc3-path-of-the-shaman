@@ -2,7 +2,7 @@
     DialogInteraction
 
     Author: Valdemar
-    Version: 1.3.1
+    Version: 1.3.2
 
     Description:
     Generic selectable-NPC dialog interaction layer. This owns NPC selection
@@ -25,8 +25,8 @@
     - call DialogInteraction_RegisterAnySelectionHandler(function OnAnySelected)
     - call DialogInteraction_ConfigureDialogTransition(...)
     - call DialogInteraction_StartConfiguredDialogEntryTransition(...)
-    Configured interactions install a default ESC action that advances entry,
-    skips exit, or closes visible choices unless the caller supplied its own.
+    Configured interactions install a default ESC action that advances entry
+    and greeting through to choices, skips exit, or closes visible choices.
     - call DialogInteraction_CancelActiveTransition()
     - call DialogInteraction_AbortActiveTransition()
     - call DialogInteraction_PlayGreetSequenceEx(...)
@@ -56,6 +56,9 @@ library DialogInteraction initializer Init requires Table, DialogSystem, CameraC
         private unit DialogInteraction_PendingNPC = null
         private integer DialogInteraction_PendingSeq = 0
         private boolean DialogInteraction_PendingSequenceCinematic = false
+        private timer DialogInteraction_PendingGreetFinishTimer = null
+        private boolean DialogInteraction_PendingGreetFinishQueued = false
+        private boolean DialogInteraction_PendingGreetMarksFirst = false
         private string DialogInteraction_ReopenDialogFuncName = ""
         private string DialogInteraction_LastSelectionBlockReason = ""
         unit DialogInteraction_SelectedUnit = null
@@ -86,6 +89,7 @@ library DialogInteraction initializer Init requires Table, DialogSystem, CameraC
         private boolean TransitionEntryStaged = false
 
         private constant real DIALOGINTERACTION_COMBAT_CHECK_INTERVAL = 0.10
+        private constant real DIALOGINTERACTION_GREET_DIALOG_DELAY = 0.05
         private trigger DialogInteraction_CombatAttackTrigger = null
         private trigger DialogInteraction_CombatInterruptHandler = null
         private timer DialogInteraction_CombatCheckTimer = null
@@ -518,12 +522,19 @@ library DialogInteraction initializer Init requires Table, DialogSystem, CameraC
         set t = null
     endfunction
 
-    private function OnGreetSequenceEnd takes nothing returns nothing
+    private function FinishPendingGreetSequence takes nothing returns nothing
         local unit npc = DialogInteraction_PendingNPC
         local dialog d = DialogInteraction_PendingDialog
         local player p = DialogInteraction_PendingPlayer
+        local boolean marksFirst = DialogInteraction_PendingGreetMarksFirst
 
-        if d != null and p != null then
+        set DialogInteraction_PendingGreetFinishQueued = false
+        set DialogInteraction_PendingGreetMarksFirst = false
+        if marksFirst and npc != null then
+            call SetFirstGreetDone(npc, true)
+            call SuppressNextGreet(npc)
+        endif
+        if d != null and p != null and (not marksFirst or npc != null) then
             call ReleasePendingGreetSequenceToDialog()
             if npc != null then
                 call DialogSystem_SetContext(npc, p)
@@ -542,6 +553,19 @@ library DialogInteraction initializer Init requires Table, DialogSystem, CameraC
         set npc = null
         set d = null
         set p = null
+    endfunction
+
+    private function QueuePendingGreetSequenceFinish takes boolean marksFirst returns nothing
+        if DialogInteraction_PendingGreetFinishTimer == null then
+            set DialogInteraction_PendingGreetFinishTimer = CreateTimer()
+        endif
+        set DialogInteraction_PendingGreetFinishQueued = true
+        set DialogInteraction_PendingGreetMarksFirst = marksFirst
+        call TimerStart(DialogInteraction_PendingGreetFinishTimer, DIALOGINTERACTION_GREET_DIALOG_DELAY, false, function FinishPendingGreetSequence)
+    endfunction
+
+    private function OnGreetSequenceEnd takes nothing returns nothing
+        call QueuePendingGreetSequenceFinish(false)
     endfunction
 
     public function ShowDialog takes unit npc, player p, dialog d returns nothing
@@ -618,31 +642,7 @@ library DialogInteraction initializer Init requires Table, DialogSystem, CameraC
     endfunction
 
     private function OnFirstGreetSequenceEnd takes nothing returns nothing
-        local unit npc = DialogInteraction_PendingNPC
-        local dialog d = DialogInteraction_PendingDialog
-        local player p = DialogInteraction_PendingPlayer
-
-        if npc != null then
-            call SetFirstGreetDone(npc, true)
-            call SuppressNextGreet(npc)
-        endif
-        if npc != null and d != null and p != null then
-            call ReleasePendingGreetSequenceToDialog()
-            call DialogSystem_SetContext(npc, p)
-            call DialogSystem_ShowDialog(d, p)
-        else
-            call EndPendingGreetSequenceControl()
-        endif
-        if DialogInteraction_PendingSeq != 0 then
-            call DialogSystem_ClearSequence(DialogInteraction_PendingSeq)
-            set DialogInteraction_PendingSeq = 0
-        endif
-        set DialogInteraction_PendingDialog = null
-        set DialogInteraction_PendingPlayer = null
-        set DialogInteraction_PendingNPC = null
-        set npc = null
-        set d = null
-        set p = null
+        call QueuePendingGreetSequenceFinish(true)
     endfunction
 
     public function PlayFirstGreetSequenceEx takes unit npc, player p, dialog d, integer seqId, boolean useCinematicMode returns nothing
@@ -704,7 +704,27 @@ library DialogInteraction initializer Init requires Table, DialogSystem, CameraC
         call DialogSystem_HideDialog(d, p)
     endfunction
 
+    private function ClearPendingDialogState takes nothing returns nothing
+        if DialogInteraction_PendingGreetFinishQueued and DialogInteraction_PendingGreetFinishTimer != null then
+            call PauseTimer(DialogInteraction_PendingGreetFinishTimer)
+        endif
+        if DialogInteraction_PendingSeq != 0 then
+            call DialogSystem_ClearSequence(DialogInteraction_PendingSeq)
+        endif
+        set DialogInteraction_PendingDialog = null
+        set DialogInteraction_PendingPlayer = null
+        set DialogInteraction_PendingNPC = null
+        set DialogInteraction_PendingSeq = 0
+        set DialogInteraction_PendingSequenceCinematic = false
+        set DialogInteraction_PendingGreetFinishQueued = false
+        set DialogInteraction_PendingGreetMarksFirst = false
+        set DialogInteraction_ReopenDialogFuncName = ""
+    endfunction
+
     public function CloseActiveDialog takes nothing returns nothing
+        if DialogInteraction_PendingGreetFinishQueued then
+            call ClearPendingDialogState()
+        endif
         if DialogSystem_LastDialog == null or DialogSystem_ActivePlayer == null then
             return
         endif
@@ -1239,18 +1259,6 @@ library DialogInteraction initializer Init requires Table, DialogSystem, CameraC
         call StartDialogEntryTransition(npc, hero, moveMode, moveOffset, moveAngle, runCinematicTrigger, useCamera, cameraDist, cameraZOffset, cameraAngle, cameraRotOffset, cameraFarZ, cameraFov, cameraBlockRadius, cameraBlockCheck, useCinematicMode, continueFuncName)
     endfunction
 
-    private function ClearPendingDialogState takes nothing returns nothing
-        if DialogInteraction_PendingSeq != 0 then
-            call DialogSystem_ClearSequence(DialogInteraction_PendingSeq)
-        endif
-        set DialogInteraction_PendingDialog = null
-        set DialogInteraction_PendingPlayer = null
-        set DialogInteraction_PendingNPC = null
-        set DialogInteraction_PendingSeq = 0
-        set DialogInteraction_PendingSequenceCinematic = false
-        set DialogInteraction_ReopenDialogFuncName = ""
-    endfunction
-
     private function ClearCombatGuardState takes nothing returns nothing
         set DialogInteraction_CombatGuardActive = false
         set DialogInteraction_CombatNPC = null
@@ -1318,6 +1326,9 @@ library DialogInteraction initializer Init requires Table, DialogSystem, CameraC
             set TransitionEntryActive = false
             if continueFuncName != "" then
                 call ExecuteFunc(continueFuncName)
+            endif
+            if DialogSystem_IsSequenceActive() then
+                call DialogSystem_SkipActiveSequence()
             endif
             return
         endif
