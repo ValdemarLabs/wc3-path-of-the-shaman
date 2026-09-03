@@ -2,7 +2,7 @@
     Companions
 
     Author: Valdemar
-    Version: 1.1.1
+    Version: 1.1.2
 
     Description:
     Companion party registration, information, idle state, and control-mode
@@ -181,6 +181,7 @@ globals
     private Table CompanionNextRandomMove = 0
     private Table CompanionNextAssistOrder = 0
     private Table CompanionAssistTarget = 0
+    private Table LeaderAttackTarget = 0
     private Table CompanionStoppedEffect = 0
     private Table CompanionFollowingEffect = 0
     private Table CompanionMapIconSlot = 0
@@ -275,6 +276,7 @@ private function EnsureState takes nothing returns nothing
         set CompanionNextRandomMove = Table.create()
         set CompanionNextAssistOrder = Table.create()
         set CompanionAssistTarget = Table.create()
+        set LeaderAttackTarget = Table.create()
         set CompanionStoppedEffect = Table.create()
         set CompanionFollowingEffect = Table.create()
         set CompanionMapIconSlot = Table.create()
@@ -751,6 +753,8 @@ private function RegisterControlledInternal takes unit controlledUnit, unit lead
     else
         call AddControlledDisplayUnit(controlledUnit)
     endif
+    call SetUnitCreepGuard(controlledUnit, false)
+    call RemoveGuardPosition(controlledUnit)
     call RemoveWanderAbility(controlledUnit)
     call SetFocusUnit(controlledUnit, leader)
     if not CompanionOrderProfile.has(unitId) then
@@ -1018,13 +1022,31 @@ endfunction
 
 private function IssueCompanionNormalOrder takes unit controlledUnit, unit leader, real distance, integer customValue, integer currentOrder returns nothing
     local integer unitId = GetHandleId(controlledUnit)
+    local integer leaderId = GetHandleId(leader)
+    local integer leaderOrder = GetUnitCurrentOrder(leader)
+    local unit assistTarget = LeaderAttackTarget.unit[leaderId]
 
+    if assistTarget != null and (not IsAliveUnit(assistTarget) or not IsUnitEnemy(assistTarget, GetOwningPlayer(leader)) or (leaderOrder != OrderId("attack") and leaderOrder != OrderId("smart"))) then
+        call LeaderAttackTarget.remove(leaderId)
+        set assistTarget = null
+    endif
     if CompanionAssistTarget.unit[unitId] != null and (currentOrder != OrderId("attack") or not IsAliveUnit(CompanionAssistTarget.unit[unitId])) then
         call CompanionAssistTarget.remove(unitId)
     endif
     if currentOrder == OrderId("attack") and (IsUnitInCombatByCustomValue(customValue) or CompanionAssistTarget.unit[unitId] != null) then
         // Keep combat and focused-hero assist orders until their target is gone.
+        set assistTarget = null
         return
+    endif
+    if assistTarget != null and not IsUnitMovingByCustomValue(customValue) and not IsUnitInCombatByCustomValue(customValue) and GetNow() >= CompanionNextAssistOrder.real[unitId] then
+        call ClearOrderIdleState(controlledUnit, customValue)
+        if IssueTargetOrder(controlledUnit, "attack", assistTarget) then
+            set CompanionNextAssistOrder.real[unitId] = GetNow() + COMPANION_NORMAL_ASSIST_COOLDOWN
+            set CompanionAssistTarget.unit[unitId] = assistTarget
+            call ScheduleNextRandomMove(controlledUnit, leader)
+            set assistTarget = null
+            return
+        endif
     endif
 
     if not IsUnitInCombatByCustomValue(customValue) and not IsUnitMovingByCustomValue(customValue) and not IsUnitIdleByCustomValue(customValue) and currentOrder != OrderId("attack") and not udg_CompanionDialogueActive and IsRandomMoveReady(controlledUnit, leader) then
@@ -1040,6 +1062,7 @@ private function IssueCompanionNormalOrder takes unit controlledUnit, unit leade
             call IssueTargetOrder(controlledUnit, "smart", leader)
         endif
     endif
+    set assistTarget = null
 endfunction
 
 private function IssueCompanionAggressiveOrder takes unit controlledUnit, unit leader, real distance, integer customValue, integer currentOrder returns nothing
@@ -1528,7 +1551,7 @@ private function UpdateCompanionIdleUnit takes unit controlledUnit, boolean isPe
             call ClearIdleState(controlledUnit)
         endif
     elseif not udg_UnitMoving[customValue] and not udg_GCSM_UnitInCombat[customValue] and not udg_CompanionDialogueActive then
-        call AddWanderAbility(controlledUnit)
+        call RemoveWanderAbility(controlledUnit)
         set udg_CompanionUnitIdle[customValue] = true
     else
         call ClearIdleState(controlledUnit)
@@ -2841,6 +2864,8 @@ private function IssueFocusedLeaderAssist takes unit leader, unit target returns
         return
     endif
 
+    set LeaderAttackTarget.unit[GetHandleId(leader)] = target
+
     if leader == udg_Nazgrek then
         set focusGroup = udg_CompanionFocusNazgrek
     elseif leader == udg_Zulkis then
@@ -2856,6 +2881,22 @@ private function IssueFocusedLeaderAssist takes unit leader, unit target returns
 
     set focusGroup = null
     set leader = null
+    set target = null
+endfunction
+
+private function OnUnitTargetOrder takes nothing returns nothing
+    local unit orderedUnit = GetTriggerUnit()
+    local unit target = GetOrderTargetUnit()
+    local integer orderId = GetIssuedOrderId()
+
+    if orderedUnit == udg_Nazgrek or orderedUnit == udg_Zulkis then
+        call LeaderAttackTarget.remove(GetHandleId(orderedUnit))
+        if target != null and (orderId == OrderId("attack") or orderId == OrderId("smart")) and IsUnitEnemy(target, GetOwningPlayer(orderedUnit)) then
+            call IssueFocusedLeaderAssist(orderedUnit, target)
+        endif
+    endif
+
+    set orderedUnit = null
     set target = null
 endfunction
 
@@ -3159,6 +3200,7 @@ private function Init takes nothing returns nothing
 
     call Events_RegisterPlayerUnitEvent(function OnSpellEffect, EVENT_PLAYER_UNIT_SPELL_EFFECT)
     call Events_RegisterPlayerUnitEvent(function HandleSoldUnit, EVENT_PLAYER_UNIT_SELL)
+    call Events_RegisterPlayerUnitEvent(function OnUnitTargetOrder, EVENT_PLAYER_UNIT_ISSUED_TARGET_ORDER)
     call Events_RegisterPlayerUnitEvent(function OnUnitAttacked, EVENT_PLAYER_UNIT_ATTACKED)
 
     set IdleTrigger = CreateTrigger()
