@@ -1,11 +1,24 @@
-library DynamicMinimap initializer Init requires Interface
-//===========================================================================
-/*
-    DynamicMinimap - Texture Chunks & Camera Bounds with Toggle
+/**
+    DynamicMinimap
 
-    Author: [Valdemar]
-    Version: 1.1
-    
+    Author: Valdemar
+    Version: 1.2
+
+    Description:
+        Swaps 256-coordinate minimap chunks and updates matching camera bounds.
+        Full/chunked map modes and normal/enlarged frame layouts can be toggled.
+        Unsafe camera rotations are corrected before any bounds update.
+
+    Credits:
+        FeelsGoodMan for the dynamic minimap texture/camera-bounds approach.
+        ANdROnlQ for documenting the SetCameraBounds rotation crash:
+        https://www.hiveworkshop.com/threads/setcamerabounds-camera-rotation-bug.319374/
+
+    How to install:
+        Import the pre-rendered 256x256 BLP chunks and full-map texture under
+        war3mapImported\, import this library after Interface, and configure the
+        map, camera, and minimap-art bounds below.
+
     Uses:
     - BlzChangeMinimapTerrainTex to swap minimap texture chunks
     - SetCameraBoundsToRect to constrain camera to the visible chunk area
@@ -34,58 +47,58 @@ library DynamicMinimap initializer Init requires Interface
         6. Imported BLPs into map in war3mapImported\
         7. Used this DynamicMinimap.j library in map script
         8. Ready
-    
+
     API:
-        DynamicMinimap_SetChunkSize(tiles) - Set chunk size (default 32)
-        DynamicMinimap_SetGridStep(tiles) - Set grid step between chunks (default 8)
-        DynamicMinimap_Enable(enable) - Enable/disable entire system (stops updates, useful for cinematics)
-        DynamicMinimap_SuspendForScriptedCamera() - Release chunk bounds while a scripted camera owns the view
-        DynamicMinimap_ResumeAfterScriptedCamera() - Restore the pre-cinematic enabled state and chunk tracking
-        DynamicMinimap_ForceUpdate() - Manually trigger update
-        DynamicMinimap_SetEnlargedPosition(x, y) - Set position when enlarged (default: 0.4, 0.3)
-        DynamicMinimap_SetEnlargedScale(scale) - Set scale multiplier when enlarged (default: 3.0x)
-        DynamicMinimap_SetToggleKey(oskeytype) - Set hotkey to toggle enlarge (default: OSKEY_ESCAPE)
-        DynamicMinimap_GetMinimapEnlarged() - Check if minimap is currently enlarged
-        DynamicMinimap_SetFullMapMode(enable) - Switch to single full map texture (disables chunking/bounds)
-        DynamicMinimap_SetTrackedUnit(unit) - Set which unit to track (default: player 1 hero)
-        DynamicMinimap_SetVisible(visible) - Show/hide the minimap
-        DynamicMinimap_GetVisible() - Check if minimap is currently visible
-
-    Credits:
-    Thanks to FeelsGoodMan's post at Hive Workshop for idea how to implement minimap texture / camera bounds change
-
-    Thanks to ANdROnlQ post @ Hiveworkshop https://www.hiveworkshop.com/threads/setcamerabounds-camera-rotation-bug.319374/
-    Using SetCameraField(CAMERA_FIELD_ROTATION) with some values together calling SetCameraBounds will crash the game
-    The camera rotation therefore must be tracked and not update camerabounds if the rotation is in illegal values 
-
-*/
-//===========================================================================
+        DynamicMinimap_SetChunkSize(tiles)
+        DynamicMinimap_SetGridStep(tiles)
+        DynamicMinimap_Enable(enable)
+        DynamicMinimap_SuspendForScriptedCamera()
+        DynamicMinimap_ResumeAfterScriptedCamera()
+        DynamicMinimap_ForceUpdate()
+        DynamicMinimap_SetEnlargedPosition(x, y)
+        DynamicMinimap_SetEnlargedScale(scale)
+        DynamicMinimap_SetSizeToggleKey(oskeytype)
+        DynamicMinimap_SetModeToggleKey(oskeytype)
+        DynamicMinimap_GetMinimapEnlarged()
+        DynamicMinimap_SetFullMapMode(enable)
+        DynamicMinimap_SetVisible(visible)
+        DynamicMinimap_GetVisible()
+**/
+library DynamicMinimap initializer Init requires Interface
 
 globals
     // ================= CONFIGURATION //===========================================================================
     private constant boolean DEBUG = false
     private constant real UPDATE_INTERVAL = 0.1  // How often to check for updates (default; 0.1)
-    private constant integer DEFAULT_CHUNK_SIZE = 32   // 32x32 tiles per chunk (default; 32)
-    private constant integer DEFAULT_GRID_STEP = 8     // Grid alignment (default; 8 tiles
+    private constant integer DEFAULT_CHUNK_SIZE = 32   // Chunk size in the 256-coordinate texture system
+    private constant integer DEFAULT_GRID_STEP = 8     // Grid step in the 256-coordinate texture system
     private constant real BOUNDS_PADDING_MULTIPLIER = 1.0  // Camera bounds = chunk size * this (MUST be 1.0 for accurate alignment)
-    private constant integer MAP_SIZE_TILES = 480  // Actual WC3 map size in tiles (480x480 tiles)
     private constant integer CHUNK_COORDINATE_SYSTEM = 256  // Chunk files use 256-tile coordinate system
     
-    // Map offset correction (CRITICAL - set these to match your Map Properties -> Size and Camera Bounds)
-    // These values represent your map's actual world coordinate boundaries
-    // Use Map bounds (the Map X/Y values), not Camera bounds!
-    // Example: If Map shows X: -29184 to 32256, Y: -32256 to 29184, then:
-    //   MAP_WORLD_MIN_X = -29184, MAP_WORLD_MAX_X = 32256
-    //   MAP_WORLD_MIN_Y = -32256, MAP_WORLD_MAX_Y = 29184
-    private constant real MAP_WORLD_MIN_X = -29184.0  // Map's left edge (from Map Properties)
-    private constant real MAP_WORLD_MAX_X = 32256.0   // Map's right edge (from Map Properties)
-    private constant real MAP_WORLD_MIN_Y = -32256.0  // Map's bottom edge (from Map Properties)
-    private constant real MAP_WORLD_MAX_Y = 29184.0   // Map's top edge (from Map Properties)
-    
-    // Camera rotation safety (IMPORTANT - danger zone: 220-320 degrees causes crashes with SetCameraBounds especially on large maps)
-    // GetCameraField returns RADIANS, so convert degrees to radians
-    private constant real SAFE_ROTATION_MIN = 3.84  // 220 degrees in radians
-    private constant real SAFE_ROTATION_MAX = 5.59  // 320 degrees in radians
+    // Map Properties -> Size. These bounds drive texture/chunk coordinate math.
+    private constant real MAP_WORLD_MIN_X = -29184.0
+    private constant real MAP_WORLD_MAX_X = 32256.0
+    private constant real MAP_WORLD_MIN_Y = -32256.0
+    private constant real MAP_WORLD_MAX_Y = 29184.0
+
+    // Map Properties -> Camera Bounds. These restore the authored full-map camera limits.
+    private constant real CAMERA_WORLD_MIN_X = -28672.0
+    private constant real CAMERA_WORLD_MAX_X = 31744.0
+    private constant real CAMERA_WORLD_MIN_Y = -32000.0
+    private constant real CAMERA_WORLD_MAX_Y = 28928.0
+
+    // Minimap-art calibration in world units. Positive values move the art's represented
+    // world area east/north. Keep both at 0 until an accurately cropped source is available.
+    private constant real MINIMAP_ART_OFFSET_X = 0.0
+    private constant real MINIMAP_ART_OFFSET_Y = 0.0
+
+    // SetCameraField expects degrees while GetCameraField returns radians.
+    private constant real ILLEGAL_ROTATION_MIN = 220.0
+    private constant real ILLEGAL_ROTATION_MAX = 320.0
+    private constant real SAFE_ROTATION_BELOW = 219.0
+    private constant real SAFE_ROTATION_ABOVE = 321.0
+    private constant real ROTATION_CORRECTION_DURATION = 0.30
+    private constant integer ROTATION_CORRECTION_TICKS = 3
     
     // Texture cache - format: minimap_X_Y_ZOOM.blp
     private constant string TEXTURE_PREFIX = "war3mapImported\\minimap_"
@@ -116,9 +129,21 @@ globals
     private integer lastTileX = -1
     private integer lastTileY = -1
     private rect currentBoundsRect = null
-    private rect originalCameraBounds = null
     private boolean scriptedCameraSuspended = false
     private boolean scriptedCameraWasEnabled = false
+
+    // Deferred texture/bounds transaction while an illegal rotation is corrected.
+    private boolean pendingMapUpdate = false
+    private boolean pendingTextureChange = false
+    private boolean pendingChunkCommit = false
+    private string pendingTexturePath = null
+    private integer pendingChunkX = -1
+    private integer pendingChunkY = -1
+    private real pendingBoundsMinX = 0.0
+    private real pendingBoundsMinY = 0.0
+    private real pendingBoundsMaxX = 0.0
+    private real pendingBoundsMaxY = 0.0
+    private integer rotationCorrectionTicks = 0
     
     // Minimap size toggle functionality
     private framehandle minimapFrame = null
@@ -156,33 +181,105 @@ private function GetMinimapTexturePath takes integer tileX, integer tileY, integ
     return TEXTURE_PREFIX + I2S(tileX) + "_" + I2S(tileY) + "_" + I2S(chunkSize) + TEXTURE_SUFFIX
 endfunction
 
-// Check if camera rotation is safe for SetCameraBounds
-// Returns true if safe, false if in danger zone (220-320 degrees)
-private function IsCameraRotationSafe takes nothing returns boolean
-    local real rotation = GetCameraField(CAMERA_FIELD_ROTATION)  // Returns radians
-    
-    // Normalize rotation to 0-2π range
+private function GetCameraRotationDegrees takes nothing returns real
+    local real rotation = GetCameraField(CAMERA_FIELD_ROTATION) * bj_RADTODEG
+
     loop
         exitwhen rotation >= 0.0
-        set rotation = rotation + 6.28318  // Add 2π
+        set rotation = rotation + 360.0
     endloop
     loop
-        exitwhen rotation < 6.28318
-        set rotation = rotation - 6.28318  // Subtract 2π
+        exitwhen rotation < 360.0
+        set rotation = rotation - 360.0
     endloop
-    
-    // Check if in danger zone (220-320 degrees = 3.84-5.59 radians)
-    if rotation >= SAFE_ROTATION_MIN and rotation <= SAFE_ROTATION_MAX then
-        return false  // DANGER ZONE - do not call SetCameraBounds!
+    return rotation
+endfunction
+
+private function IsCameraRotationSafe takes nothing returns boolean
+    local real rotation = GetCameraRotationDegrees()
+    return rotation < ILLEGAL_ROTATION_MIN or rotation > ILLEGAL_ROTATION_MAX
+endfunction
+
+private function StartCameraRotationCorrection takes nothing returns nothing
+    local real rotation = GetCameraRotationDegrees()
+    local real targetRotation = SAFE_ROTATION_ABOVE
+
+    if rotation <= (ILLEGAL_ROTATION_MIN + ILLEGAL_ROTATION_MAX) * 0.5 then
+        set targetRotation = SAFE_ROTATION_BELOW
     endif
-    
-    return true  // Safe to call SetCameraBounds
+    call SetCameraField(CAMERA_FIELD_ROTATION, targetRotation, ROTATION_CORRECTION_DURATION)
+    set rotationCorrectionTicks = ROTATION_CORRECTION_TICKS
+
+    if DEBUG then
+        call BJDebugMsg("|cffFF8800DynamicMinimap: rotating camera to safe angle " + R2S(targetRotation) + " before bounds update|r")
+    endif
+endfunction
+
+// Texture and bounds must commit together only after the camera has settled at a safe rotation.
+private function TryApplyPendingMapUpdate takes nothing returns boolean
+    if not pendingMapUpdate then
+        return true
+    endif
+
+    if rotationCorrectionTicks > 0 then
+        set rotationCorrectionTicks = rotationCorrectionTicks - 1
+        if rotationCorrectionTicks > 0 then
+            return false
+        endif
+    endif
+
+    if not IsCameraRotationSafe() then
+        call StartCameraRotationCorrection()
+        return false
+    endif
+
+    if pendingTextureChange then
+        call BlzChangeMinimapTerrainTex(pendingTexturePath)
+    endif
+
+    if currentBoundsRect == null then
+        set currentBoundsRect = Rect(pendingBoundsMinX, pendingBoundsMinY, pendingBoundsMaxX, pendingBoundsMaxY)
+    else
+        call SetRect(currentBoundsRect, pendingBoundsMinX, pendingBoundsMinY, pendingBoundsMaxX, pendingBoundsMaxY)
+    endif
+    call SetCameraBoundsToRect(currentBoundsRect)
+
+    if pendingChunkCommit then
+        set lastTileX = pendingChunkX
+        set lastTileY = pendingChunkY
+    endif
+
+    set pendingMapUpdate = false
+    set pendingTextureChange = false
+    set pendingChunkCommit = false
+    set pendingTexturePath = null
+    set pendingChunkX = -1
+    set pendingChunkY = -1
+    return true
+endfunction
+
+private function QueueMapUpdate takes string texturePath, boolean changeTexture, boolean commitChunk, integer chunkX, integer chunkY, real minX, real minY, real maxX, real maxY returns nothing
+    set pendingTexturePath = texturePath
+    set pendingTextureChange = changeTexture
+    set pendingChunkCommit = commitChunk
+    set pendingChunkX = chunkX
+    set pendingChunkY = chunkY
+    set pendingBoundsMinX = minX
+    set pendingBoundsMinY = minY
+    set pendingBoundsMaxX = maxX
+    set pendingBoundsMaxY = maxY
+    set pendingMapUpdate = true
+    call TryApplyPendingMapUpdate()
 endfunction
 
 private function RestoreOriginalCameraBounds takes nothing returns nothing
-    if originalCameraBounds != null and IsCameraRotationSafe() then
-        call SetCameraBoundsToRect(originalCameraBounds)
-    endif
+    set lastTileX = -1
+    set lastTileY = -1
+    call QueueMapUpdate(null, false, false, -1, -1, CAMERA_WORLD_MIN_X, CAMERA_WORLD_MIN_Y, CAMERA_WORLD_MAX_X, CAMERA_WORLD_MAX_Y)
+endfunction
+
+private function RequestFullMapUpdate takes nothing returns nothing
+    call QueueMapUpdate(FULL_MAP_TEXTURE, true, false, -1, -1, CAMERA_WORLD_MIN_X, CAMERA_WORLD_MIN_Y, CAMERA_WORLD_MAX_X, CAMERA_WORLD_MAX_Y)
 endfunction
 
 private function UpdateMinimapAndBounds takes integer chunkCoordX, integer chunkCoordY returns nothing
@@ -193,65 +290,37 @@ private function UpdateMinimapAndBounds takes integer chunkCoordX, integer chunk
     local real maxY
     local real centerX
     local real centerY
-    local real boundsSize
-    local real actualChunkSizeInMapTiles
-    local real scaleFactor = I2R(MAP_SIZE_TILES) / I2R(CHUNK_COORDINATE_SYSTEM)
+    local real boundsHalfWidth
+    local real boundsHalfHeight
+    local real chunkWorldWidth
+    local real chunkWorldHeight
+    local real scaleX = (MAP_WORLD_MAX_X - MAP_WORLD_MIN_X) / I2R(CHUNK_COORDINATE_SYSTEM)
+    local real scaleY = (MAP_WORLD_MAX_Y - MAP_WORLD_MIN_Y) / I2R(CHUNK_COORDINATE_SYSTEM)
     
     // Only update if position changed
-    if chunkCoordX == lastTileX and chunkCoordY == lastTileY then
+    if chunkCoordX == lastTileX and chunkCoordY == lastTileY and not pendingMapUpdate then
         return
     endif
-    
-    set lastTileX = chunkCoordX
-    set lastTileY = chunkCoordY
-    
-    // Change minimap texture using chunk coordinates (256-tile system)
+
     set texturePath = GetMinimapTexturePath(chunkCoordX, chunkCoordY, currentChunkSize)
-    call BlzChangeMinimapTerrainTex(texturePath)
-    
-    // Calculate actual chunk size in map tiles (480-tile system)
-    // 32 tiles in 256-system = 60 tiles in 480-system
-    set actualChunkSizeInMapTiles = I2R(currentChunkSize) * scaleFactor
-    
-    // Calculate center directly from chunk coordinates (256-system converted to 480-system world coordinates)
-    // chunkCoordX/Y are in 256-tile system, need to convert to actual world position
-    // Use MAP_WORLD_MIN instead of cachedMapMin to ensure alignment with texture grid
-    set centerX = MAP_WORLD_MIN_X + (I2R(chunkCoordX) * scaleFactor * 128.0) + (actualChunkSizeInMapTiles * 128.0 / 2.0)
-    set centerY = MAP_WORLD_MIN_Y + (I2R(chunkCoordY) * scaleFactor * 128.0) + (actualChunkSizeInMapTiles * 128.0 / 2.0)
-    
-    // Camera bounds are LARGER than minimap chunk (with padding)
-    set boundsSize = actualChunkSizeInMapTiles * 128.0 * BOUNDS_PADDING_MULTIPLIER / 2.0
-    set minX = centerX - boundsSize
-    set minY = centerY - boundsSize
-    set maxX = centerX + boundsSize
-    set maxY = centerY + boundsSize
-    
-    // CRITICAL: Check camera rotation before setting bounds to prevent crashes
-    if not IsCameraRotationSafe() then
-        if DEBUG then
-            call BJDebugMsg("|cffFF8800WARNING: Camera rotation unsafe - skipping bounds update|r")
-        endif
-        return
-    endif
-    
-    // Create/update camera bounds rect
-    if currentBoundsRect == null then
-        set currentBoundsRect = Rect(minX, minY, maxX, maxY)
-    else
-        call SetRect(currentBoundsRect, minX, minY, maxX, maxY)
-    endif
-    
-    // Apply camera bounds to region (only if rotation is safe)
-    if currentBoundsRect != null then
-        call SetCameraBoundsToRect(currentBoundsRect)
-    endif
+
+    set chunkWorldWidth = I2R(currentChunkSize) * scaleX
+    set chunkWorldHeight = I2R(currentChunkSize) * scaleY
+    set centerX = MAP_WORLD_MIN_X + MINIMAP_ART_OFFSET_X + I2R(chunkCoordX) * scaleX + chunkWorldWidth * 0.5
+    set centerY = MAP_WORLD_MIN_Y + MINIMAP_ART_OFFSET_Y + I2R(chunkCoordY) * scaleY + chunkWorldHeight * 0.5
+    set boundsHalfWidth = chunkWorldWidth * BOUNDS_PADDING_MULTIPLIER * 0.5
+    set boundsHalfHeight = chunkWorldHeight * BOUNDS_PADDING_MULTIPLIER * 0.5
+    set minX = centerX - boundsHalfWidth
+    set minY = centerY - boundsHalfHeight
+    set maxX = centerX + boundsHalfWidth
+    set maxY = centerY + boundsHalfHeight
+
+    call QueueMapUpdate(texturePath, true, true, chunkCoordX, chunkCoordY, minX, minY, maxX, maxY)
     
     if DEBUG then
         call BJDebugMsg("Minimap chunk: " + texturePath)
         call BJDebugMsg("Chunk coords (256-sys): " + I2S(chunkCoordX) + "," + I2S(chunkCoordY))
-        call BJDebugMsg("Chunk size in map (480-sys): " + R2S(actualChunkSizeInMapTiles) + " tiles")
         call BJDebugMsg("Center world coords: " + R2S(centerX) + "," + R2S(centerY))
-        call BJDebugMsg("Camera bounds: " + R2S(boundsSize * 2.0 / 128.0) + "x" + R2S(boundsSize * 2.0 / 128.0) + " tiles")
         call BJDebugMsg("Bounds rect: (" + R2S(minX) + "," + R2S(minY) + ") to (" + R2S(maxX) + "," + R2S(maxY) + ")")
     endif
 endfunction
@@ -262,11 +331,17 @@ endfunction
 private function PeriodicUpdate takes nothing returns nothing
     local real unitX
     local real unitY
-    local integer unitTileX
-    local integer unitTileY
     local integer chunkCoordX
     local integer chunkCoordY
-    local real scaleFactor = I2R(CHUNK_COORDINATE_SYSTEM) / I2R(MAP_SIZE_TILES)
+    local real scaleX = (MAP_WORLD_MAX_X - MAP_WORLD_MIN_X) / I2R(CHUNK_COORDINATE_SYSTEM)
+    local real scaleY = (MAP_WORLD_MAX_Y - MAP_WORLD_MIN_Y) / I2R(CHUNK_COORDINATE_SYSTEM)
+
+    // Finish a queued transaction before calculating another chunk. This also runs
+    // while chunk tracking is disabled or full-map mode owns the minimap.
+    if pendingMapUpdate then
+        call TryApplyPendingMapUpdate()
+        return
+    endif
     
     if not enabled or fullMapMode then
         return
@@ -276,19 +351,11 @@ private function PeriodicUpdate takes nothing returns nothing
     set unitX = GetCameraTargetPositionX()
     set unitY = GetCameraTargetPositionY()
     
-    // Convert to tile coordinates in actual map (0-based, each tile = 128 units)
-    // Use MAP_WORLD_MIN to ensure consistency with chunk positioning
-    set unitTileX = R2I((unitX - MAP_WORLD_MIN_X) / 128.0)
-    set unitTileY = R2I((unitY - MAP_WORLD_MIN_Y) / 128.0)
-    
-    // Center the chunk on the unit (offset by half chunk size)
-    set unitTileX = unitTileX - (currentChunkSize / 2)
-    set unitTileY = unitTileY - (currentChunkSize / 2)
-    
-    // Scale to chunk coordinate system (256-tile system for chunk filenames)
-    // Example: tile 240 in 480-tile map = tile 128 in 256-tile chunk system
-    set chunkCoordX = R2I(I2R(unitTileX) * scaleFactor)
-    set chunkCoordY = R2I(I2R(unitTileY) * scaleFactor)
+    // Convert directly into the same 256-coordinate space used by the generated
+    // filenames. Centering after conversion avoids mixing 480 map tiles with a
+    // 32-coordinate chunk, which shifted the selected texture away from the camera.
+    set chunkCoordX = R2I((unitX - MAP_WORLD_MIN_X - MINIMAP_ART_OFFSET_X) / scaleX - I2R(currentChunkSize) * 0.5)
+    set chunkCoordY = R2I((unitY - MAP_WORLD_MIN_Y - MINIMAP_ART_OFFSET_Y) / scaleY - I2R(currentChunkSize) * 0.5)
     
     // Snap to grid alignment
     set chunkCoordX = (chunkCoordX / currentGridStep) * currentGridStep
@@ -307,27 +374,6 @@ private function PeriodicUpdate takes nothing returns nothing
         set chunkCoordY = CHUNK_COORDINATE_SYSTEM - currentChunkSize
     endif
     
-    // Scale back chunk coordinates to actual tile coordinates for camera bounds
-    // This ensures the camera bounds match the actual chunk position
-    set unitTileX = R2I(I2R(chunkCoordX) / scaleFactor)
-    set unitTileY = R2I(I2R(chunkCoordY) / scaleFactor)
-    
-    /*
-    // Clamp actual tile coordinates for camera bounds
-    if unitTileX < 0 then
-        set unitTileX = 0
-    elseif unitTileX > MAP_SIZE_TILES - R2I(I2R(currentChunkSize) / scaleFactor) then
-        set unitTileX = MAP_SIZE_TILES - R2I(I2R(currentChunkSize) / scaleFactor)
-    endif
-    
-    if unitTileY < 0 then
-        set unitTileY = 0
-    elseif unitTileY > MAP_SIZE_TILES - R2I(I2R(currentChunkSize) / scaleFactor) then
-        set unitTileY = MAP_SIZE_TILES - R2I(I2R(currentChunkSize) / scaleFactor)
-    endif
-    */ 
-
-    // Update minimap texture and camera bounds if moved to new chunk
     call UpdateMinimapAndBounds(chunkCoordX, chunkCoordY)
 endfunction
 
@@ -442,25 +488,16 @@ endfunction
 
 function DynamicMinimap_SetFullMapMode takes boolean enable returns nothing
     if enable then
-        // Switch to full map mode
         set fullMapMode = true
-        
-        // Load full map texture
-        call BlzChangeMinimapTerrainTex(FULL_MAP_TEXTURE)
-        
-        // Restore original camera bounds (entire map) with rotation safety check
-        if originalCameraBounds != null and IsCameraRotationSafe() then
-            call SetCameraBoundsToRect(originalCameraBounds)
-        endif
+        call RequestFullMapUpdate()
         
         if DEBUG then
             call BJDebugMsg("|cff00ff00DynamicMinimap: Full map mode enabled|r")
         endif
     else
-        // Switch back to chunked mode
         set fullMapMode = false
-        
-        // Force update to reload correct chunk
+        set pendingMapUpdate = false
+        set rotationCorrectionTicks = 0
         call DynamicMinimap_ForceUpdate()
         
         if DEBUG then
@@ -550,8 +587,8 @@ private function ToggleMinimapSize takes nothing returns nothing
     if not fullMapMode then
         call DynamicMinimap_ForceUpdate()
     else
-        // In full map mode, reapply the full map texture
-        call BlzChangeMinimapTerrainTex(FULL_MAP_TEXTURE)
+        // Reassert texture and bounds together so unit icons keep the full-map transform.
+        call RequestFullMapUpdate()
     endif
 endfunction
 
@@ -680,12 +717,16 @@ endfunction
 // Initialization
 //===========================================================================
 private function InitFrames takes nothing returns nothing
+    local timer initTimer = GetExpiredTimer()
+
     // Get minimap frame and set its level
     set minimapFrame = BlzGetOriginFrame(ORIGIN_FRAME_MINIMAP, 0)
     if minimapFrame == null or GetHandleId(minimapFrame) == 0 then
         if DEBUG then
             call BJDebugMsg("|cffFF0000CRITICAL: Failed to get minimap frame (HandleId null)|r")
         endif
+        call DestroyTimer(initTimer)
+        set initTimer = null
         return  // Abort initialization if minimap frame not available
     endif
     
@@ -744,20 +785,20 @@ private function InitFrames takes nothing returns nothing
             call BJDebugMsg("|cff00ff00Map mode toggle: Enabled|r")
         endif
     endif
+    call DestroyTimer(initTimer)
+    set initTimer = null
 endfunction
 
 private function Init takes nothing returns nothing
     local real startX
     local real startY
-    local integer startTileX
-    local integer startTileY
     local framehandle gameUI
     local framehandle parentFrame
     
     if DEBUG then
         call BJDebugMsg("|cffFFFF00DynamicMinimap: Starting initialization...|r")
         call BJDebugMsg("|cffAAAAFFMap bounds configured: X(" + R2S(MAP_WORLD_MIN_X) + " to " + R2S(MAP_WORLD_MAX_X) + "), Y(" + R2S(MAP_WORLD_MIN_Y) + " to " + R2S(MAP_WORLD_MAX_Y) + ")|r")
-        call BJDebugMsg("|cffAAAAFFMap size: " + I2S(MAP_SIZE_TILES) + "x" + I2S(MAP_SIZE_TILES) + " tiles (" + R2S((MAP_WORLD_MAX_X - MAP_WORLD_MIN_X)) + " units)|r")
+        call BJDebugMsg("|cffAAAAFFCamera bounds configured: X(" + R2S(CAMERA_WORLD_MIN_X) + " to " + R2S(CAMERA_WORLD_MAX_X) + "), Y(" + R2S(CAMERA_WORLD_MIN_Y) + " to " + R2S(CAMERA_WORLD_MAX_Y) + ")|r")
     endif
     
     // Create border frame at map init (CRITICAL: ConsoleUI operations must be done at map init, not in timers)
@@ -805,9 +846,6 @@ private function Init takes nothing returns nothing
         endif
     endif
     
-    // Store original camera bounds for full map mode (use GetEntireMapRect for safety)
-    set originalCameraBounds = GetEntireMapRect()
-    
     // Get initial camera position
     set startX = GetCameraTargetPositionX()
     set startY = GetCameraTargetPositionY()
@@ -817,36 +855,6 @@ private function Init takes nothing returns nothing
         call BJDebugMsg("|cffAAAAFFInitial position: (" + R2S(startX) + ", " + R2S(startY) + ")|r")
     endif
     
-    set startTileX = R2I((startX - MAP_WORLD_MIN_X) / 128.0) - (currentChunkSize / 2)
-    set startTileY = R2I((startY - MAP_WORLD_MIN_Y) / 128.0) - (currentChunkSize / 2)
-    
-    // Clamp actual tile coordinates
-    if startTileX < 0 then
-        set startTileX = 0
-    elseif startTileX > MAP_SIZE_TILES - currentChunkSize then
-        set startTileX = MAP_SIZE_TILES - currentChunkSize
-    endif
-    if startTileY < 0 then
-        set startTileY = 0
-    elseif startTileY > MAP_SIZE_TILES - currentChunkSize then
-        set startTileY = MAP_SIZE_TILES - currentChunkSize
-    endif
-    
-    // Convert to chunk coordinates for texture lookup
-    set startTileX = R2I(I2R(startTileX) * I2R(CHUNK_COORDINATE_SYSTEM) / I2R(MAP_SIZE_TILES))
-    set startTileY = R2I(I2R(startTileY) * I2R(CHUNK_COORDINATE_SYSTEM) / I2R(MAP_SIZE_TILES))
-    
-    // Snap to grid
-    set startTileX = (startTileX / currentGridStep) * currentGridStep
-    set startTileY = (startTileY / currentGridStep) * currentGridStep
-    
-    if startTileX < 0 then
-        set startTileX = 0
-    endif
-    if startTileY < 0 then
-        set startTileY = 0
-    endif
-    
     // Delay frame initialization until after map load (0.1s for asset-heavy maps)
     call TimerStart(CreateTimer(), 1.0, false, function InitFrames)
     
@@ -854,14 +862,16 @@ private function Init takes nothing returns nothing
     set updateTimer = CreateTimer()
     call TimerStart(updateTimer, UPDATE_INTERVAL, true, function PeriodicUpdate)
     
-    // Set initial minimap texture and camera bounds
-    call UpdateMinimapAndBounds(startTileX, startTileY)
+    // Set initial minimap texture and camera bounds through the normal conversion path.
+    call PeriodicUpdate()
 
     if DEBUG then
         call BJDebugMsg("|cff00ff00DynamicMinimap: Initialized|r")
         call BJDebugMsg("|cffAAAAFFChunk size: " + I2S(currentChunkSize) + "x" + I2S(currentChunkSize) + " tiles|r")
         call BJDebugMsg("|cffAAAAFFGrid step: " + I2S(currentGridStep) + " tiles|r")
     endif
+    set gameUI = null
+    set parentFrame = null
 endfunction
 
 endlibrary
