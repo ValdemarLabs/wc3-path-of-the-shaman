@@ -19,35 +19,44 @@
 
 ### Player-Facing Updates
 
-- Fixed Graknar's bag shop showing green placeholder icons and hiding its bag names, prices, and details behind the shop panel.
+- Fixed Graknar's bag shop showing green placeholder icons, hiding its bag names, prices, and details behind the shop panel, initially retaining another merchant's Trade Goods view, and failing to return to an ESC-closeable quest/trade dialog.
 - Fixed Ragno's available-quest marker changing to a question mark when dialogue refreshes reconsidered the cross-NPC Call of the Horde turn-in state.
 - Fixed one ESC press during Ragno and other configured quest-giver entry or greeting sequences advancing all the way to the available dialogue choices instead of leaving a hidden menu behind the fullscreen cinematic UI.
 - Ability trainer frames now keep the camera locked to the trainer while retaining mouse control for the custom UI.
-- Fixed Zul'kis's cinematic camera handoffs retaining queued gameplay-camera reset motion. Each scripted-camera entry now clears target-controller smoothing and active camera motion once; later zero-second setups remain ordinary adjacent GUI-style camera pairs inside the already-suspended cinematic.
+- Fixed DynamicMinimap's retained chunk bounds forcing distant Zul'kis cameras to crawl across minimap chunks instead of cutting to their zero-second setup. Scripted-camera preparation now suspends minimap tracking and restores full-map camera bounds until gameplay camera control resumes.
+- Zul'kis's opening narrator now appears as a unitless cinematic transmission named `Narrator`, while ExSound continues to own the separately played voice audio and duration.
+- The wounded Darkspear witch doctor now remains completely still during the broken-landing conversation; only Zul'kis turns toward him, preserving the staged dying pose.
 - Protect the Outpost now keeps camera ownership suspended when its completion cinematic hands the still-black screen directly to Zul'kis's opening instead of briefly restoring gameplay camera control between cinematics.
-- Companions in Normal mode now assist the focused hero's attack when they are stationary and out of combat, while a short cooldown prevents repeated hero attacks or target changes from spamming new orders.
+- Companions in Normal mode now remember the focused hero's attack target and assist once stationary and out of combat, while a short cooldown prevents repeated attacks or target changes from spamming new orders. Controlled companions also stop inheriting neutral wander and guard behavior that could pull them toward their creation location.
 
 ### Technical Updates
 
-- Updated `Vendors/Shop.j` to use the imported `.TGA` paths for bag-upgrade icons, and updated `UI/ShopUI.j` with explicit backdrop, button, icon, text, and highlight frame levels.
+- Split `FallenHeroState` out of `Death/Death.j` into the standalone `Death/FallenHeroState.j` library while preserving Death's explicit dependency on it.
+- Updated `Vendors/Shop.j` to use the imported `.TGA` paths for bag-upgrade icons, updated `UI/ShopUI.j` with explicit backdrop, button, icon, text, and highlight frame levels plus per-session display-cache invalidation, and updated `QuestsAndDialogs/QuestGivers/Orcs/qGraknar.j` to reassert its bag catalog when Trade opens and restore the returned dialog's ESC action.
 - Updated `QuestsAndDialogs/QuestMaster.j` so overhead marker aggregation only considers a quest on its current giver or, for cross-NPC turn-ins, its current receiver. Replacement quest givers now also rebuild their result from the registered giver list without letting stale icon-cache entries override valid available quests.
 - Updated `QuestsAndDialogs/DialogSystem.j` to dispatch ESC through the single native end-cinematic event instead of racing raw-key and cinematic event handlers for one keypress.
 - Updated `QuestsAndDialogs/DialogInteraction.j` so entry skips carry through a newly started greeting sequence and greeting choices open after fullscreen ESC callbacks finish reapplying interface state.
 - Updated `QuestsAndDialogs/QuestGivers/Orcs/qRagno.j` to use the shared configured-interaction ESC lifecycle instead of replacing it with a local menu-close action.
 - Updated `Abilities/AbilityTrainerDialogs.j` to reapply its fixed trainer camera when opening `UI/AbilitiesUI.j`, then explicitly retain user control for frame interaction.
-- Updated `QuestsAndDialogs/QuestGivers/Player/qZulkis.j` to call the existing reset-safe `CameraControl_PrepareScriptedCamera()` API once at each actual scripted-cinematic entry, while preserving all later native hard cuts and authored camera order and durations.
+- Updated `QuestsAndDialogs/QuestGivers/Player/qZulkis.j` to call the reset-safe `CameraControl_PrepareScriptedCamera()` API once at each actual scripted-cinematic entry, while preserving all later native hard cuts and authored camera order and durations.
+- Updated `QuestsAndDialogs/QuestGivers/Player/qZulkis.j` to avoid facing or look-at commands on the wounded witch doctor during his shoreline dialogue.
 - Updated `QuestsAndDialogs/QuestGivers/Orcs/qRagno.j` to prepare scripted-camera ownership once at Protect the Outpost completion, retain that suspension during the Zul'kis handoff, and resume Nazgrek only in the fallback path where Zul'kis's prologue was already complete.
-- Audited the DynamicMinimap sources: current repository JASS has no active external `DynamicMinimap_Enable` call site, and its camera-bounds behavior can clamp camera destinations but does not schedule the reported slow pan.
-- Updated `Companions/Companions.j` with focused-hero attack assistance for available Normal-mode companions, per-companion order throttling, and attack-order preservation while either the hero or companion remains in combat.
+- Updated `DynamicMinimap/DynamicMinimap_lastWorking.j` so disabling it releases the last chunk bounds, and added state-preserving scripted-camera suspend/resume hooks.
+- Updated `UI/CameraControl.j` to invoke those optional DynamicMinimap hooks once per prepared scripted-camera session and restore minimap tracking only when gameplay camera control resumes.
+- Updated `QuestsAndDialogs/DialogSystem.j` so named lines without a speaker unit use `TransmissionFromUnitWithNameBJ` with a null unit and sound handle, matching GUI narrator transmissions and displaying `udg_ExSoundString` for the ExSound-owned duration.
+- Updated `Companions/Companions.j` with target-order and attack-event tracking for focused heroes, periodic retry for available Normal-mode companions, per-companion order throttling, native guard-position removal, and non-pet idle handling that no longer adds Neutral Wander.
+- Added `DoodadHider/DoodadManager.j` and `DoodadHider/DoodadRender.j` with a curated 33-type configuration derived from the current 50,118-record `war3map.doo` snapshot, camera-tile culling, per-type render distances, edge-safe strip transitions, cinematic-jump refreshes, and enable/disable/refresh controls.
 
 ### Actions Remaining
 
-- Compile the full map with World Editor/JassHelper and verify Graknar's seven bag tiers render their icons, names, prices, category buttons, and selected-item details correctly.
+- Import `Death/FallenHeroState.j` before `Death/Death.j` in World Editor, then compile the full map with JassHelper.
+- Compile the full map with World Editor/JassHelper and verify Graknar immediately opens his seven-tier Bags catalog, renders its icons, names, prices, category buttons, and selected-item details, returns Back to the current quest/trade choices, and exits that returned dialog through both Farewell and ESC.
 - Compile the full map with World Editor/JassHelper and confirm Ragno keeps the available-quest exclamation mark before, during, and after dialogue while Call of the Horde's turn-in question mark remains only on Chieftain Thork.
 - Compile the full map with World Editor/JassHelper and test ESC during entry fades, each spoken greeting line, visible choices, quest acceptance/completion, Farewell, and exit fades for Ragno, Graknar, Aradion, and the recent configured quest givers.
 - Compile the full map with World Editor/JassHelper and runtime-test every Zul'kis hard cut in Normal and Advanced camera modes, including Protect the Outpost to `IntroZulkisCam2`, camera 5, shore camera 3, patrol camera 7, rescue camera 8, and the Nazgrek decision return.
-- Confirm the live map's unexported `Cinematic ON`/`Cinematic OFF` GUI triggers do not independently resume CameraControl or re-enable DynamicMinimap during the Protect the Outpost-to-Zul'kis cinematic handoff.
-- Compile the full map with World Editor/JassHelper and runtime-test Normal-mode companion assistance with both focused heroes, including stationary ranged companions, rapid hero target changes, post-combat return, Passive/Hold/Aggressive modes, manual orders, and suspended companions.
+- Confirm the live map imports `DynamicMinimap/DynamicMinimap_lastWorking.j`, then verify the minimap remains suspended through the Protect the Outpost-to-Zul'kis handoff and restores its previous enabled state only when gameplay resumes.
+- Compile the full map with World Editor/JassHelper and runtime-test Normal-mode companion assistance with both focused heroes, including companions moving when the hero first acquires a target, stationary ranged companions, rapid target changes, post-combat return, Passive/Hold/Aggressive modes, manual orders, suspended companions, and units recruited far from their creation locations.
+- Import `DoodadHider/DoodadManager.j` before `DoodadHider/DoodadRender.j`, compile the full map with World Editor/JassHelper, then multiplayer-test map edges, long camera pans, cinematic jumps, coexistence with `DestructableHider`, individual model hide/show support, pop-in, FPS, and cell-transition stutter.
 
 ## [31.8.2026]
 
