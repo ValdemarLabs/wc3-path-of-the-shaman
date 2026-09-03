@@ -2,7 +2,7 @@
     DialogSystem
 
     Author: Valdemar
-    Version: 1.1.2
+    Version: 1.2.0
 
     Description:
     Owns PotS dialog creation, button routing, spoken-line sequences,
@@ -465,6 +465,7 @@ private function PlayNextLine takes nothing returns nothing
 		endif
 	else
 		// Normal line with dialogue display
+		set udg_ExSoundString = text
 		if soundKey != "" then
 			if soundAtUnit and speaker != null then
 				call ExSound_PlayAtUnit(soundKey, speaker, text)
@@ -479,10 +480,10 @@ private function PlayNextLine takes nothing returns nothing
 			set duration = EstimateDuration(text)
 		endif
 
-		if speaker != null then
-			call TransmissionFromUnitWithNameBJ(bj_FORCE_ALL_PLAYERS, speaker, speakerName, null, text, bj_TIMETYPE_SET, duration, false)
+		if speaker != null or speakerName != "" then
+			call TransmissionFromUnitWithNameBJ(bj_FORCE_ALL_PLAYERS, speaker, speakerName, null, udg_ExSoundString, bj_TIMETYPE_SET, duration, false)
 		else
-			call DisplayTimedTextToForce(bj_FORCE_ALL_PLAYERS, duration, text)
+			call DisplayTimedTextToForce(bj_FORCE_ALL_PLAYERS, duration, udg_ExSoundString)
 		endif
 
 		if customDuration > 0.0 then
@@ -511,6 +512,7 @@ public function PlayLine takes unit speaker, string speakerName, string text, st
 		set speakerName = GetUnitDisplayName(speaker)
 	endif
 
+	set udg_ExSoundString = text
 	if soundKey != "" then
 		if soundAtUnit and speaker != null then
 			call ExSound_PlayAtUnit(soundKey, speaker, text)
@@ -525,10 +527,10 @@ public function PlayLine takes unit speaker, string speakerName, string text, st
 		set duration = EstimateDuration(text)
 	endif
 
-	if speaker != null then
-		call TransmissionFromUnitWithNameBJ(bj_FORCE_ALL_PLAYERS, speaker, speakerName, null, text, bj_TIMETYPE_SET, duration, false)
+	if speaker != null or speakerName != "" then
+		call TransmissionFromUnitWithNameBJ(bj_FORCE_ALL_PLAYERS, speaker, speakerName, null, udg_ExSoundString, bj_TIMETYPE_SET, duration, false)
 	else
-		call DisplayTimedTextToForce(bj_FORCE_ALL_PLAYERS, duration, text)
+		call DisplayTimedTextToForce(bj_FORCE_ALL_PLAYERS, duration, udg_ExSoundString)
 	endif
 endfunction
 
