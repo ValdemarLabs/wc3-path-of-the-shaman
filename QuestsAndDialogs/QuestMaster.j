@@ -2,7 +2,7 @@
     QuestMaster
 
     Author: Valdemar
-    Version: 1.3.6
+    Version: 1.3.7
 
     Description:
     Owns PotS quest data, state transitions, rewards, availability, custom
@@ -761,6 +761,16 @@ private function GetIconQuestData takes integer iconQuestId returns QuestData
 	return 0
 endfunction
 
+private function IsQuestIconOwnedByUnit takes QuestData q, unit u returns boolean
+	if q == 0 or u == null or q.state == QUEST_STATE_COMPLETE or not IsQuestUnitAvailable(q) then
+		return false
+	endif
+	if q.state == QUEST_STATE_READY_TURNIN and q.receiver != null and q.receiver != q.giver then
+		return u == q.receiver
+	endif
+	return u == q.giver
+endfunction
+
 public function IconUpdateForNPC takes unit u returns nothing
 	local integer questID
 	local integer questCount
@@ -795,12 +805,18 @@ public function IconUpdateForNPC takes unit u returns nothing
 			set curState = iconTable.integer[i*100 + QUEST_STATE_KEY]
 			set curType = iconTable.string[i*100 + QUEST_TYPE_KEY]
 			set q = GetIconQuestData(questID)
-			set includeIcon = q == 0 or IsQuestUnitAvailable(q)
-			if q != 0 then
+			if questID < 0 then
+				// Objective entries own their ready marker independently of the
+				// parent quest's in-progress state.
+				set includeIcon = q != 0 and q.active and not q.completed and not q.failed and IsQuestUnitAvailable(q)
+			elseif q != 0 then
+				set includeIcon = IsQuestIconOwnedByUnit(q, u)
 				set curState = q.state
 				set curType = q.questType
 				set iconTable.integer[i*100 + QUEST_STATE_KEY] = curState
 				set iconTable.string[i*100 + QUEST_TYPE_KEY] = curType
+			else
+				set includeIcon = true
 			endif
 			if includeIcon then
 				set statePriority = IconStatePriority(curState)
@@ -818,17 +834,18 @@ public function IconUpdateForNPC takes unit u returns nothing
 		set questCount = 0
 	endif
 
-	if questCount == 0 then
-		set questCount = GetGiverQuestCountInternal(u)
-		set i = 1
-		loop
-			exitwhen i > questCount
-			set questID = GetGiverQuestIdByIndexInternal(u, i)
-			if questID != 0 then
-				set q = GetById(questID)
-				if q != 0 and IsQuestUnitAvailable(q) then
-					set curState = q.state
-					set curType = q.questType
+	// Always scan the registered giver list as well. A replacement NPC may
+	// inherit its quests without inheriting the old handle's icon cache.
+	set questCount = GetGiverQuestCountInternal(u)
+	set i = 1
+	loop
+		exitwhen i > questCount
+		set questID = GetGiverQuestIdByIndexInternal(u, i)
+		if questID != 0 then
+			set q = GetById(questID)
+			if IsQuestIconOwnedByUnit(q, u) then
+				set curState = q.state
+				set curType = q.questType
 				set statePriority = IconStatePriority(curState)
 				set typePriority = IconTypePriority(curType)
 				if statePriority > bestStatePriority or (statePriority == bestStatePriority and typePriority > bestTypePriority) then
@@ -837,11 +854,10 @@ public function IconUpdateForNPC takes unit u returns nothing
 					set bestState = curState
 					set bestType = curType
 				endif
-				endif
 			endif
-			set i = i + 1
-		endloop
-	endif
+		endif
+		set i = i + 1
+	endloop
 
 	if bestState != QUEST_STATE_COMPLETE then
 		call IconRefresh(u, -1, bestType, bestState)
