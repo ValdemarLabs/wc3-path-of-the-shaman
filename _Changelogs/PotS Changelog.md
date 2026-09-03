@@ -15,6 +15,40 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [3.9.2026]
+
+### Player-Facing Updates
+
+- Fixed Graknar's bag shop showing green placeholder icons and hiding its bag names, prices, and details behind the shop panel.
+- Fixed Ragno's available-quest marker changing to a question mark when dialogue refreshes reconsidered the cross-NPC Call of the Horde turn-in state.
+- Fixed one ESC press during Ragno and other configured quest-giver entry or greeting sequences advancing all the way to the available dialogue choices instead of leaving a hidden menu behind the fullscreen cinematic UI.
+- Ability trainer frames now keep the camera locked to the trainer while retaining mouse control for the custom UI.
+- Fixed Zul'kis's cinematic camera handoffs retaining queued gameplay-camera reset motion. Each scripted-camera entry now clears target-controller smoothing and active camera motion once; later zero-second setups remain ordinary adjacent GUI-style camera pairs inside the already-suspended cinematic.
+- Protect the Outpost now keeps camera ownership suspended when its completion cinematic hands the still-black screen directly to Zul'kis's opening instead of briefly restoring gameplay camera control between cinematics.
+- Companions in Normal mode now assist the focused hero's attack when they are stationary and out of combat, while a short cooldown prevents repeated hero attacks or target changes from spamming new orders.
+
+### Technical Updates
+
+- Updated `Vendors/Shop.j` to use the imported `.TGA` paths for bag-upgrade icons, and updated `UI/ShopUI.j` with explicit backdrop, button, icon, text, and highlight frame levels.
+- Updated `QuestsAndDialogs/QuestMaster.j` so overhead marker aggregation only considers a quest on its current giver or, for cross-NPC turn-ins, its current receiver. Replacement quest givers now also rebuild their result from the registered giver list without letting stale icon-cache entries override valid available quests.
+- Updated `QuestsAndDialogs/DialogSystem.j` to dispatch ESC through the single native end-cinematic event instead of racing raw-key and cinematic event handlers for one keypress.
+- Updated `QuestsAndDialogs/DialogInteraction.j` so entry skips carry through a newly started greeting sequence and greeting choices open after fullscreen ESC callbacks finish reapplying interface state.
+- Updated `QuestsAndDialogs/QuestGivers/Orcs/qRagno.j` to use the shared configured-interaction ESC lifecycle instead of replacing it with a local menu-close action.
+- Updated `Abilities/AbilityTrainerDialogs.j` to reapply its fixed trainer camera when opening `UI/AbilitiesUI.j`, then explicitly retain user control for frame interaction.
+- Updated `QuestsAndDialogs/QuestGivers/Player/qZulkis.j` to call the existing reset-safe `CameraControl_PrepareScriptedCamera()` API once at each actual scripted-cinematic entry, while preserving all later native hard cuts and authored camera order and durations.
+- Updated `QuestsAndDialogs/QuestGivers/Orcs/qRagno.j` to prepare scripted-camera ownership once at Protect the Outpost completion, retain that suspension during the Zul'kis handoff, and resume Nazgrek only in the fallback path where Zul'kis's prologue was already complete.
+- Audited the DynamicMinimap sources: current repository JASS has no active external `DynamicMinimap_Enable` call site, and its camera-bounds behavior can clamp camera destinations but does not schedule the reported slow pan.
+- Updated `Companions/Companions.j` with focused-hero attack assistance for available Normal-mode companions, per-companion order throttling, and attack-order preservation while either the hero or companion remains in combat.
+
+### Actions Remaining
+
+- Compile the full map with World Editor/JassHelper and verify Graknar's seven bag tiers render their icons, names, prices, category buttons, and selected-item details correctly.
+- Compile the full map with World Editor/JassHelper and confirm Ragno keeps the available-quest exclamation mark before, during, and after dialogue while Call of the Horde's turn-in question mark remains only on Chieftain Thork.
+- Compile the full map with World Editor/JassHelper and test ESC during entry fades, each spoken greeting line, visible choices, quest acceptance/completion, Farewell, and exit fades for Ragno, Graknar, Aradion, and the recent configured quest givers.
+- Compile the full map with World Editor/JassHelper and runtime-test every Zul'kis hard cut in Normal and Advanced camera modes, including Protect the Outpost to `IntroZulkisCam2`, camera 5, shore camera 3, patrol camera 7, rescue camera 8, and the Nazgrek decision return.
+- Confirm the live map's unexported `Cinematic ON`/`Cinematic OFF` GUI triggers do not independently resume CameraControl or re-enable DynamicMinimap during the Protect the Outpost-to-Zul'kis cinematic handoff.
+- Compile the full map with World Editor/JassHelper and runtime-test Normal-mode companion assistance with both focused heroes, including stationary ranged companions, rapid hero target changes, post-combat return, Passive/Hold/Aggressive modes, manual orders, and suspended companions.
+
 ## [31.8.2026]
 
 ### Player-Facing Updates
