@@ -375,7 +375,8 @@ library qGraknar initializer Init requires QuestGiver, QuestMaster, DialogIntera
     private function OpenTrade takes nothing returns nothing
         local unit hero = ResolveDialogHero()
 
-        if hero == null or not Shop_CanPlayerTradeWithVendor(GetOwningPlayer(hero), Graknar) then
+        call VendorBags_RegisterUnit(Graknar)
+        if hero == null or Shop_GetVendorIdForUnit(Graknar) != VendorBags_GetVendorId() or not Shop_CanPlayerTradeWithVendor(GetOwningPlayer(hero), Graknar) then
             set hero = null
             call StartExitFadeOut()
             return
@@ -515,6 +516,7 @@ library qGraknar initializer Init requires QuestGiver, QuestMaster, DialogIntera
         call PauseUnit(hero, true)
         call BuildDialog()
         call DialogSystem_SetContext(vendor, GetOwningPlayer(hero))
+        call DialogSystem_SetEscapeAction(function EndVendorDialog)
         call DialogSystem_ShowDialog(GraknarDialog, GetOwningPlayer(hero))
         set vendor = null
         set hero = null

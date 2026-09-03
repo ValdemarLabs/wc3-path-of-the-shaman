@@ -2,7 +2,7 @@
     ShopUI
 
     Author: Valdemar
-    Version: 1.1.2
+    Version: 1.1.3
 
     Description:
     Frame UI for PotS merchant vendors. The panel can browse merchant stock or
@@ -152,6 +152,37 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
             call DestroyTrigger(SUI_ExternalInterruptHandler)
             set SUI_ExternalInterruptHandler = null
         endif
+    endfunction
+
+    private function SUI_InvalidateDisplayCache takes nothing returns nothing
+        local integer index = 1
+
+        loop
+            exitwhen index > SUI_MAX_ROWS
+            set SUI_RowIconCache[index] = null
+            set SUI_RowTextCache[index] = null
+            set SUI_RowPriceCache[index] = null
+            set SUI_RowChargesCache[index] = null
+            set SUI_RowVisibleState[index] = -1
+            set SUI_RowHighlightState[index] = -1
+            set index = index + 1
+        endloop
+        set index = 1
+        loop
+            exitwhen index > SUI_MAX_CATEGORIES
+            set SUI_CategoryName[index] = ""
+            set SUI_CategoryVisibleState[index] = -1
+            set index = index + 1
+        endloop
+        set SUI_DetailIconCache = null
+        set SUI_DetailChargesCache = null
+        set SUI_DetailTitleCache = null
+        set SUI_DetailInfoCache = null
+        set SUI_DetailBodyCache = null
+        set SUI_StatusCache = null
+        set SUI_GoldCache = null
+        set SUI_ArenaMarksCache = null
+        set SUI_ActionTextCache = null
     endfunction
 
     private function SUI_IsRecentCategory takes nothing returns boolean
@@ -1107,6 +1138,7 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
 
     private function SUI_ShowForVendor takes unit vendor, unit buyer, boolean returnToDialog, boolean endOnCombat, code onInterrupt returns nothing
         local player p
+        local integer vendorId
 
         if vendor == null or buyer == null then
             call Interface_PlayEventSoundForPlayer(Interface_EVENT_ERROR, Player(0))
@@ -1115,8 +1147,8 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
             return
         endif
 
-        set SUI_VendorId = Shop_GetVendorIdForUnit(vendor)
-        if SUI_VendorId <= 0 then
+        set vendorId = Shop_GetVendorIdForUnit(vendor)
+        if vendorId <= 0 then
             call Interface_PlayEventSoundForPlayer(Interface_EVENT_ERROR, GetOwningPlayer(buyer))
             set vendor = null
             set buyer = null
@@ -1133,6 +1165,7 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
         if SUI_IsVisible() then
             call SUI_HideInternal(false, false, true)
         endif
+        set SUI_VendorId = vendorId
         if not DialogInteraction_BeginCombatSensitiveInteractionEx(vendor, buyer, function SUI_InterruptTrade, endOnCombat) then
             call Interface_PlayEventSoundForPlayer(Interface_EVENT_ERROR, GetOwningPlayer(buyer))
             call DisplayTextToPlayer(GetOwningPlayer(buyer), 0.00, 0.00, "|cffff8080You cannot trade while either participant is in combat.|r")
@@ -1157,6 +1190,7 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
         set SUI_SelectedCategory = Shop_GetAllCategoryName()
         set SUI_TradeSessionOpen = true
         set SUI_ReturnToDialog = returnToDialog
+        call SUI_InvalidateDisplayCache()
         call Shop_BeginTradeSessionForUnits(SUI_VendorId, vendor, buyer)
         set SUI_RandomVendorLineRemaining = VendorLines_GetRandomLineInterval(SUI_VendorId)
         set p = GetOwningPlayer(buyer)
