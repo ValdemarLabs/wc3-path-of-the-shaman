@@ -2,7 +2,7 @@
     CameraControl
     
     Author: [Valdemar]
-    Version: 1.1.1
+    Version: 1.2.0
 
     Description: Keeps each player's camera behavior consistent, including modes, target tracking, and basic movement controls.
 
@@ -23,7 +23,7 @@
     call CameraControl_IsSuspended(whichPlayer) returns boolean
 
 **/
-library CameraControl initializer AutoInit requires FixedCameraLock, AdvancedCameraSystem, ArrowKeyMovement, FallenHeroState
+library CameraControl initializer AutoInit requires FixedCameraLock, AdvancedCameraSystem, ArrowKeyMovement, FallenHeroState, optional DynamicMinimap
 globals
     public constant integer CAMERA_MODE_NORMAL = 1
     public constant integer CAMERA_MODE_ADVANCED = 2
@@ -129,6 +129,7 @@ globals
     private boolean array CC_MoveUp
     private boolean array CC_MoveDown
     private boolean array CC_ResumePending
+    private boolean array CC_ScriptedCameraPrepared
     private boolean array CC_WoundedActive
     private timer array CC_ResumeTimer
     private integer array CC_WoundedSeed
@@ -1217,6 +1218,21 @@ private function CC_CheckCameraDrift takes nothing returns nothing
     endloop
 endfunction
 
+private function CC_ResumeScriptedCameraSystems takes player whichPlayer returns nothing
+    local integer pid = CC_GetPlayerIndex(whichPlayer)
+
+    if not CC_ScriptedCameraPrepared[pid] then
+        return
+    endif
+
+    set CC_ScriptedCameraPrepared[pid] = false
+    static if LIBRARY_DynamicMinimap then
+        if whichPlayer == Player(0) then
+            call DynamicMinimap_ResumeAfterScriptedCamera()
+        endif
+    endif
+endfunction
+
 private function CC_ResetStoredCameraState takes player whichPlayer returns nothing
     local integer pid = CC_GetPlayerIndex(whichPlayer)
 
@@ -1229,6 +1245,7 @@ private function CC_ResetStoredCameraState takes player whichPlayer returns noth
     endif
 
     call CC_ApplyMode(whichPlayer)
+    call CC_ResumeScriptedCameraSystems(whichPlayer)
 endfunction
 
 private function CC_FinishSmoothResume takes player whichPlayer returns nothing
@@ -1237,6 +1254,7 @@ private function CC_FinishSmoothResume takes player whichPlayer returns nothing
     set CC_SuspendedKeyboardAdjustable[pid] = false
     set CC_Suspended[pid] = false
     call CC_ApplyMode(whichPlayer)
+    call CC_ResumeScriptedCameraSystems(whichPlayer)
 endfunction
 
 private function CC_OnResumeTimer takes nothing returns nothing
@@ -1462,7 +1480,16 @@ public function Suspend takes player whichPlayer returns nothing
 endfunction
 
 public function PrepareScriptedCamera takes player whichPlayer returns nothing
+    local integer pid = CC_GetPlayerIndex(whichPlayer)
     call Suspend(whichPlayer)
+    if not CC_ScriptedCameraPrepared[pid] then
+        set CC_ScriptedCameraPrepared[pid] = true
+        static if LIBRARY_DynamicMinimap then
+            if whichPlayer == Player(0) then
+                call DynamicMinimap_SuspendForScriptedCamera()
+            endif
+        endif
+    endif
     if GetLocalPlayer() == whichPlayer then
         // Suspension already releases gameplay bindings. Releasing them again
         // here queues another ResetToGameCamera(0) immediately before the
@@ -1509,6 +1536,7 @@ public function ResumeQuick takes player whichPlayer returns nothing
     call CC_UpdateLoopState()
     set CC_Suspended[pid] = false
     call CC_ApplyMode(whichPlayer)
+    call CC_ResumeScriptedCameraSystems(whichPlayer)
 endfunction
 
 public function ResumeWithDuration takes player whichPlayer, real duration returns nothing
@@ -1537,6 +1565,7 @@ public function ResumeWithDuration takes player whichPlayer, real duration retur
         set CC_Suspended[pid] = false
         call CC_BindDeveloperMode(whichPlayer)
         call CC_ApplyDirectFields(whichPlayer, duration)
+        call CC_ResumeScriptedCameraSystems(whichPlayer)
     else
         set CC_ResumePending[pid] = true
         call CC_StartSmoothResumeVisualWithDuration(whichPlayer, duration)
