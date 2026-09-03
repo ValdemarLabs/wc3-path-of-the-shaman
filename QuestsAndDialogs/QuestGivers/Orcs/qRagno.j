@@ -2,7 +2,7 @@
     qRagno
 
     Author: Valdemar
-    Version: 1.1.9
+    Version: 1.2.0
 
     Description:
     Implements Ragno's quest dialogue, daily outpost tasks, Protect the
@@ -1321,6 +1321,7 @@ private function RevealProtectOutpostRespawnedRagno takes nothing returns nothin
 endfunction
 
 private function OnProtectOutpostCompletionCinematicStart takes nothing returns nothing
+    call CameraControl_PrepareScriptedCamera(Player(0))
     call DialogInteraction_BeginCinematicSequence(CINEMATIC)
     if DialogInteraction_IsUnitAlive(Nazgrek) then
         call IssueImmediateOrder(Nazgrek, "stop")
@@ -1377,6 +1378,8 @@ private function OnProtectOutpostCompletionCinematicEnd takes nothing returns no
         call CameraSetupApplyForPlayer(true, gg_cam_ProtectOutpostSkipped02, Player(0), 0.00)
         call DialogInteraction_EndCinematicSequence(CINEMATIC)
         call ResetToGameCameraForPlayer(Player(0), 0.00)
+        call CameraControl_SetTargetUnit(Player(0), Nazgrek)
+        call CameraControl_ResumeQuick(Player(0))
         call CinematicFadeBJ(bj_CINEFADETYPE_FADEIN, OUTPOST_CINEMATIC_END_FADE_DURATION, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
     else
         call qZulkis_StartPrologue()

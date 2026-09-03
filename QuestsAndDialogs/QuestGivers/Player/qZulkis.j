@@ -2,7 +2,7 @@
     qZulkis
 
     Author: Valdemar
-    Version: 1.5.0
+    Version: 1.5.1
 
     Description:
 
@@ -817,7 +817,7 @@ private function OnBrokenLandingSequenceEnd takes nothing returns nothing
 endfunction
 
 private function OnBrokenLandingSequenceStart takes nothing returns nothing
-    call CameraControl_Suspend(Player(0))
+    call CameraControl_PrepareScriptedCamera(Player(0))
     call DialogInteraction_BeginCinematicSequence(true)
     call IssueImmediateOrder(Zulkis, "stop")
 endfunction
@@ -1000,7 +1000,7 @@ private function OnRescueSequenceEnd takes nothing returns nothing
 endfunction
 
 private function OnRescueSequenceStart takes nothing returns nothing
-    call CameraControl_Suspend(Player(0))
+    call CameraControl_PrepareScriptedCamera(Player(0))
     call DialogInteraction_BeginCinematicSequence(true)
     call IssueImmediateOrder(Zulkis, "stop")
     call CameraSetupApplyForPlayer(true, gg_cam_IntroZulkisCam8, Player(0), 0.00)
@@ -1219,7 +1219,7 @@ private function StartPrologueInternal takes nothing returns nothing
     call ShowUnit(Zulkarak, false)
     set PrologueState = STATE_SHIP_ARRIVAL
     set ShipTravelElapsed = 0.00
-    call CameraControl_Suspend(Player(0))
+    call CameraControl_PrepareScriptedCamera(Player(0))
     call DialogInteraction_BeginCinematicSequence(true)
     call PlayOpeningNarratorSequence()
     call DialogSystem_SetEscapeAction(function SkipShipArrival)
