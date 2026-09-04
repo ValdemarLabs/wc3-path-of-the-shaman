@@ -2,12 +2,12 @@
     DoodadRender
 
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.2.0
 
     Description:
         Reduces rendering load by hiding selected preplaced doodad types outside
-        a view-directed camera tile area. Doodads are managed by rawcode and
-        rect; no handles, instance registration, or placement changes are used.
+        a camera-eye-centered tile area. Doodads are managed by rawcode and rect;
+        no handles, instance registration, or placement changes are used.
 
     Credits:
         Camera-grid concept based on Zwiebelchen's DestructableHider.
@@ -28,9 +28,7 @@ library DoodadRender initializer Init requires DoodadManager
         // Configuration
         private constant real UPDATE_INTERVAL = 0.20
         private constant real TILE_SIZE = 512.00
-        private constant integer OVERSCAN_TILES = 1
-        private constant real CAMERA_LOOKAHEAD_FACTOR = 0.50
-        private constant real MAX_CAMERA_LOOKAHEAD = 2048.00
+        private constant integer OVERSCAN_TILES = 0
         private constant boolean DEBUG = false
 
         // Managed doodad types and their effective tile radii.
@@ -105,26 +103,10 @@ library DoodadRender initializer Init requires DoodadManager
         return row
     endfunction
 
-    // Shifts the render anchor beyond the target toward the camera's current view.
+    // The camera eye makes configured ranges behave as distance from the viewer.
     private function ReadCameraCell takes nothing returns nothing
-        local real targetX = GetCameraTargetPositionX()
-        local real targetY = GetCameraTargetPositionY()
-        local real directionX = targetX - GetCameraEyePositionX()
-        local real directionY = targetY - GetCameraEyePositionY()
-        local real horizontalDistance = SquareRoot(directionX * directionX + directionY * directionY)
-        local real lookahead
-
-        if horizontalDistance > 0.01 then
-            set lookahead = horizontalDistance * CAMERA_LOOKAHEAD_FACTOR
-            if lookahead > MAX_CAMERA_LOOKAHEAD then
-                set lookahead = MAX_CAMERA_LOOKAHEAD
-            endif
-            set targetX = targetX + directionX / horizontalDistance * lookahead
-            set targetY = targetY + directionY / horizontalDistance * lookahead
-        endif
-
-        set cameraColumn = WorldToColumn(targetX)
-        set cameraRow = WorldToRow(targetY)
+        set cameraColumn = WorldToColumn(GetCameraEyePositionX())
+        set cameraRow = WorldToRow(GetCameraEyePositionY())
     endfunction
 
     private function DistanceToRadius takes real drawDistance returns integer
