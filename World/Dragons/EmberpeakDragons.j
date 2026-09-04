@@ -2,7 +2,7 @@
     EmberpeakDragons
 
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.1.1
 
     Description:
     Manages the high-altitude dragons in Emberpeak Highlands. The dragons
@@ -103,8 +103,6 @@ library EmberpeakDragons initializer Init requires DragonBehavior, Table, CreepR
     endfunction
 
     private function CanWander takes unit dragon returns boolean
-        local integer orderId
-
         if not IsAlive(dragon) or UnitCasting[GetHandleId(dragon)] == 1 then
             return false
         endif
@@ -114,8 +112,7 @@ library EmberpeakDragons initializer Init requires DragonBehavior, Table, CreepR
         if dragon == gg_unit_n647_0823 and udg_EmberpeakDragonCasting[2] then
             return false
         endif
-        set orderId = GetUnitCurrentOrder(dragon)
-        return orderId != OrderId("flamestrike") and orderId != OrderId("cast") and orderId != OrderId("move")
+        return true
     endfunction
 
     private function WanderGroup takes group dragonGroup, rect destinationRect, rect audienceRect returns nothing

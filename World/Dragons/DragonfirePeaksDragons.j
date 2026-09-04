@@ -2,7 +2,7 @@
     DragonfirePeaksDragons
 
     Author: Valdemar
-    Version: 1.0.0
+    Version: 1.0.1
 
     Description:
     Owns the high-altitude dragons in Dragonfire Peaks. Existing preplaced
@@ -91,13 +91,10 @@ library DragonfirePeaksDragons initializer Init requires DragonBehavior, Table, 
     endfunction
 
     private function CanWander takes unit dragon returns boolean
-        local integer orderId
-
         if not IsAlive(dragon) or UnitCasting[GetHandleId(dragon)] == 1 then
             return false
         endif
-        set orderId = GetUnitCurrentOrder(dragon)
-        return orderId != OrderId("flamestrike") and orderId != OrderId("cast") and orderId != OrderId("move")
+        return true
     endfunction
 
     private function Wander takes nothing returns nothing
