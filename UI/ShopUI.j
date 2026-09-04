@@ -2,7 +2,7 @@
     ShopUI
 
     Author: Valdemar
-    Version: 1.1.3
+    Version: 1.1.4
 
     Description:
     Frame UI for PotS merchant vendors. The panel can browse merchant stock or
@@ -639,6 +639,20 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
         call SUI_SyncListScrollFrame(whichPlayer, totalCount)
     endfunction
 
+    private function SUI_DeferredInitialRefresh takes nothing returns nothing
+        local timer refreshTimer = GetExpiredTimer()
+        local player p = SUI_GetActivePlayer()
+
+        call DestroyTimer(refreshTimer)
+        if SUI_IsVisible() and SUI_TradeSessionOpen and SUI_VendorUnit != null and SUI_BuyerUnit != null then
+            call SUI_InvalidateDisplayCache()
+            call SUI_Update(p)
+        endif
+
+        set refreshTimer = null
+        set p = null
+    endfunction
+
     private function SUI_EndTradeSession takes boolean playOutcome, boolean returnToDialog, boolean restoreGameplay returns nothing
         local unit buyer = SUI_BuyerUnit
         local unit vendor = SUI_VendorUnit
@@ -1139,6 +1153,7 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
     private function SUI_ShowForVendor takes unit vendor, unit buyer, boolean returnToDialog, boolean endOnCombat, code onInterrupt returns nothing
         local player p
         local integer vendorId
+        local timer refreshTimer
 
         if vendor == null or buyer == null then
             call Interface_PlayEventSoundForPlayer(Interface_EVENT_ERROR, Player(0))
@@ -1208,8 +1223,12 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
         endif
         call BlzFrameSetVisible(SUI_Parent, true)
         call SUI_Update(p)
+        // Native dialog callbacks can defer child-frame rendering until the event returns.
+        set refreshTimer = CreateTimer()
+        call TimerStart(refreshTimer, 0.00, false, function SUI_DeferredInitialRefresh)
 
         set p = null
+        set refreshTimer = null
         set vendor = null
         set buyer = null
     endfunction

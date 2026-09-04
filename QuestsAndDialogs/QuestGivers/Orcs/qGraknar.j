@@ -497,9 +497,37 @@ library qGraknar initializer Init requires QuestGiver, QuestMaster, DialogIntera
         call DialogInteraction_StartConfiguredDialogEntryTransition(Graknar, SelectedHero, true, USE_DIALOG_CAMERA, CINEMATIC, "qGraknar_ContinueToDialogAfterSelection")
     endfunction
 
+    private function ShowReturnedDialog takes nothing returns nothing
+        local timer returnTimer = GetExpiredTimer()
+        local unit hero = SelectedHero
+
+        call DestroyTimer(returnTimer)
+        if hero == null or not DialogInteraction_IsUnitAlive(Graknar) or not DialogInteraction_IsUnitAlive(hero) then
+            call EndVendorDialog()
+            set returnTimer = null
+            set hero = null
+            return
+        endif
+        if not DialogInteraction_BeginCombatSensitiveInteractionEx(Graknar, hero, function InterruptDialog, END_ON_COMBAT) then
+            call EndVendorDialog()
+            set returnTimer = null
+            set hero = null
+            return
+        endif
+        call PauseUnit(hero, true)
+        call BuildDialog()
+        call DialogSystem_SetContext(Graknar, GetOwningPlayer(hero))
+        call DialogSystem_SetEscapeAction(function EndVendorDialog)
+        call DialogSystem_ShowDialog(GraknarDialog, GetOwningPlayer(hero))
+
+        set returnTimer = null
+        set hero = null
+    endfunction
+
     private function ReturnFromTrade takes nothing returns boolean
         local unit vendor = ShopUI_GetVendorUnit()
         local unit hero = ShopUI_GetBuyerUnit()
+        local timer returnTimer
 
         if vendor != Graknar or hero == null or not DialogInteraction_IsUnitAlive(vendor) or not DialogInteraction_IsUnitAlive(hero) then
             set vendor = null
@@ -507,19 +535,13 @@ library qGraknar initializer Init requires QuestGiver, QuestMaster, DialogIntera
             return false
         endif
         set SelectedHero = hero
-        if not DialogInteraction_BeginCombatSensitiveInteractionEx(vendor, hero, function InterruptDialog, END_ON_COMBAT) then
-            set SelectedHero = null
-            set vendor = null
-            set hero = null
-            return false
-        endif
-        call PauseUnit(hero, true)
-        call BuildDialog()
-        call DialogSystem_SetContext(vendor, GetOwningPlayer(hero))
-        call DialogSystem_SetEscapeAction(function EndVendorDialog)
-        call DialogSystem_ShowDialog(GraknarDialog, GetOwningPlayer(hero))
+        // Rebuild the native dialog after ShopUI's Back frame event has returned.
+        set returnTimer = CreateTimer()
+        call TimerStart(returnTimer, 0.00, false, function ShowReturnedDialog)
+
         set vendor = null
         set hero = null
+        set returnTimer = null
         return true
     endfunction
 
