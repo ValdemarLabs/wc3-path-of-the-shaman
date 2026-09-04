@@ -2,7 +2,7 @@
     qZulkis
 
     Author: Valdemar
-    Version: 1.5.2
+    Version: 1.6.0
 
     Description:
 
@@ -50,6 +50,7 @@ library qZulkis initializer Init requires QuestGiver, QuestMaster, DialogInterac
         private constant integer ZULKIS_GRAVEYARD_ID = 2
         private constant integer STARTING_HEADHUNTER_SIZE = 2
         private constant integer ORC_PATROL_SIZE = 4
+        private constant integer MAX_STORED_NAZGREK_COMPANIONS = 24
         private constant string STARTING_HEADHUNTER_ICON = "ReplaceableTextures\\CommandButtons\\BTNHeadHunterBerserker.blp"
         private constant string ORC_PATROL_ICON = "ReplaceableTextures\\CommandButtons\\BTNGrunt.blp"
 
@@ -98,6 +99,7 @@ library qZulkis initializer Init requires QuestGiver, QuestMaster, DialogInterac
         private unit array LandingTroll
         private unit array StartingHeadhunter
         private unit array OrcPatrolGrunt
+        private unit array StoredNazgrekCompanion
         private unit ForestTrollBarkSpeaker = null
         private effect array ShoreFire
         private QuestData MeetThorkQuest = 0
@@ -118,6 +120,13 @@ library qZulkis initializer Init requires QuestGiver, QuestMaster, DialogInterac
         private player NazgrekSavedOwner = null
         private boolean NazgrekSavedInvulnerable = false
         private boolean NazgrekWasUnitHiderReference = false
+        private boolean array StoredNazgrekCompanionWasPaused
+        private boolean array StoredNazgrekCompanionWasHidden
+        private boolean array StoredNazgrekCompanionWasSuspended
+        private boolean array StoredNazgrekCompanionWasHiderReference
+        private boolean array StoredNazgrekCompanionWasNazgrekFocused
+        private boolean array StoredNazgrekCompanionWasZulkisFocused
+        private integer StoredNazgrekCompanionCount = 0
         private integer SavedGraveyardId = 0
         private boolean NazgrekGraveyardStored = false
         private boolean GraveyardOverrideActive = false
@@ -125,6 +134,7 @@ library qZulkis initializer Init requires QuestGiver, QuestMaster, DialogInterac
         private boolean StartRequested = false
         private boolean PrologueStarted = false
         private boolean PrologueCompleted = false
+        private boolean ProloguePlayerHandoffStaged = false
         private boolean ScenePlaying = false
         private boolean BrokenLandingStaged = false
         private boolean BrokenLandingViewStaged = false
@@ -183,6 +193,116 @@ private function SyncUnitReferences takes nothing returns nothing
     if udg_Thork != null and udg_Thork != Thork then
         set Thork = udg_Thork
     endif
+endfunction
+
+private function StashNazgrekCompanions takes nothing returns nothing
+    local group candidates = CreateGroup()
+    local unit companionUnit
+    local unit companionLeader
+    local integer index
+
+    set StoredNazgrekCompanionCount = 0
+    if udg_Companion_Group != null then
+        call BlzGroupAddGroupFast(udg_Companion_Group, candidates)
+    endif
+    loop
+        set companionUnit = FirstOfGroup(candidates)
+        exitwhen companionUnit == null
+        call GroupRemoveUnit(candidates, companionUnit)
+        set companionLeader = Companions_GetLeader(companionUnit)
+        if companionLeader == Nazgrek and companionUnit != Nazgrek and companionUnit != udg_Shadowclaw and StoredNazgrekCompanionCount < MAX_STORED_NAZGREK_COMPANIONS then
+            set StoredNazgrekCompanionCount = StoredNazgrekCompanionCount + 1
+            set index = StoredNazgrekCompanionCount
+            set StoredNazgrekCompanion[index] = companionUnit
+            set StoredNazgrekCompanionWasPaused[index] = IsUnitPaused(companionUnit)
+            set StoredNazgrekCompanionWasHidden[index] = IsUnitHidden(companionUnit)
+            set StoredNazgrekCompanionWasSuspended[index] = Companions_IsSuspended(companionUnit)
+            set StoredNazgrekCompanionWasHiderReference[index] = udg_UnitHider_ReferenceGroup != null and IsUnitInGroup(companionUnit, udg_UnitHider_ReferenceGroup)
+            set StoredNazgrekCompanionWasNazgrekFocused[index] = udg_CompanionFocusNazgrek != null and IsUnitInGroup(companionUnit, udg_CompanionFocusNazgrek)
+            set StoredNazgrekCompanionWasZulkisFocused[index] = udg_CompanionFocusZulkis != null and IsUnitInGroup(companionUnit, udg_CompanionFocusZulkis)
+            call Companions_Suspend(companionUnit)
+            call GroupRemoveUnit(udg_Companion_Group, companionUnit)
+            if udg_CompanionFocusNazgrek != null then
+                call GroupRemoveUnit(udg_CompanionFocusNazgrek, companionUnit)
+            endif
+            if udg_CompanionFocusZulkis != null then
+                call GroupRemoveUnit(udg_CompanionFocusZulkis, companionUnit)
+            endif
+            if udg_UnitHider_ReferenceGroup != null then
+                call GroupRemoveUnit(udg_UnitHider_ReferenceGroup, companionUnit)
+            endif
+            call PauseUnit(companionUnit, true)
+            call ShowUnit(companionUnit, false)
+        endif
+    endloop
+    call DestroyGroup(candidates)
+    set companionLeader = null
+    set companionUnit = null
+    set candidates = null
+endfunction
+
+private function RestoreNazgrekCompanions takes nothing returns nothing
+    local integer index = 1
+    local unit companionUnit
+
+    loop
+        exitwhen index > StoredNazgrekCompanionCount
+        set companionUnit = StoredNazgrekCompanion[index]
+        if companionUnit != null and GetUnitTypeId(companionUnit) != 0 then
+            if udg_Companion_Group != null then
+                call GroupAddUnit(udg_Companion_Group, companionUnit)
+            endif
+            if StoredNazgrekCompanionWasNazgrekFocused[index] and udg_CompanionFocusNazgrek != null then
+                call GroupAddUnit(udg_CompanionFocusNazgrek, companionUnit)
+            endif
+            if StoredNazgrekCompanionWasZulkisFocused[index] and udg_CompanionFocusZulkis != null then
+                call GroupAddUnit(udg_CompanionFocusZulkis, companionUnit)
+            endif
+            if StoredNazgrekCompanionWasHiderReference[index] and udg_UnitHider_ReferenceGroup != null then
+                call GroupAddUnit(udg_UnitHider_ReferenceGroup, companionUnit)
+            endif
+            call ShowUnit(companionUnit, not StoredNazgrekCompanionWasHidden[index])
+            call PauseUnit(companionUnit, StoredNazgrekCompanionWasPaused[index])
+            if not StoredNazgrekCompanionWasSuspended[index] then
+                call Companions_Resume(companionUnit)
+            endif
+        endif
+        set StoredNazgrekCompanion[index] = null
+        set index = index + 1
+    endloop
+    set StoredNazgrekCompanionCount = 0
+    set companionUnit = null
+endfunction
+
+private function StageProloguePlayerHandoff takes nothing returns nothing
+    if ProloguePlayerHandoffStaged then
+        return
+    endif
+    set ProloguePlayerHandoffStaged = true
+
+    call StashNazgrekCompanions()
+    call PauseUnit(Nazgrek, true)
+    call SetUnitInvulnerable(Nazgrek, true)
+    call SetUnitOwner(Nazgrek, Player(PLAYER_NEUTRAL_PASSIVE), true)
+    if udg_UnitHider_ReferenceGroup != null then
+        call GroupRemoveUnit(udg_UnitHider_ReferenceGroup, Nazgrek)
+    endif
+    call ShowUnit(Nazgrek, false)
+    static if LIBRARY_Pet then
+        call Pet_HideShadowclawForStory()
+    endif
+
+    call SetUnitOwner(Zulkis, Player(0), true)
+    call SetUnitInvulnerable(Zulkis, false)
+    call PauseUnit(Zulkis, true)
+    call ShowUnit(Zulkis, false)
+    call InitializeDInventoryForUnit(Zulkis)
+    call InitializeDEquipmentForUnit(Zulkis)
+    call Start_SetupZulkisStartingItems()
+
+    call SetUnitInvulnerable(Zulkarak, true)
+    call PauseUnit(Zulkarak, true)
+    call ShowUnit(Zulkarak, false)
 endfunction
 
 private function ResumeGameplayCamera takes unit target returns nothing
@@ -460,6 +580,7 @@ private function HandleShipArrival takes nothing returns nothing
     if PrologueState != STATE_SHIP_ARRIVAL then
         return
     endif
+    call StageProloguePlayerHandoff()
     set PrologueState = STATE_SHORE_INTRO
     call DialogSystem_ClearEscapeAction()
     call RemoveIntroShip()
@@ -895,11 +1016,12 @@ private function FinishNazgrekDecision takes nothing returns nothing
     if NazgrekWasUnitHiderReference and udg_UnitHider_ReferenceGroup != null then
         call GroupAddUnit(udg_UnitHider_ReferenceGroup, Nazgrek)
     endif
-
     set ScenePlaying = false
     call DialogInteraction_EndCinematicSequence(true)
+    call RestoreNazgrekCompanions()
     call SelectUnitForPlayerSingle(Nazgrek, Player(0))
     call ResumeGameplayCamera(Nazgrek)
+    call ExecuteFunc("qRagno_DiscoverGivingTheLetter")
     call ExecuteFunc("qChieftainThork_RefreshAvailability")
     call ExecuteFunc("qRagno_RefreshAvailability")
     call QuestMaster_RefreshUnitSpecificQuests()
@@ -1174,11 +1296,12 @@ private function StartShipArrival takes nothing returns nothing
     if PrologueState != STATE_SHIP_ARRIVAL then
         return
     endif
-    call CameraSetupApplyForPlayer(true, gg_cam_IntroZulkisCam2, Player(0), 0.00)
-    call CameraSetupApplyForPlayer(true, gg_cam_IntroZulkisCam1, Player(0), SHIP_CAMERA_FIRST_PAN_DURATION)
+    call StageProloguePlayerHandoff()
     call RemoveIntroShip()
     set IntroShip = CreateUnit(Player(DARKSPEAR_PLAYER_ID), UNIT_INTRO_SHIP, GetRectCenterX(gg_rct_ZulkisShipWP1), GetRectCenterY(gg_rct_ZulkisShipWP1), bj_UNIT_FACING)
     call IssuePointOrder(IntroShip, "move", GetRectCenterX(gg_rct_ZulkisShipWP2), GetRectCenterY(gg_rct_ZulkisShipWP2))
+    call CameraSetupApplyForPlayer(true, gg_cam_IntroZulkisCam2, Player(0), 0.00)
+    call CameraSetupApplyForPlayer(true, gg_cam_IntroZulkisCam1, Player(0), SHIP_CAMERA_FIRST_PAN_DURATION)
     call CinematicFadeBJ(bj_CINEFADETYPE_FADEIN, FADE_DURATION, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
     call TimerStart(TransitionTimer, SHIP_CAMERA_SECOND_SHOT_DELAY, false, function StartShipSecondCameraShot)
     call TimerStart(ProgressTimer, PROGRESS_PERIOD, true, function OnProgress)
@@ -1196,28 +1319,6 @@ private function StartPrologueInternal takes nothing returns nothing
     set NazgrekSavedOwner = GetOwningPlayer(Nazgrek)
     set NazgrekSavedInvulnerable = BlzIsUnitInvulnerable(Nazgrek)
     set NazgrekWasUnitHiderReference = udg_UnitHider_ReferenceGroup != null and IsUnitInGroup(Nazgrek, udg_UnitHider_ReferenceGroup)
-    call PauseUnit(Nazgrek, true)
-    call SetUnitInvulnerable(Nazgrek, true)
-    call SetUnitOwner(Nazgrek, Player(PLAYER_NEUTRAL_PASSIVE), true)
-    if udg_UnitHider_ReferenceGroup != null then
-        call GroupRemoveUnit(udg_UnitHider_ReferenceGroup, Nazgrek)
-    endif
-    call ShowUnit(Nazgrek, false)
-    static if LIBRARY_Pet then
-        call Pet_HideShadowclawForStory()
-    endif
-
-    call SetUnitOwner(Zulkis, Player(0), true)
-    call SetUnitInvulnerable(Zulkis, false)
-    call PauseUnit(Zulkis, true)
-    call ShowUnit(Zulkis, false)
-    call InitializeDInventoryForUnit(Zulkis)
-    call InitializeDEquipmentForUnit(Zulkis)
-    call Start_SetupZulkisStartingItems()
-
-    call SetUnitInvulnerable(Zulkarak, true)
-    call PauseUnit(Zulkarak, true)
-    call ShowUnit(Zulkarak, false)
     set PrologueState = STATE_SHIP_ARRIVAL
     set ShipTravelElapsed = 0.00
     call CameraControl_PrepareScriptedCamera(Player(0))
