@@ -2,7 +2,7 @@
     CommandsUI
 
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.2.0
 
     Description:
     Shows a categorized, reference-only list of gameplay commands and legacy
@@ -90,6 +90,7 @@ private function CUI_InitDefinitions takes nothing returns nothing
     call CUI_RegisterCommand("/help", "General", "ReplaceableTextures\\CommandButtons\\BTNScroll.blp", "Displays the general help text or command overview when implemented in gameplay logic.")
     call CUI_RegisterCommand("/skills", "Professions", "ReplaceableTextures\\CommandButtons\\BTNChestOfGold.blp", "Shows the current tracked gather/profession skill values for the selected supported hero.")
     call CUI_RegisterCommand("/leave arena", "Arena", "ReplaceableTextures\\CommandButtons\\BTNBootsOfSpeed.blp", "Leaves the arena map section when arena gameplay is active.")
+    call CUI_RegisterCommand("/unstuck", "Movement", "ReplaceableTextures\\CommandButtons\\BTNMassTeleport.blp", "Moves selected Nazgrek and/or Zul'kis to the safe arrival point at Nazgrek's Hut. Each moved hero can use /unstuck once every 5 minutes and receives the normal Traveler's Journal cooldown.")
     call CUI_RegisterCommand("/gathernodes refresh", "Gather Debug", "ReplaceableTextures\\CommandButtons\\BTNSelectHeroOn.blp", "Refreshes gather nodes for debugging. Intended for testing only.")
 
     call CUI_RegisterCommand("Cheats", "Warning", "ReplaceableTextures\\CommandButtons\\btncage.blp", "Warning disclaimer!|n|nCheats can and will break the normal intended gameplay. The cheats are legacy of testing the map's intense features and to speed up testing. The cheats can however add additional layer of fun and thus they remain.|n|nTip:|nRemember to save before using any cheats to easily return to \"unbroken\" game state.")
