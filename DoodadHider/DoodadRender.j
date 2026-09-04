@@ -2,12 +2,12 @@
     DoodadRender
 
     Author: Valdemar
-    Version: 1.0.0
+    Version: 1.1.0
 
     Description:
         Reduces rendering load by hiding selected preplaced doodad types outside
-        a camera-centered tile area. Doodads are managed by rawcode and rect;
-        no doodad handles, instance registration, or placement changes are used.
+        a view-directed camera tile area. Doodads are managed by rawcode and
+        rect; no handles, instance registration, or placement changes are used.
 
     Credits:
         Camera-grid concept based on Zwiebelchen's DestructableHider.
@@ -29,6 +29,8 @@ library DoodadRender initializer Init requires DoodadManager
         private constant real UPDATE_INTERVAL = 0.20
         private constant real TILE_SIZE = 512.00
         private constant integer OVERSCAN_TILES = 1
+        private constant real CAMERA_LOOKAHEAD_FACTOR = 0.50
+        private constant real MAX_CAMERA_LOOKAHEAD = 2048.00
         private constant boolean DEBUG = false
 
         // Managed doodad types and their effective tile radii.
@@ -49,6 +51,8 @@ library DoodadRender initializer Init requires DoodadManager
         private timer updateTimer = null
         private integer lastColumn = -1
         private integer lastRow = -1
+        private integer cameraColumn = 0
+        private integer cameraRow = 0
         private boolean enabled = false
         private boolean initialized = false
 
@@ -99,6 +103,28 @@ library DoodadRender initializer Init requires DoodadManager
             return rows - 1
         endif
         return row
+    endfunction
+
+    // Shifts the render anchor beyond the target toward the camera's current view.
+    private function ReadCameraCell takes nothing returns nothing
+        local real targetX = GetCameraTargetPositionX()
+        local real targetY = GetCameraTargetPositionY()
+        local real directionX = targetX - GetCameraEyePositionX()
+        local real directionY = targetY - GetCameraEyePositionY()
+        local real horizontalDistance = SquareRoot(directionX * directionX + directionY * directionY)
+        local real lookahead
+
+        if horizontalDistance > 0.01 then
+            set lookahead = horizontalDistance * CAMERA_LOOKAHEAD_FACTOR
+            if lookahead > MAX_CAMERA_LOOKAHEAD then
+                set lookahead = MAX_CAMERA_LOOKAHEAD
+            endif
+            set targetX = targetX + directionX / horizontalDistance * lookahead
+            set targetY = targetY + directionY / horizontalDistance * lookahead
+        endif
+
+        set cameraColumn = WorldToColumn(targetX)
+        set cameraRow = WorldToRow(targetY)
     endfunction
 
     private function DistanceToRadius takes real drawDistance returns integer
@@ -296,17 +322,15 @@ library DoodadRender initializer Init requires DoodadManager
     endfunction
 
     private function RebuildVisibleState takes nothing returns nothing
-        local integer column = WorldToColumn(GetCameraTargetPositionX())
-        local integer row = WorldToRow(GetCameraTargetPositionY())
-
+        call ReadCameraCell()
         call HideAllManagedTypes()
-        call ShowCurrentAreas(column, row)
-        set lastColumn = column
-        set lastRow = row
+        call ShowCurrentAreas(cameraColumn, cameraRow)
+        set lastColumn = cameraColumn
+        set lastRow = cameraRow
         if DEBUG then
             set fullRefreshCount = fullRefreshCount + 1
         endif
-        call DebugTransition(column, row, true)
+        call DebugTransition(cameraColumn, cameraRow, true)
     endfunction
 
     private function Periodic takes nothing returns nothing
@@ -317,8 +341,9 @@ library DoodadRender initializer Init requires DoodadManager
             return
         endif
 
-        set column = WorldToColumn(GetCameraTargetPositionX())
-        set row = WorldToRow(GetCameraTargetPositionY())
+        call ReadCameraCell()
+        set column = cameraColumn
+        set row = cameraRow
         if column == lastColumn and row == lastRow then
             return
         endif
