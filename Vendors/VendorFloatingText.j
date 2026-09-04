@@ -2,7 +2,7 @@
     VendorFloatingText
 
     Author: Valdemar
-    Version: 1.2.1
+    Version: 1.2.2
 
     Description:
     Displays a vendor-type label above registered Shop units while they are in
@@ -15,16 +15,17 @@
     - Totems.j camera-local floating-text visibility pattern
 
     How to install:
-    Import after Shop, Table, FallenHeroState, and Events. Preplaced vendors
-    are discovered after map initialization, while newly entering vendor units
-    register automatically through the shared unit-enter dispatcher.
+    Import after Shop, Table, FallenHeroState, Events, and FullscreenUI.
+    Preplaced vendors are discovered after map initialization, while newly
+    entering vendor units register automatically through the shared unit-enter
+    dispatcher.
 
     API:
     - call VendorFloatingText_RegisterUnit(vendor)
     - call VendorFloatingText_SetEnabled(enabled)
 
 **/
-library VendorFloatingText initializer Init requires Shop, Table, FallenHeroState, Events
+library VendorFloatingText initializer Init requires Shop, Table, FallenHeroState, Events, FullscreenUI
     globals
         private constant integer VFT_MAX_VENDORS = 256
         private constant integer VFT_MAX_VISIBLE_LABELS = 8
@@ -215,7 +216,7 @@ library VendorFloatingText initializer Init requires Shop, Table, FallenHeroStat
             if vendor == null or GetUnitTypeId(vendor) == 0 or Shop_GetVendorIdForUnit(vendor) <= 0 then
                 call VFT_RemoveAt(index)
             else
-                if VFT_Enabled and not udg_InCinematic and VFT_IsInCameraView(vendor) then
+                if VFT_Enabled and not udg_InCinematic and not FullscreenUI_IsEnabled() and VFT_IsInCameraView(vendor) then
                     call VFT_CollectVisibleVendor(vendor)
                 endif
                 set index = index + 1
