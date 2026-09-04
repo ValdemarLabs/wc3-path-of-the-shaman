@@ -2,7 +2,7 @@
     DebugCommands
 
     Author: Valdemar
-    Version: 1.2.0
+    Version: 1.3.0
 
     Description:
     Chat-driven debug commands for Path of the Shaman testing. Commands are
@@ -25,10 +25,11 @@
     - /debug ability lookup '<rawcode-or-name>'
     - /debug fishpool spawn
     - /debug drunk
+    - /debug unstuck
     - /debug creeprespawn dungeon respawn [zoneId]
 
 **/
-library DebugCommands initializer Init requires DebugObjectRegistry, Ascii, GatherNodeUnits, GatherNodeSkills, ZonesCore, Dungeon, Drunk
+library DebugCommands initializer Init requires DebugObjectRegistry, Ascii, GatherNodeUnits, GatherNodeSkills, ZonesCore, Dungeon, Drunk, PlayerHome
     globals
         private constant string DBG_ROOT = "/debug"
         private constant string DBG_PREFIX = "/debug "
@@ -697,6 +698,7 @@ library DebugCommands initializer Init requires DebugObjectRegistry, Ascii, Gath
         call DBG_Message(whichPlayer, "/debug ability lookup '<rawcode-or-name>'")
         call DBG_Message(whichPlayer, "/debug fishpool spawn")
         call DBG_Message(whichPlayer, "/debug drunk")
+        call DBG_Message(whichPlayer, "/debug unstuck (bypasses the 5-minute cooldown)")
         call DBG_Message(whichPlayer, "/debug creeprespawn dungeon respawn [zoneId]")
     endfunction
 
@@ -746,6 +748,8 @@ library DebugCommands initializer Init requires DebugObjectRegistry, Ascii, Gath
             call DBG_SpawnRandomFishPool(whichPlayer, cameraX, cameraY, hasCamera)
         elseif lowerCommand == "drunk" or lowerCommand == "stat drunk" then
             call DBG_ShowSelectedDrunk(whichPlayer)
+        elseif lowerCommand == "unstuck" then
+            call PlayerHome_UnstuckSelectedHeroes(whichPlayer, true)
         elseif lowerCommand == "creeprespawn dungeon respawn" or lowerCommand == "dungeon respawn" then
             call DBG_RespawnDungeonUnits(whichPlayer, "")
         elseif DBG_StartsWith(lowerCommand, "creeprespawn dungeon respawn ") then
