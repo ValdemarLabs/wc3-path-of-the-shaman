@@ -2,7 +2,7 @@
     VendorCatalogs
 
     Author: Valdemar
-    Version: 1.3.0
+    Version: 1.3.1
 
     Description:
     Ready-to-use PotS vendor definitions for equipment, professions, factions,
@@ -285,6 +285,8 @@ library VendorCatalogs initializer Init requires Shop, VendorLines, VoicelinesVe
         call CreateCatalog(VENDOR_CATALOG_WEAPONS, "Weapons Merchant", VendorLines_TYPE_WEAPONS, 0)
         call CreateCatalog(VENDOR_CATALOG_ARMOR, "Armor Merchant", VendorLines_TYPE_ARMOR, 0)
         call CreateCatalog(VENDOR_CATALOG_SHIELDS, "Shield Merchant", VendorLines_TYPE_SHIELDS, 'o62H')
+        call VendorLines_BindUnitTypeProfile('o62H', VL_VENDOR_PROFILE_ORC_FIERY_MOUNTAIN_MALE)
+        call VendorLines_BindUnitTypeVoiceType('o62H', VL_GENERIC_ORC_MALE_3_TYPE)
         call CreateCatalog(VENDOR_CATALOG_ARENA, "Arena Quartermaster", VendorLines_TYPE_ARENA, 'N60L')
         call CreateCatalog(VENDOR_CATALOG_TRAVELLING, "Travelling Merchant", VendorLines_TYPE_TRAVELLING, 'h00H')
         call CreateCatalog(VENDOR_CATALOG_FISHER, "Fisher", VendorLines_TYPE_FISHER, 'o62I')
