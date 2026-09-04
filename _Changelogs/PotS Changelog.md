@@ -17,9 +17,15 @@
 
 ## [5.9.2026]
 
+### Player-Facing Updates
+
+- Fixed Graknar's bag shop retaining the previous merchant's Trade Goods display on its first frame and Back leaving the player in cinematic mode instead of restoring Graknar's quest/trade choices.
+
 ### Technical Updates
 
 - Updated `DoodadHider/DoodadRender.j` to center configured render distances on the local camera eye, preventing shallow cinematic cameras from hiding doodads as the viewer approaches them, and removed the additional 512-unit overscan so each distance tier takes effect nearer its configured range.
+- Updated `Vendors/VendorCatalogs.j` and `Vendors/VendorFactions/VendorElarindor.j` to use Thaelion Spellward's corrected `h00M` unit rawcode for his canonical name, shield catalog, voice profile, and Elarindor reputation binding.
+- Updated `UI/ShopUI.j` to force a cache-invalidated initial merchant repaint after the opening UI event completes, and updated `QuestsAndDialogs/QuestGivers/Orcs/qGraknar.j` to rebuild its custom dialog on the next tick after ShopUI's Back event.
 
 ### Known Issues
 
@@ -28,6 +34,7 @@
 ### Actions Remaining
 
 - Compile and runtime-test DoodadRender with the reported HFMFir A cinematic, then test one tiny and one short-distance rawcode outside their configured camera-eye ranges to separate distance behavior from unsupported model animations.
+- Compile the full map with World Editor/JassHelper, then verify Graknar opens directly on the seven-tier Bags catalog and Back restores quest/trade/Farewell choices that close through both Farewell and ESC.
 
 ## [4.9.2026]
 
