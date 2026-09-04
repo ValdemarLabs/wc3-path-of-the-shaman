@@ -2,7 +2,7 @@
     QuestMaster
 
     Author: Valdemar
-    Version: 1.3.7
+    Version: 1.3.8
 
     Description:
     Owns PotS quest data, state transitions, rewards, availability, custom
@@ -3087,6 +3087,15 @@ endfunction
 //===========================================================================
 // Availability evaluation
 //===========================================================================
+private function IsHeroAvailableForLevelCheck takes unit hero returns boolean
+	if hero == null or not IsUnitType(hero, UNIT_TYPE_HERO) then
+		return false
+	endif
+	// Cinematic ON temporarily transfers Player 1's units to Player 22, but
+	// PlayerCinemaGroup retains the heroes that were available before entry.
+	return GetOwningPlayer(hero) == Player(0) or (udg_PlayerCinemaGroup != null and IsUnitInGroup(hero, udg_PlayerCinemaGroup))
+endfunction
+
 private function GetHighestHeroLevel takes nothing returns integer
 	local group g = GetUnitsOfPlayerAll(Player(0))
 	local unit u
@@ -3105,14 +3114,14 @@ private function GetHighestHeroLevel takes nothing returns integer
 		endif
 	endloop
 
-	if udg_Nazgrek != null and GetOwningPlayer(udg_Nazgrek) == Player(0) and IsUnitType(udg_Nazgrek, UNIT_TYPE_HERO) then
+	if IsHeroAvailableForLevelCheck(udg_Nazgrek) then
 		set level = GetHeroLevel(udg_Nazgrek)
 		if level > bestLevel then
 			set bestLevel = level
 		endif
 	endif
 
-	if udg_Zulkis != null and GetOwningPlayer(udg_Zulkis) == Player(0) and IsUnitType(udg_Zulkis, UNIT_TYPE_HERO) then
+	if IsHeroAvailableForLevelCheck(udg_Zulkis) then
 		set level = GetHeroLevel(udg_Zulkis)
 		if level > bestLevel then
 			set bestLevel = level
@@ -3133,14 +3142,14 @@ private function GetHighestAllowedHeroLevel takes QuestData q returns integer
 		return GetHighestHeroLevel()
 	endif
 
-	if q.levelCheckAllowNazgrek and udg_Nazgrek != null and GetOwningPlayer(udg_Nazgrek) == Player(0) and IsUnitType(udg_Nazgrek, UNIT_TYPE_HERO) then
+	if q.levelCheckAllowNazgrek and IsHeroAvailableForLevelCheck(udg_Nazgrek) then
 		set level = GetHeroLevel(udg_Nazgrek)
 		if level > bestLevel then
 			set bestLevel = level
 		endif
 	endif
 
-	if q.levelCheckAllowZulkis and udg_Zulkis != null and GetOwningPlayer(udg_Zulkis) == Player(0) and IsUnitType(udg_Zulkis, UNIT_TYPE_HERO) then
+	if q.levelCheckAllowZulkis and IsHeroAvailableForLevelCheck(udg_Zulkis) then
 		set level = GetHeroLevel(udg_Zulkis)
 		if level > bestLevel then
 			set bestLevel = level
