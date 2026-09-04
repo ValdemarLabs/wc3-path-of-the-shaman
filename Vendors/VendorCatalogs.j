@@ -2,7 +2,7 @@
     VendorCatalogs
 
     Author: Valdemar
-    Version: 1.3.1
+    Version: 1.3.2
 
     Description:
     Ready-to-use PotS vendor definitions for equipment, professions, factions,
@@ -195,7 +195,7 @@ library VendorCatalogs initializer Init requires Shop, VendorLines, VoicelinesVe
         // Elarindor vendors
         call RegisterVendorName('h00L', "Aerendir Sunblade")
         call RegisterVendorName('h00P', "Lyssara Moonweave")
-        call RegisterVendorName('n00M', "Thaelion Spellward")
+        call RegisterVendorName('h00M', "Thaelion Spellward")
         call RegisterVendorName('h00Q', "Elowen Starweaver")
         call RegisterVendorName('h00N', "Sylvaris Dewleaf")
         call RegisterVendorName('h00R', "Vaeriel Dawnflask")

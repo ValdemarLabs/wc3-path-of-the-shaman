@@ -2,7 +2,7 @@
     VendorElarindor
 
     Author: Valdemar
-    Version: 1.0.0
+    Version: 1.0.1
 
     Description:
     Assigns Elarindor vendor unit types to equipment, arcane supply,
@@ -27,7 +27,7 @@ library VendorElarindor initializer Init requires VendorCatalogs
     private function Init takes nothing returns nothing
         call Register('h00L', VendorCatalogs_VENDOR_CATALOG_WEAPONS, VL_VENDOR_PROFILE_ELARINDOR_MALE, VL_GENERIC_ELARINDOR_MALE_1_TYPE)
         call Register('h00P', VendorCatalogs_VENDOR_CATALOG_ARMOR, VL_VENDOR_PROFILE_ELARINDOR_FEMALE, VL_GENERIC_ELARINDOR_FEMALE_1_TYPE)
-        call Register('n00M', VendorCatalogs_VENDOR_CATALOG_SHIELDS, VL_VENDOR_PROFILE_ELARINDOR_MALE, VL_GENERIC_ELARINDOR_MALE_2_TYPE)
+        call Register('h00M', VendorCatalogs_VENDOR_CATALOG_SHIELDS, VL_VENDOR_PROFILE_ELARINDOR_MALE, VL_GENERIC_ELARINDOR_MALE_2_TYPE)
         call Register('h00Q', VendorCatalogs_VENDOR_CATALOG_ENCHANTING_SUPPLIES, VL_VENDOR_PROFILE_ELARINDOR_FEMALE, VL_GENERIC_ELARINDOR_FEMALE_2_TYPE)
         call Register('h00N', VendorCatalogs_VENDOR_CATALOG_REAGENTS, VL_VENDOR_PROFILE_ELARINDOR_MALE, VL_GENERIC_ELARINDOR_MALE_1_TYPE)
         call Register('h00R', VendorCatalogs_VENDOR_CATALOG_POTIONS, VL_VENDOR_PROFILE_ELARINDOR_FEMALE, VL_GENERIC_ELARINDOR_FEMALE_1_TYPE)

@@ -179,7 +179,7 @@ Goblin vendors placed as draft for testing mostly in sirensong zone currently.
 |---|---|---|---|---|---|---|  
 | `h00L` | Aerendir Sunblade | Elarindor Weapons Vendor | Male | Vanguard Vale / Vael'Anorath | Yes (Daily + Normal) | Yes |
 | `h00P` | Lyssara Moonweave | Elarindor Armor Vendor | Female | Vanguard Vale / Vael'Anorath | — | Yes |
-| `n00M` | Thaelion Spellward | Elarindor Shield Vendor | Male | Vanguard Vale / Vael'Anorath | — | Yes |
+| `h00M` | Thaelion Spellward | Elarindor Shield Vendor | Male | Vanguard Vale / Vael'Anorath | — | Yes |
 | `h00Q` | Elowen Starweaver | Elarindor Enchanting Supplier | Female | Vanguard Vale / Vael'Anorath | Yes (Daily) | Yes |
 | `h00N` | Sylvaris Dewleaf | Elarindor Reagent Merchant | Male | Vanguard Vale / Vael'Anorath | — | Yes |
 | `h00R` | Vaeriel Dawnflask | Elarindor Potion Seller | Female | Vanguard Vale / Vael'Anorath | Yes (Daily) | Yes |
