@@ -15,6 +15,49 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [4.9.2026]
+
+### Player-Facing Updates
+
+- Added `/unstuck` for moving selected Nazgrek and/or Zul'kis to the safe Traveler's Journal arrival point at Nazgrek's Hut. Each hero has a five-minute unstuck cooldown, and using it starts that hero's normal Traveler's Journal cooldown.
+- Emberpeak and Dragonfire Peaks dragons now continue receiving new wander destinations instead of becoming permanently idle behind a retained movement order.
+- Call of the Horde is now discovered only after Zul'kis's prologue and Nazgrek's return decision cinematic have finished, instead of appearing before the parallel intro.
+- Nazgrek, Shadowclaw, and Nazgrek's active companions now remain visible until the transition is fully black; companions are silently hidden and suspended for Zul'kis gameplay, then restored after Nazgrek's return cinematic.
+- Zul'kis's river ship now receives its movement order while the screen is black, before the opening camera fades in.
+- DynamicMinimap's automatic safety rotation now uses a gentle distance-scaled camera turn and moves only to the nearest safe side of the SetCameraBounds crash range.
+- Nazgrek now starts with Graveyard04 selected, and changing graveyards reports the surrounding zone name instead of an internal graveyard number.
+- Fixed Hraknar's shield-vendor dialogue resolving to silent text instead of the shield merchant voice catalog.
+- Vendor-type floating labels now remain hidden during fullscreen dialogue cinematics as well as legacy cinematics.
+- Fixed available quests at Granis, Garthork, Grim, and other cinematic quest givers becoming unavailable when dialogue begins.
+- Zone, weather, day/night, and post-storm terrain fog changes now smoothly transition both fog color and viewing distance without stopping after the first completed fade.
+
+### Technical Updates
+
+- Updated `PlayerHome/PlayerHome.j`, `Debug/DebugCommands.j`, and `UI/CommandsUI.j` with collision-aware unstuck relocation, per-hero cooldown tracking, zone-transition cleanup, `/debug unstuck` testing support, and the player command reference entry.
+- Updated `World/Dragons/EmberpeakDragons.j` and `World/Dragons/DragonfirePeaksDragons.j` to refresh ambient dragon movement on every wander cycle while retaining their active-cast locks.
+- Updated `QuestsAndDialogs/QuestGivers/Player/qZulkis.j` with a black-screen-only player handoff, temporary Nazgrek-companion state preservation, ship-before-reveal ordering, and the post-return Call of the Horde discovery callback.
+- Updated `QuestsAndDialogs/QuestGivers/Orcs/qRagno.j` to keep Call of the Horde locked until `qZulkis_IsPrologueCompleted()` and avoid scheduling its discovery during the Zul'kis handoff.
+- Updated `DynamicMinimap/DynamicMinimap_lastWorking.j` with a two-degree safe-angle margin, a 90-degree-per-second correction capped between 0.25 and 0.65 seconds, and duration-derived settling so queued texture and camera-bounds changes cannot apply before the smooth turn finishes.
+- Updated `Death/Revival.j` to initialize the complete legacy graveyard state from Graveyard04 and derive graveyard-selection messages from `ZonesCore` at the entering hero's position.
+- Updated `DoodadHider/DoodadManager.j` with 2048, 3072, 6144, and 8192-unit render tiers, and updated `DoodadHider/DoodadRender.j` to bias its render anchor toward the local camera's eye-to-target viewing direction during gameplay and cinematic movement.
+- Updated `Vendors/VendorCatalogs.j` to bind the legacy Hraknar shield-vendor unit type to its Orc profile and `GenericOrcMale3` voice family, preventing catalog sound markers from being discarded before ExSound playback.
+- Updated `Vendors/VendorFloatingText.j` to suppress its pooled labels whenever either the legacy cinematic flag or `FullscreenUI` cinematic presentation is active.
+- Updated `QuestsAndDialogs/QuestMaster.j` so level-gated availability continues to recognize heroes retained in `PlayerCinemaGroup` while the legacy cinematic trigger temporarily transfers their ownership.
+- Updated `EnvironmentSystems/FogSystem.j`, `EnvironmentSystems/Stormv2.j`, and `Zones/ZoneEvent.j` with full distance-and-color interpolation, reliable fade-timer lifecycle tracking, explicit fog-system dependency ordering, and a counted storm override that renders enabled lightning fog over the current transitioning zone fog and restores the latest base state afterward.
+
+### Actions Remaining
+
+- Compile the full map with World Editor/JassHelper, then test `/unstuck` with Nazgrek, Zul'kis, and both heroes selected; verify each lands safely at Nazgrek's Hut, receives the Journal cooldown, respects the independent five-minute cooldown, and can be repeatedly exercised through `/debug unstuck`.
+- Compile and runtime-test both dragon zones with the player hero and an AI hero present; confirm dragons keep wandering, pause movement during Flame Strike, and resume afterward.
+- Compile and runtime-test the Protect the Outpost-to-Zul'kis handoff with no companions, a normal companion, and Shadowclaw active; confirm no actor vanishes before full black, the ship is already moving when revealed, and Call of the Horde appears only after Nazgrek's return cinematic.
+- Runtime-test DynamicMinimap border crossings near 220, 270, and 320 degrees in each gameplay camera mode, and tune the correction speed or duration limits only if the transition remains visually intrusive.
+- Compile the full map with World Editor/JassHelper, then verify Graveyard04's marker is active at map start and each graveyard announces its containing zone when Nazgrek or Zul'kis selects it.
+- Compile and runtime-test DoodadRender during slow pans, hard camera cuts, rotation, and wide cinematic shots; verify incoming scenery appears ahead of the view, tiny grass hides near 2048 range, and the longer rock/fir tiers do not visibly pop.
+- Compile the full map with World Editor/JassHelper, then test Hraknar's greeting, Trade, Farewell, idle chatter, and transaction-result lines; missing imported audio should now reach ExSound and report its estimated fallback duration.
+- Compile the full map with World Editor/JassHelper, then verify vendor labels disappear during both GUI-triggered cinematics and fullscreen vendor/quest dialogue, and return after each cinematic ends.
+- Compile the full map with World Editor/JassHelper, then start Duty For The Horde and confirm Granis, Garthork, and Grim keep their available markers and quest choices throughout dialogue entry, greeting, and ESC skips.
+- Compile the full map with World Editor/JassHelper, then test zone, weather, and day/night fog changes plus overlapping lightning storms; verify start/end distance and color fade together, subsequent transitions restart correctly, and the current zone fog returns after the final storm ends.
+
 ## [3.9.2026]
 
 ### Player-Facing Updates
