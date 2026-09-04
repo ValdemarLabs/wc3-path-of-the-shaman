@@ -6,6 +6,7 @@
 
     Description:
     Revives Nazgrek and Zulkis at the selected graveyard after 30 seconds,
+    initially selects Graveyard04 for Nazgrek,
     keeps the legacy player revive timers and graveyard globals compatible,
     and uses the preplaced Spirit Healer or Spirit Walker at that graveyard to
     recover items dropped at the death location. The active fallen player hero receives
@@ -15,7 +16,8 @@
     - Old GUI ReviveSystemPlayer triggers
 
     How to install:
-    Import after Death, Events, UnitDeathEvent, Table, ExSound, and CameraControl. Disable the
+    Import after Death, Events, UnitDeathEvent, Table, ExSound, CameraControl,
+    and ZonesCore. Disable the
     old ReviveSystemPlayer death, graveyard, revive, reveal, and healer-dialog
     GUI triggers while retaining their GUI variables.
 
@@ -30,7 +32,7 @@
     call Revival_SelectGraveyard(graveyardId)
 
 **/
-library Revival initializer Init requires Death, Table, Events, UnitDeathEvent, ExSound, CameraControl, DEquipment, DialogInteraction, DialogSystem, optional HintsUI
+library Revival initializer Init requires Death, Table, Events, UnitDeathEvent, ExSound, CameraControl, DEquipment, DialogInteraction, DialogSystem, ZonesCore, optional HintsUI
 
 globals
     // Configuration
@@ -53,6 +55,7 @@ globals
     private constant integer REVIVAL_SPIRIT_HEALER_ID = 'u605'
     private constant integer REVIVAL_SPIRIT_WALKER_ID = 'u607'
     private constant integer REVIVAL_TIMED_LIFE_BUFF_ID = 'BTLF'
+    private constant integer REVIVAL_INITIAL_GRAVEYARD_ID = 4
     private constant string REVIVAL_GRAVEYARD_EFFECT = "Abilities\\Spells\\Items\\HealingSalve\\HealingSalveTarget.mdl"
 
     private Table Revival_TimerHero = 0
@@ -142,7 +145,7 @@ endfunction
 
 private function Revival_GetSelectedGraveyardId takes nothing returns integer
     if udg_GraveyardSelect < 1 or udg_GraveyardSelect > 9 then
-        return 1
+        return REVIVAL_INITIAL_GRAVEYARD_ID
     endif
     return udg_GraveyardSelect
 endfunction
@@ -555,6 +558,7 @@ private function Revival_OnGraveyardEnter takes nothing returns nothing
     local trigger sourceTrigger = GetTriggeringTrigger()
     local unit entering = GetTriggerUnit()
     local integer graveyardId = 1
+    local integer zoneId
 
     if not Revival_IsPlayerHero(entering) or Death_IsFallen(entering) then
         set sourceTrigger = null
@@ -567,7 +571,8 @@ private function Revival_OnGraveyardEnter takes nothing returns nothing
     endloop
     if graveyardId <= 9 and graveyardId != Revival_GetSelectedGraveyardId() then
         call Revival_UpdateGraveyardLegacyState(graveyardId)
-        call DisplayTimedTextToPlayer(GetOwningPlayer(entering), 0.00, 0.00, 3.00, "|cff80ff80Graveyard " + I2S(graveyardId) + " is now your revival point.|r")
+        set zoneId = ZonesCore_GetZoneIdAtPoint(GetUnitX(entering), GetUnitY(entering))
+        call DisplayTimedTextToPlayer(GetOwningPlayer(entering), 0.00, 0.00, 3.00, "|cff80ff80" + ZonesCore_GetZoneName(zoneId) + " graveyard selected.|r")
         static if LIBRARY_HintsUI then
             call HintsUI_PublishForUnit(HintsUI_HINT_GRAVEYARDS_CHANGE, entering)
         endif
@@ -746,9 +751,7 @@ private function Init takes nothing returns nothing
     if udg_SpiritHealers == null then
         set udg_SpiritHealers = CreateGroup()
     endif
-    if udg_GraveyardSelect < 1 or udg_GraveyardSelect > 9 then
-        set udg_GraveyardSelect = 1
-    endif
+    call Revival_UpdateGraveyardLegacyState(REVIVAL_INITIAL_GRAVEYARD_ID)
     call Revival_RegisterPreplacedSpiritHealers()
 
     call Death_RegisterReviveCallback(function Revival_OnDeathRevived)
