@@ -2,7 +2,7 @@
     DynamicMinimap
 
     Author: Valdemar
-    Version: 1.2
+    Version: 1.3
 
     Description:
         Swaps 256-coordinate minimap chunks and updates matching camera bounds.
@@ -95,10 +95,11 @@ globals
     // SetCameraField expects degrees while GetCameraField returns radians.
     private constant real ILLEGAL_ROTATION_MIN = 220.0
     private constant real ILLEGAL_ROTATION_MAX = 320.0
-    private constant real SAFE_ROTATION_BELOW = 219.0
-    private constant real SAFE_ROTATION_ABOVE = 321.0
-    private constant real ROTATION_CORRECTION_DURATION = 0.30
-    private constant integer ROTATION_CORRECTION_TICKS = 3
+    private constant real SAFE_ROTATION_BELOW = 218.0
+    private constant real SAFE_ROTATION_ABOVE = 322.0
+    private constant real ROTATION_CORRECTION_DEGREES_PER_SECOND = 90.0
+    private constant real ROTATION_CORRECTION_MIN_DURATION = 0.25
+    private constant real ROTATION_CORRECTION_MAX_DURATION = 0.65
     
     // Texture cache - format: minimap_X_Y_ZOOM.blp
     private constant string TEXTURE_PREFIX = "war3mapImported\\minimap_"
@@ -203,15 +204,29 @@ endfunction
 private function StartCameraRotationCorrection takes nothing returns nothing
     local real rotation = GetCameraRotationDegrees()
     local real targetRotation = SAFE_ROTATION_ABOVE
+    local real rotationDistance
+    local real duration
 
     if rotation <= (ILLEGAL_ROTATION_MIN + ILLEGAL_ROTATION_MAX) * 0.5 then
         set targetRotation = SAFE_ROTATION_BELOW
     endif
-    call SetCameraField(CAMERA_FIELD_ROTATION, targetRotation, ROTATION_CORRECTION_DURATION)
-    set rotationCorrectionTicks = ROTATION_CORRECTION_TICKS
+
+    set rotationDistance = targetRotation - rotation
+    if rotationDistance < 0.0 then
+        set rotationDistance = -rotationDistance
+    endif
+    set duration = rotationDistance / ROTATION_CORRECTION_DEGREES_PER_SECOND
+    if duration < ROTATION_CORRECTION_MIN_DURATION then
+        set duration = ROTATION_CORRECTION_MIN_DURATION
+    elseif duration > ROTATION_CORRECTION_MAX_DURATION then
+        set duration = ROTATION_CORRECTION_MAX_DURATION
+    endif
+
+    call SetCameraField(CAMERA_FIELD_ROTATION, targetRotation, duration)
+    set rotationCorrectionTicks = R2I(duration / UPDATE_INTERVAL) + 1
 
     if DEBUG then
-        call BJDebugMsg("|cffFF8800DynamicMinimap: rotating camera to safe angle " + R2S(targetRotation) + " before bounds update|r")
+        call BJDebugMsg("|cffFF8800DynamicMinimap: gently rotating camera to " + R2S(targetRotation) + " degrees over " + R2S(duration) + " seconds before bounds update|r")
     endif
 endfunction
 
