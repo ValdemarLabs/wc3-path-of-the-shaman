@@ -2,7 +2,7 @@
     qRagno
 
     Author: Valdemar
-    Version: 1.2.1
+    Version: 1.3.0
 
     Description:
     Implements Ragno's quest dialogue, daily outpost tasks, Protect the
@@ -367,7 +367,7 @@ private function UnlockGivingLetterInternal takes nothing returns nothing
     local QuestData q
 
     call SyncUnitReferences()
-    if Ragno == null or Thork == null or not QuestGiver_IsQuestCompletedByNameAndGiver(QUEST_PROTECT_OUTPOST, Ragno) then
+    if Ragno == null or Thork == null or not QuestGiver_IsQuestCompletedByNameAndGiver(QUEST_PROTECT_OUTPOST, Ragno) or not qZulkis_IsPrologueCompleted() then
         return
     endif
 
@@ -1367,8 +1367,8 @@ private function OnProtectOutpostCompletionCinematicEnd takes nothing returns no
     if DialogInteraction_IsUnitAlive(Ragno) then
         call IssuePointOrder(Ragno, "move", GetRectCenterX(gg_rct_RagnoIntroRagno2), GetRectCenterY(gg_rct_RagnoIntroRagno2))
     endif
-    call TimerStart(ProtectOutpostLetterDelayTimer, 2.00, false, function OnProtectOutpostLetterDelay)
     if qZulkis_IsPrologueCompleted() then
+        call TimerStart(ProtectOutpostLetterDelayTimer, 2.00, false, function OnProtectOutpostLetterDelay)
         call CameraSetupApplyForPlayer(true, gg_cam_ProtectOutpostSkipped02, Player(0), 0.00)
         call DialogInteraction_EndCinematicSequence(CINEMATIC)
         call ResetToGameCameraForPlayer(Player(0), 0.00)
