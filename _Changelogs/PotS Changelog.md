@@ -15,6 +15,20 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [5.9.2026]
+
+### Technical Updates
+
+- Updated `DoodadHider/DoodadRender.j` to center configured render distances on the local camera eye, preventing shallow cinematic cameras from hiding doodads as the viewer approaches them, and removed the additional 512-unit overscan so each distance tier takes effect nearer its configured range.
+
+### Known Issues
+
+- Doodad rawcodes whose models do not implement the `"hide"` animation cannot be culled by `SetDoodadAnimationRect`; tiny grass and foliage types still require an in-map compatibility check.
+
+### Actions Remaining
+
+- Compile and runtime-test DoodadRender with the reported HFMFir A cinematic, then test one tiny and one short-distance rawcode outside their configured camera-eye ranges to separate distance behavior from unsupported model animations.
+
 ## [4.9.2026]
 
 ### Player-Facing Updates
