@@ -1,4 +1,4 @@
-library Storm initializer Init requires DNC, ZoneEvent
+library Storm initializer Init requires DNC, ZoneEvent, FogSystem
     
     // Storm v1.3.1
     // by OVOgenez
@@ -8,6 +8,7 @@ library Storm initializer Init requires DNC, ZoneEvent
                                           Imitation of lightning and thunder.
     
                                                    How to import:
+    Requires DNC, ZoneEvent, and FogSystem.
     Copy this library to TE.
     Copy 'h000' (Ldummy) unit to OE.
     Import "Ldummy.mdx".
@@ -263,6 +264,8 @@ library Storm initializer Init requires DNC, ZoneEvent
         private static real    TempTF_blue    = TF_blue
         
         private static timer Timer = CreateTimer()
+        private static integer ActiveStorms = 0          // Keep overlapping storms under one fog override
+        private static boolean FogOverrideActive = false
         
         private unit    Unit
         private effect  Effect
@@ -284,6 +287,17 @@ library Storm initializer Init requires DNC, ZoneEvent
             set .Effect = null
             set .Unit = null
             // --------------------
+
+            set ActiveStorms = ActiveStorms - 1
+            if ActiveStorms <= 0 then
+                set ActiveStorms = 0
+                if FogOverrideActive then
+                    call ZoneEvent_ApplyCurrentZoneEffects()
+                    call FogSystem_EndOverride()
+                    set FogOverrideActive = false
+                endif
+            endif
+
             call this.deallocate()
         endmethod
         
@@ -334,13 +348,24 @@ library Storm initializer Init requires DNC, ZoneEvent
         
         private static method Periodic takes nothing returns nothing
             local real li
-            local real zs = TF_zstart
-            local real ze = TF_zend
+            local player localPlayer = GetLocalPlayer()
+            local real zs = FogSystem_GetCurrentStart(localPlayer)
+            local real ze = FogSystem_GetCurrentEnd(localPlayer)
             local real d  = TF_density
-            local real r  = TF_red
-            local real g  = TF_green
-            local real b  = TF_blue
+            local real r  = FogSystem_GetCurrentRed(localPlayer)
+            local real g  = FogSystem_GetCurrentGreen(localPlayer)
+            local real b  = FogSystem_GetCurrentBlue(localPlayer)
             local integer i = thistype.size
+
+            if TF and i > 0 and not FogOverrideActive then
+                call FogSystem_BeginOverride()
+                set FogOverrideActive = true
+            elseif not TF and FogOverrideActive then
+                call ZoneEvent_ApplyCurrentZoneEffects()
+                call FogSystem_EndOverride()
+                set FogOverrideActive = false
+            endif
+
             loop
                 exitwhen i <= 0
                 call thistype[i].Function()
@@ -387,6 +412,7 @@ library Storm initializer Init requires DNC, ZoneEvent
                 // ^ disabled because it messes with fog set by other systems
             endif
             set TempTF = TF
+            set localPlayer = null
         endmethod
         
         static method create takes integer variant, integer count, integer azimuth, integer zenith, boolean localplayer returns thistype
@@ -405,6 +431,13 @@ library Storm initializer Init requires DNC, ZoneEvent
             call UnitAddAbility(.Unit, 'Aloc')
             call SetUnitAnimationByIndex(.Unit, zenith + 90)
             // --------------------
+
+            if TF and not FogOverrideActive then
+                call FogSystem_BeginOverride()
+                set FogOverrideActive = true
+            endif
+            set ActiveStorms = ActiveStorms + 1
+
             call this.add()
             return this
         endmethod

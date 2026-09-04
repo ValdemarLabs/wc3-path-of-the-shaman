@@ -1,4 +1,4 @@
-library ZoneEvent initializer Init requires ZonesCore, Table, DNC, ExMusic, TasQuestBox, CameraControl, FallenHeroState
+library ZoneEvent initializer Init requires ZonesCore, Table, DNC, ExMusic, TasQuestBox, CameraControl, FallenHeroState, FogSystem
 //===========================================================================
 /*
     ZoneEvent
