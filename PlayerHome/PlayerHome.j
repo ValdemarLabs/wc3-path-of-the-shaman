@@ -2,7 +2,7 @@
     PlayerHome
 
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.2.0
 
     Description:
     Provides the Traveler's Journal home-binding interaction, Return Home
@@ -23,6 +23,9 @@
     - PlayerHome_GetHomeZoneName() returns string
     - PlayerHome_HeroHasJournal(unit) returns boolean
     - PlayerHome_GetCooldownRemaining(unit) returns real
+    - PlayerHome_GetUnstuckCooldownRemaining(unit) returns real
+    - PlayerHome_ApplyJournalCooldown(unit) returns boolean
+    - PlayerHome_UnstuckSelectedHeroes(player, ignoreCooldown) returns integer
     - PlayerHome_IsChanneling(unit) returns boolean
     - PlayerHome_UseJournal(unit) returns boolean
     - PlayerHome_PingHome()
@@ -50,11 +53,13 @@ library PlayerHome initializer Init requires Table, Events, DamageEngine, Dialog
         private constant real PH_CHANNEL_DURATION = 10.00
         private constant real PH_CHANNEL_MONITOR_PERIOD = 0.05
         private constant real PH_COOLDOWN_DURATION = 1800.00
+        private constant real PH_UNSTUCK_COOLDOWN_DURATION = 300.00
         private constant real PH_FADE_DURATION = 1.00
         private constant real PH_FORMATION_RADIUS = 115.00
 
         private integer PH_HomeCount = 0
         private integer PH_CurrentHomeId = 0
+        private integer PH_DefaultHomeId = 0
         private Table PH_JournalHome = 0
         private unit array PH_HomeJournal
         private string array PH_HomeName
@@ -64,6 +69,7 @@ library PlayerHome initializer Init requires Table, Events, DamageEngine, Dialog
         private real array PH_HomeY
 
         private timer array PH_CooldownTimer
+        private timer array PH_UnstuckCooldownTimer
         private timer PH_ChannelTimer = null
         private timer PH_MonitorTimer = null
         private timer PH_TransferTimer = null
@@ -85,6 +91,9 @@ library PlayerHome initializer Init requires Table, Events, DamageEngine, Dialog
         private boolean PH_BindingActive = false
 
         private unit PH_FoundJournal = null
+        private trigger PH_UnstuckChatTrigger = null
+        private boolean PH_NazgrekSelected = false
+        private boolean PH_ZulkisSelected = false
     endglobals
 
     private function PH_Debug takes string message returns nothing
@@ -164,6 +173,30 @@ library PlayerHome initializer Init requires Table, Events, DamageEngine, Dialog
             return 0.00
         endif
         return TimerGetRemaining(PH_CooldownTimer[heroIndex])
+    endfunction
+
+    public function GetUnstuckCooldownRemaining takes unit hero returns real
+        local integer heroIndex = PH_GetHeroIndex(hero)
+
+        if heroIndex <= 0 or PH_UnstuckCooldownTimer[heroIndex] == null then
+            return 0.00
+        endif
+        return TimerGetRemaining(PH_UnstuckCooldownTimer[heroIndex])
+    endfunction
+
+    private function PH_CooldownExpired takes nothing returns nothing
+    endfunction
+
+    public function ApplyJournalCooldown takes unit hero returns boolean
+        local integer heroIndex = PH_GetHeroIndex(hero)
+
+        if heroIndex <= 0 or PH_CooldownTimer[heroIndex] == null then
+            set hero = null
+            return false
+        endif
+        call TimerStart(PH_CooldownTimer[heroIndex], PH_COOLDOWN_DURATION, false, function PH_CooldownExpired)
+        set hero = null
+        return true
     endfunction
 
     public function IsChanneling takes unit hero returns boolean
@@ -332,9 +365,6 @@ library PlayerHome initializer Init requires Table, Events, DamageEngine, Dialog
         set PH_TransferInProgress = false
     endfunction
 
-    private function PH_CooldownExpired takes nothing returns nothing
-    endfunction
-
     private function PH_FinishTransfer takes nothing returns nothing
         local timer expiredTimer = GetExpiredTimer()
         local integer index = 1
@@ -428,6 +458,127 @@ library PlayerHome initializer Init requires Table, Events, DamageEngine, Dialog
         endif
         call PH_ClearPassengers()
         call PH_ClearActiveReturn()
+    endfunction
+
+    private function PH_UnstuckDisplay takes player whichPlayer, string message returns nothing
+        call DisplayTextToPlayer(whichPlayer, 0.00, 0.00, "|cff00ff80[Unstuck]|r " + message)
+        set whichPlayer = null
+    endfunction
+
+    private function PH_UnstuckHero takes unit hero, player whichPlayer, boolean ignoreCooldown returns boolean
+        local integer heroIndex = PH_GetHeroIndex(hero)
+        local integer originZoneId
+        local integer secondsRemaining
+
+        if heroIndex <= 0 or GetOwningPlayer(hero) != whichPlayer then
+            set hero = null
+            set whichPlayer = null
+            return false
+        endif
+        if not FallenHeroState_IsAlive(hero) then
+            call PH_UnstuckDisplay(whichPlayer, PH_GetHeroName(hero) + " cannot be moved while fallen.")
+            set hero = null
+            set whichPlayer = null
+            return false
+        endif
+        if PH_DefaultHomeId <= 0 or PH_DefaultHomeId > PH_HomeCount then
+            call PH_UnstuckDisplay(whichPlayer, "Nazgrek's Hut is not available as a safe destination.")
+            set hero = null
+            set whichPlayer = null
+            return false
+        endif
+        if hero == PH_ActiveCaster and PH_TransferInProgress then
+            call PH_UnstuckDisplay(whichPlayer, PH_GetHeroName(hero) + " is already returning home.")
+            set hero = null
+            set whichPlayer = null
+            return false
+        endif
+        if not ignoreCooldown and GetUnstuckCooldownRemaining(hero) > 0.00 then
+            set secondsRemaining = R2I(GetUnstuckCooldownRemaining(hero) + 0.99)
+            call PH_UnstuckDisplay(whichPlayer, PH_GetHeroName(hero) + " can use /unstuck again in " + I2S(secondsRemaining) + " seconds.")
+            set hero = null
+            set whichPlayer = null
+            return false
+        endif
+
+        if hero == PH_ActiveCaster then
+            call PH_ClearPassengers()
+            call PH_ClearActiveReturn()
+        endif
+        set originZoneId = ZoneEvent_GetUnitZoneId(hero)
+        if originZoneId <= 0 then
+            set originZoneId = ZonesCore_GetZoneIdAtPoint(GetUnitX(hero), GetUnitY(hero))
+        endif
+        if originZoneId > 0 and originZoneId != PH_HomeZoneId[PH_DefaultHomeId] then
+            call ZoneEvent_TriggerLeaveCleanup(originZoneId, hero)
+        endif
+
+        call IssueImmediateOrder(hero, "stop")
+        call SetUnitPosition(hero, PH_HomeX[PH_DefaultHomeId], PH_HomeY[PH_DefaultHomeId])
+        call ZoneEvent_EnterTravelZone(PH_HomeZoneId[PH_DefaultHomeId], hero)
+        call TimerStart(PH_UnstuckCooldownTimer[heroIndex], PH_UNSTUCK_COOLDOWN_DURATION, false, function PH_CooldownExpired)
+        call ApplyJournalCooldown(hero)
+        call PH_UnstuckDisplay(whichPlayer, PH_GetHeroName(hero) + " was moved to Nazgrek's Hut. /unstuck is available again in 5 minutes.")
+
+        set hero = null
+        set whichPlayer = null
+        return true
+    endfunction
+
+    public function UnstuckSelectedHeroes takes player whichPlayer, boolean ignoreCooldown returns integer
+        local boolean hasSelectedHero = false
+        local integer movedCount = 0
+
+        if whichPlayer == Player(0) and PH_NazgrekSelected and udg_Nazgrek != null then
+            set hasSelectedHero = true
+            if PH_UnstuckHero(udg_Nazgrek, whichPlayer, ignoreCooldown) then
+                set movedCount = movedCount + 1
+            endif
+        endif
+        if whichPlayer == Player(0) and PH_ZulkisSelected and udg_Zulkis != null then
+            set hasSelectedHero = true
+            if PH_UnstuckHero(udg_Zulkis, whichPlayer, ignoreCooldown) then
+                set movedCount = movedCount + 1
+            endif
+        endif
+
+        if not hasSelectedHero then
+            call PH_UnstuckDisplay(whichPlayer, "Select Nazgrek and/or Zul'kis before using /unstuck.")
+        elseif movedCount > 0 then
+            call PanCameraToTimedForPlayer(whichPlayer, PH_HomeX[PH_DefaultHomeId], PH_HomeY[PH_DefaultHomeId], 0.00)
+        endif
+        set whichPlayer = null
+        return movedCount
+    endfunction
+
+    private function PH_OnUnstuckChat takes nothing returns nothing
+        call UnstuckSelectedHeroes(GetTriggerPlayer(), false)
+    endfunction
+
+    private function PH_OnUnitSelected takes nothing returns nothing
+        local unit selectedUnit = GetTriggerUnit()
+
+        if GetTriggerPlayer() == Player(0) then
+            if selectedUnit == udg_Nazgrek then
+                set PH_NazgrekSelected = true
+            elseif selectedUnit == udg_Zulkis then
+                set PH_ZulkisSelected = true
+            endif
+        endif
+        set selectedUnit = null
+    endfunction
+
+    private function PH_OnUnitDeselected takes nothing returns nothing
+        local unit deselectedUnit = GetTriggerUnit()
+
+        if GetTriggerPlayer() == Player(0) then
+            if deselectedUnit == udg_Nazgrek then
+                set PH_NazgrekSelected = false
+            elseif deselectedUnit == udg_Zulkis then
+                set PH_ZulkisSelected = false
+            endif
+        endif
+        set deselectedUnit = null
     endfunction
 
     private function PH_MonitorChannel takes nothing returns nothing
@@ -894,6 +1045,7 @@ library PlayerHome initializer Init requires Table, Events, DamageEngine, Dialog
         local integer defaultHomeId
 
         set defaultHomeId = PH_RegisterRectJournal(gg_rct_PlayerHome1, "Nazgrek's Hut", 2, Player(5))
+        set PH_DefaultHomeId = defaultHomeId
         call PH_RegisterRectJournal(gg_rct_PlayerHome2, "Horde Scout Base", 8810, Player(5))
         if defaultHomeId > 0 then
             call PH_SetHome(defaultHomeId, null, false)
@@ -917,7 +1069,14 @@ library PlayerHome initializer Init requires Table, Events, DamageEngine, Dialog
         set PH_TransferTimer = CreateTimer()
         set PH_CooldownTimer[1] = CreateTimer()
         set PH_CooldownTimer[2] = CreateTimer()
+        set PH_UnstuckCooldownTimer[1] = CreateTimer()
+        set PH_UnstuckCooldownTimer[2] = CreateTimer()
+        set PH_UnstuckChatTrigger = CreateTrigger()
+        call TriggerRegisterPlayerChatEvent(PH_UnstuckChatTrigger, Player(0), "/unstuck", true)
+        call TriggerAddAction(PH_UnstuckChatTrigger, function PH_OnUnstuckChat)
         call Events_RegisterSpellEffect(function PH_OnSpellEffect)
+        call Events_RegisterPlayerUnitEvent(function PH_OnUnitSelected, EVENT_PLAYER_UNIT_SELECTED)
+        call Events_RegisterPlayerUnitEvent(function PH_OnUnitDeselected, EVENT_PLAYER_UNIT_DESELECTED)
         call Events_RegisterPlayerUnitEvent(function PH_OnIssuedOrder, EVENT_PLAYER_UNIT_ISSUED_ORDER)
         call Events_RegisterPlayerUnitEvent(function PH_OnIssuedOrder, EVENT_PLAYER_UNIT_ISSUED_POINT_ORDER)
         call Events_RegisterPlayerUnitEvent(function PH_OnIssuedOrder, EVENT_PLAYER_UNIT_ISSUED_TARGET_ORDER)
