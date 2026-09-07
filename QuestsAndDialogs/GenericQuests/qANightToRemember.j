@@ -2,7 +2,7 @@
     qANightToRemember
 
     Author: Valdemar
-    Version: 2.3.0
+    Version: 2.4.0
 
     Description:
     Creates a repeatable, self-completing hangover quest. Each run asks the
@@ -327,18 +327,40 @@ private function NTR_SelectTaskTalkTarget takes integer targetIndex returns unit
     return selected
 endfunction
 
+private function NTR_IsSatyrWitness takes integer targetIndex returns boolean
+    local unit witness = NTR_TargetUnit[targetIndex]
+    local boolean result = false
+
+    if witness != null then
+        set result = AI_GetFactionInfoText(witness) == "Satyr" or GetOwningPlayer(witness) == Player(12)
+    endif
+    set witness = null
+    return result
+endfunction
+
 private function NTR_ConfigureKillTask takes integer targetIndex returns nothing
-    local integer roll = GetRandomInt(1, 4)
+    local integer roll
+
     set NTR_TargetTaskType[targetIndex] = NTR_TASK_KILL
     set NTR_TaskAmount[targetIndex] = GetRandomInt(3, 5)
-    if roll == 1 then
-        set NTR_TaskTargetType[targetIndex] = 'ngno'
-    elseif roll == 2 then
-        set NTR_TaskTargetType[targetIndex] = 'nsat'
-    elseif roll == 3 then
-        set NTR_TaskTargetType[targetIndex] = 'nsty'
+    if NTR_IsSatyrWitness(targetIndex) then
+        set roll = GetRandomInt(1, 2)
+        if roll == 1 then
+            set NTR_TaskTargetType[targetIndex] = 'ngno'
+        else
+            set NTR_TaskTargetType[targetIndex] = 'ndqt'
+        endif
     else
-        set NTR_TaskTargetType[targetIndex] = 'ndqt'
+        set roll = GetRandomInt(1, 4)
+        if roll == 1 then
+            set NTR_TaskTargetType[targetIndex] = 'ngno'
+        elseif roll == 2 then
+            set NTR_TaskTargetType[targetIndex] = 'nsat'
+        elseif roll == 3 then
+            set NTR_TaskTargetType[targetIndex] = 'nsty'
+        else
+            set NTR_TaskTargetType[targetIndex] = 'ndqt'
+        endif
     endif
 endfunction
 

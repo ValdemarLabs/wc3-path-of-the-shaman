@@ -2,7 +2,7 @@
     VoicelinesQuests
 
     Author: Valdemar
-    Version: 4.2.0
+    Version: 4.3.0
 
     Description:
     Central source of truth for reusable and vendor quest dialogue, random
@@ -177,8 +177,8 @@ library VoicelinesQuests initializer Init requires QuestsGeneric, ExSound, Voice
         constant string VL_VENDORQUEST_ORC_0034 = "The clan will eat, march, and fight because those stores still stand."
 
         // Satyr quest dialogue.
-        constant string VL_VENDORQUEST_SATYR_0001 = "Six stalkers have mistaken themselves for champions. Correct their delusion."
-        constant string VL_VENDORQUEST_SATYR_0002 = "Their silence is more convincing than their boasting ever was."
+        constant string VL_VENDORQUEST_SATYR_0001 = "Six gnolls are stalking the road my recruits use to reach the arena. Cull them before I lose another promising wager."
+        constant string VL_VENDORQUEST_SATYR_0002 = "The survivors reached the arena. Good. Blood belongs in the ring, where wagers can be placed."
         constant string VL_VENDORQUEST_SATYR_0003 = "My clients demand five flawless crystals and dislike being kept waiting."
         constant string VL_VENDORQUEST_SATYR_0004 = "Acceptable clarity. Their origins are no concern of yours."
         constant string VL_VENDORQUEST_SATYR_0005 = "Bring four measures of essence. Curiosity will not increase your payment."
@@ -187,14 +187,14 @@ library VoicelinesQuests initializer Init requires QuestsGeneric, ExSound, Voice
         constant string VL_VENDORQUEST_SATYR_0008 = "The seal remains intact. Perhaps you possess restraint after all."
         constant string VL_VENDORQUEST_SATYR_0009 = "Seven bitter leaves. Green, unbruised, and preferably not covered in orc fingerprints."
         constant string VL_VENDORQUEST_SATYR_0010 = "The leaves survived your handling. An unexpectedly pleasant result."
-        constant string VL_VENDORQUEST_SATYR_0011 = "Soulstealers have made the old path tiresome. Remove eight and I may travel it again."
-        constant string VL_VENDORQUEST_SATYR_0012 = "The path feels almost civilized now. Do not expect that feeling to last."
+        constant string VL_VENDORQUEST_SATYR_0011 = "Eight ironjaw basilisks are hunting along my old trade path. Kill them before their next meal is carrying my merchandise."
+        constant string VL_VENDORQUEST_SATYR_0012 = "The basilisks are dead and my caravans can move again. Efficient work."
         constant string VL_VENDORQUEST_SATYR_0013 = "Eight water crystals would complete a collection whose final purpose need not trouble you."
         constant string VL_VENDORQUEST_SATYR_0014 = "Beautiful clarity. Their value will only grow once their former owners discover the loss."
         constant string VL_VENDORQUEST_SATYR_0015 = "A collector's price is measured as much in discretion as in coin."
         constant string VL_VENDORQUEST_SATYR_0016 = "You have shown admirable restraint by returning every crystal. Almost suspicious restraint."
-        constant string VL_VENDORQUEST_SATYR_0017 = "Some roads deserve silence, especially when one has profitable secrets to move along them."
-        constant string VL_VENDORQUEST_SATYR_0018 = "The old path belongs to whispers again, as every useful road should."
+        constant string VL_VENDORQUEST_SATYR_0017 = "That old path carries my most delicate cargo. I cannot have ironjaws learning the taste of caravan guards."
+        constant string VL_VENDORQUEST_SATYR_0018 = "The old path belongs to quiet wheels again. My clients need never know how close their cargo came to a basilisk's gut."
     endglobals
 
     private function RegisterDailySet takes string voiceType, integer objectiveType, integer firstLine, string lineA, string lineB, string lineC returns nothing
