@@ -19,11 +19,13 @@
     How to install:
         Import the pre-rendered 256x256 BLP chunks and full-map texture under
         war3mapImported\, import this library after Interface, and configure the
-        map, camera, and minimap-art bounds below.
+        map, camera, and minimap-art bounds below. Import CameraControl after
+        this library to service smooth safe-rotation requests.
 
     Uses:
     - BlzChangeMinimapTerrainTex to swap minimap texture chunks
     - SetCameraBoundsToRect to constrain camera to the visible chunk area
+    - Optional CameraControl integration for non-cinematic safety turns
     - Frame manipulation to enlarge/shrink minimap on demand
     
     This creates a scrolling RPG-style minimap that updates both the texture
@@ -102,6 +104,7 @@ globals
     private constant real ILLEGAL_ROTATION_MAX = 320.0
     private constant real SAFE_ROTATION_BELOW = 218.0
     private constant real SAFE_ROTATION_ABOVE = 322.0
+    private constant real SAFE_ROTATION_SETTLE_TOLERANCE = 0.50
     private constant real ROTATION_LOOKAHEAD_DISTANCE = 1152.0
     private constant real CAMERA_MOVEMENT_EPSILON = 1.0
     private constant integer CAMERA_RESUME_SETTLE_TICKS = 2
@@ -213,7 +216,7 @@ private function IsCameraRotationSafe takes nothing returns boolean
 endfunction
 
 function DynamicMinimap_HasSafeRotationRequest takes nothing returns boolean
-    return safeRotationRequested and scriptedCameraSuspendDepth == 0 and enabled and not fullMapMode
+    return safeRotationRequested and scriptedCameraSuspendDepth == 0
 endfunction
 
 function DynamicMinimap_GetSafeRotationTarget takes nothing returns real
@@ -233,6 +236,18 @@ private function RequestSafeRotation takes nothing returns nothing
         set safeRotationTarget = SAFE_ROTATION_ABOVE
     endif
     set safeRotationRequested = true
+endfunction
+
+private function IsSafeRotationTargetReached takes nothing returns boolean
+    local real delta = GetCameraRotationDegrees() - safeRotationTarget
+
+    if delta < 0.0 then
+        set delta = -delta
+    endif
+    if delta > 180.0 then
+        set delta = 360.0 - delta
+    endif
+    return delta <= SAFE_ROTATION_SETTLE_TOLERANCE
 endfunction
 
 private function CancelPendingMapUpdate takes nothing returns nothing
@@ -255,6 +270,9 @@ private function TryApplyPendingMapUpdate takes nothing returns boolean
         if DEBUG then
             call BJDebugMsg("|cffFF8800DynamicMinimap: bounds update waiting for a safe camera rotation|r")
         endif
+        return false
+    endif
+    if safeRotationRequested and not IsSafeRotationTargetReached() then
         return false
     endif
 
@@ -393,8 +411,7 @@ private function PeriodicUpdate takes nothing returns nothing
     local real unitY
     local integer chunkCoordX
     local integer chunkCoordY
-    local real scaleX = (MAP_WORLD_MAX_X - MAP_WORLD_MIN_X) / I2R(CHUNK_COORDINATE_SYSTEM)
-    local real scaleY = (MAP_WORLD_MAX_Y - MAP_WORLD_MIN_Y) / I2R(CHUNK_COORDINATE_SYSTEM)
+    local boolean approachingBorder
 
     // No texture or bounds operation may occur while a cinematic owns the camera.
     if scriptedCameraSuspendDepth > 0 then
@@ -430,27 +447,21 @@ private function PeriodicUpdate takes nothing returns nothing
     set unitX = GetCameraTargetPositionX()
     set unitY = GetCameraTargetPositionY()
     
-    // Convert directly into the same 256-coordinate space used by the generated
-    // filenames. Centering after conversion avoids mixing 480 map tiles with a
-    // 32-coordinate chunk, which shifted the selected texture away from the camera.
-    set chunkCoordX = R2I((unitX - MAP_WORLD_MIN_X - MINIMAP_ART_OFFSET_X) / scaleX - I2R(currentChunkSize) * 0.5)
-    set chunkCoordY = R2I((unitY - MAP_WORLD_MIN_Y - MINIMAP_ART_OFFSET_Y) / scaleY - I2R(currentChunkSize) * 0.5)
-    
-    // Snap to grid alignment
-    set chunkCoordX = (chunkCoordX / currentGridStep) * currentGridStep
-    set chunkCoordY = (chunkCoordY / currentGridStep) * currentGridStep
-    
-    // Clamp to valid range in chunk coordinate system (0 to 224 for 256-tile chunks)
-    if chunkCoordX < 0 then
-        set chunkCoordX = 0
-    elseif chunkCoordX > CHUNK_COORDINATE_SYSTEM - currentChunkSize then
-        set chunkCoordX = CHUNK_COORDINATE_SYSTEM - currentChunkSize
-    endif
-    
-    if chunkCoordY < 0 then
-        set chunkCoordY = 0
-    elseif chunkCoordY > CHUNK_COORDINATE_SYSTEM - currentChunkSize then
-        set chunkCoordY = CHUNK_COORDINATE_SYSTEM - currentChunkSize
+    set chunkCoordX = GetChunkCoordinate(unitX, MAP_WORLD_MIN_X, MAP_WORLD_MAX_X, MINIMAP_ART_OFFSET_X)
+    set chunkCoordY = GetChunkCoordinate(unitY, MAP_WORLD_MIN_Y, MAP_WORLD_MAX_Y, MINIMAP_ART_OFFSET_Y)
+    set approachingBorder = IsApproachingChunkBorder(unitX, unitY, chunkCoordX, chunkCoordY)
+    set previousCameraTargetX = unitX
+    set previousCameraTargetY = unitY
+    set cameraTargetSampled = true
+
+    if approachingBorder or chunkCoordX != lastTileX or chunkCoordY != lastTileY then
+        if not IsCameraRotationSafe() then
+            call RequestSafeRotation()
+        elseif safeRotationRequested and IsSafeRotationTargetReached() then
+            call CancelSafeRotationRequest()
+        endif
+    elseif not pendingMapUpdate then
+        call CancelSafeRotationRequest()
     endif
     
     call UpdateMinimapAndBounds(chunkCoordX, chunkCoordY)
@@ -502,6 +513,7 @@ function DynamicMinimap_Enable takes boolean enable returns nothing
     // the last chunk bounds otherwise remain active and make the camera walk
     // across chunks instead of reaching the camerasetup in one frame.
     if not enabled then
+        call CancelSafeRotationRequest()
         call RestoreOriginalCameraBounds()
     endif
     
@@ -526,8 +538,10 @@ function DynamicMinimap_SuspendForScriptedCamera takes nothing returns nothing
         set enabled = false
         set cameraResumeSettleTicks = 0
         set cameraResumeRefreshPending = false
+        set cameraTargetSampled = false
         set lastTileX = -1
         set lastTileY = -1
+        call CancelSafeRotationRequest()
         call CancelPendingMapUpdate()
 
         // The texture swap itself is safe and ensures cinematics always display
@@ -555,6 +569,7 @@ function DynamicMinimap_ResumeAfterScriptedCamera takes nothing returns nothing
     endif
 
     set enabled = scriptedCameraWasEnabled
+    set cameraTargetSampled = false
     set cameraResumeSettleTicks = CAMERA_RESUME_SETTLE_TICKS
     set cameraResumeRefreshPending = enabled
 endfunction
@@ -586,6 +601,7 @@ endfunction
 function DynamicMinimap_SetFullMapMode takes boolean enable returns nothing
     if enable then
         set fullMapMode = true
+        call CancelSafeRotationRequest()
         call RequestFullMapUpdate()
         
         if DEBUG then

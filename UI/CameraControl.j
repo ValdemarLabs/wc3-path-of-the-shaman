@@ -2,9 +2,9 @@
     CameraControl
     
     Author: [Valdemar]
-    Version: 1.2.0
+    Version: 1.2.1
 
-    Description: Keeps each player's camera behavior consistent, including modes, target tracking, and basic movement controls.
+    Description: Keeps each player's camera behavior consistent, including modes, target tracking, basic movement controls, and optional DynamicMinimap safety turns.
 
     Credits: Tasyen (TasQuestBox as inspiration), Rahko, Sabe
 
@@ -58,6 +58,9 @@ globals
     private constant real CAMERA_KEYBOARD_HORIZONTAL_SPEED = 1.50
     private constant real CAMERA_KEYBOARD_VERTICAL_SPEED = 1.50
     private constant real CAMERA_DRIFT_CHECK_INTERVAL = 0.03
+    private constant real CAMERA_MINIMAP_SAFE_ROTATION_SPEED = 24.00
+    private constant real CAMERA_MINIMAP_SAFE_ROTATION_DURATION = 0.12
+    private constant integer CAMERA_MINIMAP_INPUT_GRACE_TICKS = 10
     private constant real CAMERA_FIELD_TOLERANCE = 0.75
     private constant real CAMERA_NORMAL_TRACE_ACCURACY = 50.00
     private constant real CAMERA_NORMAL_TRACE_FINE_ACCURACY = 10.00
@@ -87,6 +90,7 @@ globals
 
     private boolean CC_Initialized = false
     private boolean CC_UpdateLoopActive = false
+    private integer CC_MinimapRotationInputGraceTicks = 0
 
     private integer array CC_Mode
     private integer array CC_SpecialMode
@@ -1204,9 +1208,63 @@ private function CC_RegisterBuiltInSpecialCameraRects takes nothing returns noth
     // - Leaving the rect automatically restores the previously resolved camera mode.
 endfunction
 
+// DynamicMinimap only requests a destination. CameraControl owns the gentle
+// transition and yields immediately to player rotation or scripted camera input.
+private function CC_UpdateDynamicMinimapSafeRotation takes nothing returns nothing
+    local integer pid = 0
+    local real targetRotation
+    local real currentRotation
+    local real delta
+    local real step = CAMERA_MINIMAP_SAFE_ROTATION_SPEED * CAMERA_DRIFT_CHECK_INTERVAL
+
+    static if LIBRARY_DynamicMinimap then
+        if not DynamicMinimap_HasSafeRotationRequest() then
+            set CC_MinimapRotationInputGraceTicks = 0
+            return
+        endif
+        if CC_Suspended[pid] or CC_ResumePending[pid] or CC_HasSpecialMode(pid) then
+            return
+        endif
+        if CC_PressingLeft[pid] or CC_PressingRight[pid] or CC_MoveLeft[pid] or CC_MoveRight[pid] then
+            set CC_MinimapRotationInputGraceTicks = CAMERA_MINIMAP_INPUT_GRACE_TICKS
+            return
+        endif
+        if CC_MinimapRotationInputGraceTicks > 0 then
+            set CC_MinimapRotationInputGraceTicks = CC_MinimapRotationInputGraceTicks - 1
+            return
+        endif
+
+        set targetRotation = DynamicMinimap_GetSafeRotationTarget()
+        set currentRotation = CC_NormalizeAngle(CC_Rotation[pid])
+        set delta = targetRotation - currentRotation
+        if delta > 180.00 then
+            set delta = delta - 360.00
+        elseif delta < -180.00 then
+            set delta = delta + 360.00
+        endif
+
+        if CC_Abs(delta) <= step then
+            set currentRotation = targetRotation
+        elseif delta > 0.00 then
+            set currentRotation = currentRotation + step
+        else
+            set currentRotation = currentRotation - step
+        endif
+        set currentRotation = CC_NormalizeAngle(currentRotation)
+        set CC_Rotation[pid] = currentRotation
+        call CC_InvalidateNormalTraceCache(pid)
+
+        if GetLocalPlayer() == Player(pid) then
+            call SetCameraField(CAMERA_FIELD_ROTATION, currentRotation, CAMERA_MINIMAP_SAFE_ROTATION_DURATION)
+        endif
+    endif
+endfunction
+
 private function CC_CheckCameraDrift takes nothing returns nothing
     local integer i = 0
     local player whichPlayer
+
+    call CC_UpdateDynamicMinimapSafeRotation()
 
     loop
         exitwhen i >= bj_MAX_PLAYERS
