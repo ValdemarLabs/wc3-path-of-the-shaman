@@ -1,10 +1,20 @@
-`VendorCatalogs.j` registers these canonical names by unit rawcode, so vendor dialogue and quest-giver headings do not depend on Object Editor names. The `Name`, `Editor Suffix`, and `Gender` fields may still mirror this roster for clearer Object Editor entries. `Yes` in the quest-giver column means a matching `qVendorName.j` library exists; the parenthesized classification shows whether it registers daily, normal, or both quest types.
+`VendorCatalogs.j` and `VendorBags.j` register these canonical names by unit rawcode, so vendor dialogue and quest-giver headings do not depend on Object Editor names. The `Name`, `Editor Suffix`, and `Gender` fields may still mirror this roster for clearer Object Editor entries. `Yes` in the quest-giver column means a matching `qXXX.j` library exists; the parenthesized classification shows whether it registers daily, normal, or both quest types.
 
 `Intended zone` is map-placement guidance derived from the regional assignments in the vendor faction libraries. It does not place or restrict the unit at runtime. A slash-separated value permits any of the listed zones, while `unspecified` means that no exact settlement or arena has been selected yet.
 
 ### Legacy building shops (do not use as dialogue vendors)
 
 These Object Editor units are retained only as legacy building objects. They are deliberately absent from `VendorCatalogs`, `GeneralGoodsVendor`, and AI shop bindings: `nmrk` Marketplace, `ngme` Goblin Merchant, `n61F` Marketplace 2, `n608` Tavern, `n60N` Tome Merchant, `o60G` Armorsmith, `o60M` Orbs, `o60N` Rings, `o60K` Spirit Lodge, `o609` Voodoo Lounge, and `o60Q` Weaponsmith.
+
+### Shared bag vendors
+
+`VendorBags.j` owns one shared seven-tier Bag Merchant catalog. Every bag vendor with an assigned rawcode receives a distinct canonical name, racial voice profile, voice family, and reputation binding while using the same sequential bag-upgrade stock and pricing. Import `VendorBags.j` before `VendorDialogs.j`; the generic dialog scan then discovers placed bag-vendor unit types like the other vendors.
+
+Graknar `o61S` is the exception to the generic-dialog path because `qGraknar.j` owns his `Mistaken Kin`, Trade, and Farewell choices. Keep `o61S` exclusive to the canonical placed Graknar. His custom Trade option opens the same shared Bag Merchant catalog and returns to his current quest/dialog choices when ShopUI closes.
+
+The three Orc bag vendors have assigned rawcodes. All other newly planned racial and reputation bag vendors use the guarded `XXXX` dummy rawcode until their distinct unit types are created in World Editor; the `Placed` column below records the current map status. Clone the race-appropriate existing vendor named in `QuestsAndDialogs/QuestGivers/Vendors/README.md`, replace that vendor's placeholder constant in `VendorBags.j`, assign the `Bag Merchant` editor suffix and matching faction owner, and do not reuse Graknar's rawcode. Their normal shop gate requires at least Neutral reputation with the faction registered by `VendorBags.j`.
+
+To add another bag-vendor identity in code, reserve a unique unit-type constant and register it through `VendorBags_RegisterUnitTypeEx(unitTypeId, displayName, profile, voiceType, factionName)`. Use `VendorBags_RegisterUnit(vendor)` only when a custom quest-giver library owns a specific placed unit, as `qGraknar.j` does.
 
 ### Orc vendors
 
@@ -48,6 +58,10 @@ These Object Editor units are retained only as legacy building objects. They are
 | `o01L` | Vorgra Totemveil | Shamanic Goods Vendor | Male | Sirensong | — | Yes |
 | `o01M` | Gulvar Ashsigil | Fel Curio Dealer | Male | Dragonfire Peaks | — | Yes |
 | `o01N` | Morzun Felwhisper | Fel Curio Dealer | Male | Havenwoods / Thornwoods | — | Yes |
+| `o01O` | Gorvak Packhide | Bag Merchant | Male | Sirensong | — | Yes |
+| `o01P` | Threkka Trailpack | Bag Merchant | Male | Thornwoods / Havenwoods / Sereneglade | — | Yes |
+| `o01Q` | Mazruk Reedstrap | Bag Merchant | Male | Horde Lumber Mill | — | Yes |
+| `o61S` | Graknar | Bag Merchant | Male | Sereneglade | Yes (Normal) | Yes |
 
 Notes:
 - Ghorak is weird as arena quarmaster in dragonpeaks where there is no arena related stuff.
@@ -67,6 +81,7 @@ Notes:
 | `n036` | Velthyr Nighthide | Armor Vendor | Male | Weeping Hollow | — | Yes |
 | `n037` | Ozyr Blackhorn | Shield Vendor | Male | Weeping Hollow | — | Yes |
 | `n038` | Faelrix Wayhoof | Travelling Merchant | Male | Sereneglade / Weeping Hollow / travelling | Yes (Normal) | Yes |
+| `XXXX` | Vareth Hidehoard | Bag Merchant | Male | Sereneglade / Weeping Hollow | — | No |
 
 ### Human vendors
 
@@ -98,6 +113,8 @@ Notes:
 | `n03V` | Roland Mercer | Expedition Supplier | Male | Dragonfire Peaks | — | No |
 | `n05C` | Duncan Cask | Stormhaven Bartender | Male | Stormhaven / outskirts | — | No |
 | `n05K` | Arlen Wyrd | Stormhaven Arcanist | Male | Stormhaven / outskirts | — | No |
+| `XXXX` | Gareth Saddler | Bag Merchant | Male | Riverbane / outskirts | — | No |
+| `XXXX` | Tomas Waypack | Bag Merchant | Male | Havenwoods / Vanguard Vale / Sirensong / travelling | — | No |
  
 ### Female Human vendor variants
 
@@ -129,6 +146,7 @@ Notes:
 | `n05B` | Roslyn Mercer | Expedition Supplier | Female | Dragonfire Peaks | — | No |
 | `n05D` | Marta Vale | Riverbane Bartender | Female | Riverbane / outskirts | — | No |
 | `n05E` | Ilyse Faircup | Neutral Bartender | Female | Havenwoods / Vanguard Vale / Sirensong | — | No |
+| `XXXX` | Elspeth Cordwain | Bag Merchant | Female | Stormhaven / outskirts | — | No |
 
 ### Goblin vendors
 
@@ -156,6 +174,8 @@ Goblin vendors placed as draft for testing mostly in sirensong zone currently.
 | `n04D` | Zippi Beastbits | Beastmaster Supplier | Male | Sirensong / Thornwoods | — | No |
 | `n05F` | Kizzi Kegcoin | Bartender | Male | Sereneglade / Havenwoods | — | No |
 | `n05I` | Jexxi Gemcut | Jewelcrafter | Male | Sereneglade / Sirensong / travelling | — | No |
+| `XXXX` | Kexxi Bagbolt | Bag Merchant | Male | Sirensong / Havenwoods / travelling | — | No |
+| `XXXX` | Nibzi Cargozip | Bag Merchant | Male | Stormhaven / outskirts | — | No |
 
 ### Bonecrusher Ogre vendors
 
@@ -172,6 +192,7 @@ Goblin vendors placed as draft for testing mostly in sirensong zone currently.
 | `n04M` | Bargul Bonecount | Bonecrusher Quartermaster | Male | Bonecrush Stronghold | — | Yes |
 | `n04N` | Grothak Heavytrade | Trade Goods Merchant | Male | Thornwoods | — | Yes |
 | `n05G` | Brugrum Manymugs | Bartender | Male | Havenwoods / Bonecrush Stronghold | — | Yes |
+| `XXXX` | Brugmok Sackback | Bag Merchant | Male | Havenwoods / Bonecrush Stronghold | — | No |
 
 ### Elarindor vendors
 
@@ -187,6 +208,7 @@ Goblin vendors placed as draft for testing mostly in sirensong zone currently.
 | `h00S` | Maerith Silvercrest | Elarindor Quartermaster | Female | Vanguard Vale / Vael'Anorath | Yes (Daily + Normal) | Yes |
 | `h011` | Saelira Gemwhisper | Elarindor Jewelcrafter | Female | Vanguard Vale / Vael'Anorath | — | Yes |
 | `h012` | Caladren Starvault | Elarindor Magister | Male | Vanguard Vale / Vael'Anorath | — | Yes |
+| `XXXX` | Caelira Starstitch | Bag Merchant | Female | Vanguard Vale / Vael'Anorath | — | No |
 
 ### Horde Tauren vendors
 
@@ -206,6 +228,7 @@ These rawcodes are explicitly bound to Horde reputation; placing them under the 
 | `o01E` | Nara Stormhoof | Horde Travelling Merchant | Male | Dragonfire Peaks / Sirensong | Yes (Daily) | Yes |
 | `o01F` | Harn Earthbrew | Horde Bartender | Male | Ghostwalkridge / Ironspine Post | — | Yes |
 | `o01G` | Tobar Keghoof | Horde Bartender | Male | Sirensong | — | Yes |
+| `XXXX` | Hamu Broadpack | Bag Merchant | Male | Ghostwalkridge / Ironspine Post | — | No |
 
 Trade dialogue uses the `GenericTaurenMale1-3` reusable profiles. The four daily quests use `1001-1014` under the same profile assigned to each giver; missing recordings use text-duration fallback.
 
@@ -224,14 +247,16 @@ Use `Player(7)` as the Morgrim Clan owner. The vendor libraries also bind these 
 | `h00Z` | Orin Deepdelver | Morgrim Miner | Male | Dragonfire Peaks | — | Yes |
 | `h010` | Magdor Caskcoin | Morgrim Trade Goods Merchant | Male | Havenwoods | — | Yes |
 | `h013` | Bromli Alethane | Morgrim Bartender | Male | Dragonfire Peaks | — | Yes |
+| `XXXX` | Brolin Strapforge | Bag Merchant | Male | Dragonfire Peaks / Havenwoods | — | No |
 
-All Morgrim Dwarf vendors are male. `VendorCatalogs.j` and `VendorDwarves.j` bind `h00T`-`h010` plus bartender `h013` directly. Morgrim trade dialogue uses the reusable `GenericDwarfMorgrimMale1` profile; missing recordings use text-duration fallback.
+All Morgrim Dwarf vendors are male. `VendorCatalogs.j` and `VendorDwarves.j` bind `h00T`-`h010` plus bartender `h013`; `VendorBags.j` will bind Brolin after his `XXXX` placeholder is replaced. Morgrim trade dialogue uses the reusable `GenericDwarfMorgrimMale1` profile; missing recordings use text-duration fallback.
 
 ### Horde Troll vendors
 
-Use Horde ownership where practical. `VendorTrolls.j` binds both rawcodes explicitly to Horde reputation and distributes them between `GenericTrollMale1` and `GenericTrollMale2`.
+Use Horde ownership where practical. `VendorTrolls.j` binds `n05H` and `n05J` explicitly to Horde reputation and distributes them between `GenericTrollMale1` and `GenericTrollMale2`; `VendorBags.j` will bind Jarku to Horde reputation and `GenericTrollMale1` after his `XXXX` placeholder is replaced.
 
 | Rawcode | Name | Editor suffix | Gender | Intended zone | Quest giver | Placed |
 |---|---|---|---|---|---|---|
 | `n05H` | Zanjin Gemeye | Horde Jewelcrafter | Male | Horde Lumber mill | — | Yes |
 | `n05J` | Rokjin Hexsmoke | Horde Voodoo Merchant | Male | Sirensong | — | Yes |
+| `XXXX` | Jarku Packweaver | Bag Merchant | Male | Horde Lumber mill / Sirensong | — | No |

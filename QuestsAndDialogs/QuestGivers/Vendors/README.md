@@ -2,7 +2,7 @@
 
 Import in this order: `QuestsGeneric.j`, `Voicelines_Quests.j`,
 `QuestsVendor.j`, the desired `qVendorName.j` libraries, `VendorCatalogs.j`,
-all `VendorFactions/Vendor*.j` libraries, and `VendorDialogs.j`.
+all `VendorFactions/Vendor*.j` libraries, `VendorBags.j`, and `VendorDialogs.j`.
 `VendorDialogs.j` discovers placed vendor units and instantiates every quest
 registered for their unit type.
 
@@ -14,6 +14,13 @@ Reusable profile prefixes and external sound folders are registered by
 `Voicelines/Voicelines_VendorLines.j`. Individual `qVendorName.j` libraries
 reference authored text constants while using the same numbered voice profile
 assigned to that NPC's vendor dialogue.
+
+Every vendor quest must keep its giver-owned offer and completion lines specific
+to the concrete target, requested amount, location or route, and local reason for
+the work. Shared hero acknowledgements, daily flavor follow-ups, and progress
+prompts may remain brief connective dialogue, but must not replace those
+quest-specific lines. A vendor kill quest must never target the giver's own
+faction, even when the target unit is normally hostile in the map.
 
 `QuestsGeneric.j` has no Shop or Vendor dependency. Non-vendor NPCs can use its
 kill, fetch, and talk registration APIs directly, then supply an explicit
@@ -47,13 +54,13 @@ unchanged.
 | `o00E` | Hurgan Potbelly | Meat for the Evening Pot | Daily | `GenericOrcMale5_1019-1020` |
 | `o00C` | Nargash Tidehook | Jungle Catch | Daily | `GenericOrcMale1_1021-1022` |
 | `o014` | Gorthak Jungle Banner | Secure the Coastal Stores | Normal | `GenericOrcMale8_1023-1024, 1033-1034` |
-| `n02Y` | Xyros Bloodwager | Cull the Stalkers | Daily | `GenericSatyrMale1_1001-1002` |
+| `n02Y` | Xyros Bloodwager | Cull the Stalkers (Gnolls) | Daily | `GenericSatyrMale1_1001-1002` |
 | `n02Z` | Velyssra the Covetous | Crystals in the Gloom | Daily | `GenericSatyrFemale1_1003-1004` |
 | `n02Z` | Velyssra the Covetous | A Collector's Price | Normal | `GenericSatyrFemale1_1013-1016` |
 | `n030` | Malthera Duskmoss | Essence Without Questions | Daily | `GenericSatyrFemale1_1005-1006` |
 | `n031` | Ithryssa Runehorn | A Sealed Flask | Daily | `GenericSatyrFemale1_1007-1008` |
 | `n033` | Selyth Venomcup | Bitter Leaves | Daily | `GenericSatyrFemale1_1009-1010` |
-| `n038` | Faelrix Wayhoof | Silence on the Old Path | Normal | `GenericSatyrMale1_1011-1012, 1017-1018` |
+| `n038` | Faelrix Wayhoof | Silence on the Old Path (Ironjaw Basilisks) | Normal | `GenericSatyrMale1_1011-1012, 1017-1018` |
 | `n035` | Garrick Holt | Riverbane Iron | Daily | `GenericHumanMale1_1001-1002` |
 | `n035` | Garrick Holt | Riverbane's Reserve | Normal | `GenericHumanMale1_1019-1022` |
 | `n039` | Edric Vale | Patches for the Watch | Daily | `GenericHumanMale2_1003-1004` |
@@ -114,6 +121,11 @@ progress, supply-handoff, and quest-purchase interaction.
 Missing files fall back to ExSound's text-duration estimation until recordings
 are imported.
 
+Approve the complete quest dialogue in context before generating Fish Audio.
+When an existing text constant changes, its old recording is stale and must stay
+out of the production import until the revised line has been reviewed and
+re-recorded.
+
 ## Named bag vendors
 
 Graknar is both the original bag merchant and the owner of `Mistaken Kin` in
@@ -121,10 +133,36 @@ Graknar is both the original bag merchant and the owner of `Mistaken Kin` in
 Graknar placed in World Editor. Replace any additional placed `o61S` bag
 merchants with distinct unit rawcodes and names before importing qGraknar.
 
-`VendorBags.j` currently binds the Graknar bag catalog by unit type. New bag
-merchants should receive explicit catalog/name setup for their own rawcodes;
-do not register another identity as `o61S`, because quest-giver assignment and
-respawn restoration also use that rawcode.
+`VendorBags.j` owns one shared seven-tier catalog and the following distinct
+merchant identities. Graknar keeps his custom quest dialog; the other unit
+types use `VendorDialogs` like ordinary generic vendors. Each identity receives
+its own display name, racial voice profile, voice family, and reputation
+faction while sharing the same bag-upgrade pricing and progression.
+
+| Rawcode | Vendor | Race/region | Reputation | Suggested Object Editor base |
+|---|---|---|---|---|
+| `o61S` | Graknar | Bonecrusher Ogre quest giver | Placed-unit owner; unchanged | Existing Graknar |
+| `o01O` | Gorvak Packhide | Fiery Mountain Orc | Horde | `o011` Kargun Ashblade |
+| `o01P` | Threkka Trailpack | Forest Orc | Horde | `o00B` Rukgar Longroad |
+| `o01Q` | Mazruk Reedstrap | Sirensong Orc | Horde | `o010` Krazhan Far-Sail |
+| `XXXX` | Hamu Broadpack | Tauren | Horde | `o01E` Nara Stormhoof |
+| `XXXX` | Jarku Packweaver | Troll | Horde | `n05J` Rokjin Hexsmoke |
+| `XXXX` | Kexxi Bagbolt | Travelling Goblin | Goblins | `n03X` Rixit Roadcoin |
+| `XXXX` | Nibzi Cargozip | Stormhaven Goblin | Goblins | `n04C` Mogzik Cratecount |
+| `XXXX` | Vareth Hidehoard | Satyr | Satyr | `n038` Faelrix Wayhoof |
+| `XXXX` | Brugmok Sackback | Bonecrusher Ogre | Bonecrusher Clan | `n04N` Grothak Heavytrade |
+| `XXXX` | Gareth Saddler | Riverbane Human | Riverbane | `n035` Garrick Holt |
+| `XXXX` | Elspeth Cordwain | Stormhaven Human | Stormhaven | `n04Y` Maren Tidewell |
+| `XXXX` | Tomas Waypack | Neutral Human | Human Citizen | `n03C` Merrick Wayland |
+| `XXXX` | Caelira Starstitch | Elarindor | Elarindor | `h00R` Vaeriel Dawnflask |
+| `XXXX` | Brolin Strapforge | Dwarf | Morgrim Clan | `h010` Magdor Caskcoin |
+
+The three Orc identities have assigned rawcodes. For every `XXXX` entry, create
+a distinct Object Editor unit, replace only that identity's placeholder constant
+in `VendorBags.j`, and place it in a suitable settlement. Do not reuse `o61S`:
+quest-giver assignment and respawn restoration reserve it exclusively for
+Graknar. Place each unit under its matching faction owner; the normal shop gate
+requires at least Neutral reputation with the registered faction.
 
 ## Explosive Crisis fallback stock
 
@@ -152,6 +190,13 @@ One or two witnesses may require a small kill, supply, or apology task before
 the requirement completes. These use the same lightweight objective concepts
 as generic/vendor quests, but remain staged inside the repeatable Night quest
 to avoid creating conflicting child quests.
+
+Random kill tasks are faction-safe for Satyr witnesses. A Satyr AI companion or
+Satyr-owned witness can roll Gnolls or Dark Trolls, but never the Satyr or
+Shadowdancer entries retained for other witnesses. The current recorded amends
+requests remain broad because the exact task is selected at runtime; replace
+them with witness-specific task templates only after every objective and line
+has been reviewed together, before generating replacement audio.
 
 The shared profile reply pools use `1101-1107` for Orc and Tauren voices and
 `1001-1007` for Troll voices: five personal recollections, one amends request,
