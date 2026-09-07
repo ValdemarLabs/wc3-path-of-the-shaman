@@ -2,7 +2,7 @@
     VoicelinesVendorLines
 
     Author: Valdemar
-    Version: 2.2.0
+    Version: 2.3.0
 
     Description:
     Central source of truth for merchant greetings, trade chatter, transaction
@@ -217,7 +217,7 @@ library VoicelinesVendorLines initializer Init requires VendorLines, ExSound
         call RegisterBasicProfile("Blacksmith", "Steel is honest. Coin should be too.", "Blades, mail, tools. All tested before they leave my forge.", "Pick it up if you mean to buy it.", "Keep the edge dry.", "A balanced weapon feels light before it ever strikes.", "Armor should stop a blade, not stop you walking.", "Good choice. I stand behind that work.", "I can melt that down or put a new edge on it.", "Old steel out, better steel in. Sensible.", "No sparks today? Come back when you need honest steel.")
         call RegisterVoicedProfile(VL_VENDOR_PROFILE_HUMAN_RIVERBANE_BLACKSMITH_MALE, "Riverbane roads are hard on boots, buckles, and blades.", "Good steel earns its keep on every patrol.", "That will hold through a Riverbane winter.", "The lower forge can reclaim this metal.", "Worn steel out, Riverbane steel in.", "No work for the forge today? Keep your gear dry.", VL_GENERIC_HUMAN_MALE_1_TYPE, 46, 52)
         call RegisterVoicedProfile(VL_VENDOR_PROFILE_ORC_FIERY_MOUNTAIN_BLACKSMITH_MALE, "Mountain fire makes hard steel and harder smiths.", "If the edge chips, you struck like a human.", "Strong iron for a strong hand.", "I hammer this into something less embarrassing.", "Weak gear out. Mountain steel in.", "No trade? Then stop cooling my forge.", VL_GENERIC_ORC_MALE_4_TYPE, 19, 58)
-        call RegisterCatalogBasicProfile("Graknar", "Strong bags. Strong price.", "A bigger pack saves longer walks.", "No bag to carry. I make your pack bigger now.", "Travel lighter, come back richer.")
+        call RegisterCatalogBasicProfile("Bag Merchant", "Strong bags. Strong price.", "A bigger pack saves longer walks.", "No bag to carry. I make your pack bigger now.", "Travel lighter, come back richer.")
         call RegisterVoicedProfile(VL_VENDOR_PROFILE_OGRE_BONECRUSHER_BAG_MERCHANT_MALE, "Bonecrusher stitching. Even rocks stay inside.", "Tiny bag makes tiny loot. Graknar fixes.", "Bigger bag. Now bring bigger treasure.", "Graknar keeps this. Maybe sells twice.", "Pack changes, coin changes. Graknar approves.", "No bag? Then carry regret in pockets.", VL_GENERIC_OGRE_BONECRUSHER_MALE_1_TYPE, 7, 22)
         call RegisterBasicProfile("General Goods Merchant", "Supplies for the road, friend.", "A full pack keeps trouble small.", "Take what you need and leave the rest for someone poorer.", "Safe roads and steady coin.", "Rope, water, salves. Heroes always remember them one mile too late.", "The cheapest supply is the one that gets you home.", "Packed and ready. Try not to lose it.", "Used, perhaps. Useless, never.", "A lighter pack and better supplies. Good business.", "Window-shopping is free. My patience is nearly so.")
         call RegisterProfile("Goblin General Goods", "Guaranteed genuine until proven otherwise!", "Bulk discount starts immediately after you buy in bulk.", "No refunds, but compliments are always accepted.", "I know three people who will pay twice that.", "You leave supplied and I leave richer. Perfect balance!", "Not even one purchase? My projections are ruined!")
@@ -320,6 +320,7 @@ library VoicelinesVendorLines initializer Init requires VendorLines, ExSound
     endfunction
 
     private function RegisterVoiceCatalogs takes nothing returns nothing
+        call RegisterVoiceCatalog(VL_GENERIC_DWARF_MORGRIM_MALE_1_TYPE, "Bag Merchant")
         call RegisterVoiceCatalog(VL_GENERIC_DWARF_MORGRIM_MALE_1_TYPE, "Armor Merchant")
         call RegisterVoiceCatalog(VL_GENERIC_DWARF_MORGRIM_MALE_1_TYPE, "Bartender")
         call RegisterVoiceCatalog(VL_GENERIC_DWARF_MORGRIM_MALE_1_TYPE, "Blacksmith")
@@ -328,6 +329,7 @@ library VoicelinesVendorLines initializer Init requires VendorLines, ExSound
         call RegisterVoiceCatalog(VL_GENERIC_DWARF_MORGRIM_MALE_1_TYPE, "Trade Goods Merchant")
         call RegisterVoiceCatalog(VL_GENERIC_DWARF_MORGRIM_MALE_1_TYPE, "Weapons Merchant")
 
+        call RegisterVoiceCatalog(VL_GENERIC_ELARINDOR_FEMALE_1_TYPE, "Bag Merchant")
         call RegisterVoiceCatalog(VL_GENERIC_ELARINDOR_FEMALE_1_TYPE, "Armor Merchant")
         call RegisterVoiceCatalog(VL_GENERIC_ELARINDOR_FEMALE_1_TYPE, "Jewelcrafter")
         call RegisterVoiceCatalog(VL_GENERIC_ELARINDOR_FEMALE_1_TYPE, "Potion Seller")
@@ -342,6 +344,7 @@ library VoicelinesVendorLines initializer Init requires VendorLines, ExSound
         call RegisterVoiceCatalog(VL_GENERIC_ELARINDOR_MALE_2_TYPE, "Expedition Supplier")
         call RegisterVoiceCatalog(VL_GENERIC_ELARINDOR_MALE_2_TYPE, "Shield Merchant")
 
+        call RegisterVoiceCatalog(VL_GENERIC_GOBLIN_MALE_1_TYPE, "Bag Merchant")
         call RegisterVoiceCatalog(VL_GENERIC_GOBLIN_MALE_1_TYPE, "Curiosity Merchant")
         call RegisterVoiceCatalog(VL_GENERIC_GOBLIN_MALE_1_TYPE, "Expedition Supplier")
         call RegisterVoiceCatalog(VL_GENERIC_GOBLIN_MALE_1_TYPE, "Profession Supplier")
@@ -349,6 +352,7 @@ library VoicelinesVendorLines initializer Init requires VendorLines, ExSound
         call RegisterVoiceCatalog(VL_GENERIC_GOBLIN_MALE_1_TYPE, "Trade Goods Merchant")
         call RegisterVoiceCatalog(VL_GENERIC_GOBLIN_MALE_1_TYPE, "Weapons Merchant")
 
+        call RegisterVoiceCatalog(VL_GENERIC_GOBLIN_MALE_2_TYPE, "Bag Merchant")
         call RegisterVoiceCatalog(VL_GENERIC_GOBLIN_MALE_2_TYPE, "Armor Merchant")
         call RegisterVoiceCatalog(VL_GENERIC_GOBLIN_MALE_2_TYPE, "Bartender")
         call RegisterVoiceCatalog(VL_GENERIC_GOBLIN_MALE_2_TYPE, "Beastmaster Supplier")
@@ -366,6 +370,7 @@ library VoicelinesVendorLines initializer Init requires VendorLines, ExSound
         call RegisterVoiceCatalog(VL_GENERIC_GOBLIN_MALE_4_TYPE, "Provisioner")
         call RegisterVoiceCatalog(VL_GENERIC_GOBLIN_MALE_4_TYPE, "Rare Goods Dealer")
 
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_FEMALE_1_TYPE, "Bag Merchant")
         call RegisterVoiceCatalog(VL_GENERIC_HUMAN_FEMALE_1_TYPE, "Alchemy Supplier")
         call RegisterVoiceCatalog(VL_GENERIC_HUMAN_FEMALE_1_TYPE, "Arena Quartermaster")
         call RegisterVoiceCatalog(VL_GENERIC_HUMAN_FEMALE_1_TYPE, "Bartender")
@@ -394,6 +399,7 @@ library VoicelinesVendorLines initializer Init requires VendorLines, ExSound
         call RegisterVoiceCatalog(VL_GENERIC_HUMAN_FEMALE_2_TYPE, "Reagent Merchant")
         call RegisterVoiceCatalog(VL_GENERIC_HUMAN_FEMALE_2_TYPE, "Travelling Merchant")
 
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_MALE_1_TYPE, "Bag Merchant")
         call RegisterVoiceCatalog(VL_GENERIC_HUMAN_MALE_1_TYPE, "Alchemy Supplier")
         call RegisterVoiceCatalog(VL_GENERIC_HUMAN_MALE_1_TYPE, "Arcanist")
         call RegisterVoiceCatalog(VL_GENERIC_HUMAN_MALE_1_TYPE, "Arena Quartermaster")
@@ -410,6 +416,7 @@ library VoicelinesVendorLines initializer Init requires VendorLines, ExSound
         call RegisterVoiceCatalog(VL_GENERIC_HUMAN_MALE_1_TYPE, "Skinning Supplier")
         call RegisterVoiceCatalog(VL_GENERIC_HUMAN_MALE_1_TYPE, "Weapons Merchant")
 
+        call RegisterVoiceCatalog(VL_GENERIC_HUMAN_MALE_2_TYPE, "Bag Merchant")
         call RegisterVoiceCatalog(VL_GENERIC_HUMAN_MALE_2_TYPE, "Armor Merchant")
         call RegisterVoiceCatalog(VL_GENERIC_HUMAN_MALE_2_TYPE, "Bartender")
         call RegisterVoiceCatalog(VL_GENERIC_HUMAN_MALE_2_TYPE, "Blacksmithing Supplier")
@@ -429,13 +436,14 @@ library VoicelinesVendorLines initializer Init requires VendorLines, ExSound
         call RegisterVoiceCatalog(VL_GENERIC_OGRE_BONECRUSHER_MALE_1_TYPE, "Blacksmithing Supplier")
         call RegisterVoiceCatalog(VL_GENERIC_OGRE_BONECRUSHER_MALE_1_TYPE, "Cook")
         call RegisterVoiceCatalog(VL_GENERIC_OGRE_BONECRUSHER_MALE_1_TYPE, "Faction Quartermaster")
-        call RegisterVoiceCatalog(VL_GENERIC_OGRE_BONECRUSHER_MALE_1_TYPE, "Graknar")
+        call RegisterVoiceCatalog(VL_GENERIC_OGRE_BONECRUSHER_MALE_1_TYPE, "Bag Merchant")
         call RegisterVoiceCatalog(VL_GENERIC_OGRE_BONECRUSHER_MALE_1_TYPE, "Miner")
         call RegisterVoiceCatalog(VL_GENERIC_OGRE_BONECRUSHER_MALE_1_TYPE, "Profession Supplier")
         call RegisterVoiceCatalog(VL_GENERIC_OGRE_BONECRUSHER_MALE_1_TYPE, "Shield Merchant")
         call RegisterVoiceCatalog(VL_GENERIC_OGRE_BONECRUSHER_MALE_1_TYPE, "Trade Goods Merchant")
         call RegisterVoiceCatalog(VL_GENERIC_OGRE_BONECRUSHER_MALE_1_TYPE, "Weapons Merchant")
 
+        call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_1_TYPE, "Bag Merchant")
         call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_1_TYPE, "Curiosity Merchant")
         call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_1_TYPE, "Expedition Supplier")
         call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_1_TYPE, "Fisher")
@@ -447,6 +455,7 @@ library VoicelinesVendorLines initializer Init requires VendorLines, ExSound
         call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_2_TYPE, "Armor Merchant")
         call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_2_TYPE, "Bartender")
 
+        call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_3_TYPE, "Bag Merchant")
         call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_3_TYPE, "Faction Quartermaster")
         call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_3_TYPE, "General Goods Merchant")
         call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_3_TYPE, "Jewelcrafter")
@@ -476,12 +485,14 @@ library VoicelinesVendorLines initializer Init requires VendorLines, ExSound
         call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_7_TYPE, "Fel Curio Dealer")
         call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_7_TYPE, "Potion Seller")
 
+        call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_8_TYPE, "Bag Merchant")
         call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_8_TYPE, "Faction Quartermaster")
         call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_8_TYPE, "Reagent Merchant")
         call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_8_TYPE, "Spirit Speaker")
 
         call RegisterVoiceCatalog(VL_GENERIC_ORC_MALE_9_TYPE, "Weapons Merchant")
 
+        call RegisterVoiceCatalog(VL_GENERIC_SATYR_MALE_1_TYPE, "Bag Merchant")
         call RegisterVoiceCatalog(VL_GENERIC_SATYR_MALE_1_TYPE, "Arena Quartermaster")
         call RegisterVoiceCatalog(VL_GENERIC_SATYR_MALE_1_TYPE, "Armor Merchant")
         call RegisterVoiceCatalog(VL_GENERIC_SATYR_MALE_1_TYPE, "Curiosity Merchant")
@@ -498,6 +509,7 @@ library VoicelinesVendorLines initializer Init requires VendorLines, ExSound
         call RegisterVoiceCatalog(VL_GENERIC_SATYR_FEMALE_1_TYPE, "Rare Goods Dealer")
         call RegisterVoiceCatalog(VL_GENERIC_SATYR_FEMALE_1_TYPE, "Reagent Merchant")
 
+        call RegisterVoiceCatalog(VL_GENERIC_TAUREN_MALE_1_TYPE, "Bag Merchant")
         call RegisterVoiceCatalog(VL_GENERIC_TAUREN_MALE_1_TYPE, "Blacksmithing Supplier")
         call RegisterVoiceCatalog(VL_GENERIC_TAUREN_MALE_1_TYPE, "Provisioner")
         call RegisterVoiceCatalog(VL_GENERIC_TAUREN_MALE_1_TYPE, "Travelling Merchant")
@@ -513,6 +525,7 @@ library VoicelinesVendorLines initializer Init requires VendorLines, ExSound
         call RegisterVoiceCatalog(VL_GENERIC_TAUREN_MALE_3_TYPE, "Shield Merchant")
         call RegisterVoiceCatalog(VL_GENERIC_TAUREN_MALE_3_TYPE, "Trade Goods Merchant")
 
+        call RegisterVoiceCatalog(VL_GENERIC_TROLL_MALE_1_TYPE, "Bag Merchant")
         call RegisterVoiceCatalog(VL_GENERIC_TROLL_MALE_1_TYPE, "Jewelcrafter")
 
         call RegisterVoiceCatalog(VL_GENERIC_TROLL_MALE_2_TYPE, "Voodoo Merchant")
