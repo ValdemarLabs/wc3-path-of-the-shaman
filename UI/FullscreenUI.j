@@ -23,6 +23,8 @@
 
     Visibility:
     Enabling or disabling this library also disables fog of war and black mask.
+    When DynamicMinimap is present, fullscreen cinematic ownership suspends its
+    chunk updates and keeps that suspension until every owner has released it.
 
     Important:
     Do not combine this library with:
@@ -36,7 +38,7 @@
         call CinematicModeBJ(true, bj_FORCE_ALL_PLAYERS)
         call CinematicModeBJ(false, bj_FORCE_ALL_PLAYERS)
 */
-library FullscreenUI initializer DelayedInit
+library FullscreenUI initializer DelayedInit requires optional DynamicMinimap
 
 globals
     /*
@@ -193,6 +195,9 @@ public function Enable takes nothing returns nothing
         return
     endif
 
+    static if LIBRARY_DynamicMinimap then
+        call DynamicMinimap_SuspendForScriptedCamera()
+    endif
     set FullscreenUI_Enabled = true
 
     /*
@@ -283,6 +288,10 @@ public function Disable takes nothing returns nothing
 
         set index = index - 1
     endloop
+
+    static if LIBRARY_DynamicMinimap then
+        call DynamicMinimap_ResumeAfterScriptedCamera()
+    endif
 endfunction
 
 /*

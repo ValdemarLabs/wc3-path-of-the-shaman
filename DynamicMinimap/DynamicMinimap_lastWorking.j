@@ -2,12 +2,14 @@
     DynamicMinimap
 
     Author: Valdemar
-    Version: 1.3
+    Version: 1.5
 
     Description:
         Swaps 256-coordinate minimap chunks and updates matching camera bounds.
         Full/chunked map modes and normal/enlarged frame layouts can be toggled.
-        Unsafe camera rotations are corrected before any bounds update.
+        Approaching chunk borders can request a gentle safe-angle correction
+        from CameraControl. Cinematic suspension cancels all pending chunk work
+        and restores the full-map presentation.
 
     Credits:
         FeelsGoodMan for the dynamic minimap texture/camera-bounds approach.
@@ -54,6 +56,8 @@
         DynamicMinimap_Enable(enable)
         DynamicMinimap_SuspendForScriptedCamera()
         DynamicMinimap_ResumeAfterScriptedCamera()
+        DynamicMinimap_HasSafeRotationRequest()
+        DynamicMinimap_GetSafeRotationTarget()
         DynamicMinimap_ForceUpdate()
         DynamicMinimap_SetEnlargedPosition(x, y)
         DynamicMinimap_SetEnlargedScale(scale)
@@ -92,14 +96,15 @@ globals
     private constant real MINIMAP_ART_OFFSET_X = 0.0
     private constant real MINIMAP_ART_OFFSET_Y = 0.0
 
-    // SetCameraField expects degrees while GetCameraField returns radians.
+    // SetCameraBounds can crash while the camera faces through this rotation range.
+    // GetCameraField returns radians, so the safety check converts it to degrees.
     private constant real ILLEGAL_ROTATION_MIN = 220.0
     private constant real ILLEGAL_ROTATION_MAX = 320.0
     private constant real SAFE_ROTATION_BELOW = 218.0
     private constant real SAFE_ROTATION_ABOVE = 322.0
-    private constant real ROTATION_CORRECTION_DEGREES_PER_SECOND = 90.0
-    private constant real ROTATION_CORRECTION_MIN_DURATION = 0.25
-    private constant real ROTATION_CORRECTION_MAX_DURATION = 0.65
+    private constant real ROTATION_LOOKAHEAD_DISTANCE = 1152.0
+    private constant real CAMERA_MOVEMENT_EPSILON = 1.0
+    private constant integer CAMERA_RESUME_SETTLE_TICKS = 2
     
     // Texture cache - format: minimap_X_Y_ZOOM.blp
     private constant string TEXTURE_PREFIX = "war3mapImported\\minimap_"
@@ -130,10 +135,17 @@ globals
     private integer lastTileX = -1
     private integer lastTileY = -1
     private rect currentBoundsRect = null
-    private boolean scriptedCameraSuspended = false
+    private integer scriptedCameraSuspendDepth = 0
     private boolean scriptedCameraWasEnabled = false
+    private integer cameraResumeSettleTicks = 0
+    private boolean cameraResumeRefreshPending = false
+    private boolean safeRotationRequested = false
+    private real safeRotationTarget = SAFE_ROTATION_BELOW
+    private boolean cameraTargetSampled = false
+    private real previousCameraTargetX = 0.0
+    private real previousCameraTargetY = 0.0
 
-    // Deferred texture/bounds transaction while an illegal rotation is corrected.
+    // Deferred texture/bounds transaction while the current rotation is unsafe.
     private boolean pendingMapUpdate = false
     private boolean pendingTextureChange = false
     private boolean pendingChunkCommit = false
@@ -144,7 +156,6 @@ globals
     private real pendingBoundsMinY = 0.0
     private real pendingBoundsMaxX = 0.0
     private real pendingBoundsMaxY = 0.0
-    private integer rotationCorrectionTicks = 0
     
     // Minimap size toggle functionality
     private framehandle minimapFrame = null
@@ -201,50 +212,49 @@ private function IsCameraRotationSafe takes nothing returns boolean
     return rotation < ILLEGAL_ROTATION_MIN or rotation > ILLEGAL_ROTATION_MAX
 endfunction
 
-private function StartCameraRotationCorrection takes nothing returns nothing
-    local real rotation = GetCameraRotationDegrees()
-    local real targetRotation = SAFE_ROTATION_ABOVE
-    local real rotationDistance
-    local real duration
-
-    if rotation <= (ILLEGAL_ROTATION_MIN + ILLEGAL_ROTATION_MAX) * 0.5 then
-        set targetRotation = SAFE_ROTATION_BELOW
-    endif
-
-    set rotationDistance = targetRotation - rotation
-    if rotationDistance < 0.0 then
-        set rotationDistance = -rotationDistance
-    endif
-    set duration = rotationDistance / ROTATION_CORRECTION_DEGREES_PER_SECOND
-    if duration < ROTATION_CORRECTION_MIN_DURATION then
-        set duration = ROTATION_CORRECTION_MIN_DURATION
-    elseif duration > ROTATION_CORRECTION_MAX_DURATION then
-        set duration = ROTATION_CORRECTION_MAX_DURATION
-    endif
-
-    call SetCameraField(CAMERA_FIELD_ROTATION, targetRotation, duration)
-    set rotationCorrectionTicks = R2I(duration / UPDATE_INTERVAL) + 1
-
-    if DEBUG then
-        call BJDebugMsg("|cffFF8800DynamicMinimap: gently rotating camera to " + R2S(targetRotation) + " degrees over " + R2S(duration) + " seconds before bounds update|r")
-    endif
+function DynamicMinimap_HasSafeRotationRequest takes nothing returns boolean
+    return safeRotationRequested and scriptedCameraSuspendDepth == 0 and enabled and not fullMapMode
 endfunction
 
-// Texture and bounds must commit together only after the camera has settled at a safe rotation.
+function DynamicMinimap_GetSafeRotationTarget takes nothing returns real
+    return safeRotationTarget
+endfunction
+
+private function CancelSafeRotationRequest takes nothing returns nothing
+    set safeRotationRequested = false
+endfunction
+
+private function RequestSafeRotation takes nothing returns nothing
+    local real rotation = GetCameraRotationDegrees()
+
+    if rotation <= (ILLEGAL_ROTATION_MIN + ILLEGAL_ROTATION_MAX) * 0.5 then
+        set safeRotationTarget = SAFE_ROTATION_BELOW
+    else
+        set safeRotationTarget = SAFE_ROTATION_ABOVE
+    endif
+    set safeRotationRequested = true
+endfunction
+
+private function CancelPendingMapUpdate takes nothing returns nothing
+    set pendingMapUpdate = false
+    set pendingTextureChange = false
+    set pendingChunkCommit = false
+    set pendingTexturePath = null
+    set pendingChunkX = -1
+    set pendingChunkY = -1
+endfunction
+
+// DynamicMinimap never changes rotation. Unsafe bounds work waits for the camera owner.
 private function TryApplyPendingMapUpdate takes nothing returns boolean
     if not pendingMapUpdate then
         return true
     endif
 
-    if rotationCorrectionTicks > 0 then
-        set rotationCorrectionTicks = rotationCorrectionTicks - 1
-        if rotationCorrectionTicks > 0 then
-            return false
-        endif
-    endif
-
     if not IsCameraRotationSafe() then
-        call StartCameraRotationCorrection()
+        call RequestSafeRotation()
+        if DEBUG then
+            call BJDebugMsg("|cffFF8800DynamicMinimap: bounds update waiting for a safe camera rotation|r")
+        endif
         return false
     endif
 
@@ -264,16 +274,16 @@ private function TryApplyPendingMapUpdate takes nothing returns boolean
         set lastTileY = pendingChunkY
     endif
 
-    set pendingMapUpdate = false
-    set pendingTextureChange = false
-    set pendingChunkCommit = false
-    set pendingTexturePath = null
-    set pendingChunkX = -1
-    set pendingChunkY = -1
+    call CancelSafeRotationRequest()
+    call CancelPendingMapUpdate()
     return true
 endfunction
 
 private function QueueMapUpdate takes string texturePath, boolean changeTexture, boolean commitChunk, integer chunkX, integer chunkY, real minX, real minY, real maxX, real maxY returns nothing
+    if scriptedCameraSuspendDepth > 0 then
+        return
+    endif
+
     set pendingTexturePath = texturePath
     set pendingTextureChange = changeTexture
     set pendingChunkCommit = commitChunk
@@ -340,6 +350,41 @@ private function UpdateMinimapAndBounds takes integer chunkCoordX, integer chunk
     endif
 endfunction
 
+private function GetChunkCoordinate takes real worldValue, real worldMin, real worldMax, real artOffset returns integer
+    local real scale = (worldMax - worldMin) / I2R(CHUNK_COORDINATE_SYSTEM)
+    local integer chunkCoord = R2I((worldValue - worldMin - artOffset) / scale - I2R(currentChunkSize) * 0.5)
+
+    set chunkCoord = (chunkCoord / currentGridStep) * currentGridStep
+    if chunkCoord < 0 then
+        return 0
+    elseif chunkCoord > CHUNK_COORDINATE_SYSTEM - currentChunkSize then
+        return CHUNK_COORDINATE_SYSTEM - currentChunkSize
+    endif
+    return chunkCoord
+endfunction
+
+private function IsApproachingChunkBorder takes real cameraX, real cameraY, integer chunkX, integer chunkY returns boolean
+    local real lookaheadX = cameraX
+    local real lookaheadY = cameraY
+
+    if not cameraTargetSampled then
+        return false
+    endif
+
+    if cameraX > previousCameraTargetX + CAMERA_MOVEMENT_EPSILON then
+        set lookaheadX = cameraX + ROTATION_LOOKAHEAD_DISTANCE
+    elseif cameraX < previousCameraTargetX - CAMERA_MOVEMENT_EPSILON then
+        set lookaheadX = cameraX - ROTATION_LOOKAHEAD_DISTANCE
+    endif
+    if cameraY > previousCameraTargetY + CAMERA_MOVEMENT_EPSILON then
+        set lookaheadY = cameraY + ROTATION_LOOKAHEAD_DISTANCE
+    elseif cameraY < previousCameraTargetY - CAMERA_MOVEMENT_EPSILON then
+        set lookaheadY = cameraY - ROTATION_LOOKAHEAD_DISTANCE
+    endif
+
+    return GetChunkCoordinate(lookaheadX, MAP_WORLD_MIN_X, MAP_WORLD_MAX_X, MINIMAP_ART_OFFSET_X) != chunkX or GetChunkCoordinate(lookaheadY, MAP_WORLD_MIN_Y, MAP_WORLD_MAX_Y, MINIMAP_ART_OFFSET_Y) != chunkY
+endfunction
+
 //===========================================================================
 // Periodic Update
 //===========================================================================
@@ -351,8 +396,27 @@ private function PeriodicUpdate takes nothing returns nothing
     local real scaleX = (MAP_WORLD_MAX_X - MAP_WORLD_MIN_X) / I2R(CHUNK_COORDINATE_SYSTEM)
     local real scaleY = (MAP_WORLD_MAX_Y - MAP_WORLD_MIN_Y) / I2R(CHUNK_COORDINATE_SYSTEM)
 
-    // Finish a queued transaction before calculating another chunk. This also runs
-    // while chunk tracking is disabled or full-map mode owns the minimap.
+    // No texture or bounds operation may occur while a cinematic owns the camera.
+    if scriptedCameraSuspendDepth > 0 then
+        return
+    endif
+
+    if cameraResumeSettleTicks > 0 then
+        set cameraResumeSettleTicks = cameraResumeSettleTicks - 1
+        return
+    endif
+
+    if cameraResumeRefreshPending then
+        set cameraResumeRefreshPending = false
+        set lastTileX = -1
+        set lastTileY = -1
+        if enabled and fullMapMode then
+            call RequestFullMapUpdate()
+            return
+        endif
+    endif
+
+    // Finish a queued transaction before calculating another chunk.
     if pendingMapUpdate then
         call TryApplyPendingMapUpdate()
         return
@@ -424,9 +488,11 @@ function DynamicMinimap_SetGridStep takes integer tiles returns nothing
 endfunction
 
 function DynamicMinimap_Enable takes boolean enable returns nothing
-    if scriptedCameraSuspended then
+    if scriptedCameraSuspendDepth > 0 then
+        // Remember the requested gameplay state without allowing the cinematic
+        // to restart texture or camera-bounds work prematurely.
+        set scriptedCameraWasEnabled = enable
         set enabled = false
-        call RestoreOriginalCameraBounds()
         return
     endif
 
@@ -455,26 +521,42 @@ function DynamicMinimap_Enable takes boolean enable returns nothing
 endfunction
 
 function DynamicMinimap_SuspendForScriptedCamera takes nothing returns nothing
-    if scriptedCameraSuspended then
-        return
+    if scriptedCameraSuspendDepth == 0 then
+        set scriptedCameraWasEnabled = enabled
+        set enabled = false
+        set cameraResumeSettleTicks = 0
+        set cameraResumeRefreshPending = false
+        set lastTileX = -1
+        set lastTileY = -1
+        call CancelPendingMapUpdate()
+
+        // The texture swap itself is safe and ensures cinematics always display
+        // the full map. Full bounds are restored only when the entry rotation is
+        // safe; no bounds operation may remain queued after camera ownership moves.
+        call BlzChangeMinimapTerrainTex(FULL_MAP_TEXTURE)
+        if IsCameraRotationSafe() then
+            call RestoreOriginalCameraBounds()
+        elseif DEBUG then
+            call BJDebugMsg("|cffFF8800DynamicMinimap: cinematic suspension skipped unsafe full-bounds update|r")
+        endif
     endif
 
-    set scriptedCameraSuspended = true
-    set scriptedCameraWasEnabled = enabled
-    set enabled = false
-    call RestoreOriginalCameraBounds()
+    set scriptedCameraSuspendDepth = scriptedCameraSuspendDepth + 1
 endfunction
 
 function DynamicMinimap_ResumeAfterScriptedCamera takes nothing returns nothing
-    if not scriptedCameraSuspended then
+    if scriptedCameraSuspendDepth <= 0 then
         return
     endif
 
-    set scriptedCameraSuspended = false
-    set enabled = scriptedCameraWasEnabled
-    if enabled and not fullMapMode then
-        call DynamicMinimap_ForceUpdate()
+    set scriptedCameraSuspendDepth = scriptedCameraSuspendDepth - 1
+    if scriptedCameraSuspendDepth > 0 then
+        return
     endif
+
+    set enabled = scriptedCameraWasEnabled
+    set cameraResumeSettleTicks = CAMERA_RESUME_SETTLE_TICKS
+    set cameraResumeRefreshPending = enabled
 endfunction
 
 //===========================================================================
@@ -511,8 +593,7 @@ function DynamicMinimap_SetFullMapMode takes boolean enable returns nothing
         endif
     else
         set fullMapMode = false
-        set pendingMapUpdate = false
-        set rotationCorrectionTicks = 0
+        call CancelPendingMapUpdate()
         call DynamicMinimap_ForceUpdate()
         
         if DEBUG then
