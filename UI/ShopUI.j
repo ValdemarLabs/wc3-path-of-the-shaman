@@ -2,7 +2,7 @@
     ShopUI
 
     Author: Valdemar
-    Version: 1.1.4
+    Version: 1.1.5
 
     Description:
     Frame UI for PotS merchant vendors. The panel can browse merchant stock or
@@ -593,6 +593,7 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
         local string modeLabel = "Merchant"
         local string viewingText
         local string vendorType = Shop_GetVendorTypeLabel(SUI_VendorId)
+        local string vendorName = Shop_GetVendorUnitDisplayName(SUI_VendorUnit)
         local integer capacity = 0
         local integer usedSlots = 0
 
@@ -612,9 +613,12 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
         if SUI_ViewMode == SHOP_VIEW_MERCHANT and vendorType != "" then
             set viewingText = "|cffffcc00" + vendorType + "|r  |  " + viewingText
         endif
+        if vendorName == null or vendorName == "" then
+            set vendorName = Shop_GetVendorName(SUI_VendorId)
+        endif
 
         if GetLocalPlayer() == whichPlayer then
-            call BlzFrameSetText(SUI_Title, "|cffffe4a3" + Shop_GetVendorName(SUI_VendorId) + "|r")
+            call BlzFrameSetText(SUI_Title, "|cffffe4a3" + vendorName + "|r")
             call BlzFrameSetText(SUI_ViewingText, viewingText)
             call BlzFrameSetText(SUI_ModeButton, modeLabel)
         endif
