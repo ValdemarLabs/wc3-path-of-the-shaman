@@ -15,6 +15,36 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [7.9.2026]
+
+### Player-Facing Updates
+
+- Updated the Satyr vendor quests `Cull the Stalkers` and `Silence on the Old Path` so Xyros and Faelrix no longer ask the player to kill Satyr units; their targets are now Gnolls and Ironjaw Basilisks, respectively.
+- Prevented Satyr witnesses in `A Night To Remember` from randomly requesting Satyr or Shadowdancer kills; they now draw kill tasks only from Gnolls and Dark Trolls.
+- Reworked the affected quest descriptions and Satyr vendor lines to name the concrete threats, routes, and consequences instead of relying on generic kill-task wording.
+- DynamicMinimap no longer rotates the gameplay camera automatically at chunk borders, and fullscreen cinematics now suspend all minimap chunk activity before taking camera control.
+
+### Technical Updates
+
+- Updated `QuestsAndDialogs/QuestGivers/Vendors/qXyrosBloodwager.j`, `QuestsAndDialogs/QuestGivers/Vendors/qFaelrixWayhoof.j`, and `Voicelines/Voicelines_Quests.j` with faction-safe targets, canonical giver names, matching icons, and revised text-only dialogue definitions.
+- Updated `QuestsAndDialogs/GenericQuests/qANightToRemember.j` with a faction-aware Satyr witness filter for randomized kill-task selection.
+- Updated `QuestsAndDialogs/QuestGivers/Vendors/README.md` and `_developer/Design Plans/Story and Quest Design.md` with the no-friendly-faction kill rule and the dialogue-specificity/audio-approval policy.
+- Updated `DynamicMinimap/DynamicMinimap_lastWorking.j` to retry unsafe gameplay bounds updates without changing camera rotation, cancel queued work during depth-counted cinematic suspension, switch immediately to the full-map texture, restore authored full-map camera bounds only at a safe entry rotation, and delay chunk refresh until cinematic camera restoration settles. Updated `UI/FullscreenUI.j` with optional DynamicMinimap suspension hooks so every fullscreen cinematic flow participates.
+- Added fourteen racial and faction bag-merchant definitions alongside Graknar: three regional Orcs, three Human reputation variants, two Goblins, and one each for Tauren, Troll, Satyr, Bonecrusher Ogre, Elarindor, and Morgrim Dwarf.
+- Updated `Vendors/VendorTypes/VendorBags.j` with the shared bag catalog's named roster, race voice bindings, faction ownership, and guarded `XXXX` placeholders for the eleven non-Orc unit types still awaiting World Editor creation, while retaining Graknar's dedicated quest-giver identity.
+- Updated `UI/ShopUI.j` to show each placed vendor's canonical unit-type name instead of the shared catalog name, updated `Vendors/VendorDialogs.j` to initialize after `VendorBags`, and updated `Voicelines/Voicelines_VendorLines.j` with the shared Bag Merchant role catalog for the roster's voice families.
+- Updated `QuestsAndDialogs/QuestGivers/Vendors/README.md` and `_developer/Design Plans/Story and Quest Design.md` with the canonical bag-vendor roster and World Editor boundary.
+- Updated `Vendors/Help/VendorsHelper.md` with the shared bag-vendor lifecycle, Graknar's custom-dialog exception, all fifteen racial roster entries, placement guidance, and required `VendorBags` import order.
+
+### Actions Remaining
+
+- Review and approve the revised Satyr quest dialogue, then re-record only the changed `GenericSatyrMale1_1001-1002`, `1011-1012`, and `1017-1018` files; no Fish Audio files were generated in this pass.
+- Design and approve witness-specific `A Night To Remember` task templates before replacing its broad recorded amends requests; do not generate those Fish Audio files before the objective/line matrix is final.
+- Compile and runtime-test both Satyr vendor quests, confirming the journal objectives track `ngno` and `n63R`, the displayed icons match, and no previous Satyr kills advance either quest.
+- Force a Satyr AI witness in `A Night To Remember` across repeated debug starts and confirm its kill tasks never select `nsat` or `nsty`.
+- Compile the full map with World Editor/JassHelper, then test chunk-border crossings throughout the unsafe 220-320-degree camera range and verify they wait without rotating or crashing. Test fullscreen dialogue, travel, profession, drunk, trailer, preload, and Zul'kis cinematics; confirm no minimap texture or camera-bounds update occurs while cinematic camera control is active, then confirm chunk tracking resumes after the final owner releases it.
+- In World Editor, create and place the eleven non-Orc bag-vendor unit types marked `XXXX` in `Vendors/Help/VendorsHelper.md`, replace their individual placeholder constants in `VendorBags.j`, and use race-appropriate models; keep `o61S` exclusive to Graknar, then compile and runtime-test every faction gate, voice, dialog return, and seven-tier catalog.
+
 ## [5.9.2026]
 
 ### Player-Facing Updates
