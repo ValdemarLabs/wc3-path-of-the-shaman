@@ -13,8 +13,8 @@
 
     How to install:
     Import after DialogInteraction, DialogCamera, DialogSystem, Shop, ShopUI,
-    VendorCatalogs, every imported VendorFactions library, VendorLines,
-    Reputation, Interface, Table, and optional QuestsVendor.
+    VendorCatalogs, VendorBags, every imported VendorFactions library,
+    VendorLines, Reputation, Interface, Table, and optional QuestsVendor.
 
     API:
     - call VendorDialogs_RegisterVendor(vendor)
@@ -26,7 +26,7 @@
     - Combat interruption is enabled by default through DialogInteraction.
 
 **/
-library VendorDialogs initializer Init requires Table, DialogInteraction, DialogCamera, DialogSystem, Shop, ShopUI, VendorCatalogs, VendorOrcs, VendorSatyrs, VendorHumans, VendorGoblins, VendorBonecrusherOgres, VendorElarindor, VendorTauren, VendorDwarves, VendorTrolls, VendorLines, Reputation, Interface, qANightToRemember, optional QuestsVendor
+library VendorDialogs initializer Init requires Table, DialogInteraction, DialogCamera, DialogSystem, Shop, ShopUI, VendorCatalogs, VendorBags, VendorOrcs, VendorSatyrs, VendorHumans, VendorGoblins, VendorBonecrusherOgres, VendorElarindor, VendorTauren, VendorDwarves, VendorTrolls, VendorLines, Reputation, Interface, qANightToRemember, optional QuestsVendor
     globals
         private constant real VDI_DIALOG_RANGE = 900.00
         private constant real VDI_DIALOG_COOLDOWN = 3.00
