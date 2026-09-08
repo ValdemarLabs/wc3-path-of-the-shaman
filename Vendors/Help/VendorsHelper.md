@@ -1,5 +1,7 @@
 `VendorCatalogs.j` and `VendorBags.j` register these canonical names by unit rawcode, so vendor dialogue and quest-giver headings do not depend on Object Editor names. The `Name`, `Editor Suffix`, and `Gender` fields may still mirror this roster for clearer Object Editor entries. `Yes` in the quest-giver column means a matching `qXXX.j` library exists; the parenthesized classification shows whether it registers daily, normal, or both quest types.
 
+Shared catalog definitions in `VendorCatalogs.j` must pass `0` as their initial unit type. Concrete canonical rawcodes are registered afterward by the matching faction library; do not use unrelated or legacy Object Editor units as `CreateCatalog` defaults.
+
 `Intended zone` is map-placement guidance derived from the regional assignments in the vendor faction libraries. It does not place or restrict the unit at runtime. A slash-separated value permits any of the listed zones, while `unspecified` means that no exact settlement or arena has been selected yet.
 
 ### Legacy building shops (do not use as dialogue vendors)

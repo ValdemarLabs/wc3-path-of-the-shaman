@@ -2,7 +2,7 @@
     VendorCatalogs
 
     Author: Valdemar
-    Version: 1.3.2
+    Version: 1.3.3
 
     Description:
     Ready-to-use PotS vendor definitions for equipment, professions, factions,
@@ -279,26 +279,23 @@ library VendorCatalogs initializer Init requires Shop, VendorLines, VoicelinesVe
     endfunction
 
     private function ConfigureCatalogs takes nothing returns nothing
-        // Explicit merchant unit types and selected generic vendor placeholders
-        // are bound here. Change these rawcodes when map placement roles settle.
+        // Canonical unit types are bound by the faction and vendor-type libraries.
         set VC_VendorId[VENDOR_CATALOG_WEAPONS] = 0
         call CreateCatalog(VENDOR_CATALOG_WEAPONS, "Weapons Merchant", VendorLines_TYPE_WEAPONS, 0)
         call CreateCatalog(VENDOR_CATALOG_ARMOR, "Armor Merchant", VendorLines_TYPE_ARMOR, 0)
-        call CreateCatalog(VENDOR_CATALOG_SHIELDS, "Shield Merchant", VendorLines_TYPE_SHIELDS, 'o62H')
-        call VendorLines_BindUnitTypeProfile('o62H', VL_VENDOR_PROFILE_ORC_FIERY_MOUNTAIN_MALE)
-        call VendorLines_BindUnitTypeVoiceType('o62H', VL_GENERIC_ORC_MALE_3_TYPE)
-        call CreateCatalog(VENDOR_CATALOG_ARENA, "Arena Quartermaster", VendorLines_TYPE_ARENA, 'N60L')
-        call CreateCatalog(VENDOR_CATALOG_TRAVELLING, "Travelling Merchant", VendorLines_TYPE_TRAVELLING, 'h00H')
-        call CreateCatalog(VENDOR_CATALOG_FISHER, "Fisher", VendorLines_TYPE_FISHER, 'o62I')
+        call CreateCatalog(VENDOR_CATALOG_SHIELDS, "Shield Merchant", VendorLines_TYPE_SHIELDS, 0)
+        call CreateCatalog(VENDOR_CATALOG_ARENA, "Arena Quartermaster", VendorLines_TYPE_ARENA, 0)
+        call CreateCatalog(VENDOR_CATALOG_TRAVELLING, "Travelling Merchant", VendorLines_TYPE_TRAVELLING, 0)
+        call CreateCatalog(VENDOR_CATALOG_FISHER, "Fisher", VendorLines_TYPE_FISHER, 0)
         call CreateCatalog(VENDOR_CATALOG_MINER, "Miner", VendorLines_TYPE_MINER, 0)
-        call CreateCatalog(VENDOR_CATALOG_COOK, "Cook", VendorLines_TYPE_COOK, 'o60I')
-        call CreateCatalog(VENDOR_CATALOG_ALCHEMY_SUPPLIES, "Alchemy Supplier", VendorLines_TYPE_ALCHEMY_SUPPLIES, 'o62F')
+        call CreateCatalog(VENDOR_CATALOG_COOK, "Cook", VendorLines_TYPE_COOK, 0)
+        call CreateCatalog(VENDOR_CATALOG_ALCHEMY_SUPPLIES, "Alchemy Supplier", VendorLines_TYPE_ALCHEMY_SUPPLIES, 0)
         call CreateCatalog(VENDOR_CATALOG_BLACKSMITHING_SUPPLIES, "Blacksmithing Supplier", VendorLines_TYPE_BLACKSMITHING_SUPPLIES, 0)
         call CreateCatalog(VENDOR_CATALOG_COOKING_SUPPLIES, "Cooking Supplier", VendorLines_TYPE_COOKING_SUPPLIES, 0)
         call CreateCatalog(VENDOR_CATALOG_ENCHANTING_SUPPLIES, "Enchanting Supplier", VendorLines_TYPE_ENCHANTING_SUPPLIES, 0)
         call CreateCatalog(VENDOR_CATALOG_FISHING_SUPPLIES, "Fishing Supplier", VendorLines_TYPE_FISHING_SUPPLIES, 0)
         call CreateCatalog(VENDOR_CATALOG_LEATHERWORKING_SUPPLIES, "Leatherworking Supplier", VendorLines_TYPE_LEATHERWORKING_SUPPLIES, 0)
-        call CreateCatalog(VENDOR_CATALOG_MINING_SUPPLIES, "Mining Supplier", VendorLines_TYPE_MINING_SUPPLIES, 'o62G')
+        call CreateCatalog(VENDOR_CATALOG_MINING_SUPPLIES, "Mining Supplier", VendorLines_TYPE_MINING_SUPPLIES, 0)
         call CreateCatalog(VENDOR_CATALOG_SKINNING_SUPPLIES, "Skinning Supplier", VendorLines_TYPE_SKINNING_SUPPLIES, 0)
         call CreateCatalog(VENDOR_CATALOG_PROFESSION_SUPPLIES, "Profession Supplier", VendorLines_TYPE_PROFESSION_SUPPLIES, 0)
         call CreateCatalog(VENDOR_CATALOG_QUARTERMASTER, "Faction Quartermaster", VendorLines_TYPE_FACTION_QUARTERMASTER, 0)
@@ -309,7 +306,7 @@ library VendorCatalogs initializer Init requires Shop, VendorLines, VoicelinesVe
         call CreateCatalog(VENDOR_CATALOG_RARE_GOODS, "Rare Goods Dealer", VendorLines_TYPE_RARE_GOODS, 0)
         call CreateCatalog(VENDOR_CATALOG_ADVENTURING_SUPPLIES, "Expedition Supplier", VendorLines_TYPE_ADVENTURING_SUPPLIES, 0)
         call CreateCatalog(VENDOR_CATALOG_TRADE_GOODS, "Trade Goods Merchant", VendorLines_TYPE_TRADE_GOODS, 0)
-        call CreateCatalog(VENDOR_CATALOG_BEAST_SUPPLIES, "Beastmaster Supplier", VendorLines_TYPE_BEAST_SUPPLIES, 'o001')
+        call CreateCatalog(VENDOR_CATALOG_BEAST_SUPPLIES, "Beastmaster Supplier", VendorLines_TYPE_BEAST_SUPPLIES, 0)
         call CreateCatalog(VENDOR_CATALOG_BLACKSMITH, "Blacksmith", VendorLines_TYPE_BLACKSMITH, 0)
         call CreateCatalog(VENDOR_CATALOG_BARTENDER, "Bartender", VendorLines_TYPE_BARTENDER, 0)
         call CreateCatalog(VENDOR_CATALOG_JEWELCRAFTER, "Jewelcrafter", VendorLines_TYPE_JEWELCRAFTER, 0)
