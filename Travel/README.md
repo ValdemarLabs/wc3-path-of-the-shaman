@@ -31,7 +31,7 @@ also be unlocked by a quest or event with
 before the wyvern library finishes initializing.
 
 `Init Travel Units` should only assign the `WindRiderMaster`, `FlightMaster`,
-`Shipmaster`, ship, and zeppelin GUI variables. Do not call `IconQuery` there:
+`Shipmaster`, ship, and Zeppelin A-D GUI variables. Do not call `IconQuery` there:
 `TravelSystem` owns icon registration so discovery cannot create duplicate or
 premature master icons. Method libraries access these units only through the
 shared getters documented in `TravelSystem.j`.
@@ -62,10 +62,13 @@ shared getters documented in `TravelSystem.j`.
   the ship's current direction.
   The detached `TravelShipB_MovementStart` trigger is no longer required.
 - `TravelZeppelin.j` binds `FlightMaster[1]` at Sereneglade,
-  `FlightMaster[2]` at Sirensong, both endpoint zeppelins, and the two
-  `Zeppelin*Area` regions automatically. Zeppelin A departs Sereneglade and
-  Zeppelin B departs Sirensong; each returns to its home point behind the arrival
-  fade. Default fares are currently zero and are configured in `TravelZeppelin.j`.
+  `FlightMaster[2]` at Sirensong, `FlightMaster[3]` at Horde Scout Base, and
+  `FlightMaster[4]` at Horde Front Base. It binds both endpoint pairs and their
+  `Zeppelin*Area` regions automatically. Zeppelin A departs Sereneglade,
+  Zeppelin B departs Sirensong, Zeppelin C departs Horde Scout Base, and
+  Zeppelin D departs Horde Front Base; each returns to its home point behind the
+  arrival fade. Default fares are currently zero and are configured in
+  `TravelZeppelin.j`.
 Ship passenger proxies use `nazgrek2_shieldAttachment.mdl` for Nazgrek and
 `war3campImported\TrollMale.mdl` for Zul'kis. Their model paths, scale, and
 facing offsets are configured centrally in `TravelSystem.j`. Passenger visuals
@@ -107,7 +110,7 @@ is normally the destination drop position. Reusable coordinates can be created
 once with `TravelSystem_RegisterWaypoint` and attached to any number of routes
 with `TravelSystem_AddRegisteredWaypoint`; all seven wyvern destinations use this
 shared-point API. Wyvern routes create temporary
-Player(5) flying carriers. Zeppelin routes use the placed Zeppelin A/B units.
+Player(5) flying carriers. Zeppelin routes use the placed Zeppelin A-D units.
 AI route selection includes both methods and deliberately does not read player
 discovery state; AI heroes therefore treat every configured flight point as
 available.
