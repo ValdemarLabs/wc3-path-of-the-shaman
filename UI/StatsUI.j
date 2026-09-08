@@ -3,7 +3,7 @@ library StatsUI initializer AutoInit requires Table, MasterUI, DEquipment, Abili
     StatsUI
 
     Author: [Valdemar]
-    Version: 1.0
+    Version: 1.1
 
     Description: Shows the current party and companion stats with a quick list and a detailed view.
 
@@ -20,6 +20,9 @@ library StatsUI initializer AutoInit requires Table, MasterUI, DEquipment, Abili
     call StatsUI_RegisterManaResourceClass(integer classId)
     call StatsUI_RegisterRageResourceClass(integer classId)
     call StatsUI_RegisterEnergyResourceClass(integer classId)
+    call StatsUI_GetUnitDisplayName(unit whichUnit) returns string
+    call StatsUI_GetUnitIconPath(unit whichUnit) returns string
+    call StatsUI_GetUnitClassText(unit whichUnit) returns string
 
 **/
 
@@ -391,7 +394,23 @@ private function SUI_IsDeadForDisplay takes unit u returns boolean
 endfunction
 
 private function SUI_IsRestedForDisplay takes unit u returns boolean
-    return SUI_IsValidUnit(u) and not SUI_IsDeadForDisplay(u) and Experience_IsRested(u)
+    local unit leader = null
+    local boolean isRested
+
+    if not SUI_IsValidUnit(u) or SUI_IsDeadForDisplay(u) then
+        return false
+    endif
+    if Experience_IsRested(u) then
+        return true
+    endif
+    if not SUI_IsTrackedCompanion(u) then
+        return false
+    endif
+
+    set leader = Companions_GetLeader(u)
+    set isRested = Experience_IsRested(leader)
+    set leader = null
+    return isRested
 endfunction
 
 private function SUI_GetReviveTimer takes unit u returns timer
@@ -1050,6 +1069,18 @@ private function SUI_GetUnitClassText takes unit u returns string
         return Companions_GetClassInfoText(u)
     endif
     return SUI_GetFallbackUnitClassText(u)
+endfunction
+
+public function GetUnitDisplayName takes unit whichUnit returns string
+    return SUI_GetDisplayName(whichUnit)
+endfunction
+
+public function GetUnitIconPath takes unit whichUnit returns string
+    return SUI_GetUnitIconPath(whichUnit)
+endfunction
+
+public function GetUnitClassText takes unit whichUnit returns string
+    return SUI_GetUnitClassText(whichUnit)
 endfunction
 
 private function SUI_GetUnitRoleText takes unit u returns string
