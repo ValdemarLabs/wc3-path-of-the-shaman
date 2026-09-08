@@ -2,7 +2,7 @@
     qZulkis
 
     Author: Valdemar
-    Version: 1.6.0
+    Version: 1.6.1
 
     Description:
 
@@ -196,49 +196,44 @@ private function SyncUnitReferences takes nothing returns nothing
 endfunction
 
 private function StashNazgrekCompanions takes nothing returns nothing
-    local group candidates = CreateGroup()
     local unit companionUnit
     local unit companionLeader
-    local integer index
+    local integer rosterIndex = 1
+    local integer index = 1
 
     set StoredNazgrekCompanionCount = 0
-    if udg_Companion_Group != null then
-        call BlzGroupAddGroupFast(udg_Companion_Group, candidates)
-    endif
     loop
-        set companionUnit = FirstOfGroup(candidates)
-        exitwhen companionUnit == null
-        call GroupRemoveUnit(candidates, companionUnit)
+        exitwhen rosterIndex > udg_CompanionCount
+        set companionUnit = udg_CompanionUnit[rosterIndex]
         set companionLeader = Companions_GetLeader(companionUnit)
         if companionLeader == Nazgrek and companionUnit != Nazgrek and companionUnit != udg_Shadowclaw and StoredNazgrekCompanionCount < MAX_STORED_NAZGREK_COMPANIONS then
             set StoredNazgrekCompanionCount = StoredNazgrekCompanionCount + 1
-            set index = StoredNazgrekCompanionCount
-            set StoredNazgrekCompanion[index] = companionUnit
-            set StoredNazgrekCompanionWasPaused[index] = IsUnitPaused(companionUnit)
-            set StoredNazgrekCompanionWasHidden[index] = IsUnitHidden(companionUnit)
-            set StoredNazgrekCompanionWasSuspended[index] = Companions_IsSuspended(companionUnit)
-            set StoredNazgrekCompanionWasHiderReference[index] = udg_UnitHider_ReferenceGroup != null and IsUnitInGroup(companionUnit, udg_UnitHider_ReferenceGroup)
-            set StoredNazgrekCompanionWasNazgrekFocused[index] = udg_CompanionFocusNazgrek != null and IsUnitInGroup(companionUnit, udg_CompanionFocusNazgrek)
-            set StoredNazgrekCompanionWasZulkisFocused[index] = udg_CompanionFocusZulkis != null and IsUnitInGroup(companionUnit, udg_CompanionFocusZulkis)
-            call Companions_Suspend(companionUnit)
-            call GroupRemoveUnit(udg_Companion_Group, companionUnit)
-            if udg_CompanionFocusNazgrek != null then
-                call GroupRemoveUnit(udg_CompanionFocusNazgrek, companionUnit)
-            endif
-            if udg_CompanionFocusZulkis != null then
-                call GroupRemoveUnit(udg_CompanionFocusZulkis, companionUnit)
-            endif
+            set StoredNazgrekCompanion[StoredNazgrekCompanionCount] = companionUnit
+            set StoredNazgrekCompanionWasPaused[StoredNazgrekCompanionCount] = IsUnitPaused(companionUnit)
+            set StoredNazgrekCompanionWasHidden[StoredNazgrekCompanionCount] = IsUnitHidden(companionUnit)
+            set StoredNazgrekCompanionWasSuspended[StoredNazgrekCompanionCount] = Companions_IsSuspended(companionUnit)
+            set StoredNazgrekCompanionWasHiderReference[StoredNazgrekCompanionCount] = udg_UnitHider_ReferenceGroup != null and IsUnitInGroup(companionUnit, udg_UnitHider_ReferenceGroup)
+            set StoredNazgrekCompanionWasNazgrekFocused[StoredNazgrekCompanionCount] = udg_CompanionFocusNazgrek != null and IsUnitInGroup(companionUnit, udg_CompanionFocusNazgrek)
+            set StoredNazgrekCompanionWasZulkisFocused[StoredNazgrekCompanionCount] = udg_CompanionFocusZulkis != null and IsUnitInGroup(companionUnit, udg_CompanionFocusZulkis)
+        endif
+        set rosterIndex = rosterIndex + 1
+    endloop
+
+    loop
+        exitwhen index > StoredNazgrekCompanionCount
+        set companionUnit = StoredNazgrekCompanion[index]
+        if companionUnit != null and GetUnitTypeId(companionUnit) != 0 then
+            call Companions_SuspendFromParty(companionUnit)
             if udg_UnitHider_ReferenceGroup != null then
                 call GroupRemoveUnit(udg_UnitHider_ReferenceGroup, companionUnit)
             endif
             call PauseUnit(companionUnit, true)
             call ShowUnit(companionUnit, false)
         endif
+        set index = index + 1
     endloop
-    call DestroyGroup(candidates)
     set companionLeader = null
     set companionUnit = null
-    set candidates = null
 endfunction
 
 private function RestoreNazgrekCompanions takes nothing returns nothing
@@ -249,8 +244,12 @@ private function RestoreNazgrekCompanions takes nothing returns nothing
         exitwhen index > StoredNazgrekCompanionCount
         set companionUnit = StoredNazgrekCompanion[index]
         if companionUnit != null and GetUnitTypeId(companionUnit) != 0 then
-            if udg_Companion_Group != null then
-                call GroupAddUnit(udg_Companion_Group, companionUnit)
+            call Companions_RestoreToParty(companionUnit)
+            if udg_CompanionFocusNazgrek != null then
+                call GroupRemoveUnit(udg_CompanionFocusNazgrek, companionUnit)
+            endif
+            if udg_CompanionFocusZulkis != null then
+                call GroupRemoveUnit(udg_CompanionFocusZulkis, companionUnit)
             endif
             if StoredNazgrekCompanionWasNazgrekFocused[index] and udg_CompanionFocusNazgrek != null then
                 call GroupAddUnit(udg_CompanionFocusNazgrek, companionUnit)
@@ -303,6 +302,7 @@ private function StageProloguePlayerHandoff takes nothing returns nothing
     call SetUnitInvulnerable(Zulkarak, true)
     call PauseUnit(Zulkarak, true)
     call ShowUnit(Zulkarak, false)
+    call QuestMaster_RefreshUnitSpecificQuests()
 endfunction
 
 private function ResumeGameplayCamera takes unit target returns nothing
@@ -1327,7 +1327,6 @@ private function StartPrologueInternal takes nothing returns nothing
     call DialogSystem_SetEscapeAction(function SkipShipArrival)
     call CinematicFadeBJ(bj_CINEFADETYPE_FADEOUT, FADE_DURATION, "ReplaceableTextures\\CameraMasks\\Black_mask.blp", 0, 0, 0, 0)
     call TimerStart(TransitionTimer, FADE_DURATION, false, function StartShipArrival)
-    call QuestMaster_RefreshUnitSpecificQuests()
     call DebugMsg("Started Zul'kis prologue.")
 endfunction
 

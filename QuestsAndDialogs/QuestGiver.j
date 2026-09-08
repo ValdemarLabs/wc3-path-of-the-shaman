@@ -2,7 +2,7 @@
     QuestGiver
 
     Author: Valdemar
-    Version: 1.2.1
+    Version: 1.3.0
 
     Description:
     Provides PotS quest creation helpers, objective tracking, quest-item
@@ -25,6 +25,8 @@
     - QuestGiver_SetQuestCategory(...) assigns story/content grouping.
     - QuestGiver_UpdateGiverUnitReferenceByType(...) transfers QuestData and
       all registered objective-owner references to a respawned giver.
+    - QuestGiver_RestoreCompanion(...) silently restores a preserved party
+      roster entry without replaying its recruitment feedback.
     - QuestGiver_ResetRequirements(questId) clears objective progress.
 
 **/
@@ -208,7 +210,7 @@ endfunction
 //
 // StatsUI and StatsLiteUI read the shared companion globals directly.
 //===========================================================================
-public function AddCompanion takes unit companionUnit, string companionIcon returns nothing
+private function AddCompanionInternal takes unit companionUnit, string companionIcon, boolean announce returns nothing
 	local integer customValue
 	local integer i = 1
 	
@@ -236,8 +238,8 @@ public function AddCompanion takes unit companionUnit, string companionIcon retu
 		set i = i + 1
 	endloop
 	
-	// Play rescue sound if available
-	if RescueSound != null then
+	// Play recruitment feedback only for a new, visible party join.
+	if announce and RescueSound != null then
 		call StartSound(RescueSound)
 	endif
 	
@@ -252,8 +254,9 @@ public function AddCompanion takes unit companionUnit, string companionIcon retu
 		call GroupAddUnit(CompanionFocusZulkis, companionUnit)
 	endif
 	
-	// Display join message
-	call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, GetUnitName(companionUnit) + " has joined the party!")
+	if announce then
+		call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, GetUnitName(companionUnit) + " has joined the party!")
+	endif
 	
 	// Update companion tracking (use udg_CompanionCount directly to avoid state mismatch)
 	set udg_CompanionCount = udg_CompanionCount + 1
@@ -277,6 +280,14 @@ public function AddCompanion takes unit companionUnit, string companionIcon retu
 	endif
 	
 	call DebugMsg("Added companion: " + GetUnitName(companionUnit) + " (count=" + I2S(udg_CompanionCount) + ", icon=" + companionIcon + ")")
+endfunction
+
+public function AddCompanion takes unit companionUnit, string companionIcon returns nothing
+	call AddCompanionInternal(companionUnit, companionIcon, true)
+endfunction
+
+public function RestoreCompanion takes unit companionUnit, string companionIcon returns nothing
+	call AddCompanionInternal(companionUnit, companionIcon, false)
 endfunction
 
 public function GetCompanionIcon takes unit companionUnit returns string
