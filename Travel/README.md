@@ -38,12 +38,11 @@ shared getters documented in `TravelSystem.j`.
 
 ## Existing map content
 
-- `TravelWyvern.j` binds all seven `WindRiderMaster` units. Masters 4 through 7
-  are Verdant Plains, Ashfang Outpost, Sirensong, and Ironspine Post respectively
-  and use their placed unit positions. All 30 directed routes between the original
-  six stations are registered, plus the six directed Ironspine routes connecting
-  it with Horde Scout Base, Ashfang Outpost, and Sirensong; destination discovery
-  remains required for player travel.
+- `TravelWyvern.j` binds all six `WindRiderMaster` units. Master 3 is Ironspine
+  Post; masters 4 through 6 are Verdant Plains, Ashfang Outpost, and Sirensong.
+  Those four stops use their placed unit positions. All 30 directed routes
+  between the six stations are registered; destination discovery remains
+  required for player travel.
   Sirensong-Horde Scout Base uses `gg_rct_FPRoute001` through
   `gg_rct_FPRoute019`. Horde Scout Base-Ashfang Outpost follows shared points
   019 through 016 and then points 020 through 028. Direct Sirensong-Ashfang
@@ -85,6 +84,9 @@ invulnerable so neutral-passive guard-position behavior cannot pull them home.
 The travel camera uses a 750 distance and 80-degree field of view while arrow
 keys remain available for rotation and angle changes. Fullscreen presentation
 keeps user control enabled for those camera key events.
+TravelUI passenger rows reuse StatsUI display names, class metadata, and unit
+icons. Selected travelers retain their text marker and also receive an icon-
+centered sprite border; destination selection uses the same centered treatment.
 Ship journeys lock 300 height units above the ship origin so the deck, rather
 than the hull or waterline, stays near the center of the view. Flight travel
 continues to target the flying vehicle origin.

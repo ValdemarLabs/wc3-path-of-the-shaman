@@ -2,18 +2,20 @@
     TravelUI
 
     Author: Valdemar
-    Version:
+    Version: 1.1.0
 
     Description:
     ShopUI-styled destination and passenger selection panel for TravelSystem.
     It presents destination zone icons plus discovery, vehicle, fare, party,
-    and gold requirements before committing a journey.
+    unit identity, class, selection, and gold requirements before committing
+    a journey.
 
     Credits:
     PotS ShopUI frame layout and interaction conventions.
 
     How to install:
-    Import after TravelSystem, ZonesCore, Table, Interface, and DialogSystem.
+    Import after TravelSystem, ZonesCore, StatsUI, Table, Interface, and
+    DialogSystem.
 
     API:
     - call TravelUI_ShowForStop(integer stopId)
@@ -22,7 +24,7 @@
     - set visible = TravelUI_IsVisible()
 
 **/
-library TravelUI initializer Init requires TravelSystem, ZonesCore, Table, Interface, DialogSystem
+library TravelUI initializer Init requires TravelSystem, ZonesCore, StatsUI, Table, Interface, DialogSystem
     globals
         private constant integer TUI_MAX_ROUTE_ROWS = 7
         private constant integer TUI_MAX_PASSENGER_ROWS = 10
@@ -48,7 +50,9 @@ library TravelUI initializer Init requires TravelSystem, ZonesCore, Table, Inter
         private framehandle TUI_DetailInfo = null
         private framehandle TUI_PassengerHeading = null
         private framehandle array TUI_PassengerButton
+        private framehandle array TUI_PassengerIcon
         private framehandle array TUI_PassengerText
+        private framehandle array TUI_PassengerHighlight
         private framehandle TUI_Warning = null
         private framehandle TUI_StatusText = null
         private framehandle TUI_GoldText = null
@@ -184,6 +188,7 @@ library TravelUI initializer Init requires TravelSystem, ZonesCore, Table, Inter
         local unit passenger
         local string marker
         local string color
+        local string classText
 
         loop
             exitwhen row > TUI_MAX_PASSENGER_ROWS
@@ -200,9 +205,15 @@ library TravelUI initializer Init requires TravelSystem, ZonesCore, Table, Inter
                     set marker = "[ ]"
                     set color = "|cff9f9f9f"
                 endif
-                call BlzFrameSetText(TUI_PassengerText[row], color + marker + " " + GetObjectName(GetUnitTypeId(passenger)) + "|r  |cffc0c0c0" + TUI_GetPassengerRole(row) + "|r")
+                set classText = StatsUI_GetUnitClassText(passenger)
+                call BlzFrameSetTexture(TUI_PassengerIcon[row], StatsUI_GetUnitIconPath(passenger), 0, true)
+                call BlzFrameSetText(TUI_PassengerText[row], color + marker + " " + StatsUI_GetUnitDisplayName(passenger) + "|r  |cffc0c0c0" + classText + " | " + TUI_GetPassengerRole(row) + "|r")
+                call BlzFrameSetVisible(TUI_PassengerIcon[row], true)
+                call BlzFrameSetVisible(TUI_PassengerHighlight[row], TravelSystem_IsPassengerSelected(row))
                 call BlzFrameSetVisible(TUI_PassengerButton[row], true)
             else
+                call BlzFrameSetVisible(TUI_PassengerIcon[row], false)
+                call BlzFrameSetVisible(TUI_PassengerHighlight[row], false)
                 call BlzFrameSetVisible(TUI_PassengerButton[row], false)
             endif
             set row = row + 1
@@ -540,7 +551,7 @@ library TravelUI initializer Init requires TravelSystem, ZonesCore, Table, Inter
             call BlzFrameSetEnable(TUI_RoutePrice[row], false)
 
             set TUI_RouteHighlight[row] = BlzCreateFrameByType("SPRITE", "TravelUIRouteHighlight" + I2S(row), TUI_RouteButton[row], "", 0)
-            call BlzFrameSetAllPoints(TUI_RouteHighlight[row], TUI_RouteButton[row])
+            call BlzFrameSetAllPoints(TUI_RouteHighlight[row], TUI_RouteIcon[row])
             call BlzFrameSetModel(TUI_RouteHighlight[row], TUI_HighlightModel, 0)
             call BlzFrameSetScale(TUI_RouteHighlight[row], 0.76)
             call BlzFrameSetEnable(TUI_RouteHighlight[row], false)
@@ -581,12 +592,24 @@ library TravelUI initializer Init requires TravelSystem, ZonesCore, Table, Inter
             call BlzTriggerRegisterFrameEvent(TUI_ClearFocusTrigger, TUI_PassengerButton[row], FRAMEEVENT_CONTROL_CLICK)
             set TUI_PassengerFrameRow.integer[GetHandleId(TUI_PassengerButton[row])] = row
 
+            set TUI_PassengerIcon[row] = BlzCreateFrameByType("BACKDROP", "TravelUIPassengerIcon" + I2S(row), TUI_PassengerButton[row], "IconButtonTemplate", 0)
+            call BlzFrameSetPoint(TUI_PassengerIcon[row], FRAMEPOINT_LEFT, TUI_PassengerButton[row], FRAMEPOINT_LEFT, 0.004, 0.0)
+            call BlzFrameSetSize(TUI_PassengerIcon[row], 0.018, 0.018)
+            call BlzFrameSetEnable(TUI_PassengerIcon[row], false)
+
             set TUI_PassengerText[row] = BlzCreateFrameByType("TEXT", "TravelUIPassengerText" + I2S(row), TUI_PassengerButton[row], "", 0)
-            call BlzFrameSetPoint(TUI_PassengerText[row], FRAMEPOINT_TOPLEFT, TUI_PassengerButton[row], FRAMEPOINT_TOPLEFT, 0.006, -0.002)
+            call BlzFrameSetPoint(TUI_PassengerText[row], FRAMEPOINT_TOPLEFT, TUI_PassengerButton[row], FRAMEPOINT_TOPLEFT, 0.027, -0.002)
             call BlzFrameSetPoint(TUI_PassengerText[row], FRAMEPOINT_BOTTOMRIGHT, TUI_PassengerButton[row], FRAMEPOINT_BOTTOMRIGHT, -0.006, 0.002)
             call BlzFrameSetTextAlignment(TUI_PassengerText[row], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
-            call BlzFrameSetScale(TUI_PassengerText[row], 0.75)
+            call BlzFrameSetScale(TUI_PassengerText[row], 0.72)
             call BlzFrameSetEnable(TUI_PassengerText[row], false)
+
+            set TUI_PassengerHighlight[row] = BlzCreateFrameByType("SPRITE", "TravelUIPassengerHighlight" + I2S(row), TUI_PassengerButton[row], "", 0)
+            call BlzFrameSetAllPoints(TUI_PassengerHighlight[row], TUI_PassengerIcon[row])
+            call BlzFrameSetModel(TUI_PassengerHighlight[row], TUI_HighlightModel, 0)
+            call BlzFrameSetScale(TUI_PassengerHighlight[row], 0.54)
+            call BlzFrameSetEnable(TUI_PassengerHighlight[row], false)
+            call BlzFrameSetVisible(TUI_PassengerHighlight[row], false)
 
             set rowY = rowY - 0.023
             set row = row + 1

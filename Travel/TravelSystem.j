@@ -2,7 +2,7 @@
     TravelSystem
 
     Author: Valdemar
-    Version: 1.1.3
+    Version: 1.1.4
 
     Description:
     Configurable travel-stop, route, passenger, discovery, movement, camera,
@@ -18,32 +18,35 @@
     map globals have been initialized.
 
     World Editor shared-unit bindings:
-    Travel masters:
-    - udg_WindRiderMaster[1] = Horde Scout Base, unit 0025 (active).
-    - udg_WindRiderMaster[2] = Horde Lumber Mill, unit 0208 (active).
-    - udg_WindRiderMaster[3] = Horde Gold Mine, unit 0427 (active).
-    - udg_WindRiderMaster[4] = Verdant Plains neutral master, Ursa 2424 (active).
-    - udg_WindRiderMaster[5] = Ashfang Outpost master, unit 1978 (active).
-    - udg_WindRiderMaster[6] = Sirensong Wind Rider Master 1239 (active).
-    - udg_WindRiderMaster[7] = Ironspine Post Wind Rider Master (assign in Init Travel Units).
-    - udg_FlightMaster[1] = Sereneglade Flightmaster 2617 (active).
-    - udg_FlightMaster[2] = Sirensong Shipmaster 0613 (active).
-    - udg_FlightMaster[3] = Horde Scout Base Flightmaster 2418 (active).
-    - udg_FlightMaster[4] = Horde Front Base Flightmaster 2057 (active).
-    - udg_Shipmaster[1] = Mok'natha Shipmaster 0996 (active).
-    - udg_Shipmaster[2] = Sirensong shipmaster 2230 (Ship A).
-    - udg_Shipmaster[3] = Ironspine shipmaster 2228 (Ship B).
-    - udg_Shipmaster[4] = Stormhaven shipmaster 2229 (Ship A).
-    - udg_Shipmaster[5] = Dawnhold shipmaster (Ship A).
-    - udg_Shipmaster[6] = Frontbase shipmaster (Ship B).
+    Wind Rider Masters:
+    - udg_WindRiderMaster[1] = Wind Rider Master 0025 at Horde Scout Base (active).
+    - udg_WindRiderMaster[2] = Wind Rider Master 0208 at Horde Lumber Mill (active).
+    - udg_WindRiderMaster[3] = Wind Rider Master 0427 at Ironspine Post (active).
+    - udg_WindRiderMaster[4] = Ursa 2424 at Verdant Plains (active).
+    - udg_WindRiderMaster[5] = Wind Rider Master 1978 at Ashfang Outpost (active).
+    - udg_WindRiderMaster[6] = Wind Rider Master 1239 at Sirensong (active).
+
+    Zeppelin Flightmasters:
+    - udg_FlightMaster[1] = Flightmaster 2617 at Sereneglade (active).
+    - udg_FlightMaster[2] = Flightmaster 2618 at Sirensong (active).
+    - udg_FlightMaster[3] = Flightmaster 2418 at Horde Scout Base (active).
+    - udg_FlightMaster[4] = Flightmaster 2057 at Horde Front Base (active).
+
+    Shipmasters:
+    - udg_Shipmaster[1] = Shipmaster 0996 at Mok'natha (Ship B).
+    - udg_Shipmaster[2] = Shipmaster 2230 at Sirensong (Ship A).
+    - udg_Shipmaster[3] = Shipmaster 2228 at Ironspine Post (Ship B).
+    - udg_Shipmaster[4] = Shipmaster 2229 at Stormhaven (Ship A).
+    - udg_Shipmaster[5] = Shipmaster 0613 at Dawnhold (Ship A).
+    - udg_Shipmaster[6] = Shipmaster 2619 at Horde Front Base (Ship B).
 
     Travel vehicles:
     - udg_TravelShipA = Transport Ship 0923 (active scheduled patrol).
     - udg_TravelShipB = Orc Frigate 0061 (active scheduled patrol).
     - udg_ZeppelinA = Zeppelin 2226 at Sereneglade (active outbound vehicle).
     - udg_ZeppelinB = Zeppelin 0922 at Sirensong (active outbound vehicle).
-    - udg_ZeppelinC = Zeppelin at Horde Scout Base (active outbound vehicle).
-    - udg_ZeppelinD = Zeppelin at Horde Front Base (active outbound vehicle).
+    - udg_ZeppelinC = Zeppelin 2419 at Horde Scout Base (active outbound vehicle).
+    - udg_ZeppelinD = Zeppelin 1668 at Horde Front Base (active outbound vehicle).
 
     Shared passengers:
     - udg_Nazgrek and udg_Zulkis = selectable player heroes.
@@ -96,11 +99,10 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
 
         constant integer TRAVEL_WINDRIDER_MASTER_HORDE_SCOUT_BASE = 1
         constant integer TRAVEL_WINDRIDER_MASTER_HORDE_LUMBER_MILL = 2
-        constant integer TRAVEL_WINDRIDER_MASTER_HORDE_GOLD_MINE = 3
+        constant integer TRAVEL_WINDRIDER_MASTER_IRONSPINE_POST = 3
         constant integer TRAVEL_WINDRIDER_MASTER_VERDANT_PLAINS = 4
         constant integer TRAVEL_WINDRIDER_MASTER_ASHFANG_OUTPOST = 5
         constant integer TRAVEL_WINDRIDER_MASTER_SIRENSONG = 6
-        constant integer TRAVEL_WINDRIDER_MASTER_IRONSPINE_POST = 7
 
         constant integer TRAVEL_FLIGHT_MASTER_SERENEGLADE = 1
         constant integer TRAVEL_FLIGHT_MASTER_SIRENSONG = 2
@@ -280,7 +282,7 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
     // Central World Editor unit binding access. Method libraries must use these
     // getters instead of depending directly on udg_* globals.
     public function GetWindRiderMaster takes integer index returns unit
-        if index < 1 or index > 7 then
+        if index < 1 or index > 6 then
             return null
         endif
         return udg_WindRiderMaster[index]
@@ -362,7 +364,7 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         local integer index = 1
 
         loop
-            exitwhen index > 7
+            exitwhen index > 6
             call TS_RegisterMasterEffect(GetWindRiderMaster(index))
             set index = index + 1
         endloop

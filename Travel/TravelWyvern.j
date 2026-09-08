@@ -2,10 +2,10 @@
     TravelWyvern
 
     Author: Valdemar
-    Version: 1.2.1
+    Version: 1.3.0
 
     Description:
-    Registers all seven configured Wind Rider Masters and the directed flight
+    Registers all six configured Wind Rider Masters and the directed flight
     network between them. Temporary wyvern and bat carriers are configured
     here while TravelSystem owns flight presentation and movement.
 
@@ -13,9 +13,9 @@
     The original Wind Rider Master GUI triggers.
 
     How to install:
-    Import after TravelSystem and TravelUI. Keep the three legacy boarding
-    areas, FlyHere rects, and configured FPRoute rects. Masters 4..7 use their
-    placed unit positions.
+    Import after TravelSystem and TravelUI. Keep the two legacy Horde boarding
+    areas and FlyHere rects plus the configured FPRoute rects. Masters 3..6
+    use their placed unit positions.
 
     API:
     - set stopId = TravelWyvern_RegisterStation(...)
@@ -23,11 +23,10 @@
     - call TravelWyvern_AddWaypoint(...)
     - TravelWyvern_GetScoutBaseStop()
     - TravelWyvern_GetLumberMillStop()
-    - TravelWyvern_GetGoldMineStop()
+    - TravelWyvern_GetIronspinePostStop()
     - TravelWyvern_GetVerdantPlainsStop()
     - TravelWyvern_GetAshfangOutpostStop()
     - TravelWyvern_GetSirensongStop()
-    - TravelWyvern_GetIronspinePostStop()
     - call TravelWyvern_DiscoverVerdantPlains(...)
 
 **/
@@ -50,11 +49,10 @@ library TravelWyvern initializer Init requires TravelSystem, TravelUI, optional 
         private integer array TW_FlightWaypoint
         private integer TW_ScoutBaseStop = 0
         private integer TW_LumberMillStop = 0
-        private integer TW_GoldMineStop = 0
+        private integer TW_IronspinePostStop = 0
         private integer TW_VerdantPlainsStop = 0
         private integer TW_AshfangOutpostStop = 0
         private integer TW_SirensongStop = 0
-        private integer TW_IronspinePostStop = 0
         private boolean TW_DiscoverVerdantOnInit = false
         private boolean TW_ShowVerdantDiscoveryOnInit = false
         private timer TW_InitTimer = null
@@ -103,8 +101,8 @@ library TravelWyvern initializer Init requires TravelSystem, TravelUI, optional 
         return TW_LumberMillStop
     endfunction
 
-    public function GetGoldMineStop takes nothing returns integer
-        return TW_GoldMineStop
+    public function GetIronspinePostStop takes nothing returns integer
+        return TW_IronspinePostStop
     endfunction
 
     public function GetVerdantPlainsStop takes nothing returns integer
@@ -117,10 +115,6 @@ library TravelWyvern initializer Init requires TravelSystem, TravelUI, optional 
 
     public function GetSirensongStop takes nothing returns integer
         return TW_SirensongStop
-    endfunction
-
-    public function GetIronspinePostStop takes nothing returns integer
-        return TW_IronspinePostStop
     endfunction
 
     public function DiscoverVerdantPlains takes boolean showMessage returns nothing
@@ -150,7 +144,7 @@ library TravelWyvern initializer Init requires TravelSystem, TravelUI, optional 
         local integer index = 1
 
         loop
-            exitwhen index > 7
+            exitwhen index > 6
             set TW_Waypoint[index] = TravelSystem_RegisterWaypoint(TravelSystem_GetStopX(TW_Stop[index]), TravelSystem_GetStopY(TW_Stop[index]))
             if TW_Waypoint[index] <= 0 then
                 return false
@@ -332,82 +326,67 @@ library TravelWyvern initializer Init requires TravelSystem, TravelUI, optional 
             endloop
             set startIndex = startIndex + 1
         endloop
-
-        // Ironspine connects only to the three supplied long-distance route sets.
-        call TW_CreateRoute(1, 7)
-        call TW_CreateRoute(7, 1)
-        call TW_CreateRoute(5, 7)
-        call TW_CreateRoute(7, 5)
-        call TW_CreateRoute(6, 7)
-        call TW_CreateRoute(7, 6)
     endfunction
 
     private function TW_TryInitialize takes nothing returns nothing
         local unit scoutMaster = TW_GetMaster(TRAVEL_WINDRIDER_MASTER_HORDE_SCOUT_BASE)
         local unit lumberMaster = TW_GetMaster(TRAVEL_WINDRIDER_MASTER_HORDE_LUMBER_MILL)
-        local unit goldMaster = TW_GetMaster(TRAVEL_WINDRIDER_MASTER_HORDE_GOLD_MINE)
+        local unit ironspineMaster = TW_GetMaster(TRAVEL_WINDRIDER_MASTER_IRONSPINE_POST)
         local unit verdantMaster = TW_GetMaster(TRAVEL_WINDRIDER_MASTER_VERDANT_PLAINS)
         local unit ashfangMaster = TW_GetMaster(TRAVEL_WINDRIDER_MASTER_ASHFANG_OUTPOST)
         local unit sirensongMaster = TW_GetMaster(TRAVEL_WINDRIDER_MASTER_SIRENSONG)
-        local unit ironspineMaster = TW_GetMaster(TRAVEL_WINDRIDER_MASTER_IRONSPINE_POST)
 
         if TW_Initialized then
             set scoutMaster = null
             set lumberMaster = null
-            set goldMaster = null
+            set ironspineMaster = null
             set verdantMaster = null
             set ashfangMaster = null
             set sirensongMaster = null
-            set ironspineMaster = null
             return
         endif
-        if scoutMaster == null or lumberMaster == null or goldMaster == null or verdantMaster == null or ashfangMaster == null or sirensongMaster == null or ironspineMaster == null then
+        if scoutMaster == null or lumberMaster == null or ironspineMaster == null or verdantMaster == null or ashfangMaster == null or sirensongMaster == null then
             call TimerStart(TW_InitTimer, 1.00, false, function TW_TryInitialize)
             set scoutMaster = null
             set lumberMaster = null
-            set goldMaster = null
+            set ironspineMaster = null
             set verdantMaster = null
             set ashfangMaster = null
             set sirensongMaster = null
-            set ironspineMaster = null
             return
         endif
 
         set TW_ScoutBaseStop = RegisterStation("Horde Scout Base", TW_ZONE_HORDE_SCOUT_BASE, scoutMaster, gg_rct_HordeScoutBaseWindRiderArea, TW_RectCenterX(gg_rct_FlyHere01), TW_RectCenterY(gg_rct_FlyHere01))
         set TW_LumberMillStop = RegisterStation("Horde Lumber Mill", 0, lumberMaster, gg_rct_HordeLumberMillWindRiderArea, TW_RectCenterX(gg_rct_FlyHere02), TW_RectCenterY(gg_rct_FlyHere02))
-        set TW_GoldMineStop = RegisterStation("Horde Gold Mine", 0, goldMaster, gg_rct_HordeGoldMineWindRiderArea, TW_RectCenterX(gg_rct_FlyHere03), TW_RectCenterY(gg_rct_FlyHere03))
+        set TW_IronspinePostStop = RegisterStation("Ironspine Post", TW_ZONE_IRONSPINE_POST, ironspineMaster, null, GetUnitX(ironspineMaster), GetUnitY(ironspineMaster))
         set TW_VerdantPlainsStop = RegisterStation("Verdant Plains", TW_ZONE_VERDANT_PLAINS, verdantMaster, null, GetUnitX(verdantMaster), GetUnitY(verdantMaster))
         set TW_AshfangOutpostStop = RegisterStation("Ashfang Outpost", TW_ZONE_ASHFANG_OUTPOST, ashfangMaster, null, GetUnitX(ashfangMaster), GetUnitY(ashfangMaster))
         set TW_SirensongStop = RegisterStation("Sirensong", TW_ZONE_SIRENSONG, sirensongMaster, null, GetUnitX(sirensongMaster), GetUnitY(sirensongMaster))
-        set TW_IronspinePostStop = RegisterStation("Ironspine Post", TW_ZONE_IRONSPINE_POST, ironspineMaster, null, GetUnitX(ironspineMaster), GetUnitY(ironspineMaster))
 
         set TW_Stop[1] = TW_ScoutBaseStop
         set TW_Stop[2] = TW_LumberMillStop
-        set TW_Stop[3] = TW_GoldMineStop
+        set TW_Stop[3] = TW_IronspinePostStop
         set TW_Stop[4] = TW_VerdantPlainsStop
         set TW_Stop[5] = TW_AshfangOutpostStop
         set TW_Stop[6] = TW_SirensongStop
-        set TW_Stop[7] = TW_IronspinePostStop
-        if TW_Stop[1] <= 0 or TW_Stop[2] <= 0 or TW_Stop[3] <= 0 or TW_Stop[4] <= 0 or TW_Stop[5] <= 0 or TW_Stop[6] <= 0 or TW_Stop[7] <= 0 then
+        if TW_Stop[1] <= 0 or TW_Stop[2] <= 0 or TW_Stop[3] <= 0 or TW_Stop[4] <= 0 or TW_Stop[5] <= 0 or TW_Stop[6] <= 0 then
             call TimerStart(TW_InitTimer, 1.00, false, function TW_TryInitialize)
             set scoutMaster = null
             set lumberMaster = null
-            set goldMaster = null
+            set ironspineMaster = null
             set verdantMaster = null
             set ashfangMaster = null
             set sirensongMaster = null
-            set ironspineMaster = null
             return
         endif
         if not TW_CreateWaypoints() then
             call TimerStart(TW_InitTimer, 1.00, false, function TW_TryInitialize)
             set scoutMaster = null
             set lumberMaster = null
-            set goldMaster = null
+            set ironspineMaster = null
             set verdantMaster = null
             set ashfangMaster = null
             set sirensongMaster = null
-            set ironspineMaster = null
             return
         endif
 
@@ -421,11 +400,10 @@ library TravelWyvern initializer Init requires TravelSystem, TravelUI, optional 
         set TW_InitTimer = null
         set scoutMaster = null
         set lumberMaster = null
-        set goldMaster = null
+        set ironspineMaster = null
         set verdantMaster = null
         set ashfangMaster = null
         set sirensongMaster = null
-        set ironspineMaster = null
     endfunction
 
     private function Init takes nothing returns nothing
