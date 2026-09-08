@@ -2,7 +2,7 @@
     qANightToRemember
 
     Author: Valdemar
-    Version: 2.4.0
+    Version: 2.4.1
 
     Description:
     Creates a repeatable, self-completing hangover quest. Each run asks the
@@ -209,14 +209,13 @@ endfunction
 
 private function NTR_CollectCompanyHeroes takes unit hangoverHero returns nothing
     local integer index = 1
-    local integer count = Companions_GetControlledDisplayCount()
     local unit candidate
 
     set NTR_CompanyHeroCount = 0
     loop
-        exitwhen index > count
-        set candidate = Companions_GetControlledDisplayUnit(index)
-        if NTR_CompanyHeroCount < NTR_MAX_COMPANY_HEROES and candidate != null and candidate != hangoverHero and DialogInteraction_IsUnitAlive(candidate) and IsUnitType(candidate, UNIT_TYPE_HERO) and AI_GetInstance(candidate) > 0 and udg_Companion_Group != null and IsUnitInGroup(candidate, udg_Companion_Group) then
+        exitwhen index > udg_CompanionCount
+        set candidate = udg_CompanionUnit[index]
+        if NTR_CompanyHeroCount < NTR_MAX_COMPANY_HEROES and candidate != null and candidate != hangoverHero and DialogInteraction_IsUnitAlive(candidate) and not IsUnitHidden(candidate) and IsUnitType(candidate, UNIT_TYPE_HERO) and AI_GetInstance(candidate) > 0 and udg_Companion_Group != null and IsUnitInGroup(candidate, udg_Companion_Group) then
             set NTR_CompanyHeroCount = NTR_CompanyHeroCount + 1
             set NTR_CompanyHero[NTR_CompanyHeroCount] = candidate
         endif

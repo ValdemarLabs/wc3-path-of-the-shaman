@@ -2,7 +2,7 @@
     Drunk
 
     Author: Valdemar
-    Version: 2.5.1
+    Version: 2.5.2
 
     Description:
     Handles drunken visuals, camera sway, movement/casting mishaps, puking,
@@ -84,7 +84,7 @@ globals
     private constant real D_PASSOUT_MIN_LEVEL = 0.45
     private constant real D_PASSOUT_BASE_CHANCE = 0.50
     private constant real D_PASSOUT_MAX_CHANCE = 60.00
-    private constant real D_PASSOUT_FADE_OUT = 2.00
+    private constant real D_PASSOUT_FADE_OUT = 4.00
     private constant real D_PASSOUT_BLACK_HOLD = 5.00
     private constant real D_PASSOUT_FADE_IN = 2.00
     private constant real D_PASSOUT_SLEEP_AFTER_FADE = 3.00
@@ -298,17 +298,20 @@ private function D_GetOtherPlayerHero takes unit subject returns unit
     return null
 endfunction
 
+private function D_IsEligibleCompanyResponder takes unit subject, unit candidate returns boolean
+    return candidate != null and candidate != subject and udg_Companion_Group != null and IsUnitInGroup(candidate, udg_Companion_Group) and AI_GetInstance(candidate) > 0 and IsUnitType(candidate, UNIT_TYPE_HERO) and D_IsUnitAlive(candidate) and not IsUnitHidden(candidate) and IsUnitInRange(candidate, subject, D_REACTION_RANGE)
+endfunction
+
 private function D_GetRandomCompanyResponder takes unit subject returns unit
     local integer index = 1
-    local integer count = Companions_GetControlledDisplayCount()
     local integer seen = 0
     local unit candidate
     local unit selected = null
 
     loop
-        exitwhen index > count
-        set candidate = Companions_GetControlledDisplayUnit(index)
-        if candidate != null and candidate != subject and AI_GetInstance(candidate) > 0 and IsUnitType(candidate, UNIT_TYPE_HERO) and D_IsUnitAlive(candidate) and IsUnitInRange(candidate, subject, D_REACTION_RANGE) then
+        exitwhen index > udg_CompanionCount
+        set candidate = udg_CompanionUnit[index]
+        if D_IsEligibleCompanyResponder(subject, candidate) then
             set seen = seen + 1
             if GetRandomInt(1, seen) == 1 then
                 set selected = candidate
@@ -351,9 +354,9 @@ private function D_PlayReaction takes unit subject, boolean passOut returns noth
             set responder1 = otherHero
         endif
         loop
-            exitwhen index > Companions_GetControlledDisplayCount()
-            set candidate = Companions_GetControlledDisplayUnit(index)
-            if candidate != null and candidate != subject and AI_GetInstance(candidate) > 0 and IsUnitType(candidate, UNIT_TYPE_HERO) and D_IsUnitAlive(candidate) and IsUnitInRange(candidate, subject, D_REACTION_RANGE) then
+            exitwhen index > udg_CompanionCount
+            set candidate = udg_CompanionUnit[index]
+            if D_IsEligibleCompanyResponder(subject, candidate) then
                 set count = count + 1
                 if count == 1 then
                     set responder1 = candidate
@@ -428,7 +431,11 @@ private function D_ShowLevelNotice takes unit whichUnit, integer oldLevel, integ
     if unitId <= 0 or newLevel <= oldLevel or band <= D_LastNoticeBand[unitId] or GetOwningPlayer(whichUnit) != Player(0) or not D_IsPlayerPartyUnit(whichUnit) then
         return
     endif
-    set unitName = GetUnitName(whichUnit)
+    if IsUnitType(whichUnit, UNIT_TYPE_HERO) then
+        set unitName = GetHeroProperName(whichUnit)
+    else
+        set unitName = GetUnitName(whichUnit)
+    endif
     if band == 1 then
         set message = unitName + " is feeling light-headed."
     elseif band == 2 then
