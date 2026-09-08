@@ -2,7 +2,7 @@
     TravelSystem
 
     Author: Valdemar
-    Version: 1.1.1
+    Version: 1.1.2
 
     Description:
     Configurable travel-stop, route, passenger, discovery, movement, camera,
@@ -25,6 +25,7 @@
     - udg_WindRiderMaster[4] = Verdant Plains neutral master, Ursa 2424 (active).
     - udg_WindRiderMaster[5] = Ashfang Outpost master, unit 1978 (active).
     - udg_WindRiderMaster[6] = Sirensong Wind Rider Master 1239 (active).
+    - udg_WindRiderMaster[7] = Ironspine Post Wind Rider Master (assign in Init Travel Units).
     - udg_FlightMaster[1] = Sereneglade Flightmaster 2617 (active).
     - udg_FlightMaster[2] = Sirensong Shipmaster 0613 (active).
     - udg_Shipmaster[1] = Mok'natha Shipmaster 0996 (active).
@@ -95,6 +96,7 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         constant integer TRAVEL_WINDRIDER_MASTER_VERDANT_PLAINS = 4
         constant integer TRAVEL_WINDRIDER_MASTER_ASHFANG_OUTPOST = 5
         constant integer TRAVEL_WINDRIDER_MASTER_SIRENSONG = 6
+        constant integer TRAVEL_WINDRIDER_MASTER_IRONSPINE_POST = 7
 
         constant integer TRAVEL_FLIGHT_MASTER_SERENEGLADE = 1
         constant integer TRAVEL_FLIGHT_MASTER_SIRENSONG = 2
@@ -270,7 +272,7 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
     // Central World Editor unit binding access. Method libraries must use these
     // getters instead of depending directly on udg_* globals.
     public function GetWindRiderMaster takes integer index returns unit
-        if index < 1 or index > 6 then
+        if index < 1 or index > 7 then
             return null
         endif
         return udg_WindRiderMaster[index]
@@ -348,7 +350,7 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         local integer index = 1
 
         loop
-            exitwhen index > 6
+            exitwhen index > 7
             call TS_RegisterMasterEffect(GetWindRiderMaster(index))
             set index = index + 1
         endloop

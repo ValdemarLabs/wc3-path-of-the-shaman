@@ -2,10 +2,10 @@
     TravelWyvern
 
     Author: Valdemar
-    Version: 1.1.2
+    Version: 1.2.0
 
     Description:
-    Registers all six placed Wind Rider Masters and the directed flight
+    Registers all seven configured Wind Rider Masters and the directed flight
     network between them. Temporary wyvern and bat carriers are configured
     here while TravelSystem owns flight presentation and movement.
 
@@ -14,7 +14,7 @@
 
     How to install:
     Import after TravelSystem and TravelUI. Keep the three legacy boarding
-    areas, FlyHere rects, and configured FPRoute rects. Masters 4..6 use their
+    areas, FlyHere rects, and configured FPRoute rects. Masters 4..7 use their
     placed unit positions.
 
     API:
@@ -27,6 +27,7 @@
     - TravelWyvern_GetVerdantPlainsStop()
     - TravelWyvern_GetAshfangOutpostStop()
     - TravelWyvern_GetSirensongStop()
+    - TravelWyvern_GetIronspinePostStop()
     - call TravelWyvern_DiscoverVerdantPlains(...)
 
 **/
@@ -36,6 +37,7 @@ library TravelWyvern initializer Init requires TravelSystem, TravelUI, optional 
         private constant integer TW_ZONE_VERDANT_PLAINS = 17
         private constant integer TW_ZONE_ASHFANG_OUTPOST = 401
         private constant integer TW_ZONE_SIRENSONG = 14
+        private constant integer TW_ZONE_IRONSPINE_POST = 1901
         private constant integer TW_LEGACY_FARE = 350
         private constant integer TW_SKIP_FEE = 100
         private constant integer TW_NAZGREK_CARRIER = 'o60L'
@@ -52,6 +54,7 @@ library TravelWyvern initializer Init requires TravelSystem, TravelUI, optional 
         private integer TW_VerdantPlainsStop = 0
         private integer TW_AshfangOutpostStop = 0
         private integer TW_SirensongStop = 0
+        private integer TW_IronspinePostStop = 0
         private boolean TW_DiscoverVerdantOnInit = false
         private boolean TW_ShowVerdantDiscoveryOnInit = false
         private timer TW_InitTimer = null
@@ -116,6 +119,10 @@ library TravelWyvern initializer Init requires TravelSystem, TravelUI, optional 
         return TW_SirensongStop
     endfunction
 
+    public function GetIronspinePostStop takes nothing returns integer
+        return TW_IronspinePostStop
+    endfunction
+
     public function DiscoverVerdantPlains takes boolean showMessage returns nothing
         if TW_VerdantPlainsStop > 0 then
             call TravelSystem_DiscoverStop(TW_VerdantPlainsStop, showMessage)
@@ -143,7 +150,7 @@ library TravelWyvern initializer Init requires TravelSystem, TravelUI, optional 
         local integer index = 1
 
         loop
-            exitwhen index > 6
+            exitwhen index > 7
             set TW_Waypoint[index] = TravelSystem_RegisterWaypoint(TravelSystem_GetStopX(TW_Stop[index]), TravelSystem_GetStopY(TW_Stop[index]))
             if TW_Waypoint[index] <= 0 then
                 return false
@@ -179,10 +186,23 @@ library TravelWyvern initializer Init requires TravelSystem, TravelUI, optional 
         call TW_RegisterFlightWaypoint(26, gg_rct_FPRoute026)
         call TW_RegisterFlightWaypoint(27, gg_rct_FPRoute027)
         call TW_RegisterFlightWaypoint(28, gg_rct_FPRoute028)
+        call TW_RegisterFlightWaypoint(29, gg_rct_FPRoute029)
+        call TW_RegisterFlightWaypoint(34, gg_rct_FPRoute034)
+        call TW_RegisterFlightWaypoint(35, gg_rct_FPRoute035)
+        call TW_RegisterFlightWaypoint(36, gg_rct_FPRoute036)
+        call TW_RegisterFlightWaypoint(37, gg_rct_FPRoute037)
 
         set index = 1
         loop
-            exitwhen index > 28
+            exitwhen index > 29
+            if TW_FlightWaypoint[index] <= 0 then
+                return false
+            endif
+            set index = index + 1
+        endloop
+        set index = 34
+        loop
+            exitwhen index > 37
             if TW_FlightWaypoint[index] <= 0 then
                 return false
             endif
@@ -207,13 +227,27 @@ library TravelWyvern initializer Init requires TravelSystem, TravelUI, optional 
         return true
     endfunction
 
+    private function TW_AddIronspineApproach takes integer routeId returns boolean
+        if not TW_AddWaypointRange(routeId, 29, 29) then
+            return false
+        endif
+        return TW_AddWaypointRange(routeId, 34, 37)
+    endfunction
+
+    private function TW_AddIronspineDeparture takes integer routeId returns boolean
+        if not TW_AddWaypointRange(routeId, 37, 34) then
+            return false
+        endif
+        return TW_AddWaypointRange(routeId, 29, 29)
+    endfunction
+
     private function TW_AddConfiguredRouteWaypoints takes integer routeId, integer startStop, integer endStop returns boolean
         if startStop == TW_SirensongStop and endStop == TW_ScoutBaseStop then
             return TW_AddWaypointRange(routeId, 1, 19)
         elseif startStop == TW_ScoutBaseStop and endStop == TW_SirensongStop then
             return TW_AddWaypointRange(routeId, 19, 1)
         elseif startStop == TW_ScoutBaseStop and endStop == TW_AshfangOutpostStop then
-            if not TW_AddWaypointRange(routeId, 19, 15) then
+            if not TW_AddWaypointRange(routeId, 19, 16) then
                 return false
             endif
             return TW_AddWaypointRange(routeId, 20, 28)
@@ -221,12 +255,9 @@ library TravelWyvern initializer Init requires TravelSystem, TravelUI, optional 
             if not TW_AddWaypointRange(routeId, 28, 20) then
                 return false
             endif
-            return TW_AddWaypointRange(routeId, 15, 19)
+            return TW_AddWaypointRange(routeId, 16, 19)
         elseif startStop == TW_SirensongStop and endStop == TW_AshfangOutpostStop then
-            if not TW_AddWaypointRange(routeId, 1, 19) then
-                return false
-            endif
-            if not TW_AddWaypointRange(routeId, 18, 15) then
+            if not TW_AddWaypointRange(routeId, 1, 15) then
                 return false
             endif
             return TW_AddWaypointRange(routeId, 20, 28)
@@ -234,19 +265,73 @@ library TravelWyvern initializer Init requires TravelSystem, TravelUI, optional 
             if not TW_AddWaypointRange(routeId, 28, 20) then
                 return false
             endif
-            if not TW_AddWaypointRange(routeId, 15, 19) then
+            return TW_AddWaypointRange(routeId, 15, 1)
+        elseif startStop == TW_SirensongStop and endStop == TW_IronspinePostStop then
+            if not TW_AddWaypointRange(routeId, 1, 7) then
                 return false
             endif
-            return TW_AddWaypointRange(routeId, 18, 1)
+            return TW_AddIronspineApproach(routeId)
+        elseif startStop == TW_IronspinePostStop and endStop == TW_SirensongStop then
+            if not TW_AddIronspineDeparture(routeId) then
+                return false
+            endif
+            return TW_AddWaypointRange(routeId, 7, 1)
+        elseif startStop == TW_AshfangOutpostStop and endStop == TW_IronspinePostStop then
+            if not TW_AddWaypointRange(routeId, 28, 20) then
+                return false
+            endif
+            if not TW_AddWaypointRange(routeId, 15, 7) then
+                return false
+            endif
+            return TW_AddIronspineApproach(routeId)
+        elseif startStop == TW_IronspinePostStop and endStop == TW_AshfangOutpostStop then
+            if not TW_AddIronspineDeparture(routeId) then
+                return false
+            endif
+            if not TW_AddWaypointRange(routeId, 7, 15) then
+                return false
+            endif
+            return TW_AddWaypointRange(routeId, 20, 28)
+        elseif startStop == TW_ScoutBaseStop and endStop == TW_IronspinePostStop then
+            if not TW_AddWaypointRange(routeId, 19, 18) then
+                return false
+            endif
+            if not TW_AddWaypointRange(routeId, 16, 7) then
+                return false
+            endif
+            return TW_AddIronspineApproach(routeId)
+        elseif startStop == TW_IronspinePostStop and endStop == TW_ScoutBaseStop then
+            if not TW_AddIronspineDeparture(routeId) then
+                return false
+            endif
+            if not TW_AddWaypointRange(routeId, 7, 16) then
+                return false
+            endif
+            return TW_AddWaypointRange(routeId, 18, 19)
         endif
         return true
+    endfunction
+
+    private function TW_CreateRoute takes integer startIndex, integer endIndex returns nothing
+        local integer fare = TW_LEGACY_FARE
+        local integer routeId
+
+        if endIndex == TRAVEL_WINDRIDER_MASTER_HORDE_SCOUT_BASE then
+            set fare = 0
+        endif
+        set routeId = RegisterDirectedRoute(TW_Stop[startIndex], TW_Stop[endIndex], fare)
+        if routeId > 0 then
+            // Keep the stop drop point last so the carrier lands after all route rects.
+            if not TW_AddConfiguredRouteWaypoints(routeId, TW_Stop[startIndex], TW_Stop[endIndex]) or not TravelSystem_AddRegisteredWaypoint(routeId, TW_Waypoint[endIndex], 0) then
+                call TravelSystem_SetRouteEnabled(routeId, false)
+                call BJDebugMsg("|cffff8080[TravelWyvern] Failed to build route " + I2S(startIndex) + " -> " + I2S(endIndex) + ".|r")
+            endif
+        endif
     endfunction
 
     private function TW_CreateNetwork takes nothing returns nothing
         local integer startIndex = 1
         local integer endIndex
-        local integer fare
-        local integer routeId
 
         loop
             exitwhen startIndex > 6
@@ -254,23 +339,20 @@ library TravelWyvern initializer Init requires TravelSystem, TravelUI, optional 
             loop
                 exitwhen endIndex > 6
                 if startIndex != endIndex then
-                    set fare = TW_LEGACY_FARE
-                    if endIndex == TRAVEL_WINDRIDER_MASTER_HORDE_SCOUT_BASE then
-                        set fare = 0
-                    endif
-                    set routeId = RegisterDirectedRoute(TW_Stop[startIndex], TW_Stop[endIndex], fare)
-                    if routeId > 0 then
-                        // Keep the stop drop point last so the carrier lands after all route rects.
-                        if not TW_AddConfiguredRouteWaypoints(routeId, TW_Stop[startIndex], TW_Stop[endIndex]) or not TravelSystem_AddRegisteredWaypoint(routeId, TW_Waypoint[endIndex], 0) then
-                            call TravelSystem_SetRouteEnabled(routeId, false)
-                            call BJDebugMsg("|cffff8080[TravelWyvern] Failed to build route " + I2S(startIndex) + " -> " + I2S(endIndex) + ".|r")
-                        endif
-                    endif
+                    call TW_CreateRoute(startIndex, endIndex)
                 endif
                 set endIndex = endIndex + 1
             endloop
             set startIndex = startIndex + 1
         endloop
+
+        // Ironspine connects only to the three supplied long-distance route sets.
+        call TW_CreateRoute(1, 7)
+        call TW_CreateRoute(7, 1)
+        call TW_CreateRoute(5, 7)
+        call TW_CreateRoute(7, 5)
+        call TW_CreateRoute(6, 7)
+        call TW_CreateRoute(7, 6)
     endfunction
 
     private function TW_TryInitialize takes nothing returns nothing
@@ -280,6 +362,7 @@ library TravelWyvern initializer Init requires TravelSystem, TravelUI, optional 
         local unit verdantMaster = TW_GetMaster(TRAVEL_WINDRIDER_MASTER_VERDANT_PLAINS)
         local unit ashfangMaster = TW_GetMaster(TRAVEL_WINDRIDER_MASTER_ASHFANG_OUTPOST)
         local unit sirensongMaster = TW_GetMaster(TRAVEL_WINDRIDER_MASTER_SIRENSONG)
+        local unit ironspineMaster = TW_GetMaster(TRAVEL_WINDRIDER_MASTER_IRONSPINE_POST)
 
         if TW_Initialized then
             set scoutMaster = null
@@ -288,9 +371,10 @@ library TravelWyvern initializer Init requires TravelSystem, TravelUI, optional 
             set verdantMaster = null
             set ashfangMaster = null
             set sirensongMaster = null
+            set ironspineMaster = null
             return
         endif
-        if scoutMaster == null or lumberMaster == null or goldMaster == null or verdantMaster == null or ashfangMaster == null or sirensongMaster == null then
+        if scoutMaster == null or lumberMaster == null or goldMaster == null or verdantMaster == null or ashfangMaster == null or sirensongMaster == null or ironspineMaster == null then
             call TimerStart(TW_InitTimer, 1.00, false, function TW_TryInitialize)
             set scoutMaster = null
             set lumberMaster = null
@@ -298,6 +382,7 @@ library TravelWyvern initializer Init requires TravelSystem, TravelUI, optional 
             set verdantMaster = null
             set ashfangMaster = null
             set sirensongMaster = null
+            set ironspineMaster = null
             return
         endif
 
@@ -307,6 +392,7 @@ library TravelWyvern initializer Init requires TravelSystem, TravelUI, optional 
         set TW_VerdantPlainsStop = RegisterStation("Verdant Plains", TW_ZONE_VERDANT_PLAINS, verdantMaster, null, GetUnitX(verdantMaster), GetUnitY(verdantMaster))
         set TW_AshfangOutpostStop = RegisterStation("Ashfang Outpost", TW_ZONE_ASHFANG_OUTPOST, ashfangMaster, null, GetUnitX(ashfangMaster), GetUnitY(ashfangMaster))
         set TW_SirensongStop = RegisterStation("Sirensong", TW_ZONE_SIRENSONG, sirensongMaster, null, GetUnitX(sirensongMaster), GetUnitY(sirensongMaster))
+        set TW_IronspinePostStop = RegisterStation("Ironspine Post", TW_ZONE_IRONSPINE_POST, ironspineMaster, null, GetUnitX(ironspineMaster), GetUnitY(ironspineMaster))
 
         set TW_Stop[1] = TW_ScoutBaseStop
         set TW_Stop[2] = TW_LumberMillStop
@@ -314,7 +400,8 @@ library TravelWyvern initializer Init requires TravelSystem, TravelUI, optional 
         set TW_Stop[4] = TW_VerdantPlainsStop
         set TW_Stop[5] = TW_AshfangOutpostStop
         set TW_Stop[6] = TW_SirensongStop
-        if TW_Stop[1] <= 0 or TW_Stop[2] <= 0 or TW_Stop[3] <= 0 or TW_Stop[4] <= 0 or TW_Stop[5] <= 0 or TW_Stop[6] <= 0 then
+        set TW_Stop[7] = TW_IronspinePostStop
+        if TW_Stop[1] <= 0 or TW_Stop[2] <= 0 or TW_Stop[3] <= 0 or TW_Stop[4] <= 0 or TW_Stop[5] <= 0 or TW_Stop[6] <= 0 or TW_Stop[7] <= 0 then
             call TimerStart(TW_InitTimer, 1.00, false, function TW_TryInitialize)
             set scoutMaster = null
             set lumberMaster = null
@@ -322,6 +409,7 @@ library TravelWyvern initializer Init requires TravelSystem, TravelUI, optional 
             set verdantMaster = null
             set ashfangMaster = null
             set sirensongMaster = null
+            set ironspineMaster = null
             return
         endif
         if not TW_CreateWaypoints() then
@@ -332,6 +420,7 @@ library TravelWyvern initializer Init requires TravelSystem, TravelUI, optional 
             set verdantMaster = null
             set ashfangMaster = null
             set sirensongMaster = null
+            set ironspineMaster = null
             return
         endif
 
@@ -349,6 +438,7 @@ library TravelWyvern initializer Init requires TravelSystem, TravelUI, optional 
         set verdantMaster = null
         set ashfangMaster = null
         set sirensongMaster = null
+        set ironspineMaster = null
     endfunction
 
     private function Init takes nothing returns nothing

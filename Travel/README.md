@@ -38,15 +38,19 @@ shared getters documented in `TravelSystem.j`.
 
 ## Existing map content
 
-- `TravelWyvern.j` binds all six `WindRiderMaster` units. Masters 4, 5, and 6
-  are Verdant Plains, Ashfang Outpost, and Sirensong respectively and use their
-  placed unit positions. All 30 directed routes between the six stations are
-  registered; destination discovery remains required for player travel.
+- `TravelWyvern.j` binds all seven `WindRiderMaster` units. Masters 4 through 7
+  are Verdant Plains, Ashfang Outpost, Sirensong, and Ironspine Post respectively
+  and use their placed unit positions. All 30 directed routes between the original
+  six stations are registered, plus the six directed Ironspine routes connecting
+  it with Horde Scout Base, Ashfang Outpost, and Sirensong; destination discovery
+  remains required for player travel.
   Sirensong-Horde Scout Base uses `gg_rct_FPRoute001` through
   `gg_rct_FPRoute019`. Horde Scout Base-Ashfang Outpost follows shared points
-  019 down through 015 and then points 020 through 028. Reverse flights traverse
-  each sequence in reverse order. Direct Sirensong-Ashfang flights stitch both
-  chains together through Horde Scout Base, and every configured route still
+  019 through 016 and then points 020 through 028. Direct Sirensong-Ashfang
+  flights use points 001 through 015 before continuing through 020 to 028, so
+  they no longer enter the Scout Base spur. Ironspine routes branch from point
+  007 through 029 and 034 through 037. Reverse flights traverse the corresponding
+  pair-specific sequence in reverse order, and every configured route still
   appends its destination drop point after the final route rect.
 - `TravelShipA.j` owns the 64-point Sirensong-Dawnhold-Stormhaven neutral-ship
   loop. It pauses at both passes through `gg_rct_SirensongShip012`, and uses the
@@ -101,7 +105,7 @@ route with its own start stop, end stop, fare, vehicle configuration, and ordere
 waypoint list. `TravelSystem_AddWaypoint` appends middle points; the final point
 is normally the destination drop position. Reusable coordinates can be created
 once with `TravelSystem_RegisterWaypoint` and attached to any number of routes
-with `TravelSystem_AddRegisteredWaypoint`; all six wyvern destinations use this
+with `TravelSystem_AddRegisteredWaypoint`; all seven wyvern destinations use this
 shared-point API. Wyvern routes create temporary
 Player(5) flying carriers. Zeppelin routes use the placed Zeppelin A/B units.
 AI route selection includes both methods and deliberately does not read player
