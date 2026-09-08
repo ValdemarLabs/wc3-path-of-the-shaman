@@ -2,7 +2,7 @@
     qOutcastJinzun
 
     Author: Valdemar
-    Version: 1.1.3
+    Version: 1.1.4
 
     Description:
     Quest, dialogue, patrol, fishing, ward-placement, tree-restoration, and
@@ -59,6 +59,7 @@ library qOutcastJinzun initializer Init requires qVelyssara, QuestGiver, QuestMa
         private constant real DIALOG_COOLDOWN = 6.00
         private constant real DIALOG_FADE_OUT = 1.00
         private constant real DIALOG_FADE_IN = 1.00
+        private constant real DIALOG_EXIT_RESUME_DELAY = 2.10
         private constant boolean ALLOW_NAZGREK = true
         private constant boolean ALLOW_ZULKIS = false
         private constant boolean USE_DIALOG_CAMERA = true
@@ -95,13 +96,13 @@ library qOutcastJinzun initializer Init requires qVelyssara, QuestGiver, QuestMa
         private constant integer ACTION_COMPLETE_FISHING = 13
         private constant integer ACTION_RECOVER_WARDS = 14
         private constant integer ACTION_RECOVER_SEEDS = 15
-        private constant integer ACTION_DECLINE = 16
 
         private unit Jinzun = null
         private unit Nazgrek = null
         private unit SelectedHero = null
         private dialog JinzunDialog = null
         private timer JinzunDialogCooldown = null
+        private timer JinzunPatrolResumeTimer = null
         private timer QuestPingTimer = null
         private timer FishingBehaviorTimer = null
         private trigger WardDropTrigger = null
@@ -324,9 +325,18 @@ library qOutcastJinzun initializer Init requires qVelyssara, QuestGiver, QuestMa
         endif
     endfunction
 
-    private function StartExitFadeOut takes nothing returns nothing
+    private function OnPatrolResumeTimer takes nothing returns nothing
         call ContinuePatrol()
+    endfunction
+
+    private function StartExitFadeOut takes nothing returns nothing
+        call TimerStart(JinzunPatrolResumeTimer, DIALOG_EXIT_RESUME_DELAY, false, function OnPatrolResumeTimer)
         call DialogInteraction_StartConfiguredDialogExitTransition(Jinzun, SelectedHero, JinzunDialogCooldown, DIALOG_COOLDOWN, USE_DIALOG_CAMERA, CINEMATIC)
+    endfunction
+
+    private function OnJinzunEscape takes nothing returns nothing
+        call DialogInteraction_RunDefaultEscape()
+        call ContinuePatrol()
     endfunction
 
     private function IsPlayerHeroNearJinzun takes real range returns boolean
@@ -867,40 +877,6 @@ library qOutcastJinzun initializer Init requires qVelyssara, QuestGiver, QuestMa
         call DialogSystem_PlaySequence(seq, Player(0), Jinzun)
     endfunction
 
-    private function HasAvailableQuest takes nothing returns boolean
-        return QuestGiver_GetStateByNameAndGiver(QUEST_PLAGUE_TREES, Jinzun) == QUEST_STATE_AVAILABLE or QuestGiver_GetStateByNameAndGiver(QUEST_LURKING_SHADOWS, Jinzun) == QUEST_STATE_AVAILABLE or QuestGiver_GetStateByNameAndGiver(QUEST_UNKNOWN_ENTITY, Jinzun) == QUEST_STATE_AVAILABLE or QuestGiver_GetStateByNameAndGiver(QUEST_SEEDS_LIFE, Jinzun) == QUEST_STATE_AVAILABLE or QuestGiver_GetStateByNameAndGiver(QUEST_RESURGENCE_DEAD_1, Jinzun) == QUEST_STATE_AVAILABLE or QuestGiver_GetStateByNameAndGiver(QUEST_FISHING_POLE, Jinzun) == QUEST_STATE_AVAILABLE
-    endfunction
-
-    private function OnDeclineEnd takes nothing returns nothing
-        call StartExitFadeOut()
-    endfunction
-
-    private function OnDecline takes nothing returns nothing
-        local integer seq
-        call DialogInteraction_BeginDialogSequence()
-        set seq = DialogInteraction_CreateBaseSequence(Jinzun, JINZUN_NAME)
-        if QuestGiver_GetStateByNameAndGiver(QUEST_PLAGUE_TREES, Jinzun) == QUEST_STATE_AVAILABLE then
-            call DialogInteraction_AddHeroLookAtLine(seq, SelectedHero, Jinzun, VL_NAZGREK_0029_TEXT, VL_NAZGREK_0029_KEY)
-            call DialogSystem_AddLine(seq, Jinzun, JINZUN_NAME, VL_JINZUN_0018_TEXT, VL_JINZUN_0018_KEY, true)
-        elseif QuestGiver_GetStateByNameAndGiver(QUEST_LURKING_SHADOWS, Jinzun) == QUEST_STATE_AVAILABLE then
-            call DialogInteraction_AddHeroLookAtLine(seq, SelectedHero, Jinzun, VL_NAZGREK_0052_TEXT, VL_NAZGREK_0052_KEY)
-            call DialogSystem_AddLine(seq, Jinzun, JINZUN_NAME, VL_JINZUN_0051_TEXT, VL_JINZUN_0051_KEY, true)
-        elseif QuestGiver_GetStateByNameAndGiver(QUEST_UNKNOWN_ENTITY, Jinzun) == QUEST_STATE_AVAILABLE then
-            call DialogInteraction_AddHeroLookAtLine(seq, SelectedHero, Jinzun, VL_NAZGREK_0041_TEXT, VL_NAZGREK_0041_KEY)
-            call DialogSystem_AddLine(seq, Jinzun, JINZUN_NAME, VL_JINZUN_0034_TEXT, VL_JINZUN_0034_KEY, true)
-        elseif QuestGiver_GetStateByNameAndGiver(QUEST_SEEDS_LIFE, Jinzun) == QUEST_STATE_AVAILABLE then
-            call DialogSystem_AddLine(seq, Jinzun, JINZUN_NAME, VL_JINZUN_0126_TEXT, VL_JINZUN_0126_KEY, true)
-        elseif QuestGiver_GetStateByNameAndGiver(QUEST_RESURGENCE_DEAD_1, Jinzun) == QUEST_STATE_AVAILABLE then
-            call DialogInteraction_AddHeroLookAtLine(seq, SelectedHero, Jinzun, VL_NAZGREK_0105_TEXT, VL_NAZGREK_0105_KEY)
-            call DialogSystem_AddLine(seq, Jinzun, JINZUN_NAME, VL_JINZUN_0074_TEXT, VL_JINZUN_0074_KEY, true)
-        else
-            call DialogInteraction_AddHeroLookAtLine(seq, SelectedHero, Jinzun, VL_NAZGREK_0224_TEXT, VL_NAZGREK_0224_KEY)
-            call DialogSystem_AddLine(seq, Jinzun, JINZUN_NAME, VL_JINZUN_0114_TEXT, VL_JINZUN_0114_KEY, true)
-        endif
-        call DialogSystem_SetSequenceCallbacks(seq, null, function OnDeclineEnd)
-        call DialogSystem_PlaySequence(seq, Player(0), Jinzun)
-    endfunction
-
     private function OnFarewellEnd takes nothing returns nothing
         call StartExitFadeOut()
     endfunction
@@ -969,10 +945,6 @@ library qOutcastJinzun initializer Init requires qVelyssara, QuestGiver, QuestMa
         call QuestGiver_AddAvailableQuestAcceptButton(JinzunDialog, QUEST_FISHING_POLE, Jinzun, ACTION_ACCEPT_FISHING, function OnAcceptFishing, true, false)
         call QuestGiver_AddReadyQuestCompleteButton(JinzunDialog, QUEST_FISHING_POLE, Jinzun, ACTION_COMPLETE_FISHING, function OnCompleteFishing, true)
 
-        if HasAvailableQuest() then
-            set b = DialogSystem_AddButtonDecline(JinzunDialog, ACTION_DECLINE)
-            call DialogSystem_BindButtonCode(b, function OnDecline)
-        endif
         set b = DialogSystem_AddFarewellButton(JinzunDialog)
         call DialogSystem_BindButtonCode(b, function OnFarewell)
         set b = null
@@ -1039,6 +1011,7 @@ library qOutcastJinzun initializer Init requires qVelyssara, QuestGiver, QuestMa
             return
         endif
         call BuildDialog()
+        call DialogSystem_SetEscapeAction(function OnJinzunEscape)
         set seq = DialogInteraction_CreateGreetSequenceBase(Jinzun, JINZUN_NAME, hero, DIALOG_FADE_OUT, DIALOG_FADE_IN, true)
         call AddPreDialogBark(seq)
         call DialogInteraction_PlayGreetSequenceEx(seq, Jinzun, Player(0), JinzunDialog, CINEMATIC)
@@ -1264,6 +1237,7 @@ library qOutcastJinzun initializer Init requires qVelyssara, QuestGiver, QuestMa
 
     private function Init takes nothing returns nothing
         set JinzunDialogCooldown = CreateTimer()
+        set JinzunPatrolResumeTimer = CreateTimer()
         set QuestPingTimer = CreateTimer()
         set FishingBehaviorTimer = CreateTimer()
         call TimerStart(QuestPingTimer, 60.00, true, function OnQuestPing)
