@@ -2,7 +2,7 @@
     Companions
 
     Author: Valdemar
-    Version: 1.1.2
+    Version: 1.1.3
 
     Description:
     Companion party registration, information, idle state, and control-mode
@@ -88,8 +88,6 @@ globals
     private constant real COMPANION_NORMAL_CATCHUP_DISTANCE = 600.00
     private constant real COMPANION_POST_COMBAT_RETURN_DISTANCE = 350.00
     private constant real COMPANION_AGGRESSIVE_CATCHUP_DISTANCE = 1800.00
-    private constant real COMPANION_NORMAL_MIN_OFFSET = 100.00
-    private constant real COMPANION_NORMAL_MAX_OFFSET = 300.00
     private constant real COMPANION_AGGRESSIVE_MIN_OFFSET = 400.00
     private constant real COMPANION_AGGRESSIVE_MAX_OFFSET = 1800.00
     private constant real COMPANION_RANDOM_MOVE_MIN_DELAY = 3.00
@@ -179,6 +177,7 @@ globals
     private Table CompanionTracked = 0
     private Table CompanionOrderProfile = 0
     private Table CompanionNextRandomMove = 0
+    private Table CompanionRandomMoveOrder = 0
     private Table CompanionNextAssistOrder = 0
     private Table CompanionAssistTarget = 0
     private Table LeaderAttackTarget = 0
@@ -274,6 +273,7 @@ private function EnsureState takes nothing returns nothing
         set CompanionTracked = Table.create()
         set CompanionOrderProfile = Table.create()
         set CompanionNextRandomMove = Table.create()
+        set CompanionRandomMoveOrder = Table.create()
         set CompanionNextAssistOrder = Table.create()
         set CompanionAssistTarget = Table.create()
         set LeaderAttackTarget = Table.create()
@@ -513,12 +513,6 @@ endfunction
 private function RemoveWanderAbility takes unit u returns nothing
     if u != null and GetUnitAbilityLevel(u, ABIL_WANDER_NEUTRAL) > 0 then
         call UnitRemoveAbility(u, ABIL_WANDER_NEUTRAL)
-    endif
-endfunction
-
-private function AddWanderAbility takes unit u returns nothing
-    if u != null and GetUnitAbilityLevel(u, ABIL_WANDER_NEUTRAL) == 0 then
-        call UnitAddAbility(u, ABIL_WANDER_NEUTRAL)
     endif
 endfunction
 
@@ -985,10 +979,6 @@ private function IsUnitInCombatByCustomValue takes integer customValue returns b
     return customValue > 0 and udg_GCSM_UnitInCombat[customValue]
 endfunction
 
-private function IsUnitIdleByCustomValue takes integer customValue returns boolean
-    return customValue > 0 and udg_CompanionUnitIdle[customValue]
-endfunction
-
 private function IsAliveByCustomValue takes unit controlledUnit, integer customValue returns boolean
     if customValue <= 0 then
         return IsAliveUnit(controlledUnit)
@@ -1002,6 +992,7 @@ endfunction
 
 private function ClearOrderIdleState takes unit controlledUnit, integer customValue returns nothing
     call RemoveWanderAbility(controlledUnit)
+    call CompanionRandomMoveOrder.remove(GetHandleId(controlledUnit))
     if customValue > 0 then
         set udg_CompanionUnitIdle[customValue] = false
     endif
@@ -1011,7 +1002,9 @@ private function IssueRandomAttackMoveNearLeader takes unit controlledUnit, unit
     local real angle = GetRandomReal(0.00, 6.2831853)
     local real offset = GetRandomReal(minOffset, maxOffset)
 
-    call IssuePointOrder(controlledUnit, "attack", GetUnitX(leader) + offset * Cos(angle), GetUnitY(leader) + offset * Sin(angle))
+    if IssuePointOrder(controlledUnit, "attack", GetUnitX(leader) + offset * Cos(angle), GetUnitY(leader) + offset * Sin(angle)) then
+        set CompanionRandomMoveOrder[GetHandleId(controlledUnit)] = 1
+    endif
 endfunction
 
 private function IssueCompanionPassiveOrder takes unit controlledUnit, unit leader, real distance, integer currentOrder returns nothing
@@ -1033,6 +1026,12 @@ private function IssueCompanionNormalOrder takes unit controlledUnit, unit leade
     if CompanionAssistTarget.unit[unitId] != null and (currentOrder != OrderId("attack") or not IsAliveUnit(CompanionAssistTarget.unit[unitId])) then
         call CompanionAssistTarget.remove(unitId)
     endif
+    if CompanionRandomMoveOrder[unitId] == 1 then
+        call ClearOrderIdleState(controlledUnit, customValue)
+        call IssueTargetOrder(controlledUnit, "smart", leader)
+        set assistTarget = null
+        return
+    endif
     if currentOrder == OrderId("attack") and (IsUnitInCombatByCustomValue(customValue) or CompanionAssistTarget.unit[unitId] != null) then
         // Keep combat and focused-hero assist orders until their target is gone.
         set assistTarget = null
@@ -1049,11 +1048,7 @@ private function IssueCompanionNormalOrder takes unit controlledUnit, unit leade
         endif
     endif
 
-    if not IsUnitInCombatByCustomValue(customValue) and not IsUnitMovingByCustomValue(customValue) and not IsUnitIdleByCustomValue(customValue) and currentOrder != OrderId("attack") and not udg_CompanionDialogueActive and IsRandomMoveReady(controlledUnit, leader) then
-        call ClearOrderIdleState(controlledUnit, customValue)
-        call IssueRandomAttackMoveNearLeader(controlledUnit, leader, COMPANION_NORMAL_MIN_OFFSET, COMPANION_NORMAL_MAX_OFFSET)
-        call ScheduleNextRandomMove(controlledUnit, leader)
-    elseif currentOrder == OrderId("attack") and not IsUnitInCombatByCustomValue(GetUnitUserData(leader)) and distance >= COMPANION_POST_COMBAT_RETURN_DISTANCE then
+    if currentOrder == OrderId("attack") and not IsUnitInCombatByCustomValue(GetUnitUserData(leader)) and distance >= COMPANION_POST_COMBAT_RETURN_DISTANCE then
         call ClearOrderIdleState(controlledUnit, customValue)
         call IssueTargetOrder(controlledUnit, "smart", leader)
     elseif distance >= COMPANION_NORMAL_CATCHUP_DISTANCE or IsUnitInCombatByCustomValue(GetUnitUserData(leader)) then
@@ -1191,8 +1186,54 @@ private function IsDialogOrderBlocked takes nothing returns boolean
     return udg_InCinematic or udg_CompanionDialogueActive or DialogSystem_IsSequenceActive() or DialogSystem_IsDialogVisible() or DialogSystem_IsFieldLineQueueActive()
 endfunction
 
+private function ClearBlockedAutonomousOrderUnit takes unit controlledUnit returns nothing
+    local integer unitId
+    local integer customValue
+    local boolean hadAutonomousOrder
+
+    if controlledUnit == null or GetUnitTypeId(controlledUnit) == 0 or CompanionTracked == 0 then
+        return
+    endif
+
+    set unitId = GetHandleId(controlledUnit)
+    if CompanionTracked[unitId] == 0 then
+        return
+    endif
+    set hadAutonomousOrder = CompanionAssistTarget.unit[unitId] != null or CompanionRandomMoveOrder[unitId] == 1 or GetUnitAbilityLevel(controlledUnit, ABIL_WANDER_NEUTRAL) > 0
+    set customValue = GetUnitUserData(controlledUnit)
+    call RemoveWanderAbility(controlledUnit)
+    call CompanionAssistTarget.remove(unitId)
+    call CompanionRandomMoveOrder.remove(unitId)
+    if customValue > 0 then
+        set udg_CompanionUnitIdle[customValue] = false
+    endif
+
+    if hadAutonomousOrder and CompanionSuspended[unitId] == 0 and CompanionExternalOrderOverride[unitId] == 0 and CompanionManualOrder[unitId] == 0 and CompanionOrderProfile[unitId] != COMPANION_PROFILE_ESCORT and NormalizeMode(CompanionMode[unitId]) != COMPANION_MODE_HOLD then
+        call IssueImmediateOrder(controlledUnit, "stop")
+    endif
+endfunction
+
+private function ClearBlockedAutonomousOrderEnum takes nothing returns nothing
+    call ClearBlockedAutonomousOrderUnit(GetEnumUnit())
+endfunction
+
 private function OnOrderPeriodic takes nothing returns nothing
     if IsDialogOrderBlocked() then
+        if udg_Nazgrek != null then
+            call LeaderAttackTarget.remove(GetHandleId(udg_Nazgrek))
+        endif
+        if udg_Zulkis != null then
+            call LeaderAttackTarget.remove(GetHandleId(udg_Zulkis))
+        endif
+        if udg_Companion_Group != null then
+            call ForGroup(udg_Companion_Group, function ClearBlockedAutonomousOrderEnum)
+        endif
+        if udg_TamedUnits != null then
+            call ForGroup(udg_TamedUnits, function ClearBlockedAutonomousOrderEnum)
+        endif
+        if ControlledDisplayGroup != null then
+            call ForGroup(ControlledDisplayGroup, function ClearBlockedAutonomousOrderEnum)
+        endif
         return
     endif
 
@@ -1359,6 +1400,7 @@ private function RemoveInternal takes unit companionUnit returns nothing
     call CompanionTracked.remove(unitId)
     call CompanionOrderProfile.remove(unitId)
     call CompanionNextRandomMove.remove(unitId)
+    call CompanionRandomMoveOrder.remove(unitId)
     call CompanionNextAssistOrder.remove(unitId)
     call CompanionAssistTarget.remove(unitId)
     call CompanionStoppedEffect.remove(unitId)
@@ -1524,7 +1566,7 @@ private function IsCompanionIdleBlocked takes unit controlledUnit returns boolea
     return CompanionSuspended[unitId] == 1 or mode == COMPANION_MODE_HOLD or CompanionManualOrder[unitId] != 0
 endfunction
 
-private function UpdateCompanionIdleUnit takes unit controlledUnit, boolean isPet returns nothing
+private function UpdateCompanionIdleUnit takes unit controlledUnit returns nothing
     local integer customValue
 
     if controlledUnit == null or GetUnitTypeId(controlledUnit) == 0 then
@@ -1543,14 +1585,7 @@ private function UpdateCompanionIdleUnit takes unit controlledUnit, boolean isPe
         return
     endif
 
-    if isPet then
-        if not udg_UnitMoving[customValue] then
-            call AddWanderAbility(controlledUnit)
-            set udg_CompanionUnitIdle[customValue] = true
-        else
-            call ClearIdleState(controlledUnit)
-        endif
-    elseif not udg_UnitMoving[customValue] and not udg_GCSM_UnitInCombat[customValue] and not udg_CompanionDialogueActive then
+    if not udg_UnitMoving[customValue] and not udg_GCSM_UnitInCombat[customValue] and not udg_CompanionDialogueActive then
         call RemoveWanderAbility(controlledUnit)
         set udg_CompanionUnitIdle[customValue] = true
     else
@@ -1561,15 +1596,7 @@ endfunction
 private function UpdateCompanionIdleEnum takes nothing returns nothing
     local unit controlledUnit = GetEnumUnit()
 
-    call UpdateCompanionIdleUnit(controlledUnit, false)
-
-    set controlledUnit = null
-endfunction
-
-private function UpdatePetIdleEnum takes nothing returns nothing
-    local unit controlledUnit = GetEnumUnit()
-
-    call UpdateCompanionIdleUnit(controlledUnit, true)
+    call UpdateCompanionIdleUnit(controlledUnit)
 
     set controlledUnit = null
 endfunction
@@ -1584,7 +1611,7 @@ private function OnIdlePeriodic takes nothing returns nothing
         call ForGroup(udg_Companion_Group, function UpdateCompanionIdleEnum)
     endif
     if udg_TamedUnits != null then
-        call ForGroup(udg_TamedUnits, function UpdatePetIdleEnum)
+        call ForGroup(udg_TamedUnits, function UpdateCompanionIdleEnum)
     endif
     if ControlledDisplayGroup != null then
         call ForGroup(ControlledDisplayGroup, function UpdateCompanionIdleEnum)
@@ -3117,6 +3144,7 @@ public function UnregisterControlled takes unit controlledUnit returns nothing
     call CompanionTracked.remove(unitId)
     call CompanionOrderProfile.remove(unitId)
     call CompanionNextRandomMove.remove(unitId)
+    call CompanionRandomMoveOrder.remove(unitId)
     call CompanionNextAssistOrder.remove(unitId)
     call CompanionAssistTarget.remove(unitId)
     call CompanionStoppedEffect.remove(unitId)
