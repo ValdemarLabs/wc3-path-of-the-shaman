@@ -2,7 +2,7 @@
     TravelWyvern
 
     Author: Valdemar
-    Version: 1.2.0
+    Version: 1.2.1
 
     Description:
     Registers all seven configured Wind Rider Masters and the directed flight
@@ -187,22 +187,15 @@ library TravelWyvern initializer Init requires TravelSystem, TravelUI, optional 
         call TW_RegisterFlightWaypoint(27, gg_rct_FPRoute027)
         call TW_RegisterFlightWaypoint(28, gg_rct_FPRoute028)
         call TW_RegisterFlightWaypoint(29, gg_rct_FPRoute029)
+        call TW_RegisterFlightWaypoint(30, gg_rct_FPRoute030)
+        call TW_RegisterFlightWaypoint(31, gg_rct_FPRoute031)
+        call TW_RegisterFlightWaypoint(32, gg_rct_FPRoute032)
+        call TW_RegisterFlightWaypoint(33, gg_rct_FPRoute033)
         call TW_RegisterFlightWaypoint(34, gg_rct_FPRoute034)
-        call TW_RegisterFlightWaypoint(35, gg_rct_FPRoute035)
-        call TW_RegisterFlightWaypoint(36, gg_rct_FPRoute036)
-        call TW_RegisterFlightWaypoint(37, gg_rct_FPRoute037)
 
         set index = 1
         loop
-            exitwhen index > 29
-            if TW_FlightWaypoint[index] <= 0 then
-                return false
-            endif
-            set index = index + 1
-        endloop
-        set index = 34
-        loop
-            exitwhen index > 37
+            exitwhen index > 34
             if TW_FlightWaypoint[index] <= 0 then
                 return false
             endif
@@ -228,17 +221,11 @@ library TravelWyvern initializer Init requires TravelSystem, TravelUI, optional 
     endfunction
 
     private function TW_AddIronspineApproach takes integer routeId returns boolean
-        if not TW_AddWaypointRange(routeId, 29, 29) then
-            return false
-        endif
-        return TW_AddWaypointRange(routeId, 34, 37)
+        return TW_AddWaypointRange(routeId, 29, 34)
     endfunction
 
     private function TW_AddIronspineDeparture takes integer routeId returns boolean
-        if not TW_AddWaypointRange(routeId, 37, 34) then
-            return false
-        endif
-        return TW_AddWaypointRange(routeId, 29, 29)
+        return TW_AddWaypointRange(routeId, 34, 29)
     endfunction
 
     private function TW_AddConfiguredRouteWaypoints takes integer routeId, integer startStop, integer endStop returns boolean

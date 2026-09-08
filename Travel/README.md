@@ -49,9 +49,10 @@ shared getters documented in `TravelSystem.j`.
   019 through 016 and then points 020 through 028. Direct Sirensong-Ashfang
   flights use points 001 through 015 before continuing through 020 to 028, so
   they no longer enter the Scout Base spur. Ironspine routes branch from point
-  007 through 029 and 034 through 037. Reverse flights traverse the corresponding
-  pair-specific sequence in reverse order, and every configured route still
-  appends its destination drop point after the final route rect.
+  007 through the contiguous `FPRoute029`-`FPRoute034` chain. Reverse flights
+  traverse the corresponding pair-specific sequence in reverse order, and every
+  configured route still appends its destination drop point after the final
+  route rect.
 - `TravelShipA.j` owns the 64-point Sirensong-Dawnhold-Stormhaven neutral-ship
   loop. It pauses at both passes through `gg_rct_SirensongShip012`, and uses the
   supplied dock, boarding, and deck rects for all three harbours. Adjacent fares
