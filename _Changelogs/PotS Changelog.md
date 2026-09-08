@@ -15,6 +15,23 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [8.9.2026]
+
+### Player-Facing Updates
+
+- Fixed companions and active pets continuing toward autonomous random destinations after a cinematic or dialogue sequence began. Normal mode now stays with the focused hero instead of issuing random nearby attack-moves, and controlled pets no longer receive Neutral Wander while idle.
+- Fixed Sirensong-Ashfang wind riders detouring through the Horde Scout Base and added Ironspine Post flights to Sirensong, Ashfang Outpost, and the Scout Base.
+
+### Technical Updates
+
+- Updated `Companions/Companions.j` to mark Aggressive-mode random movement, clear only companion-system assist/wander/random orders while cinematic dialogue blocks normal control, remove stale focused-hero attack targets, and reserve Neutral Wander for pets after they leave active companion control.
+- Updated `Travel/TravelSystem.j`, `Travel/TravelWyvern.j`, and `Travel/README.md` with the seventh Wind Rider Master binding, Ironspine Post station, pair-specific Sirensong/Scout Base/Ashfang/Ironspine waypoint sequences, and FPRoute029 plus FPRoute034-037 support.
+
+### Actions Remaining
+
+- Compile the full map with World Editor/JassHelper and runtime-test companions and pets entering fullscreen and ordinary dialogue while following, assisting, idle, and using Aggressive random movement; confirm system-owned movement stops without overriding explicitly suspended, manually ordered, escort, or externally controlled units.
+- In World Editor, assign the Ironspine Post Wind Rider Master to `udg_WindRiderMaster[7]` and ensure `gg_rct_FPRoute029` and `gg_rct_FPRoute034` through `gg_rct_FPRoute037` exist, then compile and runtime-test all twelve directed long-distance waypoint sequences.
+
 ## [7.9.2026]
 
 ### Player-Facing Updates
