@@ -2,7 +2,7 @@
     TravelSystem
 
     Author: Valdemar
-    Version: 1.1.2
+    Version: 1.1.3
 
     Description:
     Configurable travel-stop, route, passenger, discovery, movement, camera,
@@ -28,6 +28,8 @@
     - udg_WindRiderMaster[7] = Ironspine Post Wind Rider Master (assign in Init Travel Units).
     - udg_FlightMaster[1] = Sereneglade Flightmaster 2617 (active).
     - udg_FlightMaster[2] = Sirensong Shipmaster 0613 (active).
+    - udg_FlightMaster[3] = Horde Scout Base Flightmaster 2418 (active).
+    - udg_FlightMaster[4] = Horde Front Base Flightmaster 2057 (active).
     - udg_Shipmaster[1] = Mok'natha Shipmaster 0996 (active).
     - udg_Shipmaster[2] = Sirensong shipmaster 2230 (Ship A).
     - udg_Shipmaster[3] = Ironspine shipmaster 2228 (Ship B).
@@ -40,6 +42,8 @@
     - udg_TravelShipB = Orc Frigate 0061 (active scheduled patrol).
     - udg_ZeppelinA = Zeppelin 2226 at Sereneglade (active outbound vehicle).
     - udg_ZeppelinB = Zeppelin 0922 at Sirensong (active outbound vehicle).
+    - udg_ZeppelinC = Zeppelin at Horde Scout Base (active outbound vehicle).
+    - udg_ZeppelinD = Zeppelin at Horde Front Base (active outbound vehicle).
 
     Shared passengers:
     - udg_Nazgrek and udg_Zulkis = selectable player heroes.
@@ -100,6 +104,8 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
 
         constant integer TRAVEL_FLIGHT_MASTER_SERENEGLADE = 1
         constant integer TRAVEL_FLIGHT_MASTER_SIRENSONG = 2
+        constant integer TRAVEL_FLIGHT_MASTER_HORDE_SCOUT_BASE = 3
+        constant integer TRAVEL_FLIGHT_MASTER_HORDE_FRONT_BASE = 4
 
         constant integer TRAVEL_SHIP_MASTER_MOKNATHA = 1
         constant integer TRAVEL_SHIP_MASTER_SIRENSONG = 2
@@ -110,6 +116,8 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
 
         constant integer TRAVEL_ZEPPELIN_SERENEGLADE = 1
         constant integer TRAVEL_ZEPPELIN_SIRENSONG = 2
+        constant integer TRAVEL_ZEPPELIN_HORDE_SCOUT_BASE = 3
+        constant integer TRAVEL_ZEPPELIN_HORDE_FRONT_BASE = 4
 
         // Travel presentation configuration.
         constant boolean TRAVEL_HIDE_MASTER_UI_GAME_BUTTON = true
@@ -120,7 +128,7 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         private constant integer TS_MAX_REGISTERED_WAYPOINTS = 256
         private constant integer TS_MAX_PASSENGERS = 12
         private constant integer TS_MAX_PROXY_MODELS = 8
-        private constant integer TS_MAX_MASTER_EFFECTS = 16
+        private constant integer TS_MAX_MASTER_EFFECTS = 20
         private constant integer TS_TRAVEL_UNIT_OWNER_ID = 5
         private constant real TS_DISCOVERY_RANGE = 600.00
         private constant real TS_DISCOVERY_PERIOD = 1.00
@@ -279,7 +287,7 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
     endfunction
 
     public function GetFlightMaster takes integer index returns unit
-        if index < 1 or index > 2 then
+        if index < 1 or index > 4 then
             return null
         endif
         return udg_FlightMaster[index]
@@ -305,6 +313,10 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
             return udg_ZeppelinA
         elseif index == 2 then
             return udg_ZeppelinB
+        elseif index == 3 then
+            return udg_ZeppelinC
+        elseif index == 4 then
+            return udg_ZeppelinD
         endif
         return null
     endfunction
@@ -356,7 +368,7 @@ library TravelSystem initializer Init requires Table, DialogInteraction, DialogS
         endloop
         set index = 1
         loop
-            exitwhen index > 2
+            exitwhen index > 4
             call TS_RegisterMasterEffect(GetFlightMaster(index))
             set index = index + 1
         endloop

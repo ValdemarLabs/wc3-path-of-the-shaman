@@ -2,25 +2,32 @@
     TravelZeppelin
 
     Author: Valdemar
-    Version:
+    Version: 1.1.0
 
     Description:
-    Registers the Sereneglade-Sirensong zeppelin service from the shared
-    TravelSystem bindings and its two World Editor boarding areas.
+    Registers the Sereneglade-Sirensong and Horde Scout Base-Horde Front Base
+    zeppelin services from shared TravelSystem bindings and boarding areas.
 
     Credits:
     The original PotS travel design.
 
     How to install:
-    Import after TravelSystem and TravelUI. Assign FlightMaster[1..2] and
-    ZeppelinA/ZeppelinB in Init Travel Units, and keep ZeppelinSerenegladeArea and
-    ZeppelinSirensongArea in the Region Palette.
+    Import after TravelSystem and TravelUI. Assign FlightMaster[1..4] and
+    ZeppelinA through ZeppelinD in Init Travel Units. Keep both pairs of
+    Zeppelin*Area rects in the Region Palette.
 
     API:
     - set success = TravelZeppelin_Bind(...)
     - set success = TravelZeppelin_BindTwoWay(...)
     - set success = TravelZeppelin_BindShared()
+    - set success = TravelZeppelin_BindHordeTwoWay(...)
+    - set success = TravelZeppelin_BindHordeShared()
     - TravelZeppelin_IsBound()
+    - TravelZeppelin_IsHordeRouteBound()
+    - TravelZeppelin_GetHordeScoutBaseStop()
+    - TravelZeppelin_GetHordeFrontBaseStop()
+    - TravelZeppelin_GetToHordeScoutBaseRoute()
+    - TravelZeppelin_GetToHordeFrontBaseRoute()
     - set stopId = TravelZeppelin_RegisterStation(...)
     - set routeId = TravelZeppelin_RegisterDirectedRoute(...)
     - call TravelZeppelin_AddWaypoint(...)
@@ -30,17 +37,27 @@ library TravelZeppelin initializer Init requires TravelSystem, TravelUI
     globals
         private constant integer TZ_ZONE_SERENEGLADE = 2
         private constant integer TZ_ZONE_SIRENSONG = 14
+        private constant integer TZ_ZONE_HORDE_SCOUT_BASE = 8810
+        // Front Base has no current ZonesCore entry; TravelSystem resolves zone 0 from the stop point.
+        private constant integer TZ_ZONE_HORDE_FRONT_BASE = 0
         private constant integer TZ_SKIP_FEE = 100
         // Configure fares here until final zeppelin pricing is known.
         private constant integer TZ_FARE_TO_SERENEGLADE = 0
         private constant integer TZ_FARE_TO_SIRENSONG = 0
+        private constant integer TZ_FARE_TO_HORDE_SCOUT_BASE = 0
+        private constant integer TZ_FARE_TO_HORDE_FRONT_BASE = 0
 
         private integer TZ_SirensongStop = 0
         private integer TZ_SerenegladeStop = 0
         private integer TZ_ToSerenegladeRoute = 0
         private integer TZ_ToSirensongRoute = 0
+        private integer TZ_HordeScoutBaseStop = 0
+        private integer TZ_HordeFrontBaseStop = 0
+        private integer TZ_ToHordeScoutBaseRoute = 0
+        private integer TZ_ToHordeFrontBaseRoute = 0
         private timer TZ_InitTimer = null
         private boolean TZ_Bound = false
+        private boolean TZ_HordeRouteBound = false
     endglobals
 
     public function RegisterStation takes string name, integer zoneId, unit master, rect boardingArea, real dropX, real dropY returns integer
@@ -85,8 +102,28 @@ library TravelZeppelin initializer Init requires TravelSystem, TravelUI
         return TZ_ToSirensongRoute
     endfunction
 
+    public function GetHordeScoutBaseStop takes nothing returns integer
+        return TZ_HordeScoutBaseStop
+    endfunction
+
+    public function GetHordeFrontBaseStop takes nothing returns integer
+        return TZ_HordeFrontBaseStop
+    endfunction
+
+    public function GetToHordeScoutBaseRoute takes nothing returns integer
+        return TZ_ToHordeScoutBaseRoute
+    endfunction
+
+    public function GetToHordeFrontBaseRoute takes nothing returns integer
+        return TZ_ToHordeFrontBaseRoute
+    endfunction
+
     public function IsBound takes nothing returns boolean
         return TZ_Bound
+    endfunction
+
+    public function IsHordeRouteBound takes nothing returns boolean
+        return TZ_HordeRouteBound
     endfunction
 
     public function BindTwoWay takes unit serenegladeZeppelin, unit sirensongZeppelin, unit sirensongMaster, rect sirensongArea, real sirensongX, real sirensongY, unit serenegladeMaster, rect serenegladeArea, real serenegladeX, real serenegladeY, integer fareToSereneglade, integer fareToSirensong returns boolean
@@ -113,6 +150,26 @@ library TravelZeppelin initializer Init requires TravelSystem, TravelUI
         return BindTwoWay(zeppelin, zeppelin, sirensongMaster, sirensongArea, sirensongX, sirensongY, serenegladeMaster, serenegladeArea, serenegladeX, serenegladeY, fareToSereneglade, fareToSirensong)
     endfunction
 
+    public function BindHordeTwoWay takes unit scoutBaseZeppelin, unit frontBaseZeppelin, unit scoutBaseMaster, rect scoutBaseArea, real scoutBaseX, real scoutBaseY, unit frontBaseMaster, rect frontBaseArea, real frontBaseX, real frontBaseY, integer fareToScoutBase, integer fareToFrontBase returns boolean
+        if TZ_HordeRouteBound or scoutBaseZeppelin == null or frontBaseZeppelin == null or scoutBaseMaster == null or scoutBaseArea == null or frontBaseMaster == null or frontBaseArea == null then
+            return false
+        endif
+        set TZ_HordeScoutBaseStop = RegisterStation("Horde Scout Base", TZ_ZONE_HORDE_SCOUT_BASE, scoutBaseMaster, scoutBaseArea, scoutBaseX, scoutBaseY)
+        set TZ_HordeFrontBaseStop = RegisterStation("Horde Front Base", TZ_ZONE_HORDE_FRONT_BASE, frontBaseMaster, frontBaseArea, frontBaseX, frontBaseY)
+        if TZ_HordeScoutBaseStop <= 0 or TZ_HordeFrontBaseStop <= 0 then
+            return false
+        endif
+        set TZ_ToHordeFrontBaseRoute = RegisterDirectedRoute(TZ_HordeScoutBaseStop, TZ_HordeFrontBaseStop, fareToFrontBase, scoutBaseZeppelin)
+        set TZ_ToHordeScoutBaseRoute = RegisterDirectedRoute(TZ_HordeFrontBaseStop, TZ_HordeScoutBaseStop, fareToScoutBase, frontBaseZeppelin)
+        if TZ_ToHordeFrontBaseRoute <= 0 or TZ_ToHordeScoutBaseRoute <= 0 then
+            return false
+        endif
+        call AddWaypoint(TZ_ToHordeFrontBaseRoute, frontBaseX, frontBaseY)
+        call AddWaypoint(TZ_ToHordeScoutBaseRoute, scoutBaseX, scoutBaseY)
+        set TZ_HordeRouteBound = true
+        return true
+    endfunction
+
     public function BindShared takes nothing returns boolean
         local unit serenegladeZeppelin = TravelSystem_GetZeppelin(TRAVEL_ZEPPELIN_SERENEGLADE)
         local unit sirensongZeppelin = TravelSystem_GetZeppelin(TRAVEL_ZEPPELIN_SIRENSONG)
@@ -127,6 +184,20 @@ library TravelZeppelin initializer Init requires TravelSystem, TravelUI
         return success
     endfunction
 
+    public function BindHordeShared takes nothing returns boolean
+        local unit scoutBaseZeppelin = TravelSystem_GetZeppelin(TRAVEL_ZEPPELIN_HORDE_SCOUT_BASE)
+        local unit frontBaseZeppelin = TravelSystem_GetZeppelin(TRAVEL_ZEPPELIN_HORDE_FRONT_BASE)
+        local unit scoutBaseMaster = TravelSystem_GetFlightMaster(TRAVEL_FLIGHT_MASTER_HORDE_SCOUT_BASE)
+        local unit frontBaseMaster = TravelSystem_GetFlightMaster(TRAVEL_FLIGHT_MASTER_HORDE_FRONT_BASE)
+        local boolean success = BindHordeTwoWay(scoutBaseZeppelin, frontBaseZeppelin, scoutBaseMaster, gg_rct_ZeppelinHordeScoutBaseArea, GetRectCenterX(gg_rct_ZeppelinHordeScoutBaseArea), GetRectCenterY(gg_rct_ZeppelinHordeScoutBaseArea), frontBaseMaster, gg_rct_ZeppelinHordeFrontBaseArea, GetRectCenterX(gg_rct_ZeppelinHordeFrontBaseArea), GetRectCenterY(gg_rct_ZeppelinHordeFrontBaseArea), TZ_FARE_TO_HORDE_SCOUT_BASE, TZ_FARE_TO_HORDE_FRONT_BASE)
+
+        set scoutBaseZeppelin = null
+        set frontBaseZeppelin = null
+        set scoutBaseMaster = null
+        set frontBaseMaster = null
+        return success
+    endfunction
+
     private function TZ_StopInitTimer takes nothing returns nothing
         call PauseTimer(TZ_InitTimer)
         call DestroyTimer(TZ_InitTimer)
@@ -136,21 +207,32 @@ library TravelZeppelin initializer Init requires TravelSystem, TravelUI
     private function TZ_TryInitialize takes nothing returns nothing
         local unit serenegladeZeppelin = TravelSystem_GetZeppelin(TRAVEL_ZEPPELIN_SERENEGLADE)
         local unit sirensongZeppelin = TravelSystem_GetZeppelin(TRAVEL_ZEPPELIN_SIRENSONG)
+        local unit scoutBaseZeppelin = TravelSystem_GetZeppelin(TRAVEL_ZEPPELIN_HORDE_SCOUT_BASE)
+        local unit frontBaseZeppelin = TravelSystem_GetZeppelin(TRAVEL_ZEPPELIN_HORDE_FRONT_BASE)
         local unit serenegladeMaster = TravelSystem_GetFlightMaster(TRAVEL_FLIGHT_MASTER_SERENEGLADE)
         local unit sirensongMaster = TravelSystem_GetFlightMaster(TRAVEL_FLIGHT_MASTER_SIRENSONG)
+        local unit scoutBaseMaster = TravelSystem_GetFlightMaster(TRAVEL_FLIGHT_MASTER_HORDE_SCOUT_BASE)
+        local unit frontBaseMaster = TravelSystem_GetFlightMaster(TRAVEL_FLIGHT_MASTER_HORDE_FRONT_BASE)
 
-        if TZ_Bound then
-            call TZ_StopInitTimer()
-        elseif serenegladeZeppelin == null or sirensongZeppelin == null or serenegladeMaster == null or sirensongMaster == null then
-            call TimerStart(TZ_InitTimer, 1.00, false, function TZ_TryInitialize)
-        else
+        if not TZ_Bound and serenegladeZeppelin != null and sirensongZeppelin != null and serenegladeMaster != null and sirensongMaster != null then
             call BindShared()
+        endif
+        if not TZ_HordeRouteBound and scoutBaseZeppelin != null and frontBaseZeppelin != null and scoutBaseMaster != null and frontBaseMaster != null then
+            call BindHordeShared()
+        endif
+        if TZ_Bound and TZ_HordeRouteBound then
             call TZ_StopInitTimer()
+        else
+            call TimerStart(TZ_InitTimer, 1.00, false, function TZ_TryInitialize)
         endif
         set serenegladeZeppelin = null
         set sirensongZeppelin = null
+        set scoutBaseZeppelin = null
+        set frontBaseZeppelin = null
         set serenegladeMaster = null
         set sirensongMaster = null
+        set scoutBaseMaster = null
+        set frontBaseMaster = null
     endfunction
 
     private function Init takes nothing returns nothing
