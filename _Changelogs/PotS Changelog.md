@@ -19,21 +19,47 @@
 
 ### Player-Facing Updates
 
+- Removed obsolete decline choices from Outcast Jin'Zun's quest dialogue and kept him stationary until dialogue cinematics fully finish.
+- Nazgrek's companions temporarily leave the active companion roster during Zul'kis's intro, so hidden companions no longer consume Zul'kis's party capacity or appear in his companion count; their previous status returns silently with Nazgrek.
+- Companion details in StatsUI now show Rested when their assigned player-hero leader is rested.
+- Fixed the vendor camera becoming freely movable when ShopUI changed to another automatic camera angle.
+- Fixed Aerendyl and seven other non-canonical or legacy unit types being automatically treated as current vendors.
+- Diversified vendor chatter and transaction reactions across Humans, Tauren, Morgrim Dwarves, Elarindor, Trolls, Orcs, Satyrs, Bonecrusher Ogres, and Goblins. Vendors now retain their racial or faction character when the player buys, sells, exchanges goods, browses, or leaves without trading instead of repeatedly falling back to the same generic remarks.
 - Fixed companions and active pets continuing toward autonomous random destinations after a cinematic or dialogue sequence began. Normal mode now stays with the focused hero instead of issuing random nearby attack-moves, and controlled pets no longer receive Neutral Wander while idle.
 - Fixed Sirensong-Ashfang wind riders detouring through the Horde Scout Base and added Ironspine Post flights to Sirensong, Ashfang Outpost, and the Scout Base.
 - Added a two-way zeppelin route between the Horde Scout Base and Horde Front Base.
+- Restored interaction and travel-point discovery at every Wind Rider Master by binding Ironspine to the existing third master instead of waiting for a nonexistent seventh master.
+- Travel passenger selection now shows each unit's proper name, class, hero/companion/pet role, and unit icon, with centered sprite borders marking selected destinations and travelers.
+- Drunk status messages now use hero proper names. Active AI hero companions now react when the player hero pukes or passes out, the pass-out fade is slower, and `A Night To Remember` always assigns at least one witness objective to a companion when an eligible companion is present.
 
 ### Technical Updates
 
+- Updated `QuestsAndDialogs/QuestGivers/Troll/qOutcastJinzun.j` to resume its patrol only after the configured exit transition and to restore movement when the dialog is closed with ESC.
+- Updated `QuestsAndDialogs/QuestGiver.j` and `Companions/Companions.j` with silent temporary party-suspension and restoration APIs that preserve companion controller metadata while removing and rebuilding the synchronized GUI roster entry.
+- Updated `QuestsAndDialogs/QuestGivers/Player/qZulkis.j` to use temporary party suspension for Nazgrek-focused companions and refresh unit-specific quest state only after the black-screen hero handoff has updated the active roster.
+- Updated `UI/StatsUI.j` to resolve companion rested display state from the companion's assigned leader while still honoring rested state stored directly on the unit.
+- Updated `Camera/DialogCamera.j` to apply its fixed-unit target lock after queuing each timed pan, preserving the vendor lock across automatic preset changes.
+- Updated `Vendors/VendorCatalogs.j` to stop default-binding `h00H`, `o62H`, `N60L`, `o62I`, `o60I`, `o62F`, `o62G`, and `o001`. Catalog creation now leaves unit types unbound until the canonical faction and vendor-type libraries register them, and `Vendors/Help/VendorsHelper.md` now records that ownership rule.
+- Updated `Voicelines/Voicelines_VendorLines.j` with nine culture-specific variation sets, region- and reputation-specific no-transaction remarks, and removal of the two universal no-transaction fallbacks from generic and role catalogs.
 - Updated `Companions/Companions.j` to mark Aggressive-mode random movement, clear only companion-system assist/wander/random orders while cinematic dialogue blocks normal control, remove stale focused-hero attack targets, and reserve Neutral Wander for pets after they leave active companion control.
-- Updated `Travel/TravelSystem.j`, `Travel/TravelWyvern.j`, and `Travel/README.md` with the seventh Wind Rider Master binding, Ironspine Post station, pair-specific Sirensong/Scout Base/Ashfang/Ironspine waypoint sequences, and contiguous `FPRoute029`-`FPRoute034` support.
+- Updated `Travel/TravelSystem.j`, `Travel/TravelWyvern.j`, and `Travel/README.md` to identify `WindRiderMaster[3]` as Ironspine Post, remove the nonexistent seventh-master dependency, retain pair-specific Sirensong/Scout Base/Ashfang/Ironspine waypoint sequences, and support contiguous `FPRoute029`-`FPRoute034`.
 - Updated `Travel/TravelSystem.j`, `Travel/TravelZeppelin.j`, and `Travel/README.md` with Flight Master 3-4 and Zeppelin C-D bindings, separate Horde zeppelin route state, and the two new boarding areas.
+- Updated `Travel/TravelUI.j` and `UI/StatsUI.j` with reusable unit display metadata, passenger icons and class labels, icon-centered selection sprites, and selected-traveler borders.
+- Updated `Professions/Drunk.j` and `QuestsAndDialogs/GenericQuests/qANightToRemember.j` to enumerate registered party companions from the authoritative companion roster instead of the auxiliary controlled-display list; updated `_developer/Design Plans/Story and Quest Design.md` with the companion-witness guarantee.
 
 ### Actions Remaining
 
+- Compile the full map with World Editor/JassHelper and runtime-test Jin'Zun's quest selection, Farewell, ESC exit, fishing behavior, and waypoint patrol; confirm he remains stationary until cinematic control returns and then resumes the correct behavior.
+- Compile and runtime-test Zul'kis's intro while Nazgrek has zero, one, and a full party of companions; verify hidden companions do not affect Zul'kis's count or limit, produce no leave/join feedback, and return with their prior leader, mode, pause, visibility, and suspension state.
+- Compile the full map with World Editor/JassHelper and confirm StatsUI shows and clears Rested for companions when their assigned leader gains, loses, or expires the rested state.
+- Compile the full map with World Editor/JassHelper and leave ShopUI open through several automatic camera changes; confirm the vendor stays centered and player camera movement cannot break the lock.
+- Compile the full map with World Editor/JassHelper, verify the eight removed rawcodes no longer acquire vendor interaction from `VendorCatalogs`, and confirm representative canonical vendors from every faction still open their documented catalogs.
+- Review the new cultural vendor text, re-record the affected Fish Audio variation ranges, and runtime-test repeated chatter, buy-only, sell-only, mixed-trade, and no-transaction outcomes across every race and reputation profile. The changed ranges are Human male `0019-0045` and `0052-0060`, Human female `0019-0045`, Tauren/Dwarf/Elarindor/Troll/Satyr male `0007-0015`, Orc `0031-0057` plus `GenericOrcMale4_0058-0066` and `GenericOrcMale3_0067-0075`, Bonecrusher Ogre `0013-0030`, and Goblin `0031-0075`; no Fish Audio files were generated in this pass.
 - Compile the full map with World Editor/JassHelper and runtime-test companions and pets entering fullscreen and ordinary dialogue while following, assisting, idle, and using Aggressive random movement; confirm system-owned movement stops without overriding explicitly suspended, manually ordered, escort, or externally controlled units.
-- In World Editor, assign the Ironspine Post Wind Rider Master to `udg_WindRiderMaster[7]` and ensure `gg_rct_FPRoute029` through `gg_rct_FPRoute034` exist, then compile and runtime-test all twelve directed long-distance waypoint sequences.
+- Ensure `gg_rct_FPRoute029` through `gg_rct_FPRoute034` exist in World Editor, then compile and runtime-test all twelve directed long-distance waypoint sequences.
 - Compile the full map with World Editor/JassHelper and runtime-test Zeppelin C from Horde Scout Base to Horde Front Base and Zeppelin D in reverse; verify both masters discover independently, both boarding areas open the correct destination, and each zeppelin returns home after arrival.
+- Compile the full map with World Editor/JassHelper, verify all six Wind Rider Masters can be discovered and selected, and inspect TravelUI at multiple UI scales with heroes, companions, and a pet selected and deselected; confirm names/classes fit, icons resolve, and both destination and passenger sprites stay centered.
+- Compile and runtime-test drunk notices, puke reactions, and the slower pass-out sequence with Nazgrek and Zul'kis both alone and accompanied by one or more AI heroes; confirm `A Night To Remember` assigns at least one witness objective to an eligible active companion.
 
 ## [7.9.2026]
 
