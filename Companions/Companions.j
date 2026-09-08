@@ -2,7 +2,7 @@
     Companions
 
     Author: Valdemar
-    Version: 1.1.3
+    Version: 1.2.0
 
     Description:
     Companion party registration, information, idle state, and control-mode
@@ -29,6 +29,8 @@
     call Companions_HaltAll()
     call Companions_Suspend(unit companionUnit)
     call Companions_Resume(unit companionUnit)
+    call Companions_SuspendFromParty(unit companionUnit)
+    call Companions_RestoreToParty(unit companionUnit)
     call Companions_ResumeAll()
     call Companions_RegisterControlled(unit controlledUnit, unit leader, integer mode)
     call Companions_UnregisterControlled(unit controlledUnit)
@@ -1529,6 +1531,39 @@ private function SetSuspendedInternal takes unit companionUnit, boolean suspende
         set CompanionSuspended[unitId] = 0
     endif
     call ApplyOrders(companionUnit)
+endfunction
+
+// Temporarily detach a registered companion from party accounting without
+// discarding its controller metadata or changing its saved mode and leader.
+private function SuspendFromPartyInternal takes unit companionUnit returns nothing
+    if companionUnit == null or GetUnitTypeId(companionUnit) == 0 or CompanionTracked == 0 then
+        return
+    endif
+    if CompanionTracked[GetHandleId(companionUnit)] == 0 or FindCompanionIndex(companionUnit) == 0 then
+        return
+    endif
+
+    call SetSuspendedInternal(companionUnit, true)
+    call QuestGiver_RemoveCompanion(companionUnit)
+endfunction
+
+private function RestoreToPartyInternal takes unit companionUnit returns nothing
+    local integer unitId
+    local unit leader
+
+    if companionUnit == null or GetUnitTypeId(companionUnit) == 0 or CompanionTracked == 0 then
+        return
+    endif
+    set unitId = GetHandleId(companionUnit)
+    if CompanionTracked[unitId] == 0 or CompanionRegistered[unitId] == 0 or FindCompanionIndex(companionUnit) > 0 then
+        return
+    endif
+
+    call QuestGiver_RestoreCompanion(companionUnit, CompanionIcon.string[unitId])
+    set leader = GetFocusedLeader(companionUnit)
+    call SetFocusUnit(companionUnit, leader)
+    call ApplyOrders(companionUnit)
+    set leader = null
 endfunction
 
 private function SetIdleFlag takes unit controlledUnit, boolean isIdle returns nothing
@@ -3097,6 +3132,14 @@ endfunction
 
 public function Resume takes unit companionUnit returns nothing
     call SetSuspendedInternal(companionUnit, false)
+endfunction
+
+public function SuspendFromParty takes unit companionUnit returns nothing
+    call SuspendFromPartyInternal(companionUnit)
+endfunction
+
+public function RestoreToParty takes unit companionUnit returns nothing
+    call RestoreToPartyInternal(companionUnit)
 endfunction
 
 public function ResumeAll takes nothing returns nothing
