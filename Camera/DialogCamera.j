@@ -2,7 +2,7 @@
     DialogCamera
 
     Author: Valdemar
-    Version: 2.1.1
+    Version: 2.1.2
 
     Description:
     Focuses a player's camera on a dialogue unit, provides reusable cinematic
@@ -197,8 +197,6 @@ library DialogCamera initializer Init requires CameraControl, FixedCameraLock
         if GetLocalPlayer() == p then
             call CameraSetSmoothingFactor(1)
         endif
-        call FCL_Lock(u, p)
-
         call PanCameraToTimedForPlayer(p, x, y, transitionTime)
         call SetCameraFieldForPlayer(p, CAMERA_FIELD_TARGET_DISTANCE, distance, transitionTime)
         call SetCameraFieldForPlayer(p, CAMERA_FIELD_FARZ, farZ, transitionTime)
@@ -207,6 +205,8 @@ library DialogCamera initializer Init requires CameraControl, FixedCameraLock
         call SetCameraFieldForPlayer(p, CAMERA_FIELD_ROTATION, finalRotation, transitionTime)
         call SetCameraFieldForPlayer(p, CAMERA_FIELD_ZOFFSET, zOffset, transitionTime)
         call SetCameraFieldForPlayer(p, CAMERA_FIELD_NEARZ, DEFAULT_NEAR_Z, transitionTime)
+        // PanCameraToTimed replaces the active target controller, so lock after the pan is queued.
+        call FCL_Lock(u, p)
     endfunction
 
     function DialogCameraRegisterPreset takes integer presetId, real distance, real zOffset, real angle, real rotationOffset, real farZ, real fov, real blockRadius returns boolean
