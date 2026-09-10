@@ -5,7 +5,7 @@ description: Research, design, implement, or review PotS Warcraft III abilities 
 
 # Warcraft Ability Insight
 
-Use the repository's searchable [Warcraft 3 WE Ability Insight](<../../../_developer/Abilities/Warcraft 3 WE Ability Insight.md>) as a research input for custom ability decisions. It contains stock ability observations, rawcodes, behavioral tags, field tests, patch notes, inline comment links, and an appendix preserving every exported comment.
+Use the repository's searchable [Warcraft 3 WE Ability Insight](<../../../_developer/Abilities/Warcraft 3 WE Ability Insight.md>) as a research input for custom ability decisions. It contains stock ability observations, rawcodes, behavioral tags, field tests, patch notes, inline comment links, and an appendix preserving every exported comment. Credit for the original document belongs to HiveWorkshop user **ScrewTheTrees**; retain the link to [The Warcraft 3 Ability Insight Document](https://www.hiveworkshop.com/threads/the-warcraft-3-ability-insight-document.294584/) when redistributing or deriving documentation from it.
 
 ## Workflow
 

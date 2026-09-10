@@ -5,6 +5,7 @@
 # **Warcraft 3 WE Ability Insight**
 
 > Source: `Warcraft 3 WE Ability Insight.docx`  
+> Original document credit: HiveWorkshop user **ScrewTheTrees** â€” [The Warcraft 3 Ability Insight Document](https://www.hiveworkshop.com/threads/the-warcraft-3-ability-insight-document.294584/)  
 > Source modified: 2026-09-10 20:59:20 +03:00  
 > Source SHA-256: `3db918e11572eded39e936893eaef3f2abdfc124591315cf0ce2b8265602d15d`  
 > Conversion notes: Word heading styles became Markdown headings; list nesting, hyperlinks, the tag table, and inline emphasis are retained. Inserted revision text is shown normally, while deleted revision text is shown with strikethrough. All exported comments are linked inline and reproduced in the Comments appendix. The DOCX contains no modern resolved-comment status part, so resolution/reopen events that survived only as comment text are labeled as such without inferring thread relationships.

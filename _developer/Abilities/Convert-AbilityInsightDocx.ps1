@@ -518,6 +518,7 @@ try {
     $sourceModified = $sourceItem.LastWriteTime.ToString("yyyy-MM-dd HH':'mm':'ss zzz", [System.Globalization.CultureInfo]::InvariantCulture)
     $preamble = @(
         '> Source: `Warcraft 3 WE Ability Insight.docx`  ',
+        '> Original document credit: HiveWorkshop user **ScrewTheTrees** — [The Warcraft 3 Ability Insight Document](https://www.hiveworkshop.com/threads/the-warcraft-3-ability-insight-document.294584/)  ',
         "> Source modified: $sourceModified  ",
         "> Source SHA-256: ``$sourceHash``  ",
         '> Conversion notes: Word heading styles became Markdown headings; list nesting, hyperlinks, the tag table, and inline emphasis are retained. Inserted revision text is shown normally, while deleted revision text is shown with strikethrough. All exported comments are linked inline and reproduced in the Comments appendix. The DOCX contains no modern resolved-comment status part, so resolution/reopen events that survived only as comment text are labeled as such without inferring thread relationships.',
