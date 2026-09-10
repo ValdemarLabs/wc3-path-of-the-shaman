@@ -4,15 +4,15 @@ library DialogSystemPlayer initializer Init requires DialogSystem, VoicelinesZul
 // Player-specific dialog line registration.
 //===========================================================================
 private function LinesZulkis takes nothing returns nothing
-	call DialogSystem_RegisterGreetLine("Zulkis", "How you doing, mon?", "Zulkis_Greet1", true)
-	call DialogSystem_RegisterGreetLine("Zulkis", "Greetings, mon.", "Zulkis_Greet2", true)
-	call DialogSystem_RegisterGreetLine("Zulkis", "Zul'kis greets ya.", "Zulkis_Greet3", true)
-	call DialogSystem_RegisterGreetLine("Zulkis", "Aah, greetings, mon.", "Zulkis_Greet4", true)
+	call DialogSystem_RegisterGreetLine("Zulkis", VL_ZULKISDIALOG_GREET_1_TEXT, VL_ZULKISDIALOG_GREET_1_KEY, true)
+	call DialogSystem_RegisterGreetLine("Zulkis", VL_ZULKISDIALOG_GREET_2_TEXT, VL_ZULKISDIALOG_GREET_2_KEY, true)
+	call DialogSystem_RegisterGreetLine("Zulkis", VL_ZULKISDIALOG_GREET_3_TEXT, VL_ZULKISDIALOG_GREET_3_KEY, true)
+	call DialogSystem_RegisterGreetLine("Zulkis", VL_ZULKISDIALOG_GREET_4_TEXT, VL_ZULKISDIALOG_GREET_4_KEY, true)
 
-	call DialogSystem_RegisterFarewellLine("Zulkis", "Catch ya later, mon!", "Zulkis_Farewell1", true)
-	call DialogSystem_RegisterFarewellLine("Zulkis", "May the spirits watch your back.", "Zulkis_Farewell2", true)
-	call DialogSystem_RegisterFarewellLine("Zulkis", "Stay sharp, mon!", "Zulkis_Farewell3", true)
-	call DialogSystem_RegisterFarewellLine("Zulkis", "Be seeing ya.", "Zulkis_Farewell4", true)
+	call DialogSystem_RegisterFarewellLine("Zulkis", VL_ZULKISDIALOG_FAREWELL_1_TEXT, VL_ZULKISDIALOG_FAREWELL_1_KEY, true)
+	call DialogSystem_RegisterFarewellLine("Zulkis", VL_ZULKISDIALOG_FAREWELL_2_TEXT, VL_ZULKISDIALOG_FAREWELL_2_KEY, true)
+	call DialogSystem_RegisterFarewellLine("Zulkis", VL_ZULKISDIALOG_FAREWELL_3_TEXT, VL_ZULKISDIALOG_FAREWELL_3_KEY, true)
+	call DialogSystem_RegisterFarewellLine("Zulkis", VL_ZULKISDIALOG_FAREWELL_4_TEXT, VL_ZULKISDIALOG_FAREWELL_4_KEY, true)
 
 	call DialogSystem_RegisterGreetTrainerLine("Zulkis", VL_ZULKISDIALOG_GREET_TRAINER_1_TEXT, VL_ZULKISDIALOG_GREET_TRAINER_1_KEY, true)
 	call DialogSystem_RegisterGreetTrainerLine("Zulkis", VL_ZULKISDIALOG_GREET_TRAINER_2_TEXT, VL_ZULKISDIALOG_GREET_TRAINER_2_KEY, true)
@@ -40,20 +40,20 @@ private function LinesZulkis takes nothing returns nothing
 
 	call DialogSystem_RegisterAcceptLine("Zulkis", VL_ZULKISDIALOG_ACCEPT_1_TEXT, VL_ZULKISDIALOG_ACCEPT_1_KEY, true)
 
-	call DialogSystem_RegisterCompanionCommandLine("Zulkis", "Invite", "Come with us, mon.", "Zulkis_CompanionInvite1", true)
-	call DialogSystem_RegisterCompanionCommandLine("Zulkis", "Invite", "Join on our quest, mon.", "Zulkis_CompanionInvite2", true)
-	call DialogSystem_RegisterCompanionCommandLine("Zulkis", "Kick", "You be done here, mon.", "Zulkis_CompanionKick1", true)
-	call DialogSystem_RegisterCompanionCommandLine("Zulkis", "Kick", "Return to your path.", "Zulkis_CompanionKick2", true)
-	call DialogSystem_RegisterCompanionCommandLine("Zulkis", "DropItems", "Drop what ya carrying.", "Zulkis_CompanionDropItems1", true)
-	call DialogSystem_RegisterCompanionCommandLine("Zulkis", "DropItems", "Leave da gear here.", "Zulkis_CompanionDropItems2", true)
-	call DialogSystem_RegisterCompanionCommandLine("Zulkis", "PassiveMode", "Stay back and keep safe.", "Zulkis_CompanionPassiveMode1", true)
-	call DialogSystem_RegisterCompanionCommandLine("Zulkis", "PassiveMode", "No fighting unless I call it.", "Zulkis_CompanionPassiveMode2", true)
-	call DialogSystem_RegisterCompanionCommandLine("Zulkis", "NormalMode", "Stay close.", "Zulkis_CompanionNormalMode1", true)
-	call DialogSystem_RegisterCompanionCommandLine("Zulkis", "NormalMode", "Back to formation, mon.", "Zulkis_CompanionNormalMode2", true)
-	call DialogSystem_RegisterCompanionCommandLine("Zulkis", "AggressiveMode", "Stay aggressive, mon.", "Zulkis_CompanionAggressiveMode1", true)
-	call DialogSystem_RegisterCompanionCommandLine("Zulkis", "AggressiveMode", "Show them our strength.", "Zulkis_CompanionAggressiveMode2", true)
-	call DialogSystem_RegisterCompanionCommandLine("Zulkis", "HoldMode", "Hold this ground.", "Zulkis_CompanionHoldMode1", true)
-	call DialogSystem_RegisterCompanionCommandLine("Zulkis", "HoldMode", "Stand firm here, mon.", "Zulkis_CompanionHoldMode2", true)
+	call DialogSystem_RegisterCompanionCommandLine("Zulkis", "Invite", VL_ZULKISDIALOG_COMPANION_INVITE_1_TEXT, VL_ZULKISDIALOG_COMPANION_INVITE_1_KEY, true)
+	call DialogSystem_RegisterCompanionCommandLine("Zulkis", "Invite", VL_ZULKISDIALOG_COMPANION_INVITE_2_TEXT, VL_ZULKISDIALOG_COMPANION_INVITE_2_KEY, true)
+	call DialogSystem_RegisterCompanionCommandLine("Zulkis", "Kick", VL_ZULKISDIALOG_COMPANION_KICK_1_TEXT, VL_ZULKISDIALOG_COMPANION_KICK_1_KEY, true)
+	call DialogSystem_RegisterCompanionCommandLine("Zulkis", "Kick", VL_ZULKISDIALOG_COMPANION_KICK_2_TEXT, VL_ZULKISDIALOG_COMPANION_KICK_2_KEY, true)
+	call DialogSystem_RegisterCompanionCommandLine("Zulkis", "DropItems", VL_ZULKISDIALOG_COMPANION_DROP_ITEMS_1_TEXT, VL_ZULKISDIALOG_COMPANION_DROP_ITEMS_1_KEY, true)
+	call DialogSystem_RegisterCompanionCommandLine("Zulkis", "DropItems", VL_ZULKISDIALOG_COMPANION_DROP_ITEMS_2_TEXT, VL_ZULKISDIALOG_COMPANION_DROP_ITEMS_2_KEY, true)
+	call DialogSystem_RegisterCompanionCommandLine("Zulkis", "PassiveMode", VL_ZULKISDIALOG_COMPANION_PASSIVE_MODE_1_TEXT, VL_ZULKISDIALOG_COMPANION_PASSIVE_MODE_1_KEY, true)
+	call DialogSystem_RegisterCompanionCommandLine("Zulkis", "PassiveMode", VL_ZULKISDIALOG_COMPANION_PASSIVE_MODE_2_TEXT, VL_ZULKISDIALOG_COMPANION_PASSIVE_MODE_2_KEY, true)
+	call DialogSystem_RegisterCompanionCommandLine("Zulkis", "NormalMode", VL_ZULKISDIALOG_COMPANION_NORMAL_MODE_1_TEXT, VL_ZULKISDIALOG_COMPANION_NORMAL_MODE_1_KEY, true)
+	call DialogSystem_RegisterCompanionCommandLine("Zulkis", "NormalMode", VL_ZULKISDIALOG_COMPANION_NORMAL_MODE_2_TEXT, VL_ZULKISDIALOG_COMPANION_NORMAL_MODE_2_KEY, true)
+	call DialogSystem_RegisterCompanionCommandLine("Zulkis", "AggressiveMode", VL_ZULKISDIALOG_COMPANION_AGGRESSIVE_MODE_1_TEXT, VL_ZULKISDIALOG_COMPANION_AGGRESSIVE_MODE_1_KEY, true)
+	call DialogSystem_RegisterCompanionCommandLine("Zulkis", "AggressiveMode", VL_ZULKISDIALOG_COMPANION_AGGRESSIVE_MODE_2_TEXT, VL_ZULKISDIALOG_COMPANION_AGGRESSIVE_MODE_2_KEY, true)
+	call DialogSystem_RegisterCompanionCommandLine("Zulkis", "HoldMode", VL_ZULKISDIALOG_COMPANION_HOLD_MODE_1_TEXT, VL_ZULKISDIALOG_COMPANION_HOLD_MODE_1_KEY, true)
+	call DialogSystem_RegisterCompanionCommandLine("Zulkis", "HoldMode", VL_ZULKISDIALOG_COMPANION_HOLD_MODE_2_TEXT, VL_ZULKISDIALOG_COMPANION_HOLD_MODE_2_KEY, true)
 
 endfunction
 
