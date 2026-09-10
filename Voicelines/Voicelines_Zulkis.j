@@ -2,7 +2,7 @@
     VoicelinesZulkis
 
     Author: Valdemar
-    Version: 1.1.3
+    Version: 1.2.0
 
     Description:
     Speaker-owned story and reusable generic quest voicelines for Zul'kis.
@@ -100,6 +100,24 @@ globals
     constant string VL_ZULKIS_GENERIC_0028_TEXT = "I be here to buy what da quest requires."
 
     // Reusable player-dialog and ability-trainer replies.
+    constant string VL_ZULKISDIALOG_GREET_1_KEY = "Zulkis_Greet1"
+    constant string VL_ZULKISDIALOG_GREET_1_TEXT = "How you doing, mon?"
+    constant string VL_ZULKISDIALOG_GREET_2_KEY = "Zulkis_Greet2"
+    constant string VL_ZULKISDIALOG_GREET_2_TEXT = "Greetings, mon."
+    constant string VL_ZULKISDIALOG_GREET_3_KEY = "Zulkis_Greet3"
+    constant string VL_ZULKISDIALOG_GREET_3_TEXT = "Zul'kis greets ya."
+    constant string VL_ZULKISDIALOG_GREET_4_KEY = "Zulkis_Greet4"
+    constant string VL_ZULKISDIALOG_GREET_4_TEXT = "Aah, greetings, mon."
+
+    constant string VL_ZULKISDIALOG_FAREWELL_1_KEY = "Zulkis_Farewell1"
+    constant string VL_ZULKISDIALOG_FAREWELL_1_TEXT = "Catch ya later, mon!"
+    constant string VL_ZULKISDIALOG_FAREWELL_2_KEY = "Zulkis_Farewell2"
+    constant string VL_ZULKISDIALOG_FAREWELL_2_TEXT = "May the spirits watch your back."
+    constant string VL_ZULKISDIALOG_FAREWELL_3_KEY = "Zulkis_Farewell3"
+    constant string VL_ZULKISDIALOG_FAREWELL_3_TEXT = "Stay sharp, mon!"
+    constant string VL_ZULKISDIALOG_FAREWELL_4_KEY = "Zulkis_Farewell4"
+    constant string VL_ZULKISDIALOG_FAREWELL_4_TEXT = "Be seeing ya."
+
     constant string VL_ZULKISDIALOG_GREET_TRAINER_1_KEY = "Zulkis_GreetTrainer1"
     constant string VL_ZULKISDIALOG_GREET_TRAINER_1_TEXT = "What lessons ya got for me, mon?"
     constant string VL_ZULKISDIALOG_GREET_TRAINER_2_KEY = "Zulkis_GreetTrainer2"
@@ -137,6 +155,36 @@ globals
     constant string VL_ZULKISDIALOG_DECLINE_1_TEXT = "No."
     constant string VL_ZULKISDIALOG_ACCEPT_1_KEY = "Zulkis_Accept1"
     constant string VL_ZULKISDIALOG_ACCEPT_1_TEXT = "Yes."
+
+    // Companion-command replies.
+    constant string VL_ZULKISDIALOG_COMPANION_INVITE_1_KEY = "Zulkis_CompanionInvite1"
+    constant string VL_ZULKISDIALOG_COMPANION_INVITE_1_TEXT = "Come with us, mon."
+    constant string VL_ZULKISDIALOG_COMPANION_INVITE_2_KEY = "Zulkis_CompanionInvite2"
+    constant string VL_ZULKISDIALOG_COMPANION_INVITE_2_TEXT = "Join on our quest, mon."
+    constant string VL_ZULKISDIALOG_COMPANION_KICK_1_KEY = "Zulkis_CompanionKick1"
+    constant string VL_ZULKISDIALOG_COMPANION_KICK_1_TEXT = "You be done here, mon."
+    constant string VL_ZULKISDIALOG_COMPANION_KICK_2_KEY = "Zulkis_CompanionKick2"
+    constant string VL_ZULKISDIALOG_COMPANION_KICK_2_TEXT = "Return to your path."
+    constant string VL_ZULKISDIALOG_COMPANION_DROP_ITEMS_1_KEY = "Zulkis_CompanionDropItems1"
+    constant string VL_ZULKISDIALOG_COMPANION_DROP_ITEMS_1_TEXT = "Drop what ya carrying."
+    constant string VL_ZULKISDIALOG_COMPANION_DROP_ITEMS_2_KEY = "Zulkis_CompanionDropItems2"
+    constant string VL_ZULKISDIALOG_COMPANION_DROP_ITEMS_2_TEXT = "Leave da gear here."
+    constant string VL_ZULKISDIALOG_COMPANION_PASSIVE_MODE_1_KEY = "Zulkis_CompanionPassiveMode1"
+    constant string VL_ZULKISDIALOG_COMPANION_PASSIVE_MODE_1_TEXT = "Stay back and keep safe."
+    constant string VL_ZULKISDIALOG_COMPANION_PASSIVE_MODE_2_KEY = "Zulkis_CompanionPassiveMode2"
+    constant string VL_ZULKISDIALOG_COMPANION_PASSIVE_MODE_2_TEXT = "No fighting unless I call it."
+    constant string VL_ZULKISDIALOG_COMPANION_NORMAL_MODE_1_KEY = "Zulkis_CompanionNormalMode1"
+    constant string VL_ZULKISDIALOG_COMPANION_NORMAL_MODE_1_TEXT = "Stay close."
+    constant string VL_ZULKISDIALOG_COMPANION_NORMAL_MODE_2_KEY = "Zulkis_CompanionNormalMode2"
+    constant string VL_ZULKISDIALOG_COMPANION_NORMAL_MODE_2_TEXT = "Back to formation, mon."
+    constant string VL_ZULKISDIALOG_COMPANION_AGGRESSIVE_MODE_1_KEY = "Zulkis_CompanionAggressiveMode1"
+    constant string VL_ZULKISDIALOG_COMPANION_AGGRESSIVE_MODE_1_TEXT = "Stay aggressive, mon."
+    constant string VL_ZULKISDIALOG_COMPANION_AGGRESSIVE_MODE_2_KEY = "Zulkis_CompanionAggressiveMode2"
+    constant string VL_ZULKISDIALOG_COMPANION_AGGRESSIVE_MODE_2_TEXT = "Show them our strength."
+    constant string VL_ZULKISDIALOG_COMPANION_HOLD_MODE_1_KEY = "Zulkis_CompanionHoldMode1"
+    constant string VL_ZULKISDIALOG_COMPANION_HOLD_MODE_1_TEXT = "Hold this ground."
+    constant string VL_ZULKISDIALOG_COMPANION_HOLD_MODE_2_KEY = "Zulkis_CompanionHoldMode2"
+    constant string VL_ZULKISDIALOG_COMPANION_HOLD_MODE_2_TEXT = "Stand firm here, mon."
 
     // Legacy Excel draft/reference rows.
 
@@ -176,9 +224,6 @@ globals
     constant string VL_ZULKIS_0014_KEY = "Zulkis_0014"
     constant string VL_ZULKIS_0014_TEXT = "Hail, Chieftain Thork. I be Zul'kis of da Darkspear."
 
-    // Excel draft: Zulkis lines | Quest: Magical Eye | Event: Random discussion | Done: x
-    constant string VL_ZULKIS_0044_KEY = "Zulkis_0044"
-    constant string VL_ZULKIS_0044_TEXT = "\"I be hearin' dat them murlocs, dey be puttin' their victims in da water for weeks, limitin' their breath supply. Keep 'em alive, ya know. And when dem victims be all soaked and ready, dat's when dem murlocs feast, eatin' 'em alive. A gruesome business, mon."
 endglobals
 
 private function RegisterGenericQuestLines takes nothing returns nothing
