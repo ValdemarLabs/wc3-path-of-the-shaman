@@ -1,15 +1,27 @@
-library WeatherSystem initializer Init requires ZonesCore, ZoneEvent, Storm, CloudsSystem, SteamBreathSystem, SnowSystem
-//===========================================================================
-/*
-    WeatherSystem 2.1 - Zone-Based Master Weather Control System
+/**
+    WeatherSystem
 
-    Author: [Valdemar]
+    Author: Valdemar
 
     Description:
-    A comprehensive zone-based weather system that manages weather by master zones and subzones:
-    
-*/ 
-//===========================================================================
+        Controls zone-based seasonal weather, ambient audio, clouds, thunder,
+        snow, steam breath, and camera-local rain impact visuals.
+
+    Credits:
+        Rain-impact camera-area approach follows the camera-grid concept used
+        by DoodadRender. Terrain alignment is provided by SpeciFX.
+
+    How to install:
+        Import the required libraries and both configured rain-impact models,
+        then configure zone weather rectangles through ZonesCore.
+
+    API:
+        WeatherSystem_SetZoneWeatherById(integer zoneId, string weatherType, real duration)
+        WeatherSystem_StopZoneWeatherById(integer zoneId)
+        WeatherSystem_SetRipplesEnabled(boolean enable)
+        WeatherSystem_EnableSeasonalWeather(boolean enable)
+**/
+library WeatherSystem initializer Init requires ZonesCore, ZoneEvent, Storm, CloudsSystem, SteamBreathSystem, SnowSystem, SpeciFX
 
 
 //===========================================================================
@@ -89,12 +101,18 @@ globals
     private constant integer SNOW_HEAVY_WAVES    = 15     // Waves for heavy snow
     private constant integer SNOW_HEAVY_UNITS    = 20    // Units per wave for heavy snow
     
-    // Ripple Doodad Configuration
-    private constant integer DOODAD_RIPPLES     = 'D023' // Change to your ripple doodad ID
-    private constant integer RIPPLES_LIGHT      = 3      // Ripples for rain_light
-    private constant integer RIPPLES_MEDIUM     = 6      // Ripples for rain_medium
-    private constant integer RIPPLES_HEAVY      = 10     // Ripples for rain_heavy
-    private constant real RIPPLE_CHECK_SIZE     = 128.0  // Area size for ripple placement checks
+    // Camera-local rain impact configuration
+    private constant string RAIN_IMPACT_WATER_MODEL       = "war3mapImported\\Ripples.mdl"
+    private constant string RAIN_IMPACT_LAND_MODEL        = "lluvia suelo1.mdx"
+    private constant real RAIN_IMPACT_INTERVAL             = 0.15
+    private constant real RAIN_IMPACT_MIN_DISTANCE         = 160.00
+    private constant real RAIN_IMPACT_MAX_DISTANCE         = 1350.00
+    private constant real RAIN_IMPACT_LAND_Z_OFFSET        = 2.00
+    private constant real RAIN_IMPACT_SLOPE_SAMPLE_RADIUS  = 24.00
+    private constant real RAIN_IMPACT_MAX_HEIGHT_DIFFERENCE = 48.00
+    private constant integer RAIN_IMPACT_POOL_SIZE         = 16
+    private constant integer RAIN_IMPACT_LIGHT_STEP        = 4
+    private constant integer RAIN_IMPACT_MEDIUM_STEP       = 2
     
     // Ambient Sound Configuration
     // NOTE: Configure these sounds in World Editor by importing sounds and creating variables
@@ -123,7 +141,7 @@ globals
     // FPS Optimization Settings
     private boolean FPS_OptimizationEnabled     = false  // Master FPS optimization toggle
     private boolean FPS_CloudsDisabled          = true  // Disable clouds for FPS
-    private boolean FPS_RipplesDisabled         = true  // Disable ripples for FPS
+    private boolean FPS_RipplesDisabled         = false // Disable rain impacts for FPS
     private boolean FPS_ThunderDisabled         = false  // Disable thunder for FPS
     private boolean FPS_SteamDisabled           = false  // Disable steam breath for FPS
     private integer FPS_CloudCountOverride      = 0      // Override cloud count (0 = use default)
@@ -169,9 +187,15 @@ globals
     private integer array RegionSnowWaveCount   // Current snow wave count
     private integer array RegionSnowMaxWaves    // Max waves for this region based on intensity
     private integer array RegionSnowUnitsPerWave // Units per wave based on intensity
-    private destructable array RegionRipples    // Array of ripple destructables (2D: [regionIndex * 20 + rippleIndex])
-    private integer array RegionRippleCount     // Number of ripples in region
     private integer RegionCount                 = 0
+
+    // Camera-local rain impacts share a fixed handle lifecycle on every client.
+    private timer RainImpactTimer               = CreateTimer()
+    private location RainImpactTerrainLocation  = Location(0.00, 0.00)
+    private effect array RainImpactEffect
+    private integer RainImpactSlot              = 0
+    private integer RainImpactSequence          = 0
+    private boolean RainImpactTimerRunning      = false
     
     // Seasonal State
     private string CurrentSeason                = SEASON_SPRING
@@ -372,107 +396,171 @@ endfunction
 
 
 //===========================================================================
-// RIPPLE MANAGEMENT (for rain effects)
+// CAMERA-LOCAL RAIN IMPACTS
 //===========================================================================
 
-// Check if a point has water terrain type
-private function IsPointWaterTerrain takes real x, real y returns boolean
-    local integer terrainType = GetTerrainType(x, y)
-    // Water terrain types (may vary by tileset):
-    // 'Wdro' = Deep Water (Lordaeron), 'Wshw' = Shallow Water
-    // Add more terrain types specific to your map's tileset
-    return terrainType == 'Wdro' or terrainType == 'Wshw' or terrainType == 'Wdrt' or terrainType == 'Wwtr'
+private function IsRainWeather takes string weatherType returns boolean
+    return weatherType == WEATHER_RAIN_LIGHT or weatherType == WEATHER_RAIN_MEDIUM or weatherType == WEATHER_RAIN_HEAVY or weatherType == WEATHER_STORM
 endfunction
 
-// Stop ripples in a region
-private function StopRipplesInRegion takes rect whichRect, integer regionIndex returns nothing
+private function GetRainIntensityAtPoint takes real x, real y returns integer
     local integer i = 0
-    local integer baseIndex
-    local destructable ripple
-    
-    if regionIndex == -1 then
-        return
-    endif
-    
-    set baseIndex = regionIndex * 20
-    
-    // Remove all ripples for this region
+    local integer intensity = 0
+    local string weatherType
+    local rect r
+
     loop
-        exitwhen i >= RegionRippleCount[regionIndex]
-        set ripple = RegionRipples[baseIndex + i]
-        if ripple != null then
-            call RemoveDestructable(ripple)
-            set RegionRipples[baseIndex + i] = null
+        exitwhen i >= RegionCount
+        set r = RegionRect[i]
+        if r != null and x >= GetRectMinX(r) and x <= GetRectMaxX(r) and y >= GetRectMinY(r) and y <= GetRectMaxY(r) then
+            set weatherType = RegionWeatherType[i]
+            if weatherType == WEATHER_RAIN_HEAVY or weatherType == WEATHER_STORM then
+                set intensity = 3
+            elseif weatherType == WEATHER_RAIN_MEDIUM and intensity < 2 then
+                set intensity = 2
+            elseif weatherType == WEATHER_RAIN_LIGHT and intensity < 1 then
+                set intensity = 1
+            endif
         endif
         set i = i + 1
     endloop
-    
-    if RegionRippleCount[regionIndex] > 0 then
-        call Debug("Removed " + I2S(RegionRippleCount[regionIndex]) + " ripples from region")
-    endif
-    
-    set RegionRippleCount[regionIndex] = 0
+
+    set r = null
+    return intensity
 endfunction
 
-// Start ripples in a region with specified intensity
-private function StartRipplesInRegion takes rect whichRect, integer regionIndex, integer rippleCount returns nothing
-    local real minX
-    local real minY
-    local real maxX
-    local real maxY
+private function HasActiveRain takes nothing returns boolean
+    local integer i = 0
+
+    loop
+        exitwhen i >= RegionCount
+        if IsRainWeather(RegionWeatherType[i]) then
+            return true
+        endif
+        set i = i + 1
+    endloop
+    return false
+endfunction
+
+private function GetRainImpactTerrainZ takes real x, real y returns real
+    call MoveLocation(RainImpactTerrainLocation, x, y)
+    return GetLocationZ(RainImpactTerrainLocation)
+endfunction
+
+private function IsRainImpactSlopeAllowed takes real x, real y returns boolean
+    local real centerZ = GetRainImpactTerrainZ(x, y)
+    local real radius = RAIN_IMPACT_SLOPE_SAMPLE_RADIUS
+    local real limit = RAIN_IMPACT_MAX_HEIGHT_DIFFERENCE
+
+    if RAbsBJ(GetRainImpactTerrainZ(x + radius, y) - centerZ) > limit then
+        return false
+    elseif RAbsBJ(GetRainImpactTerrainZ(x - radius, y) - centerZ) > limit then
+        return false
+    elseif RAbsBJ(GetRainImpactTerrainZ(x, y + radius) - centerZ) > limit then
+        return false
+    endif
+    return RAbsBJ(GetRainImpactTerrainZ(x, y - radius) - centerZ) <= limit
+endfunction
+
+private function IsRainImpactVisibleThisStep takes integer intensity returns boolean
+    if intensity >= 3 then
+        return true
+    elseif intensity == 2 then
+        return ModuloInteger(RainImpactSequence, RAIN_IMPACT_MEDIUM_STEP) == 0
+    elseif intensity == 1 then
+        return ModuloInteger(RainImpactSequence, RAIN_IMPACT_LIGHT_STEP) == 0
+    endif
+    return false
+endfunction
+
+private function ClampRainImpactCoordinate takes real value, real minimum, real maximum returns real
+    if value < minimum then
+        return minimum
+    elseif value > maximum then
+        return maximum
+    endif
+    return value
+endfunction
+
+private function ClearRainImpacts takes nothing returns nothing
+    local integer i = 0
+
+    loop
+        exitwhen i >= RAIN_IMPACT_POOL_SIZE
+        if RainImpactEffect[i] != null then
+            call DestroyEffect(RainImpactEffect[i])
+            set RainImpactEffect[i] = null
+        endif
+        set i = i + 1
+    endloop
+    set RainImpactSlot = 0
+endfunction
+
+// All clients create and recycle exactly one effect per tick. Its local position,
+// model, and visibility may differ safely with each client's camera view.
+private function RainImpactCallback takes nothing returns nothing
+    local real angle
+    local real distance
     local real x
     local real y
-    local integer attempts = 0
-    local integer spawned = 0
-    local integer maxAttempts = rippleCount * 10
-    local destructable ripple
-    local integer rippleIndex
-    
-    // Skip if FPS optimization disables ripples
-    if FPS_RipplesDisabled or FPS_OptimizationEnabled then
-        return
+    local integer intensity
+    local boolean isWater
+    local boolean showImpact
+    local string effectPath
+    local effect rainEffect
+
+    if RainImpactEffect[RainImpactSlot] != null then
+        call DestroyEffect(RainImpactEffect[RainImpactSlot])
+        set RainImpactEffect[RainImpactSlot] = null
     endif
-    
-    if regionIndex == -1 or whichRect == null then
-        return
+
+    set RainImpactSequence = RainImpactSequence + 1
+    if RainImpactSequence >= 1000000 then
+        set RainImpactSequence = 1
     endif
-    
-    // Clear existing ripples first
-    call StopRipplesInRegion(whichRect, regionIndex)
-    
-    set minX = GetRectMinX(whichRect)
-    set minY = GetRectMinY(whichRect)
-    set maxX = GetRectMaxX(whichRect)
-    set maxY = GetRectMaxY(whichRect)
-    
-    // Spawn ripples only on water terrain
-    loop
-        exitwhen spawned >= rippleCount or attempts >= maxAttempts
-        
-        // Generate random position in region
-        set x = GetRandomReal(minX + RIPPLE_CHECK_SIZE, maxX - RIPPLE_CHECK_SIZE)
-        set y = GetRandomReal(minY + RIPPLE_CHECK_SIZE, maxY - RIPPLE_CHECK_SIZE)
-        
-        // Check if point has water terrain
-        if IsPointWaterTerrain(x, y) then
-            // Create ripple destructable
-            set ripple = CreateDestructable(DOODAD_RIPPLES, x, y, GetRandomReal(0, 360), 1.0, 0)
-            
-            if ripple != null then
-                // Store in array (use regionIndex * 20 as base offset, max 20 ripples per region)
-                set rippleIndex = regionIndex * 20 + spawned
-                set RegionRipples[rippleIndex] = ripple
-                set spawned = spawned + 1
-            endif
-        endif
-        
-        set attempts = attempts + 1
-    endloop
-    
-    set RegionRippleCount[regionIndex] = spawned
-    
-    if spawned > 0 then
-        call Debug("Spawned " + I2S(spawned) + " ripples on water terrain")
+    set angle = I2R(ModuloInteger(RainImpactSequence * 137, 360)) * bj_DEGTORAD
+    set distance = RAIN_IMPACT_MIN_DISTANCE + (RAIN_IMPACT_MAX_DISTANCE - RAIN_IMPACT_MIN_DISTANCE) * SquareRoot(I2R(ModuloInteger(RainImpactSequence * 83, 1000)) / 1000.00)
+    set x = GetCameraEyePositionX() + distance * Cos(angle)
+    set y = GetCameraEyePositionY() + distance * Sin(angle)
+    set x = ClampRainImpactCoordinate(x, GetRectMinX(bj_mapInitialPlayableArea), GetRectMaxX(bj_mapInitialPlayableArea))
+    set y = ClampRainImpactCoordinate(y, GetRectMinY(bj_mapInitialPlayableArea), GetRectMaxY(bj_mapInitialPlayableArea))
+    set intensity = GetRainIntensityAtPoint(x, y)
+    set isWater = not IsTerrainPathable(x, y, PATHING_TYPE_FLOATABILITY)
+    set showImpact = IsRainImpactVisibleThisStep(intensity)
+
+    if isWater then
+        set effectPath = RAIN_IMPACT_WATER_MODEL
+    else
+        set effectPath = RAIN_IMPACT_LAND_MODEL
+    endif
+    set rainEffect = AddSpecialEffect(effectPath, x, y)
+
+    if showImpact and not isWater and IsRainImpactSlopeAllowed(x, y) then
+        call SpeciFX_AlignToTerrain(rainEffect)
+        call BlzSetSpecialEffectZ(rainEffect, GetRainImpactTerrainZ(x, y) + RAIN_IMPACT_LAND_Z_OFFSET)
+    elseif not showImpact or not isWater then
+        // Preserve identical handle allocation across clients when local cameras differ.
+        call BlzSetSpecialEffectAlpha(rainEffect, 0)
+    endif
+
+    set RainImpactEffect[RainImpactSlot] = rainEffect
+    set RainImpactSlot = RainImpactSlot + 1
+    if RainImpactSlot >= RAIN_IMPACT_POOL_SIZE then
+        set RainImpactSlot = 0
+    endif
+    set rainEffect = null
+endfunction
+
+private function UpdateRainImpactTimer takes nothing returns nothing
+    local boolean shouldRun = not FPS_RipplesDisabled and not FPS_OptimizationEnabled and HasActiveRain()
+
+    if shouldRun and not RainImpactTimerRunning then
+        set RainImpactTimerRunning = true
+        call TimerStart(RainImpactTimer, RAIN_IMPACT_INTERVAL, true, function RainImpactCallback)
+    elseif not shouldRun and RainImpactTimerRunning then
+        set RainImpactTimerRunning = false
+        call PauseTimer(RainImpactTimer)
+        call ClearRainImpacts()
     endif
 endfunction
 
@@ -812,7 +900,6 @@ private function StopRegionWeatherInternal takes integer regionIndex returns not
     // Disable effects
     call DisableCloudsInRegion(regionIndex)
     call DisableSteamBreathInRegion(regionIndex)
-    call StopRipplesInRegion(RegionRect[regionIndex], regionIndex)
 
     // Stop snow if active
     if RegionWeatherType[regionIndex] == WEATHER_SNOW_LIGHT or RegionWeatherType[regionIndex] == WEATHER_SNOW_MEDIUM or RegionWeatherType[regionIndex] == WEATHER_SNOW_HEAVY then
@@ -820,6 +907,7 @@ private function StopRegionWeatherInternal takes integer regionIndex returns not
     endif
 
     set RegionWeatherType[regionIndex] = WEATHER_NONE
+    call UpdateRainImpactTimer()
 
     // Debug message
     if oldWeather != WEATHER_NONE then
@@ -1015,13 +1103,11 @@ private function StartRegionWeatherInternal takes integer regionIndex, string we
     if weatherType == WEATHER_RAIN_LIGHT then
         set RegionWeatherEffect[regionIndex] = AddWeatherEffect(r, WEATHER_EFFECT_RAIN_LIGHT)
         set RegionAmbientSound[regionIndex] = gg_snd_Ambient_RainLight  // was: SOUND_RAIN_LIGHT
-        call StartRipplesInRegion(r, regionIndex, RIPPLES_LIGHT)
         // No clouds for rain_light
         call EnableSteamBreathInRegion(regionIndex)
     elseif weatherType == WEATHER_RAIN_MEDIUM then
         set RegionWeatherEffect[regionIndex] = AddWeatherEffect(r, WEATHER_EFFECT_RAIN_MEDIUM)
         set RegionAmbientSound[regionIndex] = gg_snd_Ambient_RainMedium  // was: SOUND_RAIN_MEDIUM
-        call StartRipplesInRegion(r, regionIndex, RIPPLES_MEDIUM)
         // Enable clouds for rain_medium
         if z != 0 and z.weatherEnableClouds then
             call EnableCloudsInRegion(regionIndex)
@@ -1030,7 +1116,6 @@ private function StartRegionWeatherInternal takes integer regionIndex, string we
     elseif weatherType == WEATHER_RAIN_HEAVY then
         set RegionWeatherEffect[regionIndex] = AddWeatherEffect(r, WEATHER_EFFECT_RAIN_HEAVY)
         set RegionAmbientSound[regionIndex] = gg_snd_Ambient_RainHeavy  // was: SOUND_RAIN_HEAVY
-        call StartRipplesInRegion(r, regionIndex, RIPPLES_HEAVY)
         // Enable clouds for rain_heavy
         if z != 0 and z.weatherEnableClouds then
             call EnableCloudsInRegion(regionIndex)
@@ -1070,12 +1155,10 @@ private function StartRegionWeatherInternal takes integer regionIndex, string we
             // 70 perc chance: rain_heavy with storm
             set RegionWeatherEffect[regionIndex] = AddWeatherEffect(r, WEATHER_EFFECT_RAIN_HEAVY)
             set RegionAmbientSound[regionIndex] = gg_snd_Ambient_RainHeavy
-            call StartRipplesInRegion(r, regionIndex, RIPPLES_HEAVY)
         else
         // 30 perc chance: rain_medium with storm
             set RegionWeatherEffect[regionIndex] = AddWeatherEffect(r, WEATHER_EFFECT_RAIN_MEDIUM)
             set RegionAmbientSound[regionIndex] = gg_snd_Ambient_RainMedium
-            call StartRipplesInRegion(r, regionIndex, RIPPLES_MEDIUM)
         endif
         // Enable clouds for storm
         if z != 0 and z.weatherEnableClouds then
@@ -1093,6 +1176,7 @@ private function StartRegionWeatherInternal takes integer regionIndex, string we
     
     if RegionWeatherEffect[regionIndex] != null then
         set RegionWeatherType[regionIndex] = weatherType
+        call UpdateRainImpactTimer()
         
         // Enable weather effect
         call EnableWeatherEffect(RegionWeatherEffect[regionIndex], true)
@@ -1144,7 +1228,6 @@ private function RegisterRegionRectInternal takes rect r, integer zoneIndex, int
     set RegionSnowWaveCount[RegionCount] = 0
     set RegionSnowMaxWaves[RegionCount] = 0
     set RegionSnowUnitsPerWave[RegionCount] = 0
-    set RegionRippleCount[RegionCount] = 0
     // Debug: report new region registration
     call Debug("RegisterRegionRectInternal: Registered regionIndex=" + I2S(RegionCount) + ", zoneIndex=" + I2S(zoneIndex) + ", subZoneIndex=" + I2S(subZoneIndex) + ", rect=" + R2S(GetRectMinX(r)) + "," + R2S(GetRectMinY(r)) + " - " + R2S(GetRectMaxX(r)) + "," + R2S(GetRectMaxY(r)))
     set RegionCount = RegionCount + 1
@@ -1478,6 +1561,7 @@ endfunction
 // Enable/disable FPS optimization mode (disables all optional effects)
 public function SetFPSOptimization takes boolean enable returns nothing
     set FPS_OptimizationEnabled = enable
+    call UpdateRainImpactTimer()
     
     if enable then
         call Debug("FPS Optimization: Enabled (all optional effects disabled)")
@@ -1511,6 +1595,7 @@ endfunction
 // Disable/enable ripples for FPS
 public function SetRipplesEnabled takes boolean enable returns nothing
     set FPS_RipplesDisabled = not enable
+    call UpdateRainImpactTimer()
     
     if enable then
         call Debug("Ripples: Enabled")
@@ -1748,6 +1833,8 @@ endfunction
 //===========================================================================
 
 private function Init takes nothing returns nothing
+    call Preload(RAIN_IMPACT_WATER_MODEL)
+    call Preload(RAIN_IMPACT_LAND_MODEL)
     // Initialize season
     call UpdateSeasonInternal()
     // Register any ZoneData weather rects into the Region list so weather can be applied
