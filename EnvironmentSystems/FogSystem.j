@@ -44,7 +44,7 @@ globals
 	real array Fog_Player_FogZ_Start
 	real array Fog_Player_FogZ_End
 	player array Fog_Player
-	real Fog_ChangeSpeed = 0.03 // Lower value for smoother fade
+	real Fog_ChangeSpeed = 0.015 // Fraction of the remaining difference blended per update
 	timer FogFadeTimer = null
 	private boolean FogFadeTimerRunning = false
 	private integer FogOverrideCount = 0
