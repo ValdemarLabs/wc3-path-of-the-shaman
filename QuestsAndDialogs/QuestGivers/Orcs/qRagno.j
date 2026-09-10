@@ -2,7 +2,7 @@
     qRagno
 
     Author: Valdemar
-    Version: 1.3.0
+    Version: 1.3.1
 
     Description:
     Implements Ragno's quest dialogue, daily outpost tasks, Protect the
@@ -110,6 +110,7 @@ globals
     private unit Zulkis = null
     private unit SelectedHero = null
     private unit LumberPeon = null
+    private unit LumberLeader = null
     private unit ProtectOutpostGruntPick = null
     private unit ProtectOutpostCameraTarget = null
 
@@ -699,6 +700,7 @@ private function CleanupLumberjackRuntime takes boolean removePeon returns nothi
             set LumberPeon = null
         endif
     endif
+    set LumberLeader = null
     call ResetLumberjackTrees()
 endfunction
 
@@ -722,8 +724,8 @@ private function OnLumberHarvestResume takes nothing returns nothing
     endif
     if DialogInteraction_IsUnitAlive(LumberPeon) then
         call IssueImmediateOrder(LumberPeon, "stop")
-        if IsLumberjackQuestActive() and DialogInteraction_IsUnitAlive(Nazgrek) then
-            call FollowSystem_SetFollow(LumberPeon, Nazgrek, 1200.00, true, 5.00, FOLLOW_STYLE_PASSIVE, true, true)
+        if IsLumberjackQuestActive() and DialogInteraction_IsUnitAlive(LumberLeader) then
+            call FollowSystem_SetFollow(LumberPeon, LumberLeader, 1200.00, true, 5.00, FOLLOW_STYLE_PASSIVE, true, true)
         endif
     endif
 endfunction
@@ -868,7 +870,7 @@ private function OnLumberPeonNearTreeTimer takes nothing returns nothing
     if not IsLumberjackQuestActive() or not DialogInteraction_IsUnitAlive(LumberPeon) or LumberPeonHarvestOrderPending or LumberPeonHarvesting then
         return
     endif
-    if not DialogInteraction_IsUnitAlive(Nazgrek) or not IsUnitInRange(LumberPeon, Nazgrek, LUMBER_NEAR_TREE_RANGE) then
+    if not DialogInteraction_IsUnitAlive(LumberLeader) or not IsUnitInRange(LumberPeon, LumberLeader, LUMBER_NEAR_TREE_RANGE) then
         return
     endif
 
@@ -890,11 +892,12 @@ private function OnLumberPeonNearTreeTimer takes nothing returns nothing
     endif
 endfunction
 
-private function StartLumberjackRuntime takes nothing returns nothing
+private function StartLumberjackRuntime takes unit leader returns nothing
     local real x
     local real y
 
     call CleanupLumberjackRuntime(true)
+    set LumberLeader = leader
     set x = GetRectCenterX(gg_rct_LumberPeonSpawn)
     set y = GetRectCenterY(gg_rct_LumberPeonSpawn)
     set LumberPeon = CreateUnit(Player(1), UNIT_LUMBER_PEON, x, y, 345.00)
@@ -904,8 +907,8 @@ private function StartLumberjackRuntime takes nothing returns nothing
     endif
 
     call IssuePointOrder(LumberPeon, "move", GetRectCenterX(gg_rct_LumberPeonMove), GetRectCenterY(gg_rct_LumberPeonMove))
-    if DialogInteraction_IsUnitAlive(Nazgrek) then
-        call FollowSystem_SetFollow(LumberPeon, Nazgrek, 1200.00, true, 5.00, FOLLOW_STYLE_PASSIVE, true, true)
+    if DialogInteraction_IsUnitAlive(LumberLeader) then
+        call FollowSystem_SetFollow(LumberPeon, LumberLeader, 1200.00, true, 5.00, FOLLOW_STYLE_PASSIVE, true, true)
     endif
 
     set LumberPeonDeathTrigger = CreateTrigger()
@@ -1647,9 +1650,10 @@ endfunction
 
 private function OnAcceptLumberjack takes nothing returns nothing
     local integer seq
+    local unit hero = ResolveDialogHero()
 
     set RagnoGreeted = true
-    call StartLumberjackRuntime()
+    call StartLumberjackRuntime(hero)
     call DialogInteraction_BeginDialogSequence()
     set seq = DialogInteraction_CreateBaseSequence(Ragno, "Ragno")
     call DialogSystem_AddLine(seq, Ragno, "Ragno", VL_ORCGRUNT_0097_TEXT, VL_ORCGRUNT_0097_KEY, true)
@@ -1657,6 +1661,8 @@ private function OnAcceptLumberjack takes nothing returns nothing
     call AddLumberPeonIntroLines(seq)
     call DialogSystem_SetSequenceCallbacks(seq, null, function OnAcceptLumberjackEnd)
     call DialogSystem_PlaySequence(seq, Player(0), Ragno)
+
+    set hero = null
 endfunction
 
 private function OnCompleteLumberjackEnd takes nothing returns nothing
