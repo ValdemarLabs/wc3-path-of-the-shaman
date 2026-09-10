@@ -230,25 +230,94 @@ function Get-JassRows {
             }
         }
 
-        $voicedProfilePattern = 'RegisterVoicedProfile\(\s*[A-Z0-9_]+\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*(VL_[A-Z0-9_]+_TYPE)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)'
-        $extraVendorTexts = @(
-            "Take your time. The right purchase is worth considering.",
-            "A wise purchase. I hope it serves you well.",
-            "Good choice. That belongs in capable hands.",
-            "I can put that back into useful circulation.",
-            "Fair value for something you no longer need.",
-            "A productive exchange for both of us.",
-            "Your pack changed, and my shelves did too. Good trade.",
-            "All that browsing and not a single coin moved.",
-            "Nothing suited you? That is disappointing."
-        )
+        # Resolve the cultural/profile variation helpers from their authored
+        # JASS calls so the generation manifest cannot drift from vendor text.
+        $vendorVariationTextsByCulture = @{}
+        $vendorNoTradeTextsByCulture = @{}
+        $vendorNoTradeTextsByProfile = @{}
+        $cultureFunction = [regex]::Match($text, 'private\s+function\s+RegisterCulturalVariations[\s\S]*?endfunction')
+        if ($cultureFunction.Success) {
+            $currentCulture = ""
+            $profileBranch = @()
+            $insideProfileBranch = $false
+            foreach ($line in ($cultureFunction.Value -split "`r?`n")) {
+                if ($line -match '^\s*(?:if|elseif)\s+culture\s*==\s*(VL_CULTURE_[A-Z0-9_]+)\s+then\s*$') {
+                    $currentCulture = $matches[1]
+                    $profileBranch = @()
+                    $insideProfileBranch = $false
+                    continue
+                }
+
+                if ($line -match '^\s*(?:if|elseif)\s+profileName\s*==\s*(.+)\s+then\s*$') {
+                    $profileBranch = @([regex]::Matches($matches[1], 'VL_VENDOR_PROFILE_[A-Z0-9_]+') | ForEach-Object { $_.Value })
+                    $insideProfileBranch = $true
+                    continue
+                }
+
+                if ($insideProfileBranch -and $line -match '^\s*else\s*$') {
+                    $profileBranch = @()
+                    continue
+                }
+
+                $variationMatch = [regex]::Match($line, 'call\s+RegisterVoicedVariationSet\(\s*profileName\s*,\s*firstLine\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*\)')
+                if ($variationMatch.Success -and -not [string]::IsNullOrWhiteSpace($currentCulture)) {
+                    $vendorVariationTextsByCulture[$currentCulture] = @(1..7 | ForEach-Object { ConvertFrom-JassString $variationMatch.Groups[$_].Value })
+                    continue
+                }
+
+                $noTradeMatch = [regex]::Match($line, 'call\s+RegisterNoTransactionVariations\(\s*profileName\s*,\s*firstLine\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*\)')
+                if ($noTradeMatch.Success -and -not [string]::IsNullOrWhiteSpace($currentCulture)) {
+                    $noTradeTexts = @(
+                        (ConvertFrom-JassString $noTradeMatch.Groups[1].Value),
+                        (ConvertFrom-JassString $noTradeMatch.Groups[2].Value)
+                    )
+                    if ($insideProfileBranch -and $profileBranch.Count -gt 0) {
+                        foreach ($profileName in $profileBranch) {
+                            $vendorNoTradeTextsByProfile[$profileName] = $noTradeTexts
+                        }
+                    }
+                    else {
+                        $vendorNoTradeTextsByCulture[$currentCulture] = $noTradeTexts
+                    }
+                    continue
+                }
+
+                if ($insideProfileBranch -and $line -match '^\s*endif\s*$') {
+                    $profileBranch = @()
+                    $insideProfileBranch = $false
+                }
+            }
+        }
+
+        $catalogVariationTexts = @()
+        $catalogFunction = [regex]::Match($text, 'private\s+function\s+RegisterCatalogVariations[\s\S]*?endfunction')
+        if ($catalogFunction.Success) {
+            foreach ($m in [regex]::Matches($catalogFunction.Value, 'call\s+VendorLines_RegisterCatalogLine\([^\r\n]*?,\s*"((?:[^"\\]|\\.)*)"\s*\)')) {
+                $catalogVariationTexts += ConvertFrom-JassString $m.Groups[1].Value
+            }
+        }
+
+        $voicedProfilePattern = 'RegisterVoicedProfile\(\s*([A-Z0-9_]+)\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*(VL_[A-Z0-9_]+_TYPE)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(VL_CULTURE_[A-Z0-9_]+)\s*\)'
 
         foreach ($m in [regex]::Matches($text, $voicedProfilePattern)) {
-            $soundTypeConstant = $m.Groups[7].Value
+            $profileConstant = $m.Groups[1].Value
+            $soundTypeConstant = $m.Groups[8].Value
             if (-not $soundTypeByConstant.ContainsKey($soundTypeConstant)) { continue }
 
-            $firstLine = [int]$m.Groups[8].Value
-            $extraFirstLine = [int]$m.Groups[9].Value
+            $firstLine = [int]$m.Groups[9].Value
+            $extraFirstLine = [int]$m.Groups[10].Value
+            $cultureConstant = $m.Groups[11].Value
+            $extraVendorTexts = @()
+            if ($vendorVariationTextsByCulture.ContainsKey($cultureConstant)) {
+                $extraVendorTexts += $vendorVariationTextsByCulture[$cultureConstant]
+            }
+            if ($vendorNoTradeTextsByProfile.ContainsKey($profileConstant)) {
+                $extraVendorTexts += $vendorNoTradeTextsByProfile[$profileConstant]
+            }
+            elseif ($vendorNoTradeTextsByCulture.ContainsKey($cultureConstant)) {
+                $extraVendorTexts += $vendorNoTradeTextsByCulture[$cultureConstant]
+            }
+
             $familyConstant = $soundTypeConstant -replace '_\d+_TYPE$', ''
             foreach ($candidateConstant in $soundTypeByConstant.Keys) {
                 if (($candidateConstant -replace '_\d+_TYPE$', '') -ne $familyConstant) { continue }
@@ -256,7 +325,7 @@ function Get-JassRows {
                 $soundType = $soundTypeByConstant[$candidateConstant]
                 for ($i = 0; $i -lt 6; $i++) {
                     $lineIndex = $firstLine + $i
-                    Add-Row -Rows $rows -Key (Format-SequenceKey -SoundType $soundType -LineIndex $lineIndex) -Text (ConvertFrom-JassString $m.Groups[$i + 1].Value) -Source $file.Name -ExpectedFolder "" -DefinitionId "$($file.Name):$($candidateConstant):$lineIndex"
+                    Add-Row -Rows $rows -Key (Format-SequenceKey -SoundType $soundType -LineIndex $lineIndex) -Text (ConvertFrom-JassString $m.Groups[$i + 2].Value) -Source $file.Name -ExpectedFolder "" -DefinitionId "$($file.Name):$($candidateConstant):$lineIndex"
                 }
                 for ($i = 0; $i -lt $extraVendorTexts.Count; $i++) {
                     $lineIndex = $extraFirstLine + $i
@@ -309,7 +378,7 @@ function Get-JassRows {
             $vendorCatalogCount++
             $catalogTexts = @($arguments | Select-Object -Skip 1)
             if ($m.Groups[1].Value -eq "RegisterBasicProfile") {
-                $catalogTexts += $extraVendorTexts
+                $catalogTexts += $catalogVariationTexts
             }
             $vendorCatalogs[$arguments[0]] = [pscustomobject]@{
                 index = $vendorCatalogCount
