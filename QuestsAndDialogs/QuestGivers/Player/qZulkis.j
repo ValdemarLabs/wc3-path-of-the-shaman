@@ -48,6 +48,7 @@ library qZulkis initializer Init requires QuestGiver, QuestMaster, DialogInterac
         private constant integer DARKSPEAR_PLAYER_ID = 1
         private constant integer COMPANION_PLAYER_ID = 18
         private constant integer ZULKIS_GRAVEYARD_ID = 2
+        private constant integer NAZGREK_STARTING_GRAVEYARD_ID = 4
         private constant integer STARTING_HEADHUNTER_SIZE = 2
         private constant integer ORC_PATROL_SIZE = 4
         private constant integer MAX_STORED_NAZGREK_COMPANIONS = 24
@@ -127,9 +128,6 @@ library qZulkis initializer Init requires QuestGiver, QuestMaster, DialogInterac
         private boolean array StoredNazgrekCompanionWasNazgrekFocused
         private boolean array StoredNazgrekCompanionWasZulkisFocused
         private integer StoredNazgrekCompanionCount = 0
-        private integer SavedGraveyardId = 0
-        private boolean NazgrekGraveyardStored = false
-        private boolean GraveyardOverrideActive = false
         private boolean Initialized = false
         private boolean StartRequested = false
         private boolean PrologueStarted = false
@@ -152,20 +150,9 @@ private function DebugMsg takes string msg returns nothing
     endif
 endfunction
 
-private function StoreNazgrekGraveyardSelection takes nothing returns nothing
-    if not NazgrekGraveyardStored then
-        set SavedGraveyardId = Revival_GetSelectedGraveyard()
-        set NazgrekGraveyardStored = true
-    endif
-endfunction
-
 private function OverridePrologueGraveyard takes nothing returns nothing
     if not PrologueStarted or PrologueCompleted then
         return
-    endif
-    if not GraveyardOverrideActive then
-        call StoreNazgrekGraveyardSelection()
-        set GraveyardOverrideActive = true
     endif
     if udg_GraveyardSelect != ZULKIS_GRAVEYARD_ID then
         call Revival_SelectGraveyard(ZULKIS_GRAVEYARD_ID)
@@ -173,11 +160,7 @@ private function OverridePrologueGraveyard takes nothing returns nothing
 endfunction
 
 private function RestorePlayerGraveyard takes nothing returns nothing
-    if NazgrekGraveyardStored then
-        call Revival_SelectGraveyard(SavedGraveyardId)
-    endif
-    set NazgrekGraveyardStored = false
-    set GraveyardOverrideActive = false
+    call Revival_SelectGraveyard(NAZGREK_STARTING_GRAVEYARD_ID)
 endfunction
 
 private function SyncUnitReferences takes nothing returns nothing
@@ -1312,7 +1295,6 @@ private function StartPrologueInternal takes nothing returns nothing
         return
     endif
 
-    call StoreNazgrekGraveyardSelection()
     set PrologueStarted = true
     set ScenePlaying = true
     call OverridePrologueGraveyard()
