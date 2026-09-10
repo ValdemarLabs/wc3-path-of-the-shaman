@@ -15,6 +15,43 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [10.9.2026]
+
+### Player-Facing Updates
+
+- Fixed the Lumberjack Duties peon failing to begin harvesting when Zul'kis accepted Ragno's quest; the peon now follows and checks proximity against the hero who actually accepted it.
+- Nazgrek now returns to the initial starting graveyard after Zul'kis's intro instead of restoring the previously selected graveyard.
+- Fixed Velyssara standing still during `Chains of Seduction`; while Nazgrek remains charmed, she now follows him aggressively and blinks to his location if she becomes stuck or falls too far behind.
+- Fixed steam-breath effects remaining attached after affected units die, including units tracked in later weather regions.
+- Made terrain-fog changes fade in more gradually for slower, more natural transitions between zones.
+- Restored Zul'kis's missing companion-command voice coverage and corrected two item-error sound registrations that could not resolve their existing audio files.
+
+### Technical Updates
+
+- Added `_developer/Abilities/Warcraft 3 WE Ability Insight.md` as a searchable, anchored conversion of the large World Editor ability research document, preserving nested lists, links, revisions, its tag glossary, and all 61 exported comments with contextual backlinks and resolution/reopen markers, with explicit credit and a source-topic link for HiveWorkshop user ScrewTheTrees. Added `_developer/Abilities/Convert-AbilityInsightDocx.ps1` for reproducible regeneration and updated `AGENTS.md` plus `.agents/skills/warcraft-ability-insight/SKILL.md` so future custom-ability work consults and validates the reference.
+- Updated `QuestsAndDialogs/QuestGivers/Orcs/qRagno.j` to retain the Lumberjack Duties accepting hero throughout its follow/harvest cycle while continuing to suspend FollowSystem during harvesting.
+- Updated `QuestsAndDialogs/QuestGivers/Player/qZulkis.j` to select Graveyard04 when the prologue returns control to Nazgrek, and updated `_developer/Design Plans/Story and Quest Design.md` with the revised handoff behavior.
+- Updated `PatrolFollowSystems/FollowSystem.j` with optional per-follower blink catch-up that teleports a distant follower to its target before the normal leash can stop it, without changing existing callers.
+- Updated `QuestsAndDialogs/QuestGivers/Satyr/qVelyssara.j` to use `FollowSystem` for her charmed pursuit of Nazgrek, including the new blink catch-up behavior, and removed its redundant quest-owned follow timer.
+- Updated `EnvironmentSystems/SteamBreath.j` to store per-region unit/effect pairs in a hashtable instead of flattening up to 100,000 entries into 8192-slot JASS arrays, and retained death cleanup through `UnitDeathEvent_Register` and `UnitDeathEvent_GetDyingUnit`.
+- Updated `EnvironmentSystems/FogSystem.j` to halve the per-update fog blend from 3% to 1.5% while preserving its eased transition curve.
+- Updated `Voicelines/Voicelines_Zulkis.j` and `QuestsAndDialogs/DialogSystemPlayer.j` with speaker-owned constants for Zul'kis's greeting, farewell, and fourteen companion-command replies; removed the unused malformed `Zulkis_0044` duplicate.
+- Updated `SoundAndMusic/ExSound.j` to register the existing `Zulkis_ItemErrorAny` and `Zulkis_ItemErrorGeneral2` keys and filenames without the previous `2Any` and `Genera2` typos.
+- Updated `tools/voicelines.ps1` to derive vendor cultural, regional no-transaction, and catalog-variation text directly from `Voicelines_VendorLines.j`, keeping Fish Audio manifests synchronized with the authored JASS.
+
+### Imports
+
+- Generated and validated 704 Fish Audio review MP3s under `tools/temp/fishaudio-review`: 684 changed vendor lines across all applicable reusable voice profiles, six revised male Satyr vendor-quest lines, and fourteen previously missing Zul'kis companion-command lines. The fourteen Zul'kis files are also present in the official sound tree; the 690 vendor and Satyr rerecordings remain staged for listening review.
+
+### Actions Remaining
+
+- Compile the full map with World Editor/JassHelper and runtime-test Lumberjack Duties with both Nazgrek and Zul'kis; lead the peon beside `LTlt` and `B61E` trees and confirm it pauses following, harvests, performs its return step, and resumes following the accepting hero.
+- Compile and runtime-test completion of Zul'kis's intro after selecting another graveyard as Nazgrek; confirm Graveyard04 and its marker become active before Nazgrek's return scene.
+- Compile the full map with World Editor/JassHelper and runtime-test accepting `Chains of Seduction`; confirm Velyssara follows Nazgrek throughout all four tasks, blinks to him beyond 900 range, and stops following after completion or Jin'Zun dispels the charm.
+- Compile the full map with World Editor/JassHelper and runtime-test steam weather in both early and later registered regions; confirm every steam effect is destroyed immediately when its attached unit dies and when regional weather stops.
+- Compile the full map with World Editor/JassHelper and runtime-test terrain-fog changes between zones to confirm the slower fade feels natural.
+- Listen-review and promote the 690 staged vendor and Satyr Fish Audio MP3s, then runtime-test racial and regional vendor reactions, the revised Satyr vendor quests, and every Zul'kis companion command.
+
 ## [8.9.2026]
 
 ### Player-Facing Updates
