@@ -28,7 +28,7 @@
     - qVelyssara_RefreshRespawnedUnitHooks()
 
 **/
-library qVelyssara initializer Init requires QuestGiver, QuestMaster, DialogInteraction, DialogSystem, HeroItemCheck, UnitDeathEvent, ZonesCore, ExSound, VoicelinesDemoness, VoicelinesNazgrek
+library qVelyssara initializer Init requires QuestGiver, QuestMaster, DialogInteraction, DialogSystem, HeroItemCheck, UnitDeathEvent, ZonesCore, FollowSystem, ExSound, VoicelinesDemoness, VoicelinesNazgrek
 
 globals
     private constant boolean DEBUG = false
@@ -71,7 +71,7 @@ globals
     private constant real CAMERA_BLOCK_RADIUS = 0.00
     private constant boolean CAMERA_BLOCK_CHECK = true
 
-    private constant real FOLLOW_INTERVAL = 2.00
+    private constant real FOLLOW_BLINK_DISTANCE = 900.00
     private constant real CONFINEMENT_INTERVAL = 0.10
     private constant real GUARD_HOSTILE_DURATION = 10.00
     private constant real HORDE_HOSTILE_DURATION = 60.00
@@ -85,7 +85,6 @@ globals
     private item PillageItem = null
     private dialog VelyssaraDialog = null
     private timer VelyssaraDialogCooldown = null
-    private timer FollowTimer = null
     private timer ConfinementTimer = null
     private timer GuardHostileTimer = null
     private timer HordeHostileTimer = null
@@ -197,7 +196,7 @@ private function RemoveTaskObjects takes nothing returns nothing
 endfunction
 
 private function StopCharmRuntime takes nothing returns nothing
-    call PauseTimer(FollowTimer)
+    call FollowSystem_RemoveUnit(Velyssara)
     call PauseTimer(ConfinementTimer)
 endfunction
 
@@ -285,16 +284,6 @@ private function OnConfinementTick takes nothing returns nothing
     endif
 endfunction
 
-private function OnFollowTick takes nothing returns nothing
-    if not IsConfinedInternal() then
-        call PauseTimer(FollowTimer)
-        return
-    endif
-    if DialogInteraction_IsUnitAlive(Velyssara) and DialogInteraction_IsUnitAlive(CharmedHero) then
-        call IssueTargetOrder(Velyssara, "follow", CharmedHero)
-    endif
-endfunction
-
 private function StartCharmRuntime takes unit hero returns nothing
     set CharmedHero = hero
     set Charmed = true
@@ -311,7 +300,8 @@ private function StartCharmRuntime takes unit hero returns nothing
         call TeleportHeroBack(hero)
     endif
     call SetUnitInvulnerable(Velyssara, true)
-    call TimerStart(FollowTimer, FOLLOW_INTERVAL, true, function OnFollowTick)
+    call FollowSystem_SetFollow(Velyssara, hero, FOLLOW_BLINK_DISTANCE, false, 0.00, FOLLOW_STYLE_DEFEND, false, false)
+    call FollowSystem_EnableBlinkCatchUp(Velyssara, FOLLOW_BLINK_DISTANCE)
     call TimerStart(ConfinementTimer, CONFINEMENT_INTERVAL, true, function OnConfinementTick)
 endfunction
 
@@ -872,7 +862,6 @@ endfunction
 
 private function Init takes nothing returns nothing
     set VelyssaraDialogCooldown = CreateTimer()
-    set FollowTimer = CreateTimer()
     set ConfinementTimer = CreateTimer()
     set GuardHostileTimer = CreateTimer()
     set HordeHostileTimer = CreateTimer()
