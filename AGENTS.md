@@ -42,6 +42,10 @@ Write short commit messages in chat per changed files or sometimes for many file
 
 Before creating or materially updating a quest, quest giver, story dialogue, dungeon quest, or story-driven world event, read `_developer/Design Plans/Story and Quest Design.md`. Reconcile the proposed change with its implementation ledger, story dependencies, canonical names, zone ID, and open decisions. Current JASS, current World Editor data, and `Zones/ZonesCore.j` take priority over outdated Articy material; inspect unexported GUI triggers before claiming or replacing their behavior. When implementation changes a quest's status, dependencies, location, identity, or story outcome, update the design plan and the current-date changelog in the same change.
 
+## Ability design reference
+
+Before creating or materially changing a custom ability, selecting or repurposing a Warcraft III base ability, or diagnosing Object Editor ability behavior, search `_developer/Abilities/Warcraft 3 WE Ability Insight.md`. Read the relevant ability section, its latest-tested-version note, tags, field behavior, AI behavior, and linked comments, including exported resolution/reopen markers. Treat the document as a versioned research reference rather than authority over current game behavior: reconcile it with current PotS JASS and Object Editor data and validate risky, patch-sensitive, multiplayer, crash, or desync claims in the current Warcraft III build. Use `.agents/skills/warcraft-ability-insight/SKILL.md` for the detailed workflow. Regenerate the Markdown with `_developer/Abilities/Convert-AbilityInsightDocx.ps1` when its source DOCX changes; do not hand-edit generated source content.
+
 ## Subagent policy
 
 Use subagents only for independent, bounded work.
