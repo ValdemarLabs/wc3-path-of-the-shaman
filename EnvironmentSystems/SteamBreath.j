@@ -11,11 +11,20 @@
     and summoned units. The system supports up to 1000 units per region and provides functions to attach, 
     remove, and clean up steam effects.
 
+    Credits:
+    -   PotS weather and centralized unit-death systems.
+
+    How to install:
+    Import after UnitDeathEvent and FallenHeroState. Weather systems may then
+    attach and remove steam effects by registered region index.
+
     API:
     -   call AttachSteamEffectsInRegion(rect, integer) - Attaches steam effects to units in a specific region.
     -   call RemoveSteamEffectsInRegion(integer) - Removes steam effects from a specific region.
     -   call AttachSteamEffects() - Legacy: Attaches steam effects globally (deprecated).
     -   call RemoveSteamEffects() - Legacy: Removes all steam effects globally (deprecated).
+    -   call HasSteamEffect(unit) - Returns whether a unit has a tracked steam effect.
+    -   call RemoveSteamEffectUnit(unit) - Removes every tracked steam effect from a unit.
 
 */ 
 //===========================================================================
@@ -25,8 +34,9 @@ library SteamBreathSystem initializer Init requires UnitDeathEvent, FallenHeroSt
 globals
     private constant integer MAX_UNITS_PER_REGION = 1000 // Maximum units that can have steam in one region
     private constant integer MAX_REGIONS = 100 // Must match WeatherSystem MAX_REGIONS
-    private unit array RandomUnits // Store affected units [regionIndex * MAX_UNITS_PER_REGION + unitIndex]
-    private effect array SteamEffects // Store attached effects [regionIndex * MAX_UNITS_PER_REGION + unitIndex]
+    private constant integer UNIT_KEY_OFFSET = 0
+    private constant integer EFFECT_KEY_OFFSET = MAX_UNITS_PER_REGION
+    private hashtable SteamBreathData = InitHashtable() // Region index -> unit/effect slots
     private integer array RegionUnitCount // Track units per region
 endglobals
 //===========================================================================
@@ -48,47 +58,46 @@ endfunction
 function SteamBreathCleanup takes nothing returns nothing
     local integer i = 0
     local integer j = 0
-    local integer index
+    local effect steamEffect
     loop
         exitwhen i >= MAX_REGIONS
         set j = 0
         loop
-            exitwhen j >= MAX_UNITS_PER_REGION
-            set index = i * MAX_UNITS_PER_REGION + j
-            if SteamEffects[index] != null then
-                call DestroyEffect(SteamEffects[index])
-                set SteamEffects[index] = null
+            exitwhen j >= RegionUnitCount[i]
+            set steamEffect = LoadEffectHandle(SteamBreathData, i, EFFECT_KEY_OFFSET + j)
+            if steamEffect != null then
+                call DestroyEffect(steamEffect)
             endif
-            set RandomUnits[index] = null
             set j = j + 1
         endloop
+        call FlushChildHashtable(SteamBreathData, i)
         set RegionUnitCount[i] = 0
         set i = i + 1
     endloop
+    set steamEffect = null
 endfunction
 //===========================================================================
 // Remove steam effects from a specific region
 function RemoveSteamEffectsInRegion takes integer regionIndex returns nothing
     local integer i = 0
-    local integer baseIndex
+    local effect steamEffect
     
     if regionIndex < 0 or regionIndex >= MAX_REGIONS then
         return
     endif
     
-    set baseIndex = regionIndex * MAX_UNITS_PER_REGION
-    
     loop
         exitwhen i >= RegionUnitCount[regionIndex]
-        if SteamEffects[baseIndex + i] != null then
-            call DestroyEffect(SteamEffects[baseIndex + i])
-            set SteamEffects[baseIndex + i] = null
+        set steamEffect = LoadEffectHandle(SteamBreathData, regionIndex, EFFECT_KEY_OFFSET + i)
+        if steamEffect != null then
+            call DestroyEffect(steamEffect)
         endif
-        set RandomUnits[baseIndex + i] = null
         set i = i + 1
     endloop
-    
+
+    call FlushChildHashtable(SteamBreathData, regionIndex)
     set RegionUnitCount[regionIndex] = 0
+    set steamEffect = null
 endfunction
 
 // Attach steam effects to units in a specific region
@@ -96,7 +105,7 @@ function AttachSteamEffectsInRegion takes rect whichRegion, integer regionIndex 
     local group g = CreateGroup()
     local unit u
     local integer i = 0
-    local integer baseIndex
+    local effect steamEffect
     
     if whichRegion == null or regionIndex < 0 or regionIndex >= MAX_REGIONS then
         call DestroyGroup(g)
@@ -107,8 +116,6 @@ function AttachSteamEffectsInRegion takes rect whichRegion, integer regionIndex 
     // Remove existing steam effects in this region first
     call RemoveSteamEffectsInRegion(regionIndex)
     
-    set baseIndex = regionIndex * MAX_UNITS_PER_REGION
-
     // Pick all units in the specified region
     // Pick only valid steam targets (alive, non-mechanical, non-structure, non-summoned)
     call GroupEnumUnitsInRect(g, whichRegion, Condition(function Filter_IsSteamTarget))
@@ -118,8 +125,9 @@ function AttachSteamEffectsInRegion takes rect whichRegion, integer regionIndex 
         set u = FirstOfGroup(g)
         exitwhen u == null or i >= MAX_UNITS_PER_REGION
         
-        set RandomUnits[baseIndex + i] = u // Store unit reference
-        set SteamEffects[baseIndex + i] = AddSpecialEffectTarget("SteamBreath_Small_Moderate.mdx", u, "head")
+        set steamEffect = AddSpecialEffectTarget("SteamBreath_Small_Moderate.mdx", u, "head")
+        call SaveUnitHandle(SteamBreathData, regionIndex, UNIT_KEY_OFFSET + i, u)
+        call SaveEffectHandle(SteamBreathData, regionIndex, EFFECT_KEY_OFFSET + i, steamEffect)
 
         call GroupRemoveUnit(g, u)
         set i = i + 1
@@ -128,6 +136,7 @@ function AttachSteamEffectsInRegion takes rect whichRegion, integer regionIndex 
     set RegionUnitCount[regionIndex] = i
 
     call DestroyGroup(g)
+    set steamEffect = null
     set u = null
     set g = null
 endfunction
@@ -137,8 +146,9 @@ function AttachSteamEffects takes nothing returns nothing
     local group g = CreateGroup()
     local unit u
     local integer i = 0
+    local effect steamEffect
     
-    // Clear previous RandomUnits[] data
+    // Clear previously tracked steam effects
     call SteamBreathCleanup()
 
     // Pick all units in the playable map area
@@ -150,8 +160,9 @@ function AttachSteamEffects takes nothing returns nothing
         set u = FirstOfGroup(g)
         exitwhen u == null or i >= MAX_UNITS_PER_REGION
         
-        set RandomUnits[i] = u // Store unit reference
-        set SteamEffects[i] = AddSpecialEffectTarget("SteamBreath_Small_Moderate.mdx", u, "head")
+        set steamEffect = AddSpecialEffectTarget("SteamBreath_Small_Moderate.mdx", u, "head")
+        call SaveUnitHandle(SteamBreathData, 0, UNIT_KEY_OFFSET + i, u)
+        call SaveEffectHandle(SteamBreathData, 0, EFFECT_KEY_OFFSET + i, steamEffect)
 
         call GroupRemoveUnit(g, u)
         set i = i + 1
@@ -159,23 +170,14 @@ function AttachSteamEffects takes nothing returns nothing
 
     set RegionUnitCount[0] = i
     call DestroyGroup(g)
+    set steamEffect = null
     set u = null
     set g = null
 endfunction
 //===========================================================================
 // Legacy function - removes all steam effects globally (deprecated)
 function RemoveSteamEffects takes nothing returns nothing
-    local integer i = 0
-    loop
-        exitwhen i >= MAX_UNITS_PER_REGION
-        if SteamEffects[i] != null then
-            call DestroyEffect(SteamEffects[i])
-            set SteamEffects[i] = null
-        endif
-        set RandomUnits[i] = null
-        set i = i + 1
-    endloop
-    set RegionUnitCount[0] = 0
+    call RemoveSteamEffectsInRegion(0)
 endfunction
 //===========================================================================
 // Checks if a unit has a steam breath effect
@@ -183,7 +185,7 @@ endfunction
 function HasSteamEffect takes unit u returns boolean
     local integer i = 0
     local integer j = 0
-    local integer index
+    local unit trackedUnit
     if u == null then
         return false
     endif
@@ -192,14 +194,16 @@ function HasSteamEffect takes unit u returns boolean
         set j = 0
         loop
             exitwhen j >= RegionUnitCount[i]
-            set index = i * MAX_UNITS_PER_REGION + j
-            if RandomUnits[index] == u then
+            set trackedUnit = LoadUnitHandle(SteamBreathData, i, UNIT_KEY_OFFSET + j)
+            if trackedUnit == u then
+                set trackedUnit = null
                 return true
             endif
             set j = j + 1
         endloop
         set i = i + 1
     endloop
+    set trackedUnit = null
     return false
 endfunction
 //===========================================================================
@@ -208,7 +212,8 @@ endfunction
 function RemoveSteamEffectUnit takes unit u returns nothing
     local integer i = 0
     local integer j = 0
-    local integer index
+    local unit trackedUnit
+    local effect steamEffect
     if u == null then
         return
     endif
@@ -217,18 +222,21 @@ function RemoveSteamEffectUnit takes unit u returns nothing
         set j = 0
         loop
             exitwhen j >= RegionUnitCount[i]
-            set index = i * MAX_UNITS_PER_REGION + j
-            if RandomUnits[index] == u then
-                if SteamEffects[index] != null then
-                    call DestroyEffect(SteamEffects[index])
-                    set SteamEffects[index] = null
+            set trackedUnit = LoadUnitHandle(SteamBreathData, i, UNIT_KEY_OFFSET + j)
+            if trackedUnit == u then
+                set steamEffect = LoadEffectHandle(SteamBreathData, i, EFFECT_KEY_OFFSET + j)
+                if steamEffect != null then
+                    call DestroyEffect(steamEffect)
                 endif
-                set RandomUnits[index] = null
+                call RemoveSavedHandle(SteamBreathData, i, UNIT_KEY_OFFSET + j)
+                call RemoveSavedHandle(SteamBreathData, i, EFFECT_KEY_OFFSET + j)
             endif
             set j = j + 1
         endloop
         set i = i + 1
     endloop
+    set trackedUnit = null
+    set steamEffect = null
 endfunction
 //===========================================================================
 // Trigger to detect death and remove steam breath
