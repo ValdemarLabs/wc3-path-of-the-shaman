@@ -18,13 +18,26 @@
 
 ## [11.9.2026]
 
+### Player-Facing Updates
+
+- Rain now creates intensity-scaled impact effects around the active camera: `war3mapImported\\Ripples.mdl` on water and `lluvia suelo1.mdx` on land.
+
+### Technical Updates
+
+- Updated `EnvironmentSystems/WeatherSystemV4.j` to replace fixed ripple destructables with a bounded camera-local special-effect pool, floatability-based water detection, terrain-aligned land impacts, steep-slope rejection, and automatic start/stop integration with active rain weather and FPS settings.
+
 ### Imports
+
 - `raindrops splash` by mechanix
   - lluvia suelo1.mdx
 - `Aarux The Plagued Nightmare - Undead Bone Spider`  by Dartz, Blizzard Entertainment
   - Aarux.mdx
 - `Flame of Azzinoth BC` by Sarsaparilla, Blizzard Entertainment
   - fireelemental_fel.mdx
+
+### Actions Remaining
+
+- Compile the full map with World Editor/JassHelper and runtime-test light, medium, heavy, and storm rain near weather-region borders, map edges, shallow/deep water, rolling terrain, cliffs, and different camera distances; confirm both configured model paths resolve and water ripples render at the water surface in Classic and Reforged modes.
 
 ## [10.9.2026]
 
