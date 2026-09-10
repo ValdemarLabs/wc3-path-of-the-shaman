@@ -7,6 +7,7 @@
 //   - Optional unfollow-on-attack with configurable duration
 //   - Two command styles: Passive Follow or Aggressive Defend
 //   - Automatic distance checking and re-issuing orders
+//   - Optional blink catch-up for followers that must never be left behind
 //   - Easy add/remove API for managing followers
 //   - Uses Table6.j by Bribe for efficient data storage
 //
@@ -34,6 +35,9 @@
 //
 // Change target
 // call FollowSystem_ChangeTarget(unit follower, unit newTarget)
+//
+// Blink to the target instead of stopping when the configured distance is exceeded
+// call FollowSystem_EnableBlinkCatchUp(unit follower, real teleportDistance)
 //
 /* Example Usage:
 // Passive follower (won't attack, never unfollows on attack, with icon and ping)
@@ -63,6 +67,7 @@ globals
     // Default Values (can be overridden per unit in API call)
     private constant real DEFAULT_MAX_FOLLOW_DISTANCE = 2500.0  // Stop following if target beyond this distance
     private constant real DEFAULT_UNFOLLOW_DURATION = 15.0      // Seconds to stop following after being attacked
+    private constant real DEFAULT_BLINK_CATCH_UP_DISTANCE = 1200.0
     private constant boolean DEFAULT_UNFOLLOW_ON_ATTACK = true  // Whether units unfollow when attacked by default
     private constant integer DEFAULT_COMMAND_STYLE = FOLLOW_STYLE_DEFEND  // Default follow behavior
     
@@ -97,6 +102,8 @@ globals
     // Following Effect  
     private constant string EFFECT_FOLLOWING_PATH = "UI\\Feedback\\TargetPreSelected\\TargetPreSelected.mdl"  // Effect when actively following
     private constant string EFFECT_FOLLOWING_ATTACH = "origin"  // Attachment point for following effect
+    private constant string EFFECT_BLINK_CASTER_PATH = "Abilities\\Spells\\NightElf\\Blink\\BlinkCaster.mdl"
+    private constant string EFFECT_BLINK_TARGET_PATH = "Abilities\\Spells\\NightElf\\Blink\\BlinkTarget.mdl"
     private constant integer EFFECT_FOLLOWING_VISIBLE_ALPHA = 255
     private constant integer EFFECT_FOLLOWING_HIDDEN_ALPHA = 0
     private constant real EFFECT_FOLLOWING_VISIBLE_SCALE = 1.00
@@ -130,6 +137,8 @@ globals
     private constant integer KEY_ENABLE_MAP_ICON = 12    // integer - whether map icon is enabled for this unit (0/1)
     private constant integer KEY_EFFECT_STOPPED = 13     // effect - special effect when stopped/not following
     private constant integer KEY_EFFECT_FOLLOWING = 14   // effect - special effect when following
+    private constant integer KEY_BLINK_CATCH_UP = 15     // integer - whether distant followers teleport to the target (0/1)
+    private constant integer KEY_BLINK_DISTANCE = 16     // real - distance that triggers catch-up teleport
 endglobals
 
 //============================================================================
@@ -277,6 +286,18 @@ private function IssueFollowOrder takes unit follower, unit target, integer styl
     endif
 endfunction
 
+private function BlinkFollowerToTarget takes unit follower, unit target returns nothing
+    local effect casterEffect = AddSpecialEffect(EFFECT_BLINK_CASTER_PATH, GetUnitX(follower), GetUnitY(follower))
+    local effect targetEffect = AddSpecialEffect(EFFECT_BLINK_TARGET_PATH, GetUnitX(target), GetUnitY(target))
+
+    call SetUnitPosition(follower, GetUnitX(target), GetUnitY(target))
+    call DestroyEffect(casterEffect)
+    call DestroyEffect(targetEffect)
+
+    set casterEffect = null
+    set targetEffect = null
+endfunction
+
 private function RemoveUnitInternal takes unit u returns nothing
     local integer unitId = GetHandleId(u)
     local Table unitData = FollowHash.link(unitId)
@@ -383,6 +404,8 @@ function FollowSystem_SetFollow takes unit follower, unit target, real maxDistan
     set unitData[KEY_LAST_PING] = 0
     set unitData[KEY_ENABLE_PING] = B2I(enablePing)
     set unitData[KEY_ENABLE_MAP_ICON] = B2I(enableMapIcon)
+    set unitData[KEY_BLINK_CATCH_UP] = 0
+    set unitData.real[KEY_BLINK_DISTANCE] = 0.0
 
     if ENABLE_MAP_ICON then
         set mapIconIndex = unitData[KEY_MAP_ICON]
@@ -429,6 +452,27 @@ function FollowSystem_SetFollow takes unit follower, unit target, real maxDistan
     if DEBUG_MODE then
         call BJDebugMsg("FollowSystem: " + GetUnitName(follower) + " now following " + GetUnitName(target))
     endif
+endfunction
+
+// Make an existing follower teleport to its target when it falls too far behind.
+// This is opt-in and does not alter the normal max-distance leash for other followers.
+function FollowSystem_EnableBlinkCatchUp takes unit follower, real teleportDistance returns nothing
+    local Table unitData
+
+    if not IsUnitInGroup(follower, FollowGroup) then
+        if DEBUG_MODE then
+            call BJDebugMsg("FollowSystem: Unit must be following before blink catch-up can be enabled")
+        endif
+        return
+    endif
+
+    if teleportDistance <= 0.0 then
+        set teleportDistance = DEFAULT_BLINK_CATCH_UP_DISTANCE
+    endif
+
+    set unitData = FollowHash.link(GetHandleId(follower))
+    set unitData[KEY_BLINK_CATCH_UP] = 1
+    set unitData.real[KEY_BLINK_DISTANCE] = teleportDistance
 endfunction
 
 // Remove a unit from the follow system
@@ -566,10 +610,19 @@ private function UpdateSingleFollower takes nothing returns nothing
     // Calculate distance to target
     set distance = GetDistance(follower, target)
     set maxDistance = unitData.real[KEY_DISTANCE]
+
+    // Persistent followers catch up before the normal leash can stop them.
+    if unitData[KEY_BLINK_CATCH_UP] != 0 and distance > unitData.real[KEY_BLINK_DISTANCE] then
+        call BlinkFollowerToTarget(follower, target)
+        call IssueFollowOrder(follower, target, unitData[KEY_COMMAND_STYLE])
+        set unitData.real[KEY_LAST_ORDER] = 1.0
+        set unitData[KEY_LAST_PING] = 0
+        set distance = 0.0
+    endif
     
     // Check if target is beyond max follow distance (leash broken)
     // If too far, don't issue movement orders but keep unit in system
-    if distance > maxDistance then
+    if unitData[KEY_BLINK_CATCH_UP] == 0 and distance > maxDistance then
         if DEBUG_MODE then
             call BJDebugMsg("FollowSystem: " + GetUnitName(follower) + " too far from target (distance: " + R2S(distance) + "), not moving")
         endif
