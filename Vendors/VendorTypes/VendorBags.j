@@ -117,7 +117,7 @@ library VendorBags initializer Init requires Shop, VoicelinesVendorLines, Reputa
 
     private function RegisterVendorTypes takes nothing returns nothing
         // Graknar retains his placed-unit owner's faction and quest-giver identity.
-        call VendorBags_RegisterUnitTypeEx(UNIT_TYPE_GRAKNAR, "Graknar", VL_VENDOR_PROFILE_OGRE_BONECRUSHER_BAG_MERCHANT_MALE, VL_GENERIC_OGRE_BONECRUSHER_MALE_1_TYPE, "")
+        call VendorBags_RegisterUnitTypeEx(UNIT_TYPE_GRAKNAR, "Graknar", VL_VENDOR_PROFILE_ORC_FOREST_MALE, VL_GENERIC_ORC_MALE_5_TYPE, "")
 
         call VendorBags_RegisterUnitTypeEx(UNIT_TYPE_GORVAK, "Gorvak Packhide", VL_VENDOR_PROFILE_ORC_FIERY_MOUNTAIN_MALE, VL_GENERIC_ORC_MALE_1_TYPE, "Horde")
         call VendorBags_RegisterUnitTypeEx(UNIT_TYPE_THREKKA, "Threkka Trailpack", VL_VENDOR_PROFILE_ORC_FOREST_MALE, VL_GENERIC_ORC_MALE_3_TYPE, "Horde")
