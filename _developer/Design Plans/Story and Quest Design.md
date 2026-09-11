@@ -111,7 +111,7 @@ These rawcodes or named globals are evidence that the character already exists i
 | Drek'thor | `o60D` | Thornwoods supporting quest giver; exact GUI role to recover |
 | Ogmar | `o612` | Existing supporting NPC; verify current placement and triggers |
 | Erduk | `o61C` | Ghostwalk Ridge murloc-pressure side quest giver on the outskirts of Ironspine Post |
-| Graknar | `o61S` | Bag merchant and Mistaken Kin quest giver; reserve this rawcode for the canonical Graknar and verify his final placement |
+| Graknar | `o61S`, Orc Peon base `opeo` | Sereneglade Orc bag merchant and Mistaken Kin quest giver; reserve this rawcode for the canonical Graknar and verify his final placement |
 | Boom Brothers | `n013` | Sirensong engineering chain and Boom Mine dungeon |
 | Atex Blix | `n01A` | Boom-chain contractor, betrayer, and dungeon boss identity |
 | Kribugs | `n61E` | Comic Ogre side-quest hub |
@@ -189,7 +189,7 @@ Vendor kill objectives must never target the giver's own faction. Xyros Bloodwag
 
 The generic quest plan below complements that set; it must not recreate an existing vendor task under a second quest ID. Exact vendor and generic-NPC placements must be checked in World Editor because the source repository does not provide a complete placement inventory.
 
-Graknar `o61S` is a named quest giver as well as the original bag merchant. Do not reuse `o61S` for generic bag sellers. `VendorBags.j` registers three additional Orc bag merchants and plans eleven identities across Tauren, Troll, Goblin, Satyr, Bonecrusher, Riverbane, Stormhaven, Human Citizen, Elarindor, and Morgrim vendors. The planned non-Orc identities retain guarded `XXXX` dummy rawcodes until their distinct Object Editor unit types are created; their canonical names, voice profiles, reputation ownership, and suggested bases are recorded in `QuestsAndDialogs/QuestGivers/Vendors/README.md`.
+Graknar `o61S` is a named quest giver as well as the original bag merchant. Do not reuse `o61S` for generic bag sellers. `VendorBags.j` registers two additional Orc bag merchants and plans Gorvak plus eleven identities across Tauren, Troll, Goblin, Satyr, Bonecrusher, Riverbane, Stormhaven, Human Citizen, Elarindor, and Morgrim vendors. Gorvak retains a guarded `XXXX` dummy rawcode because `o01O` belongs to a non-vendor Restoration Shaman; the other planned identities also retain `XXXX` until their distinct Object Editor unit types are created. Their canonical names, voice profiles, reputation ownership, and suggested bases are recorded in `QuestsAndDialogs/QuestGivers/Vendors/README.md`.
 
 ### Existing runtime systems tied to planned content
 
