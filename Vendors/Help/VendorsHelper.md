@@ -14,7 +14,7 @@ These Object Editor units are retained only as legacy building objects. They are
 
 Graknar `o61S` is the exception to the generic-dialog path because `qGraknar.j` owns his `Mistaken Kin`, Trade, and Farewell choices. Keep `o61S` exclusive to the canonical placed Graknar. His custom Trade option opens the same shared Bag Merchant catalog and returns to his current quest/dialog choices when ShopUI closes.
 
-The three Orc bag vendors have assigned rawcodes. All other newly planned racial and reputation bag vendors use the guarded `XXXX` dummy rawcode until their distinct unit types are created in World Editor; the `Placed` column below records the current map status. Clone the race-appropriate existing vendor named in `QuestsAndDialogs/QuestGivers/Vendors/README.md`, replace that vendor's placeholder constant in `VendorBags.j`, assign the `Bag Merchant` editor suffix and matching faction owner, and do not reuse Graknar's rawcode. Their normal shop gate requires at least Neutral reputation with the faction registered by `VendorBags.j`.
+Two generic Orc bag vendors have assigned rawcodes. Gorvak and all other newly planned racial and reputation bag vendors use the guarded `XXXX` dummy rawcode until their distinct unit types are created in World Editor; the `Placed` column below records the current map status. Clone the race-appropriate existing vendor named in `QuestsAndDialogs/QuestGivers/Vendors/README.md`, replace that vendor's placeholder constant in `VendorBags.j`, assign the `Bag Merchant` editor suffix and matching faction owner, and do not reuse Graknar's rawcode or the non-vendor Restoration Shaman rawcode `o01O`. Their normal shop gate requires at least Neutral reputation with the faction registered by `VendorBags.j`.
 
 To add another bag-vendor identity in code, reserve a unique unit-type constant and register it through `VendorBags_RegisterUnitTypeEx(unitTypeId, displayName, profile, voiceType, factionName)`. Use `VendorBags_RegisterUnit(vendor)` only when a custom quest-giver library owns a specific placed unit, as `qGraknar.j` does.
 
@@ -60,7 +60,7 @@ To add another bag-vendor identity in code, reserve a unique unit-type constant 
 | `o01L` | Vorgra Totemveil | Shamanic Goods Vendor | Male | Sirensong | — | Yes |
 | `o01M` | Gulvar Ashsigil | Fel Curio Dealer | Male | Dragonfire Peaks | — | Yes |
 | `o01N` | Morzun Felwhisper | Fel Curio Dealer | Male | Havenwoods / Thornwoods | — | Yes |
-| `o01O` | Gorvak Packhide | Bag Merchant | Male | Sirensong | — | Yes |
+| `XXXX` | Gorvak Packhide | Bag Merchant | Male | Sirensong | — | No |
 | `o01P` | Threkka Trailpack | Bag Merchant | Male | Thornwoods / Havenwoods / Sereneglade | — | Yes |
 | `o01Q` | Mazruk Reedstrap | Bag Merchant | Male | Horde Lumber Mill | — | Yes |
 | `o61S` | Graknar | Bag Merchant | Male | Sereneglade | Yes (Normal) | Yes |
