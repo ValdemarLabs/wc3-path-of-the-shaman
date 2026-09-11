@@ -190,6 +190,41 @@ namespace WC3ItemManager.Repositories
         }
 
         /// <summary>
+        /// Update several specific drops atomically.
+        /// </summary>
+        public void UpdateMany(IEnumerable<UnitSpecificDrop> drops)
+        {
+            using (var conn = new NpgsqlConnection(_connectionString))
+            {
+                conn.Open();
+                using (var transaction = conn.BeginTransaction())
+                {
+                    foreach (var drop in drops)
+                    {
+                        using (var cmd = new NpgsqlCommand(@"
+                            UPDATE unit_specific_drops SET
+                                drop_chance = @drop_chance,
+                                min_quantity = @min_qty,
+                                max_quantity = @max_qty,
+                                is_guaranteed = @guaranteed,
+                                weight = @weight,
+                                required_quest_id = @required_quest_id,
+                                required_quest_state = @required_quest_state,
+                                enabled = @enabled,
+                                notes = @notes
+                            WHERE id = @id", conn, transaction))
+                        {
+                            cmd.Parameters.AddWithValue("@id", drop.Id);
+                            AddParameters(cmd, drop);
+                            cmd.ExecuteNonQuery();
+                        }
+                    }
+                    transaction.Commit();
+                }
+            }
+        }
+
+        /// <summary>
         /// Delete a specific drop
         /// </summary>
         public void Delete(int id)

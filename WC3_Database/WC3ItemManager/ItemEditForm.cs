@@ -118,6 +118,9 @@ namespace WC3ItemManager
         private UnitSpecificDropRepository _dropSourceRepo;
         private UnitTypeRepository _unitTypeRepo;
         private List<UnitType> _allUnits;
+        private readonly HashSet<int> _modifiedDropSourceIds = new HashSet<int>();
+        private List<DropQuestChoice> _dropQuestChoices;
+        private bool _loadingDropSources;
         private bool _syncingActivelyUsedCheckboxes;
         private bool _syncingManualAbilityGridValues;
 
@@ -135,6 +138,12 @@ namespace WC3ItemManager
                 string suffix = string.IsNullOrWhiteSpace(EditorSuffix) ? "" : $" [{EditorSuffix.Trim()}]";
                 return $"{Code} - {name}{suffix}";
             }
+        }
+
+        private sealed class DropQuestChoice
+        {
+            public int Id { get; set; }
+            public string Label { get; set; }
         }
 
         public ItemEditForm(int? itemId, string connectionString, bool isDuplicateMode = false)
@@ -1881,7 +1890,7 @@ namespace WC3ItemManager
             
             tab.Controls.Add(new Label
             {
-                Text = "Configure which units drop this item as specific/boss loot. Changes are saved immediately.",
+                Text = "Edit drop values in the grid, then click Save. Use Ctrl/Shift to select units for bulk editing.",
                 Location = new Point(20, y),
                 AutoSize = true,
                 ForeColor = Color.Gray
@@ -1919,7 +1928,7 @@ namespace WC3ItemManager
 
             btnEditDropSource = new Button
             {
-                Text = "Edit / Quest Gate",
+                Text = "Edit Selected",
                 Location = new Point(210, 0),
                 Size = new Size(130, 30),
                 FlatStyle = FlatStyle.Flat,
@@ -1952,7 +1961,7 @@ namespace WC3ItemManager
                 AllowUserToDeleteRows = false,
                 ReadOnly = false,
                 SelectionMode = DataGridViewSelectionMode.FullRowSelect,
-                MultiSelect = false,
+                MultiSelect = true,
                 AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
                 RowHeadersVisible = false,
                 BackgroundColor = Color.FromArgb(245, 245, 250),
@@ -1978,36 +1987,88 @@ namespace WC3ItemManager
             var maxQtyCol = new DataGridViewTextBoxColumn { Name = "MaxQty", HeaderText = "Max Qty", Width = 60 };
             dgvDropSources.Columns.Add(maxQtyCol);
 
-            var questGateCol = new DataGridViewTextBoxColumn { Name = "QuestGate", HeaderText = "Quest Gate", Width = 190, ReadOnly = true };
+            var weightCol = new DataGridViewTextBoxColumn { Name = "Weight", HeaderText = "Weight", Width = 65 };
+            dgvDropSources.Columns.Add(weightCol);
+
+            LoadDropQuestChoices();
+            var questGateCol = new DataGridViewComboBoxColumn
+            {
+                Name = "QuestId",
+                HeaderText = "Quest Gate",
+                Width = 190,
+                DataSource = _dropQuestChoices,
+                DisplayMember = nameof(DropQuestChoice.Label),
+                ValueMember = nameof(DropQuestChoice.Id),
+                FlatStyle = FlatStyle.Flat
+            };
             dgvDropSources.Columns.Add(questGateCol);
+
+            var questStateCol = new DataGridViewComboBoxColumn
+            {
+                Name = "QuestState",
+                HeaderText = "State",
+                Width = 85,
+                FlatStyle = FlatStyle.Flat
+            };
+            questStateCol.Items.AddRange("active", "discovered");
+            dgvDropSources.Columns.Add(questStateCol);
             
             var notesCol = new DataGridViewTextBoxColumn { Name = "Notes", HeaderText = "Notes", Width = 200 };
             dgvDropSources.Columns.Add(notesCol);
             
             dgvDropSources.CellValueChanged += DgvDropSources_CellValueChanged;
             dgvDropSources.CurrentCellDirtyStateChanged += DgvDropSources_CurrentCellDirtyStateChanged;
+            dgvDropSources.SelectionChanged += DgvDropSources_SelectionChanged;
+            dgvDropSources.DataError += (s, e) =>
+            {
+                Logger.Instance.Error($"Invalid drop-source grid value: {e.Exception?.Message}");
+                e.ThrowException = false;
+            };
             
             tab.Controls.Add(dgvDropSources);
             y += 390;
             
             tab.Controls.Add(new Label
             {
-                Text = "💡 Tip: Edit values in the grid, or use 'Edit / Quest Gate' for the complete configuration.",
+                Text = "💡 Tip: Quest gate, state, weight, chance, quantity, and notes can all be edited here.",
                 Location = new Point(20, y),
                 AutoSize = true,
                 ForeColor = Color.FromArgb(80, 80, 80)
             });
         }
+
+        private void LoadDropQuestChoices()
+        {
+            _dropQuestChoices = new List<DropQuestChoice>
+            {
+                new DropQuestChoice { Id = 0, Label = "None" }
+            };
+
+            var quests = new QuestDesignerRepository(connectionString).GetQuests()
+                .Where(q => q.Enabled)
+                .OrderBy(q => q.Title)
+                .ThenBy(q => q.QuestName);
+            foreach (var quest in quests)
+            {
+                _dropQuestChoices.Add(new DropQuestChoice
+                {
+                    Id = quest.Id,
+                    Label = $"{quest.Title} [{quest.QuestName}]"
+                });
+            }
+        }
         
         private void LoadDropSources(string itemCode)
         {
-            dgvDropSources.Rows.Clear();
-            UpdateDropSourceButtons();
-            
-            if (string.IsNullOrWhiteSpace(itemCode)) return;
-            
+            _loadingDropSources = true;
             try
             {
+                dgvDropSources.Rows.Clear();
+                _modifiedDropSourceIds.Clear();
+                UpdateDropSourceButtons();
+
+                if (string.IsNullOrWhiteSpace(itemCode)) return;
+
                 var drops = _dropSourceRepo.GetByItemCode(itemCode);
                 
                 foreach (var drop in drops)
@@ -2020,7 +2081,9 @@ namespace WC3ItemManager
                         drop.IsGuaranteed,
                         drop.MinQuantity,
                         drop.MaxQuantity,
-                        drop.QuestGateDisplay,
+                        drop.Weight,
+                        drop.RequiredQuestId ?? 0,
+                        drop.RequiredQuestState ?? "active",
                         drop.Notes ?? ""
                     );
                     dgvDropSources.Rows[rowIdx].Tag = drop;
@@ -2038,13 +2101,19 @@ namespace WC3ItemManager
             {
                 Logger.Instance.Error($"Error loading drop sources: {ex.Message}");
             }
+            finally
+            {
+                _loadingDropSources = false;
+                DgvDropSources_SelectionChanged(null, EventArgs.Empty);
+            }
         }
         
         private void DgvDropSources_CurrentCellDirtyStateChanged(object sender, EventArgs e)
         {
             // Commit checkbox changes immediately
-            if (dgvDropSources.IsCurrentCellDirty && 
-                dgvDropSources.CurrentCell is DataGridViewCheckBoxCell)
+            if (dgvDropSources.IsCurrentCellDirty &&
+                (dgvDropSources.CurrentCell is DataGridViewCheckBoxCell ||
+                 dgvDropSources.CurrentCell is DataGridViewComboBoxCell))
             {
                 dgvDropSources.CommitEdit(DataGridViewDataErrorContexts.Commit);
             }
@@ -2052,10 +2121,21 @@ namespace WC3ItemManager
         
         private void DgvDropSources_CellValueChanged(object sender, DataGridViewCellEventArgs e)
         {
-            if (e.RowIndex < 0) return;
+            if (_loadingDropSources || e.RowIndex < 0) return;
             
-            // Mark row as modified
-            dgvDropSources.Rows[e.RowIndex].DefaultCellStyle.BackColor = Color.LightYellow;
+            var row = dgvDropSources.Rows[e.RowIndex];
+            if (row.Tag is UnitSpecificDrop drop && drop.Id > 0)
+            {
+                _modifiedDropSourceIds.Add(drop.Id);
+                row.DefaultCellStyle.BackColor = Color.LightYellow;
+            }
+        }
+
+        private void DgvDropSources_SelectionChanged(object sender, EventArgs e)
+        {
+            if (btnEditDropSource == null) return;
+            int count = dgvDropSources?.SelectedRows.Count ?? 0;
+            btnEditDropSource.Text = count > 1 ? $"Bulk Edit ({count})" : "Edit Selected";
         }
 
         private void UpdateDropSourceButtons()
@@ -2146,7 +2226,9 @@ namespace WC3ItemManager
                         newDrop.IsGuaranteed,
                         newDrop.MinQuantity,
                         newDrop.MaxQuantity,
-                        newDrop.QuestGateDisplay,
+                        newDrop.Weight,
+                        newDrop.RequiredQuestId ?? 0,
+                        newDrop.RequiredQuestState,
                         newDrop.Notes
                     );
                     dgvDropSources.Rows[rowIdx].Tag = newDrop;
@@ -2168,17 +2250,17 @@ namespace WC3ItemManager
         {
             if (dgvDropSources.SelectedRows.Count == 0)
             {
-                MessageBox.Show("Please select a unit to remove.", "No Selection",
+                MessageBox.Show("Please select one or more units to remove.", "No Selection",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
-            
-            var row = dgvDropSources.SelectedRows[0];
-            var drop = row.Tag as UnitSpecificDrop;
-            string unitName = row.Cells["UnitName"].Value?.ToString() ?? "Unknown";
-            
+
+            var selectedRows = dgvDropSources.SelectedRows.Cast<DataGridViewRow>().ToList();
+            string targetDescription = selectedRows.Count == 1
+                ? $"'{selectedRows[0].Cells["UnitName"].Value ?? "Unknown"}'"
+                : $"{selectedRows.Count} selected units";
             var result = MessageBox.Show(
-                $"Remove '{unitName}' from drop sources?\n\nThis will delete the drop configuration.",
+                $"Remove {targetDescription} from this item's drop sources?\n\nThis will delete the selected drop configuration(s).",
                 "Confirm Remove",
                 MessageBoxButtons.YesNo,
                 MessageBoxIcon.Question);
@@ -2187,13 +2269,16 @@ namespace WC3ItemManager
             {
                 try
                 {
-                    if (drop != null && drop.Id > 0)
+                    foreach (var row in selectedRows)
                     {
-                        _dropSourceRepo.Delete(drop.Id);
+                        if (row.Tag is UnitSpecificDrop drop && drop.Id > 0)
+                        {
+                            _dropSourceRepo.Delete(drop.Id);
+                            _modifiedDropSourceIds.Remove(drop.Id);
+                        }
+                        dgvDropSources.Rows.Remove(row);
                     }
-                    
-                    dgvDropSources.Rows.Remove(row);
-                    
+
                     // Update tab text
                     var tabDropSources = dgvDropSources.Parent as TabPage;
                     if (tabDropSources != null)
@@ -2202,7 +2287,7 @@ namespace WC3ItemManager
                         tabDropSources.Text = count > 0 ? $"Drop Sources ({count})" : "Drop Sources";
                     }
                     
-                    Logger.Instance.Info($"Removed drop source: {unitName}");
+                    Logger.Instance.Info($"Removed {selectedRows.Count} drop source(s) from {txtItemCode.Text.Trim()}");
                 }
                 catch (Exception ex)
                 {
@@ -2222,6 +2307,23 @@ namespace WC3ItemManager
                 return;
             }
 
+            try
+            {
+                SaveModifiedDropSourceRows();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Save the current grid changes before editing: {ex.Message}", "Invalid Grid Value",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (dgvDropSources.SelectedRows.Count > 1)
+            {
+                BulkEditSelectedDropSources();
+                return;
+            }
+
             var drop = dgvDropSources.SelectedRows[0].Tag as UnitSpecificDrop;
             if (drop == null) return;
 
@@ -2235,41 +2337,67 @@ namespace WC3ItemManager
             }
         }
 
+        private void BulkEditSelectedDropSources()
+        {
+            var selectedDrops = dgvDropSources.SelectedRows
+                .Cast<DataGridViewRow>()
+                .OrderBy(row => row.Index)
+                .Select(row => row.Tag as UnitSpecificDrop)
+                .Where(drop => drop != null)
+                .ToList();
+            if (selectedDrops.Count < 2) return;
+
+            using (var dialog = new DropBulkEditDialog(connectionString, selectedDrops.Count))
+            {
+                if (dialog.ShowDialog(this) != DialogResult.OK) return;
+
+                try
+                {
+                    foreach (var drop in selectedDrops)
+                    {
+                        if (dialog.DropChance.HasValue) drop.DropChance = dialog.DropChance.Value;
+                        if (dialog.IsGuaranteed.HasValue) drop.IsGuaranteed = dialog.IsGuaranteed.Value;
+                        if (dialog.MinQuantity.HasValue)
+                        {
+                            drop.MinQuantity = dialog.MinQuantity.Value;
+                            if (drop.MaxQuantity < drop.MinQuantity) drop.MaxQuantity = drop.MinQuantity;
+                        }
+                        if (dialog.MaxQuantity.HasValue)
+                        {
+                            drop.MaxQuantity = dialog.MaxQuantity.Value;
+                            if (drop.MinQuantity > drop.MaxQuantity) drop.MinQuantity = drop.MaxQuantity;
+                        }
+                        if (dialog.Weight.HasValue) drop.Weight = dialog.Weight.Value;
+                        if (dialog.ApplyQuestGate)
+                        {
+                            drop.RequiredQuestId = dialog.RequiredQuestId;
+                            drop.RequiredQuestState = dialog.RequiredQuestState;
+                        }
+                        if (dialog.ApplyNotes) drop.Notes = dialog.Notes;
+                    }
+
+                    _dropSourceRepo.UpdateMany(selectedDrops);
+                    Logger.Instance.Info($"Bulk updated {selectedDrops.Count} drop sources for {txtItemCode.Text.Trim()}");
+                    LoadDropSources(txtItemCode.Text.Trim());
+                    MessageBox.Show($"Updated {selectedDrops.Count} drop sources.", "Bulk Edit Complete",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error applying bulk changes: {ex.Message}", "Error",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    Logger.Instance.Error($"Error bulk editing drop sources: {ex.Message}");
+                }
+            }
+        }
+
         private void BtnSaveDropChanges_Click(object sender, EventArgs e)
         {
             int savedCount = 0;
             
             try
             {
-                foreach (DataGridViewRow row in dgvDropSources.Rows)
-                {
-                    // Only save modified rows (yellow background)
-                    if (row.DefaultCellStyle.BackColor != Color.LightYellow) continue;
-                    
-                    var drop = row.Tag as UnitSpecificDrop;
-                    if (drop == null) continue;
-                    
-                    // Update drop from grid values
-                    if (decimal.TryParse(row.Cells["DropChance"].Value?.ToString(), out decimal chance))
-                        drop.DropChance = Math.Max(0, Math.Min(100, chance));
-                    
-                    drop.IsGuaranteed = row.Cells["Guaranteed"].Value is bool b && b;
-                    
-                    if (int.TryParse(row.Cells["MinQty"].Value?.ToString(), out int minQty))
-                        drop.MinQuantity = Math.Max(1, minQty);
-                    
-                    if (int.TryParse(row.Cells["MaxQty"].Value?.ToString(), out int maxQty))
-                        drop.MaxQuantity = Math.Max(drop.MinQuantity, maxQty);
-                    
-                    drop.Notes = row.Cells["Notes"].Value?.ToString() ?? "";
-                    
-                    // Save to database
-                    _dropSourceRepo.Update(drop);
-                    
-                    // Clear modified indicator
-                    row.DefaultCellStyle.BackColor = Color.White;
-                    savedCount++;
-                }
+                savedCount = SaveModifiedDropSourceRows();
                 
                 if (savedCount > 0)
                 {
@@ -2289,6 +2417,58 @@ namespace WC3ItemManager
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
                 Logger.Instance.Error($"Error saving drop changes: {ex.Message}");
             }
+        }
+
+        private int SaveModifiedDropSourceRows()
+        {
+            if (dgvDropSources.IsCurrentCellDirty)
+                dgvDropSources.CommitEdit(DataGridViewDataErrorContexts.Commit);
+            if (!dgvDropSources.EndEdit())
+                throw new InvalidOperationException("Finish or correct the current cell before saving.");
+
+            var modifiedRows = dgvDropSources.Rows.Cast<DataGridViewRow>()
+                .Where(row => row.Tag is UnitSpecificDrop drop && _modifiedDropSourceIds.Contains(drop.Id))
+                .ToList();
+            if (modifiedRows.Count == 0) return 0;
+
+            foreach (var row in modifiedRows)
+                ApplyDropSourceGridValues(row, (UnitSpecificDrop)row.Tag);
+
+            _dropSourceRepo.UpdateMany(modifiedRows.Select(row => (UnitSpecificDrop)row.Tag));
+            foreach (var row in modifiedRows)
+            {
+                var drop = (UnitSpecificDrop)row.Tag;
+                _modifiedDropSourceIds.Remove(drop.Id);
+                row.DefaultCellStyle.BackColor = Color.White;
+            }
+            return modifiedRows.Count;
+        }
+
+        private static void ApplyDropSourceGridValues(DataGridViewRow row, UnitSpecificDrop drop)
+        {
+            string unitCode = drop.UnitCode ?? "unknown unit";
+            if (!decimal.TryParse(row.Cells["DropChance"].Value?.ToString(), out decimal chance) || chance < 0 || chance > 100)
+                throw new FormatException($"{unitCode}: Drop % must be between 0 and 100.");
+            if (!int.TryParse(row.Cells["MinQty"].Value?.ToString(), out int minQuantity) || minQuantity < 1)
+                throw new FormatException($"{unitCode}: Min Qty must be at least 1.");
+            if (!int.TryParse(row.Cells["MaxQty"].Value?.ToString(), out int maxQuantity) || maxQuantity < minQuantity)
+                throw new FormatException($"{unitCode}: Max Qty must be at least Min Qty.");
+            if (!int.TryParse(row.Cells["Weight"].Value?.ToString(), out int dropWeight) || dropWeight < 1 || dropWeight > 10000)
+                throw new FormatException($"{unitCode}: Weight must be between 1 and 10000.");
+
+            int questId = Convert.ToInt32(row.Cells["QuestId"].Value ?? 0);
+            string questState = row.Cells["QuestState"].Value?.ToString() ?? "active";
+            if (questState != "active" && questState != "discovered")
+                throw new FormatException($"{unitCode}: Quest state must be active or discovered.");
+
+            drop.DropChance = chance;
+            drop.IsGuaranteed = Convert.ToBoolean(row.Cells["Guaranteed"].Value ?? false);
+            drop.MinQuantity = minQuantity;
+            drop.MaxQuantity = maxQuantity;
+            drop.Weight = dropWeight;
+            drop.RequiredQuestId = questId == 0 ? null : questId;
+            drop.RequiredQuestState = questState;
+            drop.Notes = row.Cells["Notes"].Value?.ToString() ?? "";
         }
         
         private void BtnAutoGenerateTooltip_Click(object sender, EventArgs e)
