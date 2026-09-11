@@ -104,6 +104,7 @@ globals
     // Camera-local rain impact configuration
     private constant string RAIN_IMPACT_WATER_MODEL       = "war3mapImported\\Ripples.mdl"
     private constant string RAIN_IMPACT_LAND_MODEL        = "lluvia suelo1.mdx"
+    private constant real RAIN_IMPACT_WATER_SCALE         = 5.00
     private constant real RAIN_IMPACT_INTERVAL             = 0.15
     private constant real RAIN_IMPACT_MIN_DISTANCE         = 160.00
     private constant real RAIN_IMPACT_MAX_DISTANCE         = 1350.00
@@ -534,6 +535,9 @@ private function RainImpactCallback takes nothing returns nothing
         set effectPath = RAIN_IMPACT_LAND_MODEL
     endif
     set rainEffect = AddSpecialEffect(effectPath, x, y)
+    if isWater then
+        call BlzSetSpecialEffectScale(rainEffect, RAIN_IMPACT_WATER_SCALE)
+    endif
 
     if showImpact and not isWater and IsRainImpactSlopeAllowed(x, y) then
         call SpeciFX_AlignToTerrain(rainEffect)
