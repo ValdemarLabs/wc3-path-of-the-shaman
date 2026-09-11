@@ -203,13 +203,30 @@ namespace WC3ItemManager.Exporters
             sb.AppendLine($"// Generated: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
             sb.AppendLine("//===========================================================================");
             sb.AppendLine();
-            sb.AppendLine("library ItemLootDefinitionsSpecific initializer Init requires ItemLootSystem");
+            sb.AppendLine("library ItemLootDefinitionsSpecific initializer Init requires ItemLootSystem, QuestMaster");
             sb.AppendLine();
 
             // ============================================================
             // JASS requires functions to be defined BEFORE they are called
-            // Order: RegisterAllSpecificDrops -> Init
+            // Order: EvaluateQuestGate -> RegisterAllSpecificDrops -> Init
             // ============================================================
+
+            sb.AppendLine("    private function EvaluateQuestGate takes nothing returns boolean");
+            sb.AppendLine("        local integer gate = ItemLoot_GetEvaluatedQuestGate()");
+            sb.AppendLine("        local QuestData q = QuestMaster_GetByName(ItemLoot_GetEvaluatedQuestName())");
+            sb.AppendLine();
+            sb.AppendLine("        if q == 0 then");
+            sb.AppendLine("            return false");
+            sb.AppendLine("        endif");
+            sb.AppendLine("        if gate == ITEM_LOOT_QUEST_GATE_DISCOVERED then");
+            sb.AppendLine("            return q.discovered");
+            sb.AppendLine("        endif");
+            sb.AppendLine("        if gate == ITEM_LOOT_QUEST_GATE_ACTIVE then");
+            sb.AppendLine("            return q.active and not q.completed and not q.failed");
+            sb.AppendLine("        endif");
+            sb.AppendLine("        return false");
+            sb.AppendLine("    endfunction");
+            sb.AppendLine();
 
             // RegisterAllSpecificDrops function (must be defined before Init references it)
             sb.AppendLine("    private function RegisterAllSpecificDrops takes nothing returns nothing");
@@ -252,6 +269,7 @@ namespace WC3ItemManager.Exporters
 
             // Init function (uses timer callback to RegisterAllSpecificDrops, must be defined last)
             sb.AppendLine("    private function Init takes nothing returns nothing");
+            sb.AppendLine("        call ItemLoot_RegisterQuestGateEvaluator(function EvaluateQuestGate)");
             sb.AppendLine("        // Specific drop registration delayed to allow ItemLootSystem to initialize");
             sb.AppendLine("        call TimerStart(CreateTimer(), 0.02, false, function RegisterAllSpecificDrops)");
             sb.AppendLine("    endfunction");

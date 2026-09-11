@@ -3,7 +3,7 @@
 // Main library for item drops from units
 // Provides generic level-based drops and specific boss drops
 //
-// Dependencies: Table (TableV6), Events, UnitDeathEvent, QuestMaster
+// Dependencies: Table (TableV6), Events, UnitDeathEvent
 //
 // Usage:
 //   1. Include this library
@@ -15,7 +15,7 @@
 //
 //===========================================================================
 
-library ItemLootSystem initializer Init requires Table, Events, UnitDeathEvent, FallenHeroState, QuestMaster
+library ItemLootSystem initializer Init requires Table, Events, UnitDeathEvent, FallenHeroState
 
     // =========================================================================
     // CONFIGURATION
@@ -96,6 +96,11 @@ library ItemLootSystem initializer Init requires Table, Events, UnitDeathEvent, 
         private Table specificQuestName       // entry_index -> required QuestData name
         private Table specificQuestGate       // entry_index -> ITEM_LOOT_QUEST_GATE_*
         private integer specificEntryCount = 0
+
+        // Set by a higher-level adapter so this library does not depend on QuestMaster.
+        private trigger questGateEvaluator = null
+        private string evaluatedQuestName = ""
+        private integer evaluatedQuestGate = ITEM_LOOT_QUEST_GATE_NONE
 
         // Unit rawcodes and specific unit handles excluded from normal ItemLoot death processing.
         private Table excludedUnitTypes
@@ -896,6 +901,22 @@ library ItemLootSystem initializer Init requires Table, Events, UnitDeathEvent, 
         call RegisterSpecificDropForQuest(unitTypeId, itemTypeId, dropChance, isGuaranteed, weight, "", ITEM_LOOT_QUEST_GATE_NONE)
     endfunction
 
+    function ItemLoot_GetEvaluatedQuestName takes nothing returns string
+        return evaluatedQuestName
+    endfunction
+
+    function ItemLoot_GetEvaluatedQuestGate takes nothing returns integer
+        return evaluatedQuestGate
+    endfunction
+
+    function ItemLoot_RegisterQuestGateEvaluator takes code evaluator returns nothing
+        if questGateEvaluator != null then
+            call DestroyTrigger(questGateEvaluator)
+        endif
+        set questGateEvaluator = CreateTrigger()
+        call TriggerAddCondition(questGateEvaluator, Condition(evaluator))
+    endfunction
+
     function ItemLoot_RegisterExcludedUnitType takes integer unitTypeId returns nothing
         if unitTypeId != 0 then
             set excludedUnitTypes[unitTypeId] = 1
@@ -1080,23 +1101,16 @@ library ItemLootSystem initializer Init requires Table, Events, UnitDeathEvent, 
     // Fail closed when a configured quest or gate cannot be resolved.
     private function SpecificDropQuestGatePasses takes integer entryIndex returns boolean
         local integer gate = specificQuestGate[entryIndex]
-        local QuestData q
 
         if gate == ITEM_LOOT_QUEST_GATE_NONE then
             return true
         endif
-
-        set q = QuestMaster_GetByName(specificQuestName.string[entryIndex])
-        if q == 0 then
+        if questGateEvaluator == null then
             return false
         endif
-        if gate == ITEM_LOOT_QUEST_GATE_DISCOVERED then
-            return q.discovered
-        endif
-        if gate == ITEM_LOOT_QUEST_GATE_ACTIVE then
-            return q.active and not q.completed and not q.failed
-        endif
-        return false
+        set evaluatedQuestName = specificQuestName.string[entryIndex]
+        set evaluatedQuestGate = gate
+        return TriggerEvaluate(questGateEvaluator)
     endfunction
 
     private function RollSpecificDrops takes integer unitTypeId, real x, real y returns nothing
