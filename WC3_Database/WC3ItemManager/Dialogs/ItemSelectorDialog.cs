@@ -5,6 +5,7 @@ using System.Linq;
 using System.Windows.Forms;
 using Npgsql;
 using WC3ItemManager.Models;
+using WC3ItemManager.Repositories;
 
 namespace WC3ItemManager.Dialogs
 {
@@ -23,6 +24,8 @@ namespace WC3ItemManager.Dialogs
         private NumericUpDown nudMaxQty;
         private CheckBox chkGuaranteed;
         private NumericUpDown nudWeight;
+        private ComboBox cmbRequiredQuest;
+        private ComboBox cmbRequiredQuestState;
         private TextBox txtNotes;
         private Button btnOK;
         private Button btnCancel;
@@ -40,6 +43,7 @@ namespace WC3ItemManager.Dialogs
             
             InitializeComponent();
             LoadItems();
+            LoadQuestChoices();
             ApplyDarkTheme();
         }
 
@@ -111,7 +115,7 @@ namespace WC3ItemManager.Dialogs
             var pnlProperties = new Panel
             {
                 Dock = DockStyle.Bottom,
-                Height = 180,
+                Height = 245,
                 Padding = new Padding(10)
             };
 
@@ -175,18 +179,39 @@ namespace WC3ItemManager.Dialogs
                 Value = 100
             };
 
+            var lblQuest = new Label { Text = "Quest gate:", Location = new Point(15, 85), AutoSize = true };
+            cmbRequiredQuest = new ComboBox
+            {
+                Location = new Point(95, 83),
+                Size = new Size(390, 23),
+                DropDownStyle = ComboBoxStyle.DropDownList
+            };
+            cmbRequiredQuest.SelectedIndexChanged += (s, e) =>
+                cmbRequiredQuestState.Enabled = (cmbRequiredQuest.SelectedItem as QuestChoice)?.Id != null;
+
+            var lblQuestState = new Label { Text = "Required state:", Location = new Point(505, 85), AutoSize = true };
+            cmbRequiredQuestState = new ComboBox
+            {
+                Location = new Point(600, 83),
+                Size = new Size(120, 23),
+                DropDownStyle = ComboBoxStyle.DropDownList
+            };
+            cmbRequiredQuestState.Items.AddRange(new object[] { "active", "discovered" });
+            cmbRequiredQuestState.SelectedIndex = 0;
+
             // Notes
-            var lblNotes = new Label { Text = "Notes:", Location = new Point(15, 85), AutoSize = true };
+            var lblNotes = new Label { Text = "Notes:", Location = new Point(15, 120), AutoSize = true };
             txtNotes = new TextBox
             {
-                Location = new Point(80, 83),
-                Size = new Size(400, 23)
+                Location = new Point(80, 118),
+                Size = new Size(640, 23)
             };
 
             grpProperties.Controls.AddRange(new Control[] {
                 lblDropChance, nudDropChance, chkGuaranteed,
                 lblMinQty, nudMinQty, lblMaxQty, nudMaxQty,
                 lblWeight, nudWeight,
+                lblQuest, cmbRequiredQuest, lblQuestState, cmbRequiredQuestState,
                 lblNotes, txtNotes
             });
 
@@ -281,6 +306,26 @@ namespace WC3ItemManager.Dialogs
                 MessageBox.Show($"Error loading items: {ex.Message}", "Error",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        private void LoadQuestChoices()
+        {
+            cmbRequiredQuest.Items.Clear();
+            cmbRequiredQuest.Items.Add(new QuestChoice { Label = "None" });
+
+            var quests = new QuestDesignerRepository(_connectionString).GetQuests()
+                .Where(q => q.Enabled)
+                .OrderBy(q => q.Title)
+                .ThenBy(q => q.QuestName);
+            foreach (var quest in quests)
+            {
+                cmbRequiredQuest.Items.Add(new QuestChoice
+                {
+                    Id = quest.Id,
+                    Label = $"{quest.Title} [{quest.QuestName}]"
+                });
+            }
+            cmbRequiredQuest.SelectedIndex = 0;
         }
 
         private void FilterItems(string filter)
@@ -398,11 +443,20 @@ namespace WC3ItemManager.Dialogs
                 MaxQuantity = (int)nudMaxQty.Value,
                 IsGuaranteed = chkGuaranteed.Checked,
                 Weight = (int)nudWeight.Value,
+                RequiredQuestId = (cmbRequiredQuest.SelectedItem as QuestChoice)?.Id,
+                RequiredQuestState = cmbRequiredQuestState.SelectedItem?.ToString() ?? "active",
                 Notes = txtNotes.Text,
                 Enabled = true
             };
 
             DialogResult = DialogResult.OK;
+        }
+
+        private sealed class QuestChoice
+        {
+            public int? Id { get; set; }
+            public string Label { get; set; }
+            public override string ToString() => Label;
         }
 
         private void ApplyDarkTheme()

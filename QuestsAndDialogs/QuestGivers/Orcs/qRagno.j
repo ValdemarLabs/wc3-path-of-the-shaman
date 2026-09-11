@@ -2,7 +2,7 @@
     qRagno
 
     Author: Valdemar
-    Version: 1.3.2
+    Version: 1.3.3
 
     Description:
     Implements Ragno's quest dialogue, daily outpost tasks, Protect the
@@ -13,14 +13,14 @@
 
     How to install:
     Import after qZulkis and the required quest, dialogue, cinematic, follow,
-    loot, reputation, death-event, hero-item, fallen-hero, ambient-event, and
+    reputation, death-event, hero-item, fallen-hero, ambient-event, and
     voiceline libraries.
 
     API:
     Public quest-state hooks are declared at the end of this library.
 
 **/
-library qRagno initializer Init requires qZulkis, QuestGiver, QuestMaster, DialogInteraction, DialogSystem, CameraControl, CinematicMover, FollowSystem, HeroItemCheck, ItemLootSystem, Reputation, UnitDeathEvent, VoicelinesNazgrek, VoicelinesOrcGrunt, VoicelinesOrcPeon, FallenHeroState, HordeUnitsRandomChat
+library qRagno initializer Init requires qZulkis, QuestGiver, QuestMaster, DialogInteraction, DialogSystem, CameraControl, CinematicMover, FollowSystem, HeroItemCheck, Reputation, UnitDeathEvent, VoicelinesNazgrek, VoicelinesOrcGrunt, VoicelinesOrcPeon, FallenHeroState, HordeUnitsRandomChat
 
 globals
     private constant boolean DEBUG = false
@@ -56,8 +56,6 @@ globals
     private constant integer GNOLL_HEAD_REQUIRED = 20
     private constant integer PILE_WOOD_REQUIRED = 10
     private constant integer STOLEN_GOODS_REQUIRED = 6
-    private constant integer GNOLL_HEAD_DROP_CHANCE = 2500
-    private constant integer GNOLL_HEAD_DROP_WEIGHT = 80
     private constant integer KOBOLD_CHEST_ACTIVE_MAX = 6
     private constant integer KOBOLD_CHEST_SLOT_COUNT = 8
     private constant integer RAGNO_OWNER = 5
@@ -938,13 +936,6 @@ private function AddLumberPeonIntroLines takes integer seq returns nothing
         call DialogSystem_AddLine(seq, LumberPeon, "Peon", VL_ORCPEON_0005_TEXT, VL_ORCPEON_0005_KEY, true)
         call DialogSystem_AddLine(seq, LumberPeon, "Peon", VL_ORCPEON_0017_TEXT, VL_ORCPEON_0017_KEY, true)
     endif
-endfunction
-
-private function RegisterBaseGnollHeadDrops takes nothing returns nothing
-    call RegisterSpecificDrop(UNIT_GNOLL, ITEM_GNOLL_HEAD, GNOLL_HEAD_DROP_CHANCE, false, GNOLL_HEAD_DROP_WEIGHT)
-    call RegisterSpecificDrop(UNIT_GNOLL_BRUTE, ITEM_GNOLL_HEAD, GNOLL_HEAD_DROP_CHANCE, false, GNOLL_HEAD_DROP_WEIGHT)
-    call RegisterSpecificDrop(UNIT_GNOLL_POACHER, ITEM_GNOLL_HEAD, GNOLL_HEAD_DROP_CHANCE, false, GNOLL_HEAD_DROP_WEIGHT)
-    call RegisterSpecificDrop(UNIT_GNOLL_WARDEN, ITEM_GNOLL_HEAD, GNOLL_HEAD_DROP_CHANCE, false, GNOLL_HEAD_DROP_WEIGHT)
 endfunction
 
 private function EnsureProtectOutpostRuntime takes nothing returns nothing
@@ -2032,7 +2023,6 @@ private function InitDelayed takes nothing returns nothing
     call QuestGiver_Register(Ragno)
     call DialogInteraction_ConfigureDialogTransition(Ragno, CINEMATIC_MOVE_MODE, CINEMATIC_MOVE_OFFSET, CINEMATIC_MOVE_ANGLE, CAMERA_DIST, CAMERA_Z_OFFSET, CAMERA_ANGLE, CAMERA_ROT_OFFSET, CAMERA_FAR_Z, CAMERA_FOV, CAMERA_BLOCK_RADIUS, CAMERA_BLOCK_CHECK)
     call RegisterDialogLines()
-    call RegisterBaseGnollHeadDrops()
     call CreateQuests()
     if QuestGiver_IsQuestCompletedByNameAndGiver(QUEST_PROTECT_OUTPOST, Ragno) then
         set ProtectOutpostCompleted = true

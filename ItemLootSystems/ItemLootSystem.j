@@ -3,17 +3,19 @@
 // Main library for item drops from units
 // Provides generic level-based drops and specific boss drops
 //
-// Dependencies: Table (TableV6), Events, UnitDeathEvent
+// Dependencies: Table (TableV6), Events, UnitDeathEvent, QuestMaster
 //
 // Usage:
 //   1. Include this library
-//   2. Include ItemLootDefinitionsGeneric.j (generated)
-//   3. Include ItemLootDefinitionsSpecific.j (generated)
-//   4. The system auto-initializes and hooks unit death events
+//   2. Register ordinary unit-specific drops with RegisterSpecificDrop.
+//   3. Register quest loot with RegisterSpecificDropForQuest and a gate constant.
+//   4. Include ItemLootDefinitionsGeneric.j (generated)
+//   5. Include ItemLootDefinitionsSpecific.j (generated)
+//   6. The system auto-initializes and hooks unit death events
 //
 //===========================================================================
 
-library ItemLootSystem initializer Init requires Table, Events, UnitDeathEvent, FallenHeroState
+library ItemLootSystem initializer Init requires Table, Events, UnitDeathEvent, FallenHeroState, QuestMaster
 
     // =========================================================================
     // CONFIGURATION
@@ -28,6 +30,11 @@ library ItemLootSystem initializer Init requires Table, Events, UnitDeathEvent, 
         constant integer ITEM_RARITY_EPIC      = 3
         constant integer ITEM_RARITY_LEGENDARY = 4
         constant integer ITEM_RARITY_ARTIFACT  = 5
+
+        // Optional quest-state gates for unit-specific drops.
+        constant integer ITEM_LOOT_QUEST_GATE_NONE       = 0
+        constant integer ITEM_LOOT_QUEST_GATE_DISCOVERED = 1
+        constant integer ITEM_LOOT_QUEST_GATE_ACTIVE     = 2
         
         // Configuration
         private constant boolean DEBUG_MODE = false    // Enable debug messages
@@ -86,6 +93,8 @@ library ItemLootSystem initializer Init requires Table, Events, UnitDeathEvent, 
         private Table specificDropChance      // entry_index -> drop_chance (0-10000)
         private Table specificIsGuaranteed    // entry_index -> 0/1
         private Table specificWeight          // entry_index -> weight
+        private Table specificQuestName       // entry_index -> required QuestData name
+        private Table specificQuestGate       // entry_index -> ITEM_LOOT_QUEST_GATE_*
         private integer specificEntryCount = 0
 
         // Unit rawcodes and specific unit handles excluded from normal ItemLoot death processing.
@@ -848,7 +857,9 @@ library ItemLootSystem initializer Init requires Table, Events, UnitDeathEvent, 
     // dropChance: Drop chance (0-10000 = 0-100.00%)
     // isGuaranteed: If true, always drops
     // weight: Relative weight for weighted selection
-    function RegisterSpecificDrop takes integer unitTypeId, integer itemTypeId, integer dropChance, boolean isGuaranteed, integer weight returns nothing
+    // requiredQuestName: QuestData name resolved when the unit dies
+    // requiredQuestGate: ITEM_LOOT_QUEST_GATE_DISCOVERED or ITEM_LOOT_QUEST_GATE_ACTIVE
+    function RegisterSpecificDropForQuest takes integer unitTypeId, integer itemTypeId, integer dropChance, boolean isGuaranteed, integer weight, string requiredQuestName, integer requiredQuestGate returns nothing
         local integer entryIndex = specificEntryCount
         local integer firstEntry
 
@@ -857,6 +868,8 @@ library ItemLootSystem initializer Init requires Table, Events, UnitDeathEvent, 
         set specificDropChance[entryIndex] = dropChance
         set specificIsGuaranteed[entryIndex] = B2I(isGuaranteed)
         set specificWeight[entryIndex] = weight
+        set specificQuestName.string[entryIndex] = requiredQuestName
+        set specificQuestGate[entryIndex] = requiredQuestGate
         
         // Mark unit as having specific drops
         set unitHasSpecificDrops[unitTypeId] = 1
@@ -877,6 +890,10 @@ library ItemLootSystem initializer Init requires Table, Events, UnitDeathEvent, 
         if DEBUG_MODE then
             call BJDebugMsg("Registered specific drop: unit " + I2S(unitTypeId) + " -> item " + I2S(itemTypeId))
         endif
+    endfunction
+
+    function RegisterSpecificDrop takes integer unitTypeId, integer itemTypeId, integer dropChance, boolean isGuaranteed, integer weight returns nothing
+        call RegisterSpecificDropForQuest(unitTypeId, itemTypeId, dropChance, isGuaranteed, weight, "", ITEM_LOOT_QUEST_GATE_NONE)
     endfunction
 
     function ItemLoot_RegisterExcludedUnitType takes integer unitTypeId returns nothing
@@ -1060,7 +1077,28 @@ library ItemLootSystem initializer Init requires Table, Events, UnitDeathEvent, 
         endif
     endfunction
     
-    // Process specific drops for a unit
+    // Fail closed when a configured quest or gate cannot be resolved.
+    private function SpecificDropQuestGatePasses takes integer entryIndex returns boolean
+        local integer gate = specificQuestGate[entryIndex]
+        local QuestData q
+
+        if gate == ITEM_LOOT_QUEST_GATE_NONE then
+            return true
+        endif
+
+        set q = QuestMaster_GetByName(specificQuestName.string[entryIndex])
+        if q == 0 then
+            return false
+        endif
+        if gate == ITEM_LOOT_QUEST_GATE_DISCOVERED then
+            return q.discovered
+        endif
+        if gate == ITEM_LOOT_QUEST_GATE_ACTIVE then
+            return q.active and not q.completed and not q.failed
+        endif
+        return false
+    endfunction
+
     private function RollSpecificDrops takes integer unitTypeId, real x, real y returns nothing
         local integer entryIndex
         local integer itemTypeId
@@ -1085,7 +1123,7 @@ library ItemLootSystem initializer Init requires Table, Events, UnitDeathEvent, 
             endif
             
             // Check unique restriction (stored as 0/1 integer)
-            if not (itemIsUnique[itemTypeId] != 0 and uniqueItemDropped[itemTypeId] != 0) then
+            if SpecificDropQuestGatePasses(entryIndex) and not (itemIsUnique[itemTypeId] != 0 and uniqueItemDropped[itemTypeId] != 0) then
                 // Roll drop
                 if isGuaranteed or GetRandomInt(0, 10000) <= dropChance then
                     // Pre-mark unique as dropped to prevent duplicates in queue
@@ -1194,6 +1232,8 @@ library ItemLootSystem initializer Init requires Table, Events, UnitDeathEvent, 
         set specificDropChance = Table.create()
         set specificIsGuaranteed = Table.create()
         set specificWeight = Table.create()
+        set specificQuestName = Table.create()
+        set specificQuestGate = Table.create()
         set excludedUnitTypes = Table.create()
         set excludedUnits = Table.create()
         

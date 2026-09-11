@@ -565,9 +565,12 @@ namespace WC3ItemManager
             
             AppendFAQ(rtb, "What's the difference between drop_chance and weight?",
                 "drop_chance is whether this item drops at all (0-100%). weight determines selection priority when multiple items could drop (higher = more likely).");
+
+            AppendFAQ(rtb, "How do I require a quest for a unit-specific drop?",
+                "Open the unit type, add or edit its specific drop, then select a Quest gate and Required state. Active rolls only while the shared QuestMaster quest is active and unfinished; Discovered rolls after the quest has been revealed. Export the Loot System JASS after saving.");
             
             AppendFAQ(rtb, "Why isn't my unit dropping items?",
-                "Check: 1) Loot Mode is not 'none', 2) Loot Tier assigned (generic mode), 3) Loot Table assigned with items (specific mode), 4) JASS code exported and included in map.");
+                "Check: 1) Loot Mode is not 'none', 2) Loot Tier assigned (generic mode), 3) Loot Table assigned with items (specific mode), 4) Any Quest gate currently passes, 5) JASS code exported and included in map.");
             
             // Exporting
             AppendSubHeader(rtb, "📤 Exporting");

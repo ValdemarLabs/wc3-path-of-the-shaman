@@ -1,7 +1,9 @@
 using System;
 using System.Drawing;
+using System.Linq;
 using System.Windows.Forms;
 using WC3ItemManager.Models;
+using WC3ItemManager.Repositories;
 
 namespace WC3ItemManager.Dialogs
 {
@@ -21,6 +23,8 @@ namespace WC3ItemManager.Dialogs
         private NumericUpDown nudMinQty;
         private NumericUpDown nudMaxQty;
         private NumericUpDown nudWeight;
+        private ComboBox cmbRequiredQuest;
+        private ComboBox cmbRequiredQuestState;
         private TextBox txtNotes;
         private Button btnOK;
         private Button btnCancel;
@@ -40,7 +44,7 @@ namespace WC3ItemManager.Dialogs
         private void InitializeComponent()
         {
             this.Text = "Edit Drop Configuration";
-            this.Size = new Size(420, 340);
+            this.Size = new Size(500, 430);
             this.StartPosition = FormStartPosition.CenterParent;
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
@@ -154,6 +158,34 @@ namespace WC3ItemManager.Dialogs
             this.Controls.Add(lblWeightHelp);
             y += 35;
 
+            var lblQuest = new Label { Text = "Quest gate:", Location = new Point(15, y + 3), Width = labelWidth };
+            this.Controls.Add(lblQuest);
+
+            cmbRequiredQuest = new ComboBox
+            {
+                Location = new Point(controlX, y),
+                Width = 350,
+                DropDownStyle = ComboBoxStyle.DropDownList
+            };
+            cmbRequiredQuest.SelectedIndexChanged += (s, e) =>
+                cmbRequiredQuestState.Enabled = (cmbRequiredQuest.SelectedItem as QuestChoice)?.Id != null;
+            this.Controls.Add(cmbRequiredQuest);
+            y += 35;
+
+            var lblQuestState = new Label { Text = "Required state:", Location = new Point(15, y + 3), Width = labelWidth };
+            this.Controls.Add(lblQuestState);
+
+            cmbRequiredQuestState = new ComboBox
+            {
+                Location = new Point(controlX, y),
+                Width = 130,
+                DropDownStyle = ComboBoxStyle.DropDownList
+            };
+            cmbRequiredQuestState.Items.AddRange(new object[] { "active", "discovered" });
+            cmbRequiredQuestState.SelectedIndex = 0;
+            this.Controls.Add(cmbRequiredQuestState);
+            y += 35;
+
             // Notes
             var lblNotes = new Label { Text = "Notes:", Location = new Point(15, y + 3), Width = labelWidth };
             this.Controls.Add(lblNotes);
@@ -161,7 +193,7 @@ namespace WC3ItemManager.Dialogs
             txtNotes = new TextBox
             {
                 Location = new Point(controlX, y),
-                Width = 270,
+                Width = 350,
                 Height = 60,
                 Multiline = true
             };
@@ -199,6 +231,7 @@ namespace WC3ItemManager.Dialogs
 
         private void LoadDropData()
         {
+            LoadQuestChoices();
             lblItemName.Text = _originalDrop.ItemName;
             lblItemCode.Text = $"({_originalDrop.ItemCode})";
             nudDropChance.Value = _originalDrop.DropChance;
@@ -206,10 +239,34 @@ namespace WC3ItemManager.Dialogs
             nudMinQty.Value = _originalDrop.MinQuantity;
             nudMaxQty.Value = _originalDrop.MaxQuantity;
             nudWeight.Value = _originalDrop.Weight;
+            cmbRequiredQuestState.SelectedItem = _originalDrop.RequiredQuestState ?? "active";
             txtNotes.Text = _originalDrop.Notes ?? "";
             
             // Disable chance if guaranteed
             nudDropChance.Enabled = !_originalDrop.IsGuaranteed;
+        }
+
+        private void LoadQuestChoices()
+        {
+            cmbRequiredQuest.Items.Clear();
+            cmbRequiredQuest.Items.Add(new QuestChoice { Label = "None" });
+
+            var quests = new QuestDesignerRepository(_connectionString).GetQuests()
+                .Where(q => q.Enabled)
+                .OrderBy(q => q.Title)
+                .ThenBy(q => q.QuestName);
+            foreach (var quest in quests)
+            {
+                cmbRequiredQuest.Items.Add(new QuestChoice
+                {
+                    Id = quest.Id,
+                    Label = $"{quest.Title} [{quest.QuestName}]"
+                });
+            }
+
+            var selected = cmbRequiredQuest.Items.Cast<QuestChoice>()
+                .FirstOrDefault(q => q.Id == _originalDrop.RequiredQuestId);
+            cmbRequiredQuest.SelectedItem = selected ?? cmbRequiredQuest.Items[0];
         }
 
         private void ChkGuaranteed_CheckedChanged(object sender, EventArgs e)
@@ -242,6 +299,8 @@ namespace WC3ItemManager.Dialogs
                 MaxQuantity = (int)nudMaxQty.Value,
                 IsGuaranteed = chkGuaranteed.Checked,
                 Weight = (int)nudWeight.Value,
+                RequiredQuestId = (cmbRequiredQuest.SelectedItem as QuestChoice)?.Id,
+                RequiredQuestState = cmbRequiredQuestState.SelectedItem?.ToString() ?? "active",
                 Notes = txtNotes.Text,
                 Enabled = _originalDrop.Enabled
             };
@@ -268,6 +327,13 @@ namespace WC3ItemManager.Dialogs
                     btn.FlatStyle = FlatStyle.Flat;
                 }
             }
+        }
+
+        private sealed class QuestChoice
+        {
+            public int? Id { get; set; }
+            public string Label { get; set; }
+            public override string ToString() => Label;
         }
     }
 }

@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Windows.Forms;
 using Npgsql;
 using NpgsqlTypes;
+using WC3ItemManager.Dialogs;
 using WC3ItemManager.Repositories;
 using WC3ItemManager.Models;
 
@@ -112,6 +113,7 @@ namespace WC3ItemManager
         private DataGridView dgvDropSources;  // Shows which units drop this item
         private Button btnAddDropSource;
         private Button btnRemoveDropSource;
+        private Button btnEditDropSource;
         private Button btnSaveDropChanges;
         private UnitSpecificDropRepository _dropSourceRepo;
         private UnitTypeRepository _unitTypeRepo;
@@ -1914,11 +1916,22 @@ namespace WC3ItemManager
             };
             btnRemoveDropSource.Click += BtnRemoveDropSource_Click;
             buttonPanel.Controls.Add(btnRemoveDropSource);
+
+            btnEditDropSource = new Button
+            {
+                Text = "Edit / Quest Gate",
+                Location = new Point(210, 0),
+                Size = new Size(130, 30),
+                FlatStyle = FlatStyle.Flat,
+                Enabled = false
+            };
+            btnEditDropSource.Click += BtnEditDropSource_Click;
+            buttonPanel.Controls.Add(btnEditDropSource);
             
             btnSaveDropChanges = new Button
             {
                 Text = "💾 Save Changes",
-                Location = new Point(210, 0),
+                Location = new Point(350, 0),
                 Size = new Size(120, 30),
                 FlatStyle = FlatStyle.Flat,
                 BackColor = Color.FromArgb(50, 120, 50),
@@ -1964,6 +1977,9 @@ namespace WC3ItemManager
             
             var maxQtyCol = new DataGridViewTextBoxColumn { Name = "MaxQty", HeaderText = "Max Qty", Width = 60 };
             dgvDropSources.Columns.Add(maxQtyCol);
+
+            var questGateCol = new DataGridViewTextBoxColumn { Name = "QuestGate", HeaderText = "Quest Gate", Width = 190, ReadOnly = true };
+            dgvDropSources.Columns.Add(questGateCol);
             
             var notesCol = new DataGridViewTextBoxColumn { Name = "Notes", HeaderText = "Notes", Width = 200 };
             dgvDropSources.Columns.Add(notesCol);
@@ -1976,7 +1992,7 @@ namespace WC3ItemManager
             
             tab.Controls.Add(new Label
             {
-                Text = "💡 Tip: Edit values directly in the grid, then click 'Save Changes' to persist.",
+                Text = "💡 Tip: Edit values in the grid, or use 'Edit / Quest Gate' for the complete configuration.",
                 Location = new Point(20, y),
                 AutoSize = true,
                 ForeColor = Color.FromArgb(80, 80, 80)
@@ -2004,6 +2020,7 @@ namespace WC3ItemManager
                         drop.IsGuaranteed,
                         drop.MinQuantity,
                         drop.MaxQuantity,
+                        drop.QuestGateDisplay,
                         drop.Notes ?? ""
                     );
                     dgvDropSources.Rows[rowIdx].Tag = drop;
@@ -2050,6 +2067,9 @@ namespace WC3ItemManager
 
             if (btnRemoveDropSource != null)
                 btnRemoveDropSource.Enabled = itemSaved;
+
+            if (btnEditDropSource != null)
+                btnEditDropSource.Enabled = itemSaved;
 
             if (btnSaveDropChanges != null)
                 btnSaveDropChanges.Enabled = itemSaved;
@@ -2126,6 +2146,7 @@ namespace WC3ItemManager
                         newDrop.IsGuaranteed,
                         newDrop.MinQuantity,
                         newDrop.MaxQuantity,
+                        newDrop.QuestGateDisplay,
                         newDrop.Notes
                     );
                     dgvDropSources.Rows[rowIdx].Tag = newDrop;
@@ -2192,6 +2213,28 @@ namespace WC3ItemManager
             }
         }
         
+        private void BtnEditDropSource_Click(object sender, EventArgs e)
+        {
+            if (dgvDropSources.SelectedRows.Count == 0)
+            {
+                MessageBox.Show("Please select a drop source to edit.", "No Selection",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            var drop = dgvDropSources.SelectedRows[0].Tag as UnitSpecificDrop;
+            if (drop == null) return;
+
+            using (var dialog = new DropEditDialog(connectionString, drop))
+            {
+                if (dialog.ShowDialog(this) == DialogResult.OK && dialog.Result != null)
+                {
+                    _dropSourceRepo.Update(dialog.Result);
+                    LoadDropSources(txtItemCode.Text.Trim());
+                }
+            }
+        }
+
         private void BtnSaveDropChanges_Click(object sender, EventArgs e)
         {
             int savedCount = 0;

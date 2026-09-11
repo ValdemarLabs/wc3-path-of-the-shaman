@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Windows.Forms;
 using WC3ItemManager.Importers;
+using WC3ItemManager.Exporters;
 using WC3ItemManager.Models;
 using WC3ItemManager.Repositories;
 using WC3ItemManager.SourceEditing;
@@ -13,6 +14,21 @@ namespace WC3ItemManager
         [STAThread]
         static int Main(string[] args)
         {
+            if (args.Length >= 2 && string.Equals(args[0], "--export-loot", StringComparison.OrdinalIgnoreCase))
+            {
+                var exporter = new LootSystemExporter(MainForm.DefaultConnectionString);
+                ExportResult result = exporter.ExportAll(args[1]);
+                if (!result.Success)
+                {
+                    Console.Error.WriteLine("ERROR: " + result.ErrorMessage);
+                    return 1;
+                }
+                Console.WriteLine(
+                    $"Tiers={result.TiersExported}; SpecificDrops={result.SpecificDropsExported}; " +
+                    $"DestructibleDrops={result.DestructibleDropsExported}; Files={result.FilesExported.Count}");
+                foreach (string file in result.FilesExported) Console.WriteLine(file);
+                return 0;
+            }
             if (args.Length >= 1 && string.Equals(args[0], "--audit-quest-source-editing", StringComparison.OrdinalIgnoreCase))
             {
                 QuestSourceEditor.RunMarkerContractSelfTest();

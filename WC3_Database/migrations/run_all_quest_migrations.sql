@@ -5,6 +5,7 @@
 \echo 'Applying WC3 Manager Quest Designer schema...'
 \ir 007_create_quest_designer.sql
 \ir 008_add_quest_source_sync.sql
+\ir 009_add_specific_drop_quest_gate.sql
 \echo 'Quest Designer schema is ready.'
 
 SELECT table_name

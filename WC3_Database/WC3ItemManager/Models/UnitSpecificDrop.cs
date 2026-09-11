@@ -17,6 +17,8 @@ namespace WC3ItemManager.Models
         public int MaxQuantity { get; set; } = 1;
         public bool IsGuaranteed { get; set; }       // Always drops
         public int Weight { get; set; } = 100;       // For weighted random
+        public int? RequiredQuestId { get; set; }     // Optional Quest Designer relationship
+        public string RequiredQuestState { get; set; } = "active";
         
         public bool Enabled { get; set; } = true;
         public string Notes { get; set; }
@@ -26,6 +28,9 @@ namespace WC3ItemManager.Models
         public string UnitName { get; set; }
         public string ItemName { get; set; }
         public string ItemRarity { get; set; }
+        public string RequiredQuestName { get; set; }
+        public string RequiredQuestTitle { get; set; }
+        public string RequiredQuestGiverName { get; set; }
         
         // Display helpers
         public string DropChanceDisplay => IsGuaranteed 
@@ -35,5 +40,9 @@ namespace WC3ItemManager.Models
         public string QuantityDisplay => MinQuantity == MaxQuantity 
             ? MinQuantity.ToString() 
             : $"{MinQuantity}-{MaxQuantity}";
+
+        public string QuestGateDisplay => RequiredQuestId.HasValue
+            ? $"{RequiredQuestTitle ?? RequiredQuestName} ({RequiredQuestState})"
+            : "None";
     }
 }

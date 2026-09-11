@@ -31,11 +31,15 @@ namespace WC3ItemManager.Repositories
                     SELECT usd.id, usd.unit_code, usd.item_code, 
                            usd.drop_chance, usd.min_quantity, usd.max_quantity,
                            usd.is_guaranteed, usd.weight, usd.enabled, usd.notes, usd.created_at,
-                           ut.unit_name, i.item_name, r.rarity_name
+                           ut.unit_name, i.item_name, r.rarity_name,
+                           usd.required_quest_id, usd.required_quest_state,
+                           q.quest_name, q.title, qg.display_name
                     FROM unit_specific_drops usd
                     JOIN unit_types ut ON usd.unit_code = ut.unit_code
                     JOIN items i ON usd.item_code = i.item_code
                     LEFT JOIN item_rarities r ON i.rarity_id = r.id
+                    LEFT JOIN quests q ON usd.required_quest_id = q.id
+                    LEFT JOIN quest_givers qg ON q.quest_giver_id = qg.id
                     WHERE usd.unit_code = @unit_code
                     ORDER BY usd.is_guaranteed DESC, usd.drop_chance DESC", conn))
                 {
@@ -68,11 +72,15 @@ namespace WC3ItemManager.Repositories
                     SELECT usd.id, usd.unit_code, usd.item_code, 
                            usd.drop_chance, usd.min_quantity, usd.max_quantity,
                            usd.is_guaranteed, usd.weight, usd.enabled, usd.notes, usd.created_at,
-                           ut.unit_name, i.item_name, r.rarity_name
+                           ut.unit_name, i.item_name, r.rarity_name,
+                           usd.required_quest_id, usd.required_quest_state,
+                           q.quest_name, q.title, qg.display_name
                     FROM unit_specific_drops usd
                     JOIN unit_types ut ON usd.unit_code = ut.unit_code
                     JOIN items i ON usd.item_code = i.item_code
                     LEFT JOIN item_rarities r ON i.rarity_id = r.id
+                    LEFT JOIN quests q ON usd.required_quest_id = q.id
+                    LEFT JOIN quest_givers qg ON q.quest_giver_id = qg.id
                     WHERE usd.item_code = @item_code
                     ORDER BY ut.unit_name", conn))
                 {
@@ -105,11 +113,15 @@ namespace WC3ItemManager.Repositories
                     SELECT usd.id, usd.unit_code, usd.item_code, 
                            usd.drop_chance, usd.min_quantity, usd.max_quantity,
                            usd.is_guaranteed, usd.weight, usd.enabled, usd.notes, usd.created_at,
-                           ut.unit_name, i.item_name, r.rarity_name
+                           ut.unit_name, i.item_name, r.rarity_name,
+                           usd.required_quest_id, usd.required_quest_state,
+                           q.quest_name, q.title, qg.display_name
                     FROM unit_specific_drops usd
                     JOIN unit_types ut ON usd.unit_code = ut.unit_code
                     JOIN items i ON usd.item_code = i.item_code
                     LEFT JOIN item_rarities r ON i.rarity_id = r.id
+                    LEFT JOIN quests q ON usd.required_quest_id = q.id
+                    LEFT JOIN quest_givers qg ON q.quest_giver_id = qg.id
                     WHERE usd.enabled = true
                     ORDER BY usd.unit_code, usd.is_guaranteed DESC, usd.drop_chance DESC", conn))
                 {
@@ -137,10 +149,10 @@ namespace WC3ItemManager.Repositories
                 using (var cmd = new NpgsqlCommand(@"
                     INSERT INTO unit_specific_drops (
                         unit_code, item_code, drop_chance, min_quantity, max_quantity,
-                        is_guaranteed, weight, enabled, notes
+                        is_guaranteed, weight, required_quest_id, required_quest_state, enabled, notes
                     ) VALUES (
                         @unit_code, @item_code, @drop_chance, @min_qty, @max_qty,
-                        @guaranteed, @weight, @enabled, @notes
+                        @guaranteed, @weight, @required_quest_id, @required_quest_state, @enabled, @notes
                     ) RETURNING id", conn))
                 {
                     AddParameters(cmd, drop);
@@ -164,6 +176,8 @@ namespace WC3ItemManager.Repositories
                         max_quantity = @max_qty,
                         is_guaranteed = @guaranteed,
                         weight = @weight,
+                        required_quest_id = @required_quest_id,
+                        required_quest_state = @required_quest_state,
                         enabled = @enabled,
                         notes = @notes
                     WHERE id = @id", conn))
@@ -245,7 +259,12 @@ namespace WC3ItemManager.Repositories
                 CreatedAt = reader.GetDateTime(10),
                 UnitName = reader.GetString(11),
                 ItemName = reader.GetString(12),
-                ItemRarity = reader.IsDBNull(13) ? null : reader.GetString(13)
+                ItemRarity = reader.IsDBNull(13) ? null : reader.GetString(13),
+                RequiredQuestId = reader.IsDBNull(14) ? null : reader.GetInt32(14),
+                RequiredQuestState = reader.IsDBNull(15) ? "active" : reader.GetString(15),
+                RequiredQuestName = reader.IsDBNull(16) ? null : reader.GetString(16),
+                RequiredQuestTitle = reader.IsDBNull(17) ? null : reader.GetString(17),
+                RequiredQuestGiverName = reader.IsDBNull(18) ? null : reader.GetString(18)
             };
         }
 
@@ -258,6 +277,8 @@ namespace WC3ItemManager.Repositories
             cmd.Parameters.AddWithValue("@max_qty", drop.MaxQuantity);
             cmd.Parameters.AddWithValue("@guaranteed", drop.IsGuaranteed);
             cmd.Parameters.AddWithValue("@weight", drop.Weight);
+            cmd.Parameters.AddWithValue("@required_quest_id", (object)drop.RequiredQuestId ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@required_quest_state", drop.RequiredQuestState ?? "active");
             cmd.Parameters.AddWithValue("@enabled", drop.Enabled);
             cmd.Parameters.AddWithValue("@notes", (object)drop.Notes ?? DBNull.Value);
         }

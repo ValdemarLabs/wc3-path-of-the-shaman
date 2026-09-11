@@ -727,13 +727,14 @@ namespace WC3ItemManager
                 dgvSpecificDrops.Columns.Clear();
 
                 dgvSpecificDrops.Columns.Add(new DataGridViewTextBoxColumn { Name = "Code", HeaderText = "Code", Width = 50 });
-                dgvSpecificDrops.Columns.Add(new DataGridViewTextBoxColumn { Name = "Item", HeaderText = "Item Name", Width = 140 });
+                dgvSpecificDrops.Columns.Add(new DataGridViewTextBoxColumn { Name = "Item", HeaderText = "Item Name", Width = 120 });
                 dgvSpecificDrops.Columns.Add(new DataGridViewTextBoxColumn { Name = "Rarity", HeaderText = "Rarity", Width = 55 });
                 dgvSpecificDrops.Columns.Add(new DataGridViewTextBoxColumn { Name = "Chance", HeaderText = "Chance", Width = 60 });
                 dgvSpecificDrops.Columns.Add(new DataGridViewTextBoxColumn { Name = "Qty", HeaderText = "Qty", Width = 35 });
                 dgvSpecificDrops.Columns.Add(new DataGridViewTextBoxColumn { Name = "Weight", HeaderText = "Weight", Width = 45 });
                 dgvSpecificDrops.Columns.Add(new DataGridViewCheckBoxColumn { Name = "Guaranteed", HeaderText = "Guar", Width = 40 });
-                dgvSpecificDrops.Columns.Add(new DataGridViewTextBoxColumn { Name = "Notes", HeaderText = "Notes", Width = 80 });
+                dgvSpecificDrops.Columns.Add(new DataGridViewTextBoxColumn { Name = "QuestGate", HeaderText = "Quest gate", Width = 150 });
+                dgvSpecificDrops.Columns.Add(new DataGridViewTextBoxColumn { Name = "Notes", HeaderText = "Notes", Width = 70 });
 
                 foreach (var drop in drops)
                 {
@@ -745,6 +746,7 @@ namespace WC3ItemManager
                         drop.QuantityDisplay,
                         drop.Weight,
                         drop.IsGuaranteed,
+                        drop.QuestGateDisplay,
                         drop.Notes ?? ""
                     );
                     dgvSpecificDrops.Rows[rowIdx].Tag = drop;

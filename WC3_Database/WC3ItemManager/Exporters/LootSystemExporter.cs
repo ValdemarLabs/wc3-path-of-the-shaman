@@ -217,6 +217,7 @@ namespace WC3ItemManager.Exporters
             sb.AppendLine();
             sb.AppendLine("        // === SPECIFIC/BOSS DROP DEFINITIONS ===");
             sb.AppendLine("        // RegisterSpecificDrop(unitTypeId, itemTypeId, dropChance, isGuaranteed, weight)");
+            sb.AppendLine("        // RegisterSpecificDropForQuest(..., questName, ITEM_LOOT_QUEST_GATE_*)");
             sb.AppendLine();
 
             // Group by unit
@@ -231,7 +232,17 @@ namespace WC3ItemManager.Exporters
                 {
                     string isGuaranteed = drop.IsGuaranteed ? "true" : "false";
                     int dropChance = (int)(drop.DropChance * 100);
-                    sb.AppendLine($"        call RegisterSpecificDrop('{drop.UnitCode}', '{drop.ItemCode}', {dropChance}, {isGuaranteed}, {drop.Weight})  // {drop.ItemName}");
+                    if (drop.RequiredQuestId.HasValue)
+                    {
+                        string gate = string.Equals(drop.RequiredQuestState, "discovered", StringComparison.OrdinalIgnoreCase)
+                            ? "ITEM_LOOT_QUEST_GATE_DISCOVERED"
+                            : "ITEM_LOOT_QUEST_GATE_ACTIVE";
+                        sb.AppendLine($"        call RegisterSpecificDropForQuest('{drop.UnitCode}', '{drop.ItemCode}', {dropChance}, {isGuaranteed}, {drop.Weight}, \"{EscapeJassString(drop.RequiredQuestName)}\", {gate})  // {drop.ItemName}");
+                    }
+                    else
+                    {
+                        sb.AppendLine($"        call RegisterSpecificDrop('{drop.UnitCode}', '{drop.ItemCode}', {dropChance}, {isGuaranteed}, {drop.Weight})  // {drop.ItemName}");
+                    }
                 }
                 sb.AppendLine();
             }
@@ -452,6 +463,16 @@ namespace WC3ItemManager.Exporters
                 5 => "ITEM_RARITY_ARTIFACT",
                 _ => "ITEM_RARITY_COMMON"
             };
+        }
+
+        private static string EscapeJassString(string value)
+        {
+            return (value ?? "")
+                .Replace("\\", "\\\\")
+                .Replace("\"", "\\\"")
+                .Replace("\r\n", "\\n")
+                .Replace("\n", "\\n")
+                .Replace("\r", "\\n");
         }
 
         private class DroppableItem
