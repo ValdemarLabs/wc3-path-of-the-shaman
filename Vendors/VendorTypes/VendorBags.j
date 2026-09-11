@@ -2,7 +2,7 @@
     VendorBags
 
     Author: Valdemar
-    Version: 2.0.1
+    Version: 2.0.2
 
     Description:
     Shared racial and faction bag merchants for the PotS shop system. Each
@@ -32,8 +32,9 @@ library VendorBags initializer Init requires Shop, VoicelinesVendorLines, Reputa
 
         private constant integer VBAG_UNIT_TYPE_PLACEHOLDER = 'XXXX'
 
-        // Implemented Horde merchants: three regional Orcs.
-        public constant integer UNIT_TYPE_GORVAK = 'o01O'
+        // Implemented Horde merchants: two regional Orcs. Gorvak still needs a
+        // distinct Object Editor unit type; o01O belongs to a non-vendor Shaman.
+        public constant integer UNIT_TYPE_GORVAK = 'XXXX'
         public constant integer UNIT_TYPE_THREKKA = 'o01P'
         public constant integer UNIT_TYPE_MAZRUK = 'o01Q'
 
