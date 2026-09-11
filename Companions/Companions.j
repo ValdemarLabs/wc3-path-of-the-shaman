@@ -2,7 +2,7 @@
     Companions
 
     Author: Valdemar
-    Version: 1.2.0
+    Version: 1.2.1
 
     Description:
     Companion party registration, information, idle state, and control-mode
@@ -51,8 +51,9 @@
     call Companions_GetTypeInfoText(unit controlledUnit) returns string
     call Companions_GetFactionInfoText(unit controlledUnit) returns string
     call Companions_GetAbilityInfoText(unit controlledUnit) returns string
-    Abilities A0F6 and A0F7 issue persistent Move and Attack orders to all
-    non-Hold controlled units and emit COMMAND_MOVE or COMMAND_ATTACK events.
+    Abilities A0F6 and A0F7 temporarily issue Move and Attack orders to all
+    non-Hold controlled units, then restore each unit's saved companion mode.
+    They emit COMMAND_MOVE or COMMAND_ATTACK events when an order succeeds.
 
 **/
 library Companions initializer Init requires QuestGiver, FollowSystem, IconQuery, Table, Events, UnitDeathEvent, SpeciFX, Reputation, DialogSystem, FallenHeroState, optional HintsUI
@@ -85,6 +86,7 @@ globals
     private constant real COMPANION_AGGRESSIVE_DISTANCE = 3500.00
     private constant real COMPANION_IDLE_CHECK_INTERVAL = 10.00
     private constant real COMPANION_ORDER_INTERVAL = 2.00
+    private constant real COMPANION_COMMAND_MAX_DURATION = 15.00
     private constant real COMPANION_NORMAL_ASSIST_COOLDOWN = 3.00
     private constant real HIRED_UNIT_SHOP_INIT_DELAY = 1.00
     private constant real COMPANION_NORMAL_CATCHUP_DISTANCE = 600.00
@@ -188,6 +190,7 @@ globals
     private Table CompanionMapIconSlot = 0
     private Table CompanionPingCycle = 0
     private Table CompanionManualOrder = 0
+    private Table CompanionManualOrderExpires = 0
     private Table ControlledDisplayIndex = 0
     private minimapicon array CompanionMapIcons
     private unit array ControlledDisplayUnits
@@ -284,6 +287,7 @@ private function EnsureState takes nothing returns nothing
         set CompanionMapIconSlot = Table.create()
         set CompanionPingCycle = Table.create()
         set CompanionManualOrder = Table.create()
+        set CompanionManualOrderExpires = Table.create()
         set ControlledDisplayIndex = Table.create()
     endif
     if ModeTargetGroup == null then
@@ -1000,6 +1004,27 @@ private function ClearOrderIdleState takes unit controlledUnit, integer customVa
     endif
 endfunction
 
+private function ClearManualOrderState takes integer unitId returns nothing
+    call CompanionManualOrder.remove(unitId)
+    call CompanionManualOrderExpires.remove(unitId)
+endfunction
+
+// Release completed commands immediately and cap active commands so a stuck
+// order cannot permanently take the unit away from its saved companion mode.
+private function IsManualOrderActive takes unit controlledUnit, integer unitId returns boolean
+    local integer manualOrder = CompanionManualOrder[unitId]
+
+    if manualOrder == 0 then
+        return false
+    endif
+    if GetUnitCurrentOrder(controlledUnit) == manualOrder and GetNow() < CompanionManualOrderExpires.real[unitId] then
+        return true
+    endif
+
+    call ClearManualOrderState(unitId)
+    return false
+endfunction
+
 private function IssueRandomAttackMoveNearLeader takes unit controlledUnit, unit leader, real minOffset, real maxOffset returns nothing
     local real angle = GetRandomReal(0.00, 6.2831853)
     local real offset = GetRandomReal(minOffset, maxOffset)
@@ -1098,7 +1123,7 @@ private function UpdateCompanionOrderUnit takes unit controlledUnit returns noth
         call DestroyCompanionFollowerEffects(controlledUnit)
         return
     endif
-    if CompanionManualOrder[unitId] != 0 then
+    if IsManualOrderActive(controlledUnit, unitId) then
         call FollowSystem_RemoveUnit(controlledUnit)
         call ClearCompanionFarIcon(controlledUnit)
         call DestroyCompanionFollowerEffects(controlledUnit)
@@ -1407,7 +1432,7 @@ private function RemoveInternal takes unit companionUnit returns nothing
     call CompanionAssistTarget.remove(unitId)
     call CompanionStoppedEffect.remove(unitId)
     call CompanionFollowingEffect.remove(unitId)
-    call CompanionManualOrder.remove(unitId)
+    call ClearManualOrderState(unitId)
     call DebugMsg("Remove " + GetUnitName(companionUnit))
 endfunction
 
@@ -1459,7 +1484,7 @@ private function SetModeInternal takes unit companionUnit, integer mode returns 
     endif
 
     set CompanionMode[unitId] = NormalizeMode(mode)
-    call CompanionManualOrder.remove(unitId)
+    call ClearManualOrderState(unitId)
     call ApplyOrders(companionUnit)
 endfunction
 
@@ -1527,6 +1552,7 @@ private function SetSuspendedInternal takes unit companionUnit, boolean suspende
 
     if suspended then
         set CompanionSuspended[unitId] = 1
+        call ClearManualOrderState(unitId)
     else
         set CompanionSuspended[unitId] = 0
     endif
@@ -2086,31 +2112,41 @@ endfunction
 private function ApplyOrderCommandTarget takes nothing returns nothing
     local unit controlledUnit = GetEnumUnit()
     local integer unitId
+    local boolean orderIssued = false
 
     call TrackExistingControlUnit(controlledUnit)
     set unitId = GetHandleId(controlledUnit)
     if CompanionTracked[unitId] == 1 and CompanionSuspended[unitId] == 0 and NormalizeMode(CompanionMode[unitId]) != COMPANION_MODE_HOLD and IsAliveUnit(controlledUnit) then
-        set OrderCommandCount = OrderCommandCount + 1
         call ClearOrderIdleState(controlledUnit, GetUnitUserData(controlledUnit))
         call FollowSystem_RemoveUnit(controlledUnit)
         call ClearCompanionFarIcon(controlledUnit)
         call DestroyCompanionFollowerEffects(controlledUnit)
         if OrderCommandAttack then
             set CompanionManualOrder[unitId] = OrderId("attack")
-            call FireCommandEvent(controlledUnit, OrderCommandCaster, COMMAND_ATTACK, 0)
+            set CompanionManualOrderExpires.real[unitId] = GetNow() + COMPANION_COMMAND_MAX_DURATION
             if OrderCommandTarget != null then
-                call IssueTargetOrder(controlledUnit, "attack", OrderCommandTarget)
+                set orderIssued = IssueTargetOrder(controlledUnit, "attack", OrderCommandTarget)
             else
-                call IssuePointOrder(controlledUnit, "attack", OrderCommandX, OrderCommandY)
+                set orderIssued = IssuePointOrder(controlledUnit, "attack", OrderCommandX, OrderCommandY)
             endif
         else
             set CompanionManualOrder[unitId] = OrderId("move")
-            call FireCommandEvent(controlledUnit, OrderCommandCaster, COMMAND_MOVE, 0)
+            set CompanionManualOrderExpires.real[unitId] = GetNow() + COMPANION_COMMAND_MAX_DURATION
             if OrderCommandTarget != null then
-                call IssueTargetOrder(controlledUnit, "move", OrderCommandTarget)
+                set orderIssued = IssueTargetOrder(controlledUnit, "move", OrderCommandTarget)
             else
-                call IssuePointOrder(controlledUnit, "move", OrderCommandX, OrderCommandY)
+                set orderIssued = IssuePointOrder(controlledUnit, "move", OrderCommandX, OrderCommandY)
             endif
+        endif
+        if orderIssued then
+            set OrderCommandCount = OrderCommandCount + 1
+            if OrderCommandAttack then
+                call FireCommandEvent(controlledUnit, OrderCommandCaster, COMMAND_ATTACK, 0)
+            else
+                call FireCommandEvent(controlledUnit, OrderCommandCaster, COMMAND_MOVE, 0)
+            endif
+        else
+            call ClearManualOrderState(unitId)
         endif
     endif
     set controlledUnit = null
@@ -2863,7 +2899,7 @@ private function OnUnitDeath takes nothing returns nothing
     call HandleHostilityAgainstFactionUnit(killer, dying)
 
     if dying != null and CompanionTracked != 0 and CompanionTracked[GetHandleId(dying)] == 1 then
-        call CompanionManualOrder.remove(GetHandleId(dying))
+        call ClearManualOrderState(GetHandleId(dying))
     endif
     if dying != null and not FallenHeroState_IsFallen(dying) and udg_Companion_Group != null and IsUnitInGroup(dying, udg_Companion_Group) and not IsUnitType(dying, UNIT_TYPE_HERO) and dying != udg_Valeria and dying != udg_Aradion and dying != udg_Aveline then
         set udg_CompanionUnitKicked = dying
@@ -3093,6 +3129,7 @@ public function SetExternalOrderOverride takes unit controlledUnit, boolean enab
     endif
     if enabled then
         set CompanionExternalOrderOverride[unitId] = 1
+        call ClearManualOrderState(unitId)
         call FollowSystem_RemoveUnit(controlledUnit)
         call ClearCompanionFarIcon(controlledUnit)
         call DestroyCompanionFollowerEffects(controlledUnit)
@@ -3192,7 +3229,7 @@ public function UnregisterControlled takes unit controlledUnit returns nothing
     call CompanionAssistTarget.remove(unitId)
     call CompanionStoppedEffect.remove(unitId)
     call CompanionFollowingEffect.remove(unitId)
-    call CompanionManualOrder.remove(unitId)
+    call ClearManualOrderState(unitId)
 endfunction
 
 public function IsControlled takes unit controlledUnit returns boolean
