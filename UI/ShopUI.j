@@ -2,7 +2,7 @@
     ShopUI
 
     Author: Valdemar
-    Version: 1.1.5
+    Version: 1.1.6
 
     Description:
     Frame UI for PotS merchant vendors. The panel can browse merchant stock or
@@ -50,6 +50,7 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
 
         private boolean SUI_Initialized = false
         private boolean SUI_SyncingListScroll = false
+        private boolean SUI_ScrollUpdateQueued = false
         private boolean SUI_TradeSessionOpen = false
         private boolean SUI_ReturnToDialog = false
         private integer SUI_ViewMode = SHOP_VIEW_MERCHANT
@@ -130,6 +131,7 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
         private trigger SUI_ReturnTrigger = null
         private trigger SUI_ExternalInterruptHandler = null
         private timer SUI_RefreshTimer = null
+        private timer SUI_ScrollUpdateTimer = null
 
         private string SUI_PanelTexture = "UI\\Widgets\\EscMenu\\Human\\blank-background.blp"
         private string SUI_DefaultIcon = "ReplaceableTextures\\CommandButtons\\BTNSelectHeroOn.blp"
@@ -643,6 +645,29 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
         call SUI_SyncListScrollFrame(whichPlayer, totalCount)
     endfunction
 
+    // Slider dragging can emit several events before frames render; keep only the final list state.
+    private function SUI_RunScrollUpdate takes nothing returns nothing
+        local player p = SUI_GetActivePlayer()
+        local integer totalCount
+
+        set SUI_ScrollUpdateQueued = false
+        if SUI_IsVisible() and SUI_TradeSessionOpen then
+            set totalCount = SUI_GetTotalCount()
+            call SUI_ClampState(totalCount)
+            call SUI_UpdateRows(p, totalCount)
+            call SUI_UpdateDetail(p, totalCount)
+        endif
+
+        set p = null
+    endfunction
+
+    private function SUI_RequestScrollUpdate takes nothing returns nothing
+        if not SUI_ScrollUpdateQueued then
+            set SUI_ScrollUpdateQueued = true
+            call TimerStart(SUI_ScrollUpdateTimer, 0.00, false, function SUI_RunScrollUpdate)
+        endif
+    endfunction
+
     private function SUI_DeferredInitialRefresh takes nothing returns nothing
         local timer refreshTimer = GetExpiredTimer()
         local player p = SUI_GetActivePlayer()
@@ -708,6 +733,10 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
     private function SUI_HideInternal takes boolean playSound, boolean playOutcome, boolean restoreGameplay returns nothing
         local boolean returnToDialog = SUI_ReturnToDialog and playOutcome
 
+        set SUI_ScrollUpdateQueued = false
+        if SUI_ScrollUpdateTimer != null then
+            call PauseTimer(SUI_ScrollUpdateTimer)
+        endif
         if SUI_Parent != null then
             if playSound and BlzFrameIsVisible(SUI_Parent) then
                 call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_CLOSE, Player(0))
@@ -856,36 +885,42 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
     endfunction
 
     private function SUI_ListScrollAction takes nothing returns nothing
-        local player p = GetTriggerPlayer()
         local integer maxStart = SUI_GetMaxStart(SUI_GetTotalCount())
+        local integer newScrollValue
 
         if SUI_SyncingListScroll then
-            set p = null
             return
         endif
 
         set SUI_ListScrollFrameValueCache = R2I(BlzGetTriggerFrameValue() + 0.5)
-        set SUI_ListScrollValue = maxStart - SUI_ListScrollFrameValueCache
+        set newScrollValue = maxStart - SUI_ListScrollFrameValueCache
+        if newScrollValue == SUI_ListScrollValue and SUI_SelectedIndex == newScrollValue + 1 then
+            return
+        endif
+        set SUI_ListScrollValue = newScrollValue
         set SUI_SelectedIndex = SUI_ListScrollValue + 1
-        call SUI_Update(p)
-        set p = null
+        call SUI_RequestScrollUpdate()
     endfunction
 
     private function SUI_WheelAction takes nothing returns nothing
+        local real currentValue
         local real newValue
 
         if GetLocalPlayer() == GetTriggerPlayer() and SUI_ListScroll != null and BlzFrameIsVisible(SUI_ListScroll) then
+            set currentValue = BlzFrameGetValue(SUI_ListScroll)
             if BlzGetTriggerFrameValue() > 0 then
-                set newValue = BlzFrameGetValue(SUI_ListScroll) + 1.0
+                set newValue = currentValue + 1.0
             else
-                set newValue = BlzFrameGetValue(SUI_ListScroll) - 1.0
+                set newValue = currentValue - 1.0
             endif
             if newValue < 0.0 then
                 set newValue = 0.0
             elseif newValue > I2R(SUI_ListScrollMaxCache) then
                 set newValue = I2R(SUI_ListScrollMaxCache)
             endif
-            call BlzFrameSetValue(SUI_ListScroll, newValue)
+            if newValue != currentValue then
+                call BlzFrameSetValue(SUI_ListScroll, newValue)
+            endif
         endif
     endfunction
 
@@ -1325,6 +1360,7 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
         set SUI_CategoryButtonIndex = Table.create()
         set SUI_ReturnHandlerByVendor = Table.create()
         set SUI_RefreshTimer = CreateTimer()
+        set SUI_ScrollUpdateTimer = CreateTimer()
         call TimerStart(SUI_RefreshTimer, SUI_REFRESH_INTERVAL, true, function SUI_RefreshAction)
 
         set SUI_CloseTrigger = CreateTrigger()
