@@ -2,7 +2,7 @@
     qRagno
 
     Author: Valdemar
-    Version: 1.3.1
+    Version: 1.3.2
 
     Description:
     Implements Ragno's quest dialogue, daily outpost tasks, Protect the
@@ -50,8 +50,7 @@ globals
     private constant integer UNIT_LUMBER_PEON = 'opeo'
     private constant integer UNIT_LUMBER_RETURN = 'n62U'
     private constant integer DESTRUCT_STASH_QUEST = 'B61D'
-    private constant integer DESTRUCT_LUMBER_TREE = 'LTlt'
-    private constant integer DESTRUCT_LUMBER_TREE_ALT = 'B61E'
+    private constant integer DESTRUCT_LUMBER_TREE = 'B003'
     private constant integer DESTRUCT_LUMBER_BLOCKER = 'B61F'
 
     private constant integer GNOLL_HEAD_REQUIRED = 20
@@ -626,7 +625,7 @@ private function IsLumberjackTree takes destructable d returns boolean
         return false
     endif
     set typeId = GetDestructableTypeId(d)
-    return typeId == DESTRUCT_LUMBER_TREE or typeId == DESTRUCT_LUMBER_TREE_ALT
+    return typeId == DESTRUCT_LUMBER_TREE
 endfunction
 
 private function ResetLumberjackDestructableEnum takes nothing returns nothing
