@@ -2,6 +2,7 @@
     FullscreenUI
 
     Author: Valdemar
+    Version:
 
     Description:
     Enables a clean fullscreen cinematic interface while preserving native
@@ -12,6 +13,19 @@
     - Native transmissions use their normal cinematic-mode layout.
     - Cinematic borders and backgrounds are transparent.
     - The transmission portrait, speaker name, and dialogue remain visible.
+
+    Credits:
+
+    How to install:
+    Import optional DynamicMinimap and DoodadRender integrations before this
+    library, then call the public API when fullscreen presentation begins or ends.
+
+    API:
+        FullscreenUI_Enable()
+        FullscreenUI_Disable()
+        FullscreenUI_Refresh()
+        FullscreenUI_SetEnabled(boolean enabled)
+        FullscreenUI_IsEnabled()
 
     Usage:
 
@@ -25,6 +39,8 @@
     Enabling or disabling this library also disables fog of war and black mask.
     When DynamicMinimap is present, fullscreen cinematic ownership suspends its
     chunk updates and keeps that suspension until every owner has released it.
+    When DoodadRender is present, its camera-local hiding is suspended so every
+    managed doodad remains visible during the fullscreen presentation.
 
     Important:
     Do not combine this library with:
@@ -38,7 +54,7 @@
         call CinematicModeBJ(true, bj_FORCE_ALL_PLAYERS)
         call CinematicModeBJ(false, bj_FORCE_ALL_PLAYERS)
 */
-library FullscreenUI initializer DelayedInit requires optional DynamicMinimap
+library FullscreenUI initializer DelayedInit requires optional DynamicMinimap, optional DoodadRender
 
 globals
     /*
@@ -198,6 +214,9 @@ public function Enable takes nothing returns nothing
     static if LIBRARY_DynamicMinimap then
         call DynamicMinimap_SuspendForScriptedCamera()
     endif
+    static if LIBRARY_DoodadRender then
+        call DoodadRender_SuspendForCinematic()
+    endif
     set FullscreenUI_Enabled = true
 
     /*
@@ -291,6 +310,9 @@ public function Disable takes nothing returns nothing
 
     static if LIBRARY_DynamicMinimap then
         call DynamicMinimap_ResumeAfterScriptedCamera()
+    endif
+    static if LIBRARY_DoodadRender then
+        call DoodadRender_ResumeAfterCinematic()
     endif
 endfunction
 

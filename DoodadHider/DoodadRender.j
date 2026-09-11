@@ -2,7 +2,7 @@
     DoodadRender
 
     Author: Valdemar
-    Version: 1.2.0
+    Version: 1.3.0
 
     Description:
         Reduces rendering load by hiding selected preplaced doodad types outside
@@ -21,6 +21,8 @@
         DoodadRender_Enable()
         DoodadRender_Disable()
         DoodadRender_Refresh()
+        DoodadRender_SuspendForCinematic()
+        DoodadRender_ResumeAfterCinematic()
 
 **/
 library DoodadRender initializer Init requires DoodadManager
@@ -29,6 +31,7 @@ library DoodadRender initializer Init requires DoodadManager
         private constant real UPDATE_INTERVAL = 0.20
         private constant real TILE_SIZE = 512.00
         private constant integer OVERSCAN_TILES = 0
+        private constant boolean DISABLE_DURING_CINEMATICS = true
         private constant boolean DEBUG = false
 
         // Managed doodad types and their effective tile radii.
@@ -53,6 +56,8 @@ library DoodadRender initializer Init requires DoodadManager
         private integer cameraRow = 0
         private boolean enabled = false
         private boolean initialized = false
+        private integer cinematicSuspendDepth = 0
+        private boolean cinematicWasEnabled = false
 
         // Optional per-client diagnostics.
         private integer animationCallCount = 0
@@ -335,6 +340,28 @@ library DoodadRender initializer Init requires DoodadManager
         set lastRow = row
     endfunction
 
+    private function StartRendering takes nothing returns nothing
+        if not initialized or enabled then
+            return
+        endif
+
+        set enabled = true
+        call RebuildVisibleState()
+        call TimerStart(updateTimer, UPDATE_INTERVAL, true, function Periodic)
+    endfunction
+
+    private function StopRendering takes nothing returns nothing
+        if not initialized or not enabled then
+            return
+        endif
+
+        set enabled = false
+        call PauseTimer(updateTimer)
+        call ShowAllManagedTypes()
+        set lastColumn = -1
+        set lastRow = -1
+    endfunction
+
     public function RegisterType takes integer doodadId, real drawDistance returns nothing
         local integer index
         local integer radius
@@ -363,30 +390,47 @@ library DoodadRender initializer Init requires DoodadManager
     endfunction
 
     public function Enable takes nothing returns nothing
-        if not initialized or enabled then
+        if cinematicSuspendDepth > 0 then
+            set cinematicWasEnabled = true
             return
         endif
-
-        set enabled = true
-        call RebuildVisibleState()
-        call TimerStart(updateTimer, UPDATE_INTERVAL, true, function Periodic)
+        call StartRendering()
     endfunction
 
     public function Disable takes nothing returns nothing
-        if not initialized or not enabled then
+        if cinematicSuspendDepth > 0 then
+            set cinematicWasEnabled = false
             return
         endif
-
-        set enabled = false
-        call PauseTimer(updateTimer)
-        call ShowAllManagedTypes()
-        set lastColumn = -1
-        set lastRow = -1
+        call StopRendering()
     endfunction
 
     public function Refresh takes nothing returns nothing
         if initialized and enabled then
             call RebuildVisibleState()
+        endif
+    endfunction
+
+    public function SuspendForCinematic takes nothing returns nothing
+        if not DISABLE_DURING_CINEMATICS then
+            return
+        endif
+
+        if cinematicSuspendDepth == 0 then
+            set cinematicWasEnabled = enabled
+            call StopRendering()
+        endif
+        set cinematicSuspendDepth = cinematicSuspendDepth + 1
+    endfunction
+
+    public function ResumeAfterCinematic takes nothing returns nothing
+        if not DISABLE_DURING_CINEMATICS or cinematicSuspendDepth <= 0 then
+            return
+        endif
+
+        set cinematicSuspendDepth = cinematicSuspendDepth - 1
+        if cinematicSuspendDepth == 0 and cinematicWasEnabled then
+            call StartRendering()
         endif
     endfunction
 
