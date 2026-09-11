@@ -13,7 +13,7 @@
     Outcast Jin'Zun dispel branch.
 
     How to install:
-    Import after the required quest, dialogue, zone, death-event, sound, and
+    Import after the required quest, dialogue, zone, death, sound, and
     voiceline libraries. Keep Velyssara's placed-unit global and the legacy
     quest rects, then disable the converted Succubus GUI trigger group.
 
@@ -28,7 +28,7 @@
     - qVelyssara_RefreshRespawnedUnitHooks()
 
 **/
-library qVelyssara initializer Init requires QuestGiver, QuestMaster, DialogInteraction, DialogSystem, HeroItemCheck, UnitDeathEvent, ZonesCore, FollowSystem, ExSound, VoicelinesDemoness, VoicelinesNazgrek
+library qVelyssara initializer Init requires QuestGiver, QuestMaster, DialogInteraction, DialogSystem, HeroItemCheck, Death, UnitDeathEvent, ZonesCore, FollowSystem, ExSound, VoicelinesDemoness, VoicelinesNazgrek
 
 globals
     private constant boolean DEBUG = false
@@ -44,6 +44,12 @@ globals
     private constant integer ABILITY_CHARM_AURA = 'S01P'
     private constant integer HORDE_OWNER = 5
     private constant integer TEMPORARY_GUARD_OWNER = 1
+
+    // Keeps Velyssara perceptible and selectable while suggesting concealment.
+    private constant integer STEALTH_VISUAL_RED = 220
+    private constant integer STEALTH_VISUAL_GREEN = 190
+    private constant integer STEALTH_VISUAL_BLUE = 255
+    private constant integer STEALTH_VISUAL_ALPHA = 170
 
     private constant integer TASK_NONE = 0
     private constant integer TASK_RUMORS = 1
@@ -91,7 +97,6 @@ globals
     private timer SatyrHostileTimer = null
     private trigger PillageHutTrigger = null
     private trigger PillagePickupTrigger = null
-    private trigger HeroReviveTrigger = null
     private trigger VelyssaraAttackedTrigger = null
     private trigger VelyssaraSpellTrigger = null
     private group RumorTargets = null
@@ -112,9 +117,16 @@ private function DebugMsg takes string msg returns nothing
     endif
 endfunction
 
+private function ApplyStealthVisual takes unit whichUnit returns nothing
+    if whichUnit != null then
+        call SetUnitVertexColor(whichUnit, STEALTH_VISUAL_RED, STEALTH_VISUAL_GREEN, STEALTH_VISUAL_BLUE, STEALTH_VISUAL_ALPHA)
+    endif
+endfunction
+
 private function SyncUnitReferences takes nothing returns nothing
     if udg_Succubus != null and udg_Succubus != Velyssara then
         set Velyssara = udg_Succubus
+        call ApplyStealthVisual(Velyssara)
     endif
     if udg_Nazgrek != null and udg_Nazgrek != Nazgrek then
         set Nazgrek = udg_Nazgrek
@@ -735,7 +747,7 @@ private function CompleteTask4 takes unit hero returns nothing
 endfunction
 
 private function OnHeroRevived takes nothing returns nothing
-    call CompleteTask4(GetRevivingUnit())
+    call CompleteTask4(Death_EventHero)
 endfunction
 
 private function OnAnyUnitDeath takes nothing returns nothing
@@ -829,8 +841,7 @@ private function RegisterRuntime takes nothing returns nothing
     call TriggerAddAction(PillageHutTrigger, function OnPillageHutEntered)
     call TriggerRegisterPlayerUnitEvent(PillagePickupTrigger, Player(0), EVENT_PLAYER_UNIT_PICKUP_ITEM, null)
     call TriggerAddAction(PillagePickupTrigger, function OnPillagePickedUp)
-    call TriggerRegisterPlayerUnitEvent(HeroReviveTrigger, Player(0), EVENT_PLAYER_HERO_REVIVE_FINISH, null)
-    call TriggerAddAction(HeroReviveTrigger, function OnHeroRevived)
+    call Death_RegisterReviveCallback(function OnHeroRevived)
     call TriggerRegisterAnyUnitEventBJ(VelyssaraAttackedTrigger, EVENT_PLAYER_UNIT_ATTACKED)
     call TriggerAddAction(VelyssaraAttackedTrigger, function OnVelyssaraAttacked)
     call TriggerRegisterAnyUnitEventBJ(VelyssaraSpellTrigger, EVENT_PLAYER_UNIT_SPELL_CHANNEL)
@@ -868,7 +879,6 @@ private function Init takes nothing returns nothing
     set SatyrHostileTimer = CreateTimer()
     set PillageHutTrigger = CreateTrigger()
     set PillagePickupTrigger = CreateTrigger()
-    set HeroReviveTrigger = CreateTrigger()
     set VelyssaraAttackedTrigger = CreateTrigger()
     set VelyssaraSpellTrigger = CreateTrigger()
     set RumorTargets = CreateGroup()
