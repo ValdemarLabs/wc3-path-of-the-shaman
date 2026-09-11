@@ -20,14 +20,41 @@
 
 ### Player-Facing Updates
 
-- Rain now creates intensity-scaled impact effects around the active camera: `war3mapImported\\Ripples.mdl` on water and `lluvia suelo1.mdx` on land.
+- Restored Gnoll Head drops for Ragno's Gnoll Headcount quest; all configured base and custom gnolls now have a 25% chance to drop a head while the quest is active, and stop dropping them outside the quest.
+- Fullscreen cinematics now keep all managed doodads visible instead of applying camera-local doodad hiding during the presentation.
+- ShopUI's left item list now scrolls without rebuilding and repainting the entire vendor interface for every wheel or slider event.
+- Fixed Horde Restoration Shamans (`o01O`) being treated as bag merchants by removing the unrelated unit type from the shared Bags vendor registration.
+- Changed death item loss by difficulty: Story now drops nothing, Normal drops only quick-inventory items, and Hard drops equipped gear, stored bag items, and quick-inventory items.
+- Restored voiced dialogue for Graknar's Mistaken Kin quest with matching Nazgrek and Zul'kis responses; any future missing quest audio now reports the unresolved sound key instead of failing silently.
+- Rain now creates intensity-scaled impact effects around the active camera: `war3mapImported\\Ripples.mdl` at 5.0 scale on water and `lluvia suelo1.mdx` on land.
+- Fixed the Lumberjack Duties peon ignoring the quest's Pine Trees, so he can begin harvesting when the accepting hero leads him near one.
+- Companion Move and Attack commands now release each ordered companion and pet back to its saved Passive, Normal, or Aggressive mode when the command finishes or after 15 seconds, instead of leaving the unit standing at the command destination.
+- Fixed the final Chains of Seduction task not completing after Nazgrek sacrificed himself and was revived; Velyssara now also has a translucent, otherworldly appearance while remaining visible and selectable.
+- Fixed the Enhancement Master's `TrainerEnhancement_0007` farewell subtitle so it now matches the spoken "Farewell." audio.
 
 ### Technical Updates
 
+- Updated `ItemLootSystems/ItemLootSystem.j` with optional active/discovered QuestMaster gates for unit-specific drops, and removed the duplicate quest-owned Gnoll Head registration from `QuestsAndDialogs/QuestGivers/Orcs/qRagno.j`.
+- Updated `DoodadHider/DoodadRender.j` with configurable, nesting-safe cinematic suspension APIs that preserve manual enable/disable intent, and integrated them optionally with `UI/FullscreenUI.j`.
+- Updated `UI/ShopUI.j` with deferred, coalesced list redraws, unchanged-position guards, and a scroll-only refresh path that avoids rebuilding combined inventory, categories, headers, resources, and slider bounds while navigating the left pane.
+- Updated `Vendors/VendorTypes/VendorBags.j`, `Vendors/Help/VendorsHelper.md`, `QuestsAndDialogs/QuestGivers/Vendors/README.md`, and `_developer/Design Plans/Story and Quest Design.md` to return Gorvak to a guarded placeholder until he receives a distinct Object Editor unit type.
+- Updated `Death/Revival.j` and `UI/Difficulty.j` to separate quick-inventory loss from stored-bag and equipped-item loss in the difficulty rules.
+- Added `Voicelines/Voicelines_Graknar.j` and updated `Voicelines/Voicelines_Nazgrek.j`, `Voicelines/Voicelines_Zulkis.j`, and `QuestsAndDialogs/QuestGivers/Orcs/qGraknar.j` with registered Mistaken Kin dialogue keys that route through `ExSound` validation and duration fallback.
+- Corrected Graknar's `o61S` vendor binding from the erroneous Bonecrusher Ogre profile to the Sereneglade/forest Orc dialogue profile with the Orc Peon-based `GenericOrcMale5` voice.
+- Removed the obsolete Bonecrusher Ogre bag-merchant profile that contained Graknar-specific dialogue; Graknar can now resolve only through his Orc quest and vendor voice mappings.
 - Updated `EnvironmentSystems/WeatherSystemV4.j` to replace fixed ripple destructables with a bounded camera-local special-effect pool, floatability-based water detection, terrain-aligned land impacts, steep-slope rejection, and automatic start/stop integration with active rain weather and FPS settings.
+- Updated `QuestsAndDialogs/QuestGivers/Orcs/qRagno.j` to recognize the actual Lumberjack Duties tree destructible rawcode, `B003`, when scanning and validating harvest targets.
+- Updated `Companions/Companions.j` with per-unit manual-command timeouts, completion and failed-order cleanup, and command cancellation during suspension or external-order takeover; pets inherit the fix through the shared companion controller.
+- Updated `QuestsAndDialogs/QuestGivers/Satyr/qVelyssara.j` to complete its self-sacrifice task through the shared `Death` revival callback and apply a respawn-safe translucent vertex tint without gameplay invisibility or new Object Editor data.
+- Updated `Abilities/AbilityTrainerLines.j` to correct the text registered for `TrainerEnhancement_0007`.
+
+### Tool Updates
+
+- Updated `WC3_Database/WC3ItemManager` with Quest Designer links and active/discovered state selection for unit-specific drops, quest-aware JASS export, a headless `--export-loot` command, and migration `009_add_specific_drop_quest_gate.sql`; migrated Gnoll Heads to specific-only loot and linked all 16 configured gnoll drops to Gnoll Headcount.
 
 ### Imports
 
+- Generated two Nazgrek and two Zul'kis Mistaken Kin MP3s, staged improved takes of `Nazgrek_0390` and `Zulkis_0015`, and staged eight corrected Graknar MP3s with his Orc Peon voice profile for listening review.
 - `raindrops splash` by mechanix
   - lluvia suelo1.mdx
 - `Aarux The Plagued Nightmare - Undead Bone Spider`  by Dartz, Blizzard Entertainment
@@ -37,7 +64,17 @@
 
 ### Actions Remaining
 
+- Import the latest WC3Manager generic, specific, and destructible loot exports, compile the full map with World Editor/JassHelper, and test Gnoll Headcount before acceptance, while active, when ready to turn in, and after completion against both base and custom gnolls.
+- Compile the full map with World Editor/JassHelper and enter and leave nested fullscreen cinematic flows while DoodadRender is enabled and manually disabled; confirm all managed doodads remain visible in fullscreen and the prior render state returns afterward.
+- Compile the full map with World Editor/JassHelper and repeatedly wheel-scroll and drag ShopUI's left scrollbar in both Merchant and You modes; confirm rows and item details stay synchronized and long scrolling no longer causes visible hitching or progressive FPS loss.
+- In World Editor, create a distinct Bag Merchant unit type for Gorvak, replace only `VendorBags_UNIT_TYPE_GORVAK`, and leave the Restoration Shaman rawcode `o01O` unregistered; then compile and verify Restoration Shamans no longer open vendor dialogue.
+- Compile the full map with World Editor/JassHelper and runtime-test player-hero deaths on Story, Normal, and Hard; confirm each profile drops only its documented item categories and that Spirit Healer recovery restores every dropped item.
+- Listen-review and promote `Graknar_0001`-`0008`, then compile the full map with World Editor/JassHelper and runtime-test every Mistaken Kin dialogue state with both Nazgrek and Zul'kis; confirm all twelve MP3s play and no `ExSound WARNING` appears.
 - Compile the full map with World Editor/JassHelper and runtime-test light, medium, heavy, and storm rain near weather-region borders, map edges, shallow/deep water, rolling terrain, cliffs, and different camera distances; confirm both configured model paths resolve and water ripples render at the water surface in Classic and Reforged modes.
+- Compile the full map with World Editor/JassHelper and runtime-test Lumberjack Duties with both Nazgrek and Zul'kis; lead the peon within 250 range of a `B003` Pine Tree and confirm it pauses following, harvests, performs its return step, and resumes following the accepting hero.
+- Compile the full map with World Editor/JassHelper and runtime-test companion Move and Attack commands during Zul'kis's intro with Passive, Normal, and Aggressive companions plus an active pet; confirm completed and 15-second timed-out orders resume each unit's saved mode without returning units to their creation positions.
+- Compile the full map with World Editor/JassHelper and runtime-test Chains of Seduction's final task through player, companion, and spirit-healer revival paths; confirm the post-revival dialogue and reward complete once, and verify Velyssara remains visible, selectable, and suitably translucent before and after respawning.
+- Compile the full map with World Editor/JassHelper and trigger the Enhancement Master's farewells until `TrainerEnhancement_0007` plays; confirm both subtitle and audio say "Farewell."
 
 ## [10.9.2026]
 
@@ -69,7 +106,7 @@
 
 ### Actions Remaining
 
-- Compile the full map with World Editor/JassHelper and runtime-test Lumberjack Duties with both Nazgrek and Zul'kis; lead the peon beside `LTlt` and `B61E` trees and confirm it pauses following, harvests, performs its return step, and resumes following the accepting hero.
+- Compile the full map with World Editor/JassHelper and runtime-test Lumberjack Duties with both Nazgrek and Zul'kis; lead the peon beside a `B003` Pine Tree and confirm it pauses following, harvests, performs its return step, and resumes following the accepting hero.
 - Compile and runtime-test completion of Zul'kis's intro after selecting another graveyard as Nazgrek; confirm Graveyard04 and its marker become active before Nazgrek's return scene.
 - Compile the full map with World Editor/JassHelper and runtime-test accepting `Chains of Seduction`; confirm Velyssara follows Nazgrek throughout all four tasks, blinks to him beyond 900 range, and stops following after completion or Jin'Zun dispels the charm.
 - Compile the full map with World Editor/JassHelper and runtime-test steam weather in both early and later registered regions; confirm every steam effect is destroyed immediately when its attached unit dies and when regional weather stops.
