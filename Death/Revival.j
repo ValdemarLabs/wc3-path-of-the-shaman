@@ -31,6 +31,10 @@
     call Revival_GetSelectedGraveyard() returns integer
     call Revival_SelectGraveyard(graveyardId)
 
+    Difficulty item loss:
+    Story drops nothing, Normal drops quick-inventory items, and Hard drops
+    quick-inventory items, stored bag items, and equipped gear.
+
 **/
 library Revival initializer Init requires Death, Table, Events, UnitDeathEvent, ExSound, CameraControl, DEquipment, DialogInteraction, DialogSystem, ZonesCore, optional HintsUI
 
@@ -279,25 +283,31 @@ private function Revival_DropHeroItems takes unit whichHero, real x, real y retu
     local integer droppedCount = 0
     local item droppedItem
     local boolean dropEquipment = DropEquipmentOnDeath
-    local boolean dropItems = DropItemsOnDeath
+    local boolean dropStoredItems = DropItemsOnDeath
+    local boolean dropQuickInventory = DropItemsOnDeath
 
     if UseGameDifficultyDropRules then
         if GetGameDifficulty() == MAP_DIFFICULTY_EASY then
             set dropEquipment = false
-            set dropItems = false
+            set dropStoredItems = false
+            set dropQuickInventory = false
         elseif GetGameDifficulty() == MAP_DIFFICULTY_HARD then
             set dropEquipment = true
-            set dropItems = true
+            set dropStoredItems = true
+            set dropQuickInventory = true
         else
-            set dropEquipment = true
-            set dropItems = false
+            set dropEquipment = false
+            set dropStoredItems = false
+            set dropQuickInventory = true
         endif
     endif
     if dropEquipment then
         set droppedCount = droppedCount + DInvDropEquippedItemsForUnit(whichHero, x, y)
     endif
-    if dropItems then
+    if dropStoredItems then
         set droppedCount = droppedCount + DInvDropStoredItemsForUnit(whichHero, x, y)
+    endif
+    if dropQuickInventory then
         if inventorySize > bj_MAX_INVENTORY then
             set inventorySize = bj_MAX_INVENTORY
         endif
