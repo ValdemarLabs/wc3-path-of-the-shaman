@@ -12,7 +12,7 @@
     - Legacy GUI triggers in QuestsAndDialogs/OLDGUI/Graknar.
 
     How to install:
-    Import after the required quest, dialog, follow, death-event, and vendor libraries.
+    Import after the required quest, dialog, follow, death-event, vendor, and voiceline libraries.
     Disable the converted Graknar GUI trigger group and keep the Graknar,
     Nazgrek, KodoSpawn, and KodoEnd World Editor globals assigned.
 
@@ -21,7 +21,7 @@
     - call qGraknar_RefreshRespawnedUnitHooks()
 
 **/
-library qGraknar initializer Init requires QuestGiver, QuestMaster, DialogInteraction, DialogSystem, FollowSystem, UnitDeathEvent, VendorBags, VendorDialogs, Shop, ShopUI, VendorLines
+library qGraknar initializer Init requires QuestGiver, QuestMaster, DialogInteraction, DialogSystem, FollowSystem, UnitDeathEvent, VendorBags, VendorDialogs, Shop, ShopUI, VendorLines, VoicelinesGraknar, VoicelinesNazgrek, VoicelinesZulkis
     globals
         private constant boolean DEBUG = false
 
@@ -314,8 +314,8 @@ library qGraknar initializer Init requires QuestGiver, QuestMaster, DialogIntera
         call DialogInteraction_BeginDialogSequence()
         set seq = DialogInteraction_CreateBaseSequence(Graknar, GRAKNAR_NAME)
         call DialogSystem_AddMakeFaceEachOther(seq, Graknar, hero, 0.50, 0.00)
-        call DialogSystem_AddLineNoSound(seq, Graknar, GRAKNAR_NAME, "Graknar lost Kodo near the salamanders. Find Kodo. Bring Kodo back.")
-        call DialogSystem_AddLineNoSound(seq, hero, DialogInteraction_GetHeroName(hero), "I will bring it home.")
+        call DialogSystem_AddLine(seq, Graknar, GRAKNAR_NAME, VL_GRAKNAR_0001_TEXT, VL_GRAKNAR_0001_KEY, true)
+        call DialogInteraction_AddHeroLineForVoices(seq, hero, VL_NAZGREK_0389_TEXT, VL_NAZGREK_0389_KEY, VL_ZULKIS_0015_KEY)
         call DialogSystem_SetSequenceCallbacks(seq, null, function OnAcceptEnd)
         call DialogSystem_PlaySequence(seq, Player(0), Graknar)
         set hero = null
@@ -341,7 +341,7 @@ library qGraknar initializer Init requires QuestGiver, QuestMaster, DialogIntera
         call DialogInteraction_BeginDialogSequence()
         set seq = DialogInteraction_CreateBaseSequence(Graknar, GRAKNAR_NAME)
         call DialogSystem_AddMakeFaceEachOther(seq, Graknar, hero, 0.50, 0.00)
-        call DialogSystem_AddLineNoSound(seq, Graknar, GRAKNAR_NAME, "Kodo gone, but Graknar knows where another wandered. Try again.")
+        call DialogSystem_AddLine(seq, Graknar, GRAKNAR_NAME, VL_GRAKNAR_0002_TEXT, VL_GRAKNAR_0002_KEY, true)
         call DialogSystem_SetSequenceCallbacks(seq, null, function OnRetryEnd)
         call DialogSystem_PlaySequence(seq, Player(0), Graknar)
         set hero = null
@@ -365,8 +365,8 @@ library qGraknar initializer Init requires QuestGiver, QuestMaster, DialogIntera
         call DialogInteraction_BeginDialogSequence()
         set seq = DialogInteraction_CreateBaseSequence(Graknar, GRAKNAR_NAME)
         call DialogSystem_AddMakeFaceEachOther(seq, Graknar, hero, 0.50, 0.00)
-        call DialogSystem_AddLineNoSound(seq, Graknar, GRAKNAR_NAME, "Kodo back. Good. Graknar carries bags again.")
-        call DialogSystem_AddLineNoSound(seq, hero, DialogInteraction_GetHeroName(hero), "Keep a closer eye on it this time.")
+        call DialogSystem_AddLine(seq, Graknar, GRAKNAR_NAME, VL_GRAKNAR_0003_TEXT, VL_GRAKNAR_0003_KEY, true)
+        call DialogInteraction_AddHeroLineForVoices(seq, hero, VL_NAZGREK_0390_TEXT, VL_NAZGREK_0390_KEY, VL_ZULKIS_0016_KEY)
         call DialogSystem_SetSequenceCallbacks(seq, null, function OnCompleteEnd)
         call DialogSystem_PlaySequence(seq, Player(0), Graknar)
         set hero = null
@@ -444,17 +444,17 @@ library qGraknar initializer Init requires QuestGiver, QuestMaster, DialogIntera
         local QuestData q = GetMistakenKinQuest()
 
         if q != 0 and q.failed then
-            call DialogSystem_AddLineNoSound(seq, Graknar, GRAKNAR_NAME, "Kodo was lost. Graknar can show you where to search again.")
+            call DialogSystem_AddLine(seq, Graknar, GRAKNAR_NAME, VL_GRAKNAR_0004_TEXT, VL_GRAKNAR_0004_KEY, true)
         elseif q != 0 and q.active and q.state == QUEST_STATE_READY_TURNIN then
-            call DialogSystem_AddLineNoSound(seq, Graknar, GRAKNAR_NAME, "Kodo home! Graknar sees.")
+            call DialogSystem_AddLine(seq, Graknar, GRAKNAR_NAME, VL_GRAKNAR_0005_TEXT, VL_GRAKNAR_0005_KEY, true)
         elseif q != 0 and q.active and KodoFound then
-            call DialogSystem_AddLineNoSound(seq, Graknar, GRAKNAR_NAME, "Bring Kodo back. Kodo carries Graknar's best bags.")
+            call DialogSystem_AddLine(seq, Graknar, GRAKNAR_NAME, VL_GRAKNAR_0006_TEXT, VL_GRAKNAR_0006_KEY, true)
         elseif q != 0 and q.active then
-            call DialogSystem_AddLineNoSound(seq, Graknar, GRAKNAR_NAME, "Kodo still lost near salamanders.")
+            call DialogSystem_AddLine(seq, Graknar, GRAKNAR_NAME, VL_GRAKNAR_0007_TEXT, VL_GRAKNAR_0007_KEY, true)
         elseif VendorLines_PickGreetLine(Graknar) then
             call DialogSystem_AddLine(seq, Graknar, VendorLines_GetVendorSpeakerName(Graknar), DialogSystem_PickedText, DialogSystem_PickedSound, DialogSystem_PickedSoundAtUnit)
         else
-            call DialogSystem_AddLineNoSound(seq, Graknar, GRAKNAR_NAME, "Strong bags. Strong price.")
+            call DialogSystem_AddLine(seq, Graknar, GRAKNAR_NAME, VL_GRAKNAR_0008_TEXT, VL_GRAKNAR_0008_KEY, true)
         endif
         set q = 0
     endfunction

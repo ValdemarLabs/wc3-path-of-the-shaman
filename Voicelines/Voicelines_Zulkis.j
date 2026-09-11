@@ -224,6 +224,12 @@ globals
     constant string VL_ZULKIS_0014_KEY = "Zulkis_0014"
     constant string VL_ZULKIS_0014_TEXT = "Hail, Chieftain Thork. I be Zul'kis of da Darkspear."
 
+    // Graknar's Mistaken Kin quest.
+    constant string VL_ZULKIS_0015_KEY = "Zulkis_0015"
+    constant string VL_ZULKIS_0015_TEXT = "I will bring it home."
+    constant string VL_ZULKIS_0016_KEY = "Zulkis_0016"
+    constant string VL_ZULKIS_0016_TEXT = "Keep a closer eye on it this time."
+
 endglobals
 
 private function RegisterGenericQuestLines takes nothing returns nothing
@@ -260,6 +266,8 @@ endfunction
 private function Init takes nothing returns nothing
     call ExSound_RegisterSequence(VL_ZULKIS_GENERIC_TYPE, 1, 28, "Pots\\Sound\\Voicelines\\Zulkis\\ZulkisGeneric\\")
     call RegisterGenericQuestLines()
+    call Voicelines_RegisterKey(VL_ZULKIS_FOLDER, VL_ZULKIS_0015_KEY)
+    call Voicelines_RegisterKey(VL_ZULKIS_FOLDER, VL_ZULKIS_0016_KEY)
 endfunction
 
 endlibrary

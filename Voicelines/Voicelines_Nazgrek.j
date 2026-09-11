@@ -719,6 +719,12 @@ globals
     constant string VL_NAZGREK_0387_TEXT = "Still... something is not right. I feel it in my gut, but the visions the elements grant me are clouded."
     constant string VL_NAZGREK_0388_KEY = "Nazgrek_0388"
     constant string VL_NAZGREK_0388_TEXT = "While I am at it, I could use some practice in the old shamanic ways. They have grown rusty over the years we spent in the forest."
+
+    // Graknar's Mistaken Kin quest.
+    constant string VL_NAZGREK_0389_KEY = "Nazgrek_0389"
+    constant string VL_NAZGREK_0389_TEXT = "I will bring it home."
+    constant string VL_NAZGREK_0390_KEY = "Nazgrek_0390"
+    constant string VL_NAZGREK_0390_TEXT = "Keep a closer eye on it this time."
 endglobals
 
 private function RegisterGenericQuestLines takes nothing returns nothing
@@ -779,6 +785,8 @@ private function Init takes nothing returns nothing
     call Voicelines_RegisterKey(VL_NAZGREK_FOLDER, VL_NAZGREK_0372_KEY)
     call Voicelines_RegisterKey(VL_NAZGREK_FOLDER, VL_NAZGREK_0377_KEY)
     call Voicelines_RegisterKey(VL_NAZGREK_FOLDER, VL_NAZGREK_0378_KEY)
+    call Voicelines_RegisterKey(VL_NAZGREK_FOLDER, VL_NAZGREK_0389_KEY)
+    call Voicelines_RegisterKey(VL_NAZGREK_FOLDER, VL_NAZGREK_0390_KEY)
 endfunction
 
 endlibrary
