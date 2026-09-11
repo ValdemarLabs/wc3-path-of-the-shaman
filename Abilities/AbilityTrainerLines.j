@@ -104,7 +104,7 @@ library AbilityTrainerLines initializer Init requires DialogSystem, AbilitiesPla
 
         call DialogSystem_RegisterFarewellLine("Enhancement Master", "Strike hard, move faster, and don't fall over.", "TrainerEnhancement_0005", true)
         call DialogSystem_RegisterFarewellLine("Enhancement Master", "It was foretold that you will return.", "TrainerEnhancement_0006", true)
-        call DialogSystem_RegisterFarewellLine("Enhancement Master", "Do not waste the strength you asked the spirits to lend.", "TrainerEnhancement_0007", true)
+        call DialogSystem_RegisterFarewellLine("Enhancement Master", "Farewell.", "TrainerEnhancement_0007", true)
 
         call DialogSystem_RegisterLearnTrainerLine("Enhancement Master", "Good. Put this new knowledge to good use.", "TrainerEnhancement_0008", true)
         call DialogSystem_RegisterLearnTrainerLine("Enhancement Master", "Excellent choice, my friend.", "TrainerEnhancement_0009", true)
