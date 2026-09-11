@@ -141,8 +141,8 @@ faction while sharing the same bag-upgrade pricing and progression.
 
 | Rawcode | Vendor | Race/region | Reputation | Suggested Object Editor base |
 |---|---|---|---|---|
-| `o61S` | Graknar | Bonecrusher Ogre quest giver | Placed-unit owner; unchanged | Existing Graknar |
-| `o01O` | Gorvak Packhide | Fiery Mountain Orc | Horde | `o011` Kargun Ashblade |
+| `o61S` | Graknar | Sereneglade Orc quest giver | Placed-unit owner; unchanged | Existing Graknar (`opeo` base) |
+| `XXXX` | Gorvak Packhide | Fiery Mountain Orc | Horde | `o011` Kargun Ashblade |
 | `o01P` | Threkka Trailpack | Forest Orc | Horde | `o00B` Rukgar Longroad |
 | `o01Q` | Mazruk Reedstrap | Sirensong Orc | Horde | `o010` Krazhan Far-Sail |
 | `XXXX` | Hamu Broadpack | Tauren | Horde | `o01E` Nara Stormhoof |
@@ -157,7 +157,8 @@ faction while sharing the same bag-upgrade pricing and progression.
 | `XXXX` | Caelira Starstitch | Elarindor | Elarindor | `h00R` Vaeriel Dawnflask |
 | `XXXX` | Brolin Strapforge | Dwarf | Morgrim Clan | `h010` Magdor Caskcoin |
 
-The three Orc identities have assigned rawcodes. For every `XXXX` entry, create
+Two generic Orc identities have assigned rawcodes. Gorvak remains unassigned
+because `o01O` belongs to a non-vendor Restoration Shaman. For every `XXXX` entry, create
 a distinct Object Editor unit, replace only that identity's placeholder constant
 in `VendorBags.j`, and place it in a suitable settlement. Do not reuse `o61S`:
 quest-giver assignment and respawn restoration reserve it exclusively for
