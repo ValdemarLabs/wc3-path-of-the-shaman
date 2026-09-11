@@ -34,7 +34,7 @@
 
 ### Technical Updates
 
-- Updated `ItemLootSystems/ItemLootSystem.j` with optional active/discovered QuestMaster gates for unit-specific drops, and removed the duplicate quest-owned Gnoll Head registration from `QuestsAndDialogs/QuestGivers/Orcs/qRagno.j`.
+- Updated `ItemLootSystems/ItemLootSystem.j` with optional active/discovered quest gates for unit-specific drops, routed QuestMaster evaluation through the generated specific-drop adapter to avoid a library requirement cycle, and removed the duplicate quest-owned Gnoll Head registration from `QuestsAndDialogs/QuestGivers/Orcs/qRagno.j`.
 - Updated `DoodadHider/DoodadRender.j` with configurable, nesting-safe cinematic suspension APIs that preserve manual enable/disable intent, and integrated them optionally with `UI/FullscreenUI.j`.
 - Updated `UI/ShopUI.j` with deferred, coalesced list redraws, unchanged-position guards, and a scroll-only refresh path that avoids rebuilding combined inventory, categories, headers, resources, and slider bounds while navigating the left pane.
 - Updated `Vendors/VendorTypes/VendorBags.j`, `Vendors/Help/VendorsHelper.md`, `QuestsAndDialogs/QuestGivers/Vendors/README.md`, and `_developer/Design Plans/Story and Quest Design.md` to return Gorvak to a guarded placeholder until he receives a distinct Object Editor unit type.
