@@ -2,7 +2,7 @@
         VoicelinesNazgrek
 
         Author: Valdemar
-        Version: 1.2.0
+    Version: 1.3.0
 
         Description:
         Speaker-owned story and reusable generic quest voicelines for Nazgrek.
@@ -107,6 +107,26 @@
         constant string VL_NAZGREK_GENERIC_0031_TEXT = "The spirits watched the road. You may set down your burden."
         constant string VL_NAZGREK_GENERIC_0032_KEY = "NazgrekGeneric_0032"
         constant string VL_NAZGREK_GENERIC_0032_TEXT = "You made it home. Open your stall when you are ready."
+
+        // Definition-specific vendor escort progress replies.
+        constant string VL_NAZGREK_GENERIC_0033_KEY = "NazgrekGeneric_0033"
+        constant string VL_NAZGREK_GENERIC_0033_TEXT = "Koro's post is still ahead. Stay at my side, Nara."
+        constant string VL_NAZGREK_GENERIC_0034_KEY = "NazgrekGeneric_0034"
+        constant string VL_NAZGREK_GENERIC_0034_TEXT = "Keep your pace, Nara. I will not let the shadows cut you off."
+        constant string VL_NAZGREK_GENERIC_0035_KEY = "NazgrekGeneric_0035"
+        constant string VL_NAZGREK_GENERIC_0035_TEXT = "We are not at the caravan fires yet. Move with me."
+        constant string VL_NAZGREK_GENERIC_0036_KEY = "NazgrekGeneric_0036"
+        constant string VL_NAZGREK_GENERIC_0036_TEXT = "Garrick's forge is still ahead. Keep the ledgers covered."
+        constant string VL_NAZGREK_GENERIC_0037_KEY = "NazgrekGeneric_0037"
+        constant string VL_NAZGREK_GENERIC_0037_TEXT = "Riverbane needs those records intact. We keep moving."
+        constant string VL_NAZGREK_GENERIC_0038_KEY = "NazgrekGeneric_0038"
+        constant string VL_NAZGREK_GENERIC_0038_TEXT = "Stay behind me, Cedran. The road is not secure."
+        constant string VL_NAZGREK_GENERIC_0039_KEY = "NazgrekGeneric_0039"
+        constant string VL_NAZGREK_GENERIC_0039_TEXT = "Velyssra's wards are still ahead. Keep the crate steady."
+        constant string VL_NAZGREK_GENERIC_0040_KEY = "NazgrekGeneric_0040"
+        constant string VL_NAZGREK_GENERIC_0040_TEXT = "I hear the bottles, Selyth. We should keep moving."
+        constant string VL_NAZGREK_GENERIC_0041_KEY = "NazgrekGeneric_0041"
+        constant string VL_NAZGREK_GENERIC_0041_TEXT = "Stay close. I would rather not test what your cargo does when dropped."
 
         // Legacy Excel draft/reference rows not yet wired to active code.
 
@@ -773,7 +793,7 @@
     endfunction
 
     private function Init takes nothing returns nothing
-        call ExSound_RegisterSequence(VL_NAZGREK_GENERIC_TYPE, 1, 32, "Pots\\Sound\\Voicelines\\Nazgrek\\NazgrekGeneric\\")
+        call ExSound_RegisterSequence(VL_NAZGREK_GENERIC_TYPE, 1, 41, "Pots\\Sound\\Voicelines\\Nazgrek\\NazgrekGeneric\\")
         call RegisterGenericQuestLines()
         call Voicelines_RegisterKey(VL_NAZGREK_FOLDER, VL_NAZGREK_0331_KEY)
         call Voicelines_RegisterKey(VL_NAZGREK_FOLDER, VL_NAZGREK_0332_KEY)
