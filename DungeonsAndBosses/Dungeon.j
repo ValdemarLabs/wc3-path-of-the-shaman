@@ -2,14 +2,17 @@
     Dungeon
 
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.2.0
 
     Description:
     Connects explicitly registered dungeons to ZonesCore, owns their grouped
     and random creature respawns, and routes revived AI companions back to the
     entrance of the dungeon occupied by their focused player hero. A routed AI
     is teleported just inside the entrance after 120 seconds if pathing never
-    brings it into the dungeon.
+    brings it into the dungeon. It also tracks player-hero occupancy and emits
+    one reusable callback when the last tracked hero leaves a dungeon. During
+    zone transitions it moves only companions focused on the transitioning
+    hero and temporarily suppresses their normal controller for forced routes.
 
     Registered dungeon bosses and full-respawn creeps return together on the
     dungeon timer. Random-respawn slots use independent delays and never accept
@@ -41,12 +44,15 @@
     - set zoneId = Dungeon_GetZoneId(dungeonId)
     - set dungeonId = Dungeon_GetIdForUnit(whichUnit)
     - set flag = Dungeon_IsUnitInside(dungeonId, whichUnit)
+    - set count = Dungeon_GetPlayerHeroCount(dungeonId)
     - set x = Dungeon_GetEntranceX(dungeonId)
     - set y = Dungeon_GetEntranceY(dungeonId)
     - set flag = Dungeon_StartAIRoute(whichUnit)
     - call Dungeon_CancelAIRoute(whichUnit, true)
+    - call Dungeon_RegisterAllHeroesExitedCallback(callback)
 
-    Full-respawn callbacks read Dungeon_EventDungeonId.
+    Full-respawn callbacks read Dungeon_EventDungeonId. All-heroes-exited
+    callbacks also read Dungeon_EventHero for the last hero that left.
 
 **/
 library Dungeon initializer Init requires Boss, ZonesCore, ZoneEvent, CreepRespawn, UnitDeathEvent, AI, Companions, Death, Table
@@ -55,6 +61,7 @@ library Dungeon initializer Init requires Boss, ZonesCore, ZoneEvent, CreepRespa
         constant integer DUNGEON_RESPAWN_RANDOM = 2
 
         integer Dungeon_EventDungeonId = 0
+        unit Dungeon_EventHero = null
 
         private constant integer DUNGEON_MAX_COUNT = 64
         private constant integer DUNGEON_MAX_AREAS = 16
@@ -65,6 +72,9 @@ library Dungeon initializer Init requires Boss, ZonesCore, ZoneEvent, CreepRespa
         private constant real DUNGEON_AI_ROUTE_INTERVAL = 1.00
         private constant real DUNGEON_AI_ROUTE_REISSUE = 4.00
         private constant real DUNGEON_AI_TELEPORT_DELAY = 120.00
+        private constant real DUNGEON_TRANSITION_ROUTE_INTERVAL = 0.25
+        private constant real DUNGEON_TRANSITION_ROUTE_TIMEOUT = 15.00
+        private constant real DUNGEON_TRANSITION_ARRIVE_DISTANCE = 160.00
         private constant string DUNGEON_TELEPORT_EFFECT = "Abilities\\Spells\\Human\\MassTeleport\\MassTeleportTarget.mdl"
 
         private integer Dungeon_Count = 0
@@ -100,10 +110,24 @@ library Dungeon initializer Init requires Boss, ZonesCore, ZoneEvent, CreepRespa
         private Table Dungeon_RouteDungeon = 0
         private Table Dungeon_RouteRemaining = 0
         private Table Dungeon_RouteReissue = 0
+        private Table Dungeon_HeroDungeon = 0
+        private Table Dungeon_TransitionRouteX = 0
+        private Table Dungeon_TransitionRouteY = 0
+        private Table Dungeon_TransitionRouteRemaining = 0
 
         private group Dungeon_RegisterGroup = null
         private group Dungeon_AIRouteGroup = null
         private timer Dungeon_AIRouteTimer = null
+        private timer Dungeon_AllHeroesExitedTimer = null
+        private trigger Dungeon_AllHeroesExitedCallbacks = null
+        private group Dungeon_TransitionFollowers = null
+        private group Dungeon_TransitionRouteGroup = null
+        private group Dungeon_TransitionRouteUpdateGroup = null
+        private timer Dungeon_TransitionRouteTimer = null
+        private unit Dungeon_TransitionLeader = null
+        private integer array Dungeon_PlayerHeroCount
+        private boolean array Dungeon_AllHeroesExitedPending
+        private unit array Dungeon_LastExitingHero
         private integer Dungeon_RegisterContextId = 0
         private real Dungeon_RegisterRandomPercent = 0.00
         private real Dungeon_RegisterRandomMin = 0.00
@@ -587,6 +611,232 @@ library Dungeon initializer Init requires Boss, ZonesCore, ZoneEvent, CreepRespa
         return Dungeon_IsUnitAlive(leader) and IsUnitType(leader, UNIT_TYPE_HERO) and IsPlayerInForce(GetOwningPlayer(leader), udg_PlayerGroup)
     endfunction
 
+    private function Dungeon_AddFocusedTransitionFollower takes nothing returns nothing
+        local unit whichUnit = GetEnumUnit()
+
+        if Dungeon_IsUnitAlive(whichUnit) and Companions_GetLeader(whichUnit) == Dungeon_TransitionLeader then
+            call GroupAddUnit(Dungeon_TransitionFollowers, whichUnit)
+        endif
+        set whichUnit = null
+    endfunction
+
+    private function Dungeon_CollectTransitionFollowers takes unit leader returns nothing
+        call GroupClear(Dungeon_TransitionFollowers)
+        set Dungeon_TransitionLeader = leader
+        if udg_Companion_Group != null then
+            call ForGroup(udg_Companion_Group, function Dungeon_AddFocusedTransitionFollower)
+        endif
+        if udg_TamedUnits != null then
+            call ForGroup(udg_TamedUnits, function Dungeon_AddFocusedTransitionFollower)
+        endif
+        if Dungeon_IsUnitAlive(udg_TamedUnit) and Companions_GetLeader(udg_TamedUnit) == leader then
+            call GroupAddUnit(Dungeon_TransitionFollowers, udg_TamedUnit)
+        endif
+        set Dungeon_TransitionLeader = null
+    endfunction
+
+    private function Dungeon_FinishTransitionRoute takes unit whichUnit, boolean restoreOrders returns nothing
+        local integer unitKey
+
+        if whichUnit == null then
+            return
+        endif
+        set unitKey = GetHandleId(whichUnit)
+        call GroupRemoveUnit(Dungeon_TransitionRouteGroup, whichUnit)
+        call Dungeon_TransitionRouteX.real.remove(unitKey)
+        call Dungeon_TransitionRouteY.real.remove(unitKey)
+        call Dungeon_TransitionRouteRemaining.real.remove(unitKey)
+        if Companions_IsControlled(whichUnit) then
+            call Companions_SetExternalOrderOverride(whichUnit, false)
+            if restoreOrders and Dungeon_IsUnitAlive(whichUnit) and not Companions_IsSuspended(whichUnit) then
+                call Companions_RefreshOrders(whichUnit)
+            endif
+        endif
+        if FirstOfGroup(Dungeon_TransitionRouteGroup) == null then
+            call PauseTimer(Dungeon_TransitionRouteTimer)
+        endif
+    endfunction
+
+    private function Dungeon_UpdateTransitionRoute takes unit whichUnit returns nothing
+        local integer unitKey
+        local real dx
+        local real dy
+        local real remaining
+
+        if whichUnit == null then
+            return
+        endif
+        set unitKey = GetHandleId(whichUnit)
+        if not Dungeon_IsUnitAlive(whichUnit) then
+            call Dungeon_FinishTransitionRoute(whichUnit, false)
+            return
+        endif
+        set dx = GetUnitX(whichUnit) - Dungeon_TransitionRouteX.real[unitKey]
+        set dy = GetUnitY(whichUnit) - Dungeon_TransitionRouteY.real[unitKey]
+        set remaining = Dungeon_TransitionRouteRemaining.real[unitKey] - DUNGEON_TRANSITION_ROUTE_INTERVAL
+        set Dungeon_TransitionRouteRemaining.real[unitKey] = remaining
+        if dx*dx + dy*dy <= DUNGEON_TRANSITION_ARRIVE_DISTANCE*DUNGEON_TRANSITION_ARRIVE_DISTANCE or remaining <= 0.00 then
+            call Dungeon_FinishTransitionRoute(whichUnit, true)
+        endif
+    endfunction
+
+    private function Dungeon_OnTransitionRouteTick takes nothing returns nothing
+        local unit whichUnit
+
+        call GroupClear(Dungeon_TransitionRouteUpdateGroup)
+        call GroupAddGroup(Dungeon_TransitionRouteGroup, Dungeon_TransitionRouteUpdateGroup)
+        loop
+            set whichUnit = FirstOfGroup(Dungeon_TransitionRouteUpdateGroup)
+            exitwhen whichUnit == null
+            call GroupRemoveUnit(Dungeon_TransitionRouteUpdateGroup, whichUnit)
+            call Dungeon_UpdateTransitionRoute(whichUnit)
+        endloop
+        set whichUnit = null
+    endfunction
+
+    private function Dungeon_StartTransitionRoute takes unit whichUnit, real targetX, real targetY returns nothing
+        local integer unitKey
+
+        if not Dungeon_IsUnitAlive(whichUnit) then
+            return
+        endif
+        set unitKey = GetHandleId(whichUnit)
+        if Companions_IsControlled(whichUnit) then
+            call Companions_SetExternalOrderOverride(whichUnit, true)
+        endif
+        set Dungeon_TransitionRouteX.real[unitKey] = targetX
+        set Dungeon_TransitionRouteY.real[unitKey] = targetY
+        set Dungeon_TransitionRouteRemaining.real[unitKey] = DUNGEON_TRANSITION_ROUTE_TIMEOUT
+        call GroupAddUnit(Dungeon_TransitionRouteGroup, whichUnit)
+        call IssuePointOrder(whichUnit, "move", targetX, targetY)
+        call TimerStart(Dungeon_TransitionRouteTimer, DUNGEON_TRANSITION_ROUTE_INTERVAL, true, function Dungeon_OnTransitionRouteTick)
+    endfunction
+
+    private function Dungeon_OnZoneTransition takes nothing returns nothing
+        local unit whichUnit
+
+        if ZoneEvent_EventTransitionZoneId <= 0 or ZoneEvent_EventTransitionUnit == null then
+            return
+        endif
+        call Dungeon_CollectTransitionFollowers(ZoneEvent_EventTransitionUnit)
+        loop
+            set whichUnit = FirstOfGroup(Dungeon_TransitionFollowers)
+            exitwhen whichUnit == null
+            call GroupRemoveUnit(Dungeon_TransitionFollowers, whichUnit)
+            if ZoneEvent_EventTransitionUsesRoute then
+                call SetUnitPosition(whichUnit, ZoneEvent_EventTransitionStartX, ZoneEvent_EventTransitionStartY)
+                call Dungeon_StartTransitionRoute(whichUnit, ZoneEvent_EventTransitionTargetX, ZoneEvent_EventTransitionTargetY)
+            else
+                if IsUnitInGroup(whichUnit, Dungeon_TransitionRouteGroup) then
+                    call Dungeon_FinishTransitionRoute(whichUnit, false)
+                endif
+                call SetUnitPosition(whichUnit, ZoneEvent_EventTransitionTargetX, ZoneEvent_EventTransitionTargetY)
+            endif
+        endloop
+        set whichUnit = null
+    endfunction
+
+    public function GetPlayerHeroCount takes integer dungeonId returns integer
+        if not Dungeon_IsValidId(dungeonId) then
+            return 0
+        endif
+        return Dungeon_PlayerHeroCount[dungeonId]
+    endfunction
+
+    public function RegisterAllHeroesExitedCallback takes code callback returns nothing
+        if Dungeon_AllHeroesExitedCallbacks == null then
+            set Dungeon_AllHeroesExitedCallbacks = CreateTrigger()
+        endif
+        call TriggerAddAction(Dungeon_AllHeroesExitedCallbacks, callback)
+    endfunction
+
+    private function Dungeon_FireAllHeroesExited takes integer dungeonId returns nothing
+        local integer previousDungeonId = Dungeon_EventDungeonId
+        local unit previousHero = Dungeon_EventHero
+
+        if Dungeon_AllHeroesExitedCallbacks != null then
+            set Dungeon_EventDungeonId = dungeonId
+            set Dungeon_EventHero = Dungeon_LastExitingHero[dungeonId]
+            call TriggerExecute(Dungeon_AllHeroesExitedCallbacks)
+            set Dungeon_EventDungeonId = previousDungeonId
+            set Dungeon_EventHero = previousHero
+        endif
+        set Dungeon_LastExitingHero[dungeonId] = null
+        set previousHero = null
+    endfunction
+
+    private function Dungeon_OnAllHeroesExitedCheck takes nothing returns nothing
+        local integer dungeonId = 1
+
+        call PauseTimer(Dungeon_AllHeroesExitedTimer)
+        loop
+            exitwhen dungeonId > Dungeon_Count
+            if Dungeon_AllHeroesExitedPending[dungeonId] then
+                set Dungeon_AllHeroesExitedPending[dungeonId] = false
+                if Dungeon_PlayerHeroCount[dungeonId] == 0 then
+                    call Dungeon_FireAllHeroesExited(dungeonId)
+                endif
+            endif
+            set dungeonId = dungeonId + 1
+        endloop
+    endfunction
+
+    private function Dungeon_ScheduleAllHeroesExitedCheck takes integer dungeonId returns nothing
+        if Dungeon_IsValidId(dungeonId) then
+            set Dungeon_AllHeroesExitedPending[dungeonId] = true
+            call TimerStart(Dungeon_AllHeroesExitedTimer, 0.00, false, function Dungeon_OnAllHeroesExitedCheck)
+        endif
+    endfunction
+
+    private function Dungeon_TrackHeroZoneEnter takes unit whichHero, integer zoneId returns nothing
+        local integer unitKey
+        local integer oldDungeonId
+        local integer newDungeonId
+
+        if not Dungeon_IsFocusedPlayerHero(whichHero) then
+            return
+        endif
+        set unitKey = GetHandleId(whichHero)
+        set oldDungeonId = Dungeon_HeroDungeon[unitKey]
+        set newDungeonId = Dungeon_GetIdForZoneInternal(zoneId)
+        if oldDungeonId == newDungeonId then
+            return
+        endif
+        if oldDungeonId > 0 then
+            if Dungeon_PlayerHeroCount[oldDungeonId] > 0 then
+                set Dungeon_PlayerHeroCount[oldDungeonId] = Dungeon_PlayerHeroCount[oldDungeonId] - 1
+            endif
+            call Dungeon_ScheduleAllHeroesExitedCheck(oldDungeonId)
+        endif
+        if newDungeonId > 0 then
+            set Dungeon_HeroDungeon[unitKey] = newDungeonId
+            set Dungeon_PlayerHeroCount[newDungeonId] = Dungeon_PlayerHeroCount[newDungeonId] + 1
+            set Dungeon_AllHeroesExitedPending[newDungeonId] = false
+        else
+            call Dungeon_HeroDungeon.remove(unitKey)
+        endif
+    endfunction
+
+    private function Dungeon_TrackHeroZoneLeave takes unit whichHero, integer zoneId returns nothing
+        local integer unitKey
+        local integer dungeonId
+
+        if whichHero == null or not IsUnitType(whichHero, UNIT_TYPE_HERO) or not IsPlayerInForce(GetOwningPlayer(whichHero), udg_PlayerGroup) then
+            return
+        endif
+        set unitKey = GetHandleId(whichHero)
+        set dungeonId = Dungeon_GetIdForZoneInternal(zoneId)
+        if dungeonId == 0 or Dungeon_HeroDungeon[unitKey] != dungeonId then
+            return
+        endif
+        call Dungeon_HeroDungeon.remove(unitKey)
+        set Dungeon_LastExitingHero[dungeonId] = whichHero
+        if Dungeon_PlayerHeroCount[dungeonId] > 0 then
+            set Dungeon_PlayerHeroCount[dungeonId] = Dungeon_PlayerHeroCount[dungeonId] - 1
+        endif
+        call Dungeon_ScheduleAllHeroesExitedCheck(dungeonId)
+    endfunction
+
     private function Dungeon_CancelAIRouteInternal takes unit whichUnit, boolean restoreOrders returns nothing
         local integer unitKey
 
@@ -743,6 +993,9 @@ library Dungeon initializer Init requires Boss, ZonesCore, ZoneEvent, CreepRespa
     private function Dungeon_OnCompanionLeaderChanged takes nothing returns nothing
         local unit whichUnit = Companions_EventUnit
 
+        if whichUnit != null and IsUnitInGroup(whichUnit, Dungeon_TransitionRouteGroup) then
+            call Dungeon_FinishTransitionRoute(whichUnit, true)
+        endif
         if whichUnit != null and Dungeon_RouteDungeon[GetHandleId(whichUnit)] > 0 then
             call Dungeon_UpdateAIRouteUnit(whichUnit)
         endif
@@ -762,12 +1015,20 @@ library Dungeon initializer Init requires Boss, ZonesCore, ZoneEvent, CreepRespa
         local integer unitKey
 
         if enteringUnit != null then
+            call Dungeon_TrackHeroZoneEnter(enteringUnit, ZoneEvent_EventZoneId)
             set unitKey = GetHandleId(enteringUnit)
             if Dungeon_RouteDungeon[unitKey] > 0 and Dungeon_GetIdForZoneInternal(ZoneEvent_EventZoneId) == Dungeon_RouteDungeon[unitKey] and Dungeon_IsUnitInside(Dungeon_RouteDungeon[unitKey], enteringUnit) then
                 call Dungeon_CancelAIRouteInternal(enteringUnit, true)
             endif
         endif
         set enteringUnit = null
+    endfunction
+
+    private function Dungeon_OnZoneLeave takes nothing returns nothing
+        local unit leavingUnit = ZoneEvent_EventUnit
+
+        call Dungeon_TrackHeroZoneLeave(leavingUnit, ZoneEvent_EventZoneId)
+        set leavingUnit = null
     endfunction
 
     private function Dungeon_OnUnitDeath takes nothing returns nothing
@@ -782,6 +1043,9 @@ library Dungeon initializer Init requires Boss, ZonesCore, ZoneEvent, CreepRespa
         set unitKey = GetHandleId(dyingUnit)
         if Dungeon_RouteDungeon[unitKey] > 0 then
             call Dungeon_CancelAIRouteInternal(dyingUnit, true)
+        endif
+        if IsUnitInGroup(dyingUnit, Dungeon_TransitionRouteGroup) then
+            call Dungeon_FinishTransitionRoute(dyingUnit, false)
         endif
 
         set slotId = Dungeon_UnitToSlot[unitKey]
@@ -804,14 +1068,25 @@ library Dungeon initializer Init requires Boss, ZonesCore, ZoneEvent, CreepRespa
         set Dungeon_RouteDungeon = Table.create()
         set Dungeon_RouteRemaining = Table.create()
         set Dungeon_RouteReissue = Table.create()
+        set Dungeon_HeroDungeon = Table.create()
+        set Dungeon_TransitionRouteX = Table.create()
+        set Dungeon_TransitionRouteY = Table.create()
+        set Dungeon_TransitionRouteRemaining = Table.create()
         set Dungeon_RegisterGroup = CreateGroup()
         set Dungeon_AIRouteGroup = CreateGroup()
+        set Dungeon_TransitionFollowers = CreateGroup()
+        set Dungeon_TransitionRouteGroup = CreateGroup()
+        set Dungeon_TransitionRouteUpdateGroup = CreateGroup()
         set Dungeon_AIRouteTimer = CreateTimer()
+        set Dungeon_AllHeroesExitedTimer = CreateTimer()
+        set Dungeon_TransitionRouteTimer = CreateTimer()
         call TimerStart(Dungeon_AIRouteTimer, DUNGEON_AI_ROUTE_INTERVAL, true, function Dungeon_OnAIRouteTick)
         call UnitDeathEvent_Register(function Dungeon_OnUnitDeath)
         call AI_RegisterAutomaticReviveCallback(function Dungeon_OnAIRevived)
         call Death_RegisterReviveCallback(function Dungeon_OnHeroRevived)
         call ZoneEvent_RegisterEnterAction(function Dungeon_OnZoneEnter)
+        call ZoneEvent_RegisterLeaveAction(function Dungeon_OnZoneLeave)
+        call ZoneEvent_RegisterTransitionAction(function Dungeon_OnZoneTransition)
         call Companions_RegisterLeaderChangeCallback(function Dungeon_OnCompanionLeaderChanged)
     endfunction
 endlibrary
