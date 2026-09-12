@@ -2,7 +2,7 @@
     qCedranPike
 
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.2.0
 
     Description:
     Daily and one-time escort quest content for Cedran Pike,
@@ -11,13 +11,14 @@
     Credits:
 
     How to install:
-    Import after QuestsVendor and VoicelinesQuests.
+    Import after QuestsVendor, VoicelinesQuests, VoicelinesNazgrek, and
+    VoicelinesZulkis.
 
     API:
     Registers Cedran Pike's vendor quests automatically.
 
 **/
-library qCedranPike initializer Init requires QuestsVendor, VoicelinesQuests
+library qCedranPike initializer Init requires QuestsVendor, VoicelinesQuests, VoicelinesNazgrek, VoicelinesZulkis
     private function Init takes nothing returns nothing
         local integer escortDefinitionId
 
@@ -25,6 +26,15 @@ library qCedranPike initializer Init requires QuestsVendor, VoicelinesQuests
         set escortDefinitionId = QuestsVendor_RegisterEscortQuest('n03P', "The Ledger Comes Home", 8, "The Ledger Comes Home", "ReplaceableTextures\\CommandButtons\\BTNPackBeast.blp", "Escort Cedran Pike and Riverbane's field ledgers from the exposed road to Garrick Holt's forge.", 'n035', "Garrick Holt's Riverbane forge", 70, VL_GENERIC_HUMAN_MALE_2_TYPE, 1038, VL_VENDORQUEST_HUMAN_0038, VL_VENDORQUEST_HUMAN_0039)
         call QuestsVendor_SetExtendedDialogue(escortDefinitionId, VL_VENDORQUEST_HUMAN_0040, 1040, VL_VENDORQUEST_HUMAN_0041, 1041)
         call QuestsVendor_SetEscortTravelDialogue(escortDefinitionId, VL_VENDORQUEST_HUMAN_0042, 1042, "Keep the ledger close. I will make certain nobody reaches it from the rear.")
+        call QuestsVendor_RegisterEscortProgressVariant(escortDefinitionId, VL_VENDORQUEST_HUMAN_0043, 1043)
+        call QuestsVendor_RegisterEscortProgressVariant(escortDefinitionId, VL_VENDORQUEST_HUMAN_0044, 1044)
+        call QuestsVendor_RegisterEscortProgressVariant(escortDefinitionId, VL_VENDORQUEST_HUMAN_0045, 1045)
+        call QuestsVendor_RegisterEscortHeroProgressVariant(escortDefinitionId, VL_NAZGREK_GENERIC_TYPE, VL_NAZGREK_GENERIC_0036_TEXT, 36)
+        call QuestsVendor_RegisterEscortHeroProgressVariant(escortDefinitionId, VL_NAZGREK_GENERIC_TYPE, VL_NAZGREK_GENERIC_0037_TEXT, 37)
+        call QuestsVendor_RegisterEscortHeroProgressVariant(escortDefinitionId, VL_NAZGREK_GENERIC_TYPE, VL_NAZGREK_GENERIC_0038_TEXT, 38)
+        call QuestsVendor_RegisterEscortHeroProgressVariant(escortDefinitionId, VL_ZULKIS_GENERIC_TYPE, VL_ZULKIS_GENERIC_0036_TEXT, 36)
+        call QuestsVendor_RegisterEscortHeroProgressVariant(escortDefinitionId, VL_ZULKIS_GENERIC_TYPE, VL_ZULKIS_GENERIC_0037_TEXT, 37)
+        call QuestsVendor_RegisterEscortHeroProgressVariant(escortDefinitionId, VL_ZULKIS_GENERIC_TYPE, VL_ZULKIS_GENERIC_0038_TEXT, 38)
         call QuestsVendor_SetEscortTradeLocked(escortDefinitionId, true)
         call QuestsVendor_SetFactionReward(escortDefinitionId, "Riverbane", 30, false)
     endfunction
