@@ -6,8 +6,9 @@
 
     Description:
     Selectable-NPC dialogue entry for PotS shop vendors. Registered vendor
-    units greet the player, offer a Trade button, and open ShopUI for the
-    selected hero.
+    units greet the player, offer quests and an eligible Trade button, and
+    open ShopUI for the selected hero. Vendor escorts may lock Trade until
+    the merchant reaches safety.
 
     Credits:
 
@@ -53,6 +54,7 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
 
         private constant integer VDI_ACTION_TRADE = 1
         private constant integer VDI_ACTION_FAREWELL = 2
+        private constant integer VDI_ACTION_TRADE_LOCKED = 3
 
         private dialog VDI_Dialog = null
         private timer VDI_DialogCooldown = null
@@ -189,6 +191,16 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
             set hero = null
             return
         endif
+        static if LIBRARY_QuestsVendor then
+            if not QuestsVendor_IsTradeUnlocked(vendor) then
+                call Interface_PlayEventSoundForPlayer(Interface_EVENT_ERROR, Player(0))
+                call DisplayTextToPlayer(Player(0), 0.00, 0.00, "|cffff8040" + QuestsVendor_GetTradeLockText(vendor) + "|r")
+                call VDI_EndDialog(true)
+                set vendor = null
+                set hero = null
+                return
+            endif
+        endif
         if not Shop_CanPlayerTradeWithVendor(GetOwningPlayer(hero), vendor) then
             call VDI_ReportReputationFailure(vendor, hero)
             call VDI_EndDialog(true)
@@ -221,6 +233,17 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
 
         set vendor = null
         set hero = null
+    endfunction
+
+    private function VDI_OnTradeLocked takes nothing returns nothing
+        local unit vendor = VDI_SelectedVendor
+
+        static if LIBRARY_QuestsVendor then
+            call Interface_PlayEventSoundForPlayer(Interface_EVENT_ERROR, Player(0))
+            call DisplayTextToPlayer(Player(0), 0.00, 0.00, "|cffff8040" + QuestsVendor_GetTradeLockText(vendor) + "|r")
+        endif
+        call VDI_EndDialog(true)
+        set vendor = null
     endfunction
 
     private function VDI_InterruptDialog takes nothing returns nothing
@@ -322,8 +345,18 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
         endif
         call qANightToRemember_AddVendorDialogButton(VDI_Dialog, VDI_SelectedVendor, VDI_SelectedHero, function VDI_OnQuest)
 
-        set b = DialogSystem_AddButtonTrade(VDI_Dialog, VDI_ACTION_TRADE)
-        call DialogSystem_BindButtonCode(b, function VDI_OnTrade)
+        static if LIBRARY_QuestsVendor then
+            if QuestsVendor_IsTradeUnlocked(VDI_SelectedVendor) then
+                set b = DialogSystem_AddButtonTrade(VDI_Dialog, VDI_ACTION_TRADE)
+                call DialogSystem_BindButtonCode(b, function VDI_OnTrade)
+            else
+                set b = DialogSystem_AddButton(VDI_Dialog, "|cff808080Trade (escort required)|r", VDI_ACTION_TRADE_LOCKED)
+                call DialogSystem_BindButtonCode(b, function VDI_OnTradeLocked)
+            endif
+        else
+            set b = DialogSystem_AddButtonTrade(VDI_Dialog, VDI_ACTION_TRADE)
+            call DialogSystem_BindButtonCode(b, function VDI_OnTrade)
+        endif
 
         set b = DialogSystem_AddButtonExit(VDI_Dialog, VDI_ACTION_FAREWELL)
         call DialogSystem_SetButtonInterfaceEvent(b, Interface_EVENT_DIALOG_BUTTON_CLOSE)
