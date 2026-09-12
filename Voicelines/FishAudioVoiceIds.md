@@ -54,13 +54,15 @@ the same voice profile used by their shop dialogue.
 | `HeroShaman` / `HeroRestoshaman` | HeroRestoshaman | Restoration shaman AI hero | `2f5da025973948bea9c3d21b09a73d8f` | Drunk reaction lines and AI companion dialogue |
 | `HeroRogue` | HeroRogue | Rogue AI hero | `6f5776ec9e67431b9aee2ed1f17f902d` | Drunk reaction lines and AI companion dialogue |
 | `HeroWarlock` | HeroWarlock | Warlock AI hero | `06209f0d44a146b08ba67d5a8d121f74` | Drunk reaction lines and AI companion dialogue |
+| `HeroUndeadWarlock` / `*UndeadWarlock` replies | UndeadMale | Undead Warlock AI hero | `c14048ee5b8d4e23b691630a1aba8f60` | AI companion barks, dialogue, and reply lines |
 | `HeroWarrior` | HeroWarrior | Warrior AI hero | `8be8a11dd4524e6a813ac34ce1580008` | Drunk reaction lines and AI companion dialogue |
 | `Aveline` | AI_Aveline | Aveline AI hero | `829032b867d447ebbabc6c30ebba911c` | Drunk reactions, last-night witness lines, amends tasks, and forgiveness replies |
 
-Nazgrek and Zul'kis each register 28 generic lines: four randomized replies
+Nazgrek and Zul'kis each register 32 generic lines: four randomized replies
 for acceptance, kill completion, talk completion, fetch completion, progress,
-supply handoff, and quest purchase. Their text, keys, and sound registration
-are owned by `Voicelines_Nazgrek.j` and `Voicelines_Zulkis.j`.
+supply handoff, quest purchase, and escort completion. Their text, keys, and
+sound registration are owned by `Voicelines_Nazgrek.j` and
+`Voicelines_Zulkis.j`.
 
 The submitted profile list contained duplicate labels. The two Human male
 labels shared one reference ID and are represented by `GenericHumanMale2`. The
