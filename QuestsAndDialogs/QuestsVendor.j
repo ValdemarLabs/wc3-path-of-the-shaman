@@ -2,7 +2,7 @@
     QuestsVendor
 
     Author: Valdemar
-    Version: 1.4.0
+    Version: 1.5.0
 
     Description:
     Shop-vendor adapter for QuestsGeneric. Generic giver quests are delegated
@@ -25,6 +25,8 @@
     - QuestsVendor_SetSupplyRequiresPurchase overrides stock detection.
     - QuestsVendor_SetEscortTradeLocked gates Trade until escort completion.
     - QuestsVendor_SetEscortTravelDialogue adds route and companion chatter.
+    - QuestsVendor_RegisterEscortProgressVariant adds giver progress dialogue.
+    - QuestsVendor_RegisterEscortHeroProgressVariant adds hero replies.
     - QuestsVendor_SetFactionReward/SetExtendedDialogue configure definitions.
     - QuestsVendor_RegisterUnit instantiates matching vendor templates.
     - QuestsVendor_RegisterExistingQuestGivers scans placed template owners.
@@ -168,6 +170,18 @@ library QuestsVendor initializer Init requires QuestsGeneric, VoicelinesQuests, 
         set QV_EscortTravelText[escortIndex] = vendorText
         set QV_EscortTravelVoiceIndex[escortIndex] = vendorVoiceIndex
         set QV_EscortCompanionReply[escortIndex] = companionReply
+    endfunction
+
+    public function RegisterEscortProgressVariant takes integer definitionId, string text, integer voiceIndex returns nothing
+        if QV_EscortIndexByDefinition.integer[definitionId] > 0 then
+            call QuestsGeneric_RegisterDefinitionProgressVariant(definitionId, text, voiceIndex)
+        endif
+    endfunction
+
+    public function RegisterEscortHeroProgressVariant takes integer definitionId, string heroVoiceType, string text, integer voiceIndex returns nothing
+        if QV_EscortIndexByDefinition.integer[definitionId] > 0 then
+            call QuestsGeneric_RegisterDefinitionHeroVoiceVariant(definitionId, QuestsGeneric_HERO_LINE_PROGRESS, heroVoiceType, text, voiceIndex)
+        endif
     endfunction
 
     private function QV_TargetVendorSellsItem takes integer supplyIndex returns boolean
