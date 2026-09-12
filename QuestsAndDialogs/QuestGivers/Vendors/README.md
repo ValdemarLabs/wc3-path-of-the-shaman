@@ -2,7 +2,7 @@
 
 Import in this order: `QuestsGeneric.j`, `Voicelines_Quests.j`,
 `Voicelines_Nazgrek.j`, `Voicelines_Zulkis.j`,
-`FollowSystem.j`, `Companions.j`, `AI.j`, `QuestsVendor.j`, the desired
+`FollowSystem.j`, `UnitSpawn.j`, `Companions.j`, `AI.j`, `QuestsVendor.j`, the desired
 `qVendorName.j` libraries, `VendorCatalogs.j`,
 all `VendorFactions/Vendor*.j` libraries, `VendorBags.j`, and `VendorDialogs.j`.
 `VendorDialogs.j` discovers placed vendor units and instantiates every quest
@@ -39,15 +39,21 @@ quest item through the same choice if it was lost before turn-in.
 Vendor escorts are always one-time Normal quests. The escorted merchant follows
 the accepting hero through `FollowSystem`; the destination is a 425-range area
 centered on an existing destination-vendor unit, so the quest does not depend on
-an invented rect. The merchant is temporarily invulnerable while following and
-returns to the unit's prior invulnerability state on safe arrival, abandonment,
-or another state exit. Abandoning an active route also returns the merchant to
-the route's recorded start. Nara Stormhoof and Cedran Pike keep Trade locked until
-their escort is turned in. Selyth Venomcup remains willing to trade during the
-route. On acceptance, each merchant has a route-specific field line and may
-receive a short answer from one nearby active AI hero companion. Each escort
-also has three vendor-specific progress lines and three matching progress
-replies apiece for Nazgrek and Zul'kis.
+an invented rect. A route may finish there or begin a second leg back to the
+merchant's recorded start. The merchant is temporarily invulnerable while
+following and returns to the unit's prior invulnerability state on safe arrival,
+abandonment, or another state exit. Abandoning an active route also returns the
+merchant to the route's recorded start.
+
+Nara Stormhoof, Cedran Pike, Kargun Ashblade, Giznak Edgeprice, and Torren
+Deepsteel keep Trade locked until their escort is turned in. The other escorted
+vendors remain willing to trade during their routes. Five configured escorts
+spawn one hostile group at a specified percentage of the outbound or return leg;
+the enemies are tracked, ordered to attack the escorted merchant, and removed if
+the quest exits with survivors. On acceptance, each merchant has a route-specific
+field line and may receive a short answer from one nearby active AI hero
+companion. Each escort also has three vendor-specific progress lines and three
+matching progress replies apiece for Nazgrek and Zul'kis.
 
 The canonical vendor names below come from `VendorCatalogs.j` and match the
 quest-library filenames and library identifiers. Object Editor names may remain
@@ -57,6 +63,7 @@ unchanged.
 |---|---|---|---|---|
 | `o011` | Kargun Ashblade | Ore for the Edge | Daily | `GenericOrcMale9_1001-1002` |
 | `o011` | Kargun Ashblade | Steel Proven in Blood | Normal | `GenericOrcMale9_1025-1028` |
+| `o011` | Kargun Ashblade | Steel for the Ring | Normal Escort | `GenericOrcMale9_1044-1052` |
 | `o012` | Drokmar Ironhide | Thin the Shadowdancers | Daily | `GenericOrcMale4_1003-1004` |
 | `o013` | Varok Emberwall | Straps for the Line | Daily | `GenericOrcMale3_1005-1006` |
 | `o00A` | Ghorak Bloodmark | A Worthy Warm-Up | Daily | `GenericOrcMale2_1007-1008` |
@@ -66,9 +73,11 @@ unchanged.
 | `o00T` | Mordrak Cindercoin | No Troll Toll | Daily | `GenericOrcMale1_1015-1016` |
 | `o00B` | Rukgar Longroad | Quartermaster's Parcel | Daily | `GenericOrcMale3_1017-1018` |
 | `o00B` | Rukgar Longroad | The Road Takes Its Due | Normal | `GenericOrcMale3_1029-1032` |
+| `o00B` | Rukgar Longroad | The Provisioner's Circuit | Normal Round-trip Escort | `GenericOrcMale3_1053-1062` |
 | `o00E` | Hurgan Potbelly | Meat for the Evening Pot | Daily | `GenericOrcMale5_1019-1020` |
 | `o00C` | Nargash Tidehook | Jungle Catch | Daily | `GenericOrcMale1_1021-1022` |
 | `o014` | Gorthak Jungle Banner | Secure the Coastal Stores | Normal | `GenericOrcMale8_1023-1024, 1033-1034` |
+| `o014` | Gorthak Jungle Banner | The Tidehook Inspection | Normal Round-trip Escort | `GenericOrcMale8_1063-1072` |
 | `n02Y` | Xyros Bloodwager | Cull the Stalkers (Gnolls) | Daily | `GenericSatyrMale1_1001-1002` |
 | `n02Z` | Velyssra the Covetous | Crystals in the Gloom | Daily | `GenericSatyrFemale1_1003-1004` |
 | `n02Z` | Velyssra the Covetous | A Collector's Price | Normal | `GenericSatyrFemale1_1013-1016` |
@@ -93,7 +102,9 @@ unchanged.
 | `n03W` | Nackle Quickdeal | The Long Investment | Normal | `GenericGoblinMale1_1021-1024` |
 | `n03X` | Rixit Roadcoin | A Favor Between Merchants | Daily | `GenericGoblinMale2_1003-1004` |
 | `n03X` | Rixit Roadcoin | A Cart Worth Guarding | Normal | `GenericGoblinMale2_1017-1020` |
+| `n03X` | Rixit Roadcoin | Terms and Conditions | Normal Round-trip Escort | `GenericGoblinMale2_1044-1053` |
 | `n03Y` | Giznak Edgeprice | Field-Tested Steel | Daily | `GenericGoblinMale1_1005-1006` |
+| `n03Y` | Giznak Edgeprice | An Edge Worth Selling | Normal Escort | `GenericGoblinMale1_1036-1043` |
 | `n041` | Fizzik Hookline | Catch of the Minute | Daily | `GenericGoblinMale3_1007-1008` |
 | `n042` | Krikzak Deepcut | Ore Futures | Daily | `GenericGoblinMale4_1009-1010` |
 | `n043` | Nibbs Hotpan | Emergency Skewers | Daily | `GenericGoblinMale3_1011-1012` |
@@ -101,6 +112,7 @@ unchanged.
 | `n04A` | Razwick Goldglint | Reagent on Credit | Daily | `GenericGoblinMale4_1015-1016` |
 | `n04E` | Mugrok Ironclub | Break the Stalkers | Daily | `GenericOgreBonecrusherMale1_1001-1002` |
 | `n04E` | Mugrok Ironclub | A Weapon's Reputation | Normal | `GenericOgreBonecrusherMale1_1011-1014` |
+| `n04E` | Mugrok Ironclub | Armor for the Arm | Normal Round-trip Escort | `GenericOgreBonecrusherMale1_1026-1035` |
 | `n04F` | Grumbar Thickhide | Thick Hide, Thick Armor | Daily | `GenericOgreBonecrusherMale1_1003-1004` |
 | `n04G` | Bolguk Broadwall | Heavy Metal | Daily | `GenericOgreBonecrusherMale1_1005-1006` |
 | `n04H` | Kragmog Skullstake | Pit Supplies | Daily | `GenericOgreBonecrusherMale1_1007-1008` |
@@ -116,6 +128,7 @@ unchanged.
 | `o01D` | Koro Windpack | Gnolls on the Supply Trail | Daily | `GenericTaurenMale3_1005-1006` |
 | `o01E` | Nara Stormhoof | Shadow over the Long Road | Daily | `GenericTaurenMale1_1007-1008` |
 | `o01E` | Nara Stormhoof | A Road Beneath Open Sky | Normal | `GenericTaurenMale1_1015-1022` |
+| `h00V` | Torren Deepsteel | Hammer to Hammer | Normal Escort | `GenericDwarfMorgrimMale1_1001-1008` |
 
 External audio uses one folder per reusable profile, for example
 `Pots\Sound\Voicelines\GenericOrcMale4\`, `GenericGoblinMale3\`, `GenericHumanMale2\`, or
@@ -132,21 +145,25 @@ uses the `1001+` range of the assigned reusable profile. Daily quests select
 one follow-up from a three-line objective/voice pool: Orc `1035-1043`, Satyr
 `1019-1027`, Human `1029-1037`, Goblin `1027-1035`, Bonecrusher `1017-1025`,
 Elarindor male/female `1017-1025`, and Tauren `1009-1014`.
-Nazgrek and Zul'kis use `NazgrekGeneric_0001-0041` and
-`ZulkisGeneric_0001-0041`. Four randomized personality-specific replies are
+Nazgrek and Zul'kis use `NazgrekGeneric_0001-0062` and
+`ZulkisGeneric_0001-0062`. Four randomized personality-specific replies are
 registered for each accept, kill completion, talk completion, fetch completion,
 shared progress, supply-handoff, quest-purchase, and escort-completion
 interaction. Each vendor escort additionally registers three activity-specific
-progress replies per player hero from indices `0033-0041`.
+progress replies per player hero from indices `0033-0062`.
 Missing files fall back to ExSound's text-duration estimation until recordings
 are imported.
 
-Escort placement must be verified in World Editor. Place Nara a meaningful
-travel distance from Koro Windpack `o01D`, Cedran from Garrick Holt `n035`, and
-Selyth from Velyssra `n02Z`; keep each destination merchant in the intended safe
-hub. If giver and destination begin within 425 range, the accepted escort will
-finish immediately. Confirm each route is walkable and does not cross a portal
-or transport boundary that ordinary ground following cannot traverse.
+Escort placement must be verified in World Editor. In addition to the original
+three routes, verify Kargun → Ghorak `o00A`, Rukgar → Hurgan `o00E`, Gorthak →
+Nargash `o00C`, Giznak → Kargun `o011`, Rixit → Snikka `n047`, Mugrok → Grumbar
+`n04F`, and Torren → Durnik `h00T`. Rukgar, Gorthak, Rixit, and Mugrok must have
+walkable return paths to their exact starting coordinates. If giver and
+destination begin within 425 range, a route leg resolves immediately. Confirm
+every route is a meaningful distance, remains ground-walkable, and does not
+cross a portal or transport boundary. Rixit and Snikka are currently documented
+as unplaced, so `Terms and Conditions` cannot be accepted until both units are
+placed and registered.
 
 Approve the complete quest dialogue in context before generating Fish Audio.
 When an existing text constant changes, its old recording is stale and must stay
