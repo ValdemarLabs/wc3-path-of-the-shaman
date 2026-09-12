@@ -58,10 +58,11 @@ the same voice profile used by their shop dialogue.
 | `HeroWarrior` | HeroWarrior | Warrior AI hero | `8be8a11dd4524e6a813ac34ce1580008` | Drunk reaction lines and AI companion dialogue |
 | `Aveline` | AI_Aveline | Aveline AI hero | `829032b867d447ebbabc6c30ebba911c` | Drunk reactions, last-night witness lines, amends tasks, and forgiveness replies |
 
-Nazgrek and Zul'kis each register 32 generic lines: four randomized replies
+Nazgrek and Zul'kis each register 41 generic lines: four randomized replies
 for acceptance, kill completion, talk completion, fetch completion, progress,
-supply handoff, quest purchase, and escort completion. Their text, keys, and
-sound registration are owned by `Voicelines_Nazgrek.j` and
+supply handoff, quest purchase, and escort completion, followed by three
+activity-specific progress replies for each of the three vendor escorts. Their
+text, keys, and sound registration are owned by `Voicelines_Nazgrek.j` and
 `Voicelines_Zulkis.j`.
 
 The submitted profile list contained duplicate labels. The two Human male
