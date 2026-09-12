@@ -2,10 +2,10 @@
     QuestsGeneric
 
     Author: Valdemar
-    Version: 1.2.0
+    Version: 1.3.0
 
     Description:
-    Reusable kill, fetch, talk, and purchase quest templates built on
+    Reusable kill, fetch, talk, purchase, and escort quest templates built on
     QuestGiver and QuestMaster. Any NPC integration can instantiate templates,
     add contextual dialog buttons, and run interrupt-safe quest sequences.
 
@@ -20,6 +20,7 @@
     - QuestsGeneric_RegisterFetchQuest(...) registers an item template.
     - QuestsGeneric_RegisterKillQuest(...) registers a kill template.
     - QuestsGeneric_RegisterTalkQuest(...) registers a manual talk template.
+    - QuestsGeneric_RegisterEscortQuest(...) registers an escort template.
     - QuestsGeneric_SetObjective(...) changes an uninstantiated definition.
     - QuestsGeneric_SetQuestCategory(...) assigns story/content grouping.
     - QuestsGeneric_SetFactionReward(...) configures reputation rewards.
@@ -32,6 +33,7 @@
     - QuestsGeneric_HasDefinitionForUnitType(...) checks template ownership.
     - QuestsGeneric_RegisterUnit(giver, displayName) instantiates templates.
     - QuestsGeneric_AddDialogButtons(...) adds managed quest choices.
+    - QuestsGeneric_GetQuestIdFromAction(...) resolves a quest dialog action.
     - QuestsGeneric_BeginAction/FinishPendingAction/CancelPendingAction manage
       interrupt-safe accept, progress, and completion dialogue.
 
@@ -42,6 +44,7 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
         public constant integer OBJECTIVE_KILL = 2
         public constant integer OBJECTIVE_TALK = 3
         public constant integer OBJECTIVE_PURCHASE = 4
+        public constant integer OBJECTIVE_ESCORT = 5
 
         public constant integer HERO_LINE_ACCEPT = 1
         public constant integer HERO_LINE_COMPLETE_KILL = 2
@@ -50,6 +53,7 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
         public constant integer HERO_LINE_PROGRESS = 5
         public constant integer HERO_LINE_REQUEST_SUPPLY = 6
         public constant integer HERO_LINE_ASK_TO_BUY = 7
+        public constant integer HERO_LINE_COMPLETE_ESCORT = 8
 
         private constant integer QG_MAX_DEFINITIONS = 128
         private constant integer QG_MAX_QUESTS = 500
@@ -112,6 +116,7 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
         private string QG_HeroCompleteKillText = ""
         private string QG_HeroCompleteFetchText = ""
         private string QG_HeroCompleteTalkText = ""
+        private string QG_HeroCompleteEscortText = ""
         private string QG_HeroProgressText = ""
         private string QG_GiverProgressPrefix = ""
         private string QG_NazgrekVoiceType = ""
@@ -141,11 +146,12 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
         return QG_FormatSoundKey(voiceType, lineIndex)
     endfunction
 
-    public function ConfigureSharedDialogue takes string heroAccept, string heroCompleteKill, string heroCompleteFetch, string heroCompleteTalk, string heroProgress, string giverProgressPrefix, string nazgrekVoiceType, string zulkisVoiceType returns nothing
+    public function ConfigureSharedDialogue takes string heroAccept, string heroCompleteKill, string heroCompleteFetch, string heroCompleteTalk, string heroCompleteEscort, string heroProgress, string giverProgressPrefix, string nazgrekVoiceType, string zulkisVoiceType returns nothing
         set QG_HeroAcceptText = heroAccept
         set QG_HeroCompleteKillText = heroCompleteKill
         set QG_HeroCompleteFetchText = heroCompleteFetch
         set QG_HeroCompleteTalkText = heroCompleteTalk
+        set QG_HeroCompleteEscortText = heroCompleteEscort
         set QG_HeroProgressText = heroProgress
         set QG_GiverProgressPrefix = giverProgressPrefix
         set QG_NazgrekVoiceType = nazgrekVoiceType
@@ -202,11 +208,15 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
         return QG_RegisterDefinition(giverUnitTypeId, questName, questType, questLevel, title, iconPath, description, OBJECTIVE_TALK, 0, 1, targetName, goldBonus, voiceType, voiceIndex, introText, completeText)
     endfunction
 
+    public function RegisterEscortQuest takes integer giverUnitTypeId, string questName, string questType, integer questLevel, string title, string iconPath, string description, string destinationName, integer goldBonus, string voiceType, integer voiceIndex, string introText, string completeText returns integer
+        return QG_RegisterDefinition(giverUnitTypeId, questName, questType, questLevel, title, iconPath, description, OBJECTIVE_ESCORT, 0, 1, destinationName, goldBonus, voiceType, voiceIndex, introText, completeText)
+    endfunction
+
     public function SetObjective takes integer definitionId, integer objectiveType, integer targetType, integer targetAmount, string targetName returns nothing
         if definitionId <= 0 or definitionId > QG_DefinitionCount then
             return
         endif
-        if objectiveType < OBJECTIVE_FETCH or objectiveType > OBJECTIVE_PURCHASE then
+        if objectiveType < OBJECTIVE_FETCH or objectiveType > OBJECTIVE_ESCORT then
             return
         endif
         if targetAmount < 1 then
@@ -260,7 +270,7 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
     endfunction
 
     public function RegisterHeroVoiceVariant takes integer lineType, string voiceType, string text, integer voiceIndex returns nothing
-        if lineType < HERO_LINE_ACCEPT or lineType > HERO_LINE_ASK_TO_BUY or voiceType == null or voiceType == "" or text == null or text == "" or voiceIndex <= 0 or QG_HeroVoiceVariantCount >= QG_MAX_HERO_VOICE_VARIANTS then
+        if lineType < HERO_LINE_ACCEPT or lineType > HERO_LINE_COMPLETE_ESCORT or voiceType == null or voiceType == "" or text == null or text == "" or voiceIndex <= 0 or QG_HeroVoiceVariantCount >= QG_MAX_HERO_VOICE_VARIANTS then
             return
         endif
         set QG_HeroVoiceVariantCount = QG_HeroVoiceVariantCount + 1
@@ -271,7 +281,7 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
     endfunction
 
     public function RegisterProgressVariant takes integer objectiveType, string text, string soundKey returns nothing
-        if objectiveType < OBJECTIVE_FETCH or objectiveType > OBJECTIVE_PURCHASE or text == null or text == "" or QG_ProgressVariantCount >= QG_MAX_PROGRESS_VARIANTS then
+        if objectiveType < OBJECTIVE_FETCH or objectiveType > OBJECTIVE_ESCORT or text == null or text == "" or QG_ProgressVariantCount >= QG_MAX_PROGRESS_VARIANTS then
             return
         endif
         set QG_ProgressVariantCount = QG_ProgressVariantCount + 1
@@ -439,6 +449,13 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
         return actionId > QG_ACTION_BASE and QG_DefinitionByQuest.integer.has(actionId - QG_ACTION_BASE)
     endfunction
 
+    public function GetQuestIdFromAction takes integer actionId returns integer
+        if not IsQuestAction(actionId) then
+            return 0
+        endif
+        return actionId - QG_ACTION_BASE
+    endfunction
+
     private function QG_HasTurnInItems takes integer definitionId returns boolean
         if QG_ObjectiveType[definitionId] == OBJECTIVE_FETCH or QG_ObjectiveType[definitionId] == OBJECTIVE_PURCHASE or (QG_ObjectiveType[definitionId] == OBJECTIVE_TALK and QG_TargetType[definitionId] != 0) then
             return HeroItemCheckBoth(QG_TargetType[definitionId], QG_TargetAmount[definitionId])
@@ -468,6 +485,8 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
             return QG_HeroCompleteKillText
         elseif QG_ObjectiveType[definitionId] == OBJECTIVE_TALK then
             return QG_HeroCompleteTalkText
+        elseif QG_ObjectiveType[definitionId] == OBJECTIVE_ESCORT then
+            return QG_HeroCompleteEscortText
         endif
         return QG_HeroCompleteFetchText
     endfunction
@@ -477,6 +496,8 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
             return 5
         elseif QG_ObjectiveType[definitionId] == OBJECTIVE_TALK then
             return 9
+        elseif QG_ObjectiveType[definitionId] == OBJECTIVE_ESCORT then
+            return 29
         endif
         return 13
     endfunction
@@ -624,6 +645,8 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
                 call AddHeroVoiceVariantLine(seq, hero, giver, HERO_LINE_COMPLETE_KILL, QG_GetHeroCompleteText(definitionId), QG_GetHeroCompleteVoiceIndex(definitionId))
             elseif QG_ObjectiveType[definitionId] == OBJECTIVE_TALK then
                 call AddHeroVoiceVariantLine(seq, hero, giver, HERO_LINE_COMPLETE_TALK, QG_GetHeroCompleteText(definitionId), QG_GetHeroCompleteVoiceIndex(definitionId))
+            elseif QG_ObjectiveType[definitionId] == OBJECTIVE_ESCORT then
+                call AddHeroVoiceVariantLine(seq, hero, giver, HERO_LINE_COMPLETE_ESCORT, QG_GetHeroCompleteText(definitionId), QG_GetHeroCompleteVoiceIndex(definitionId))
             else
                 call AddHeroVoiceVariantLine(seq, hero, giver, HERO_LINE_COMPLETE_FETCH, QG_GetHeroCompleteText(definitionId), QG_GetHeroCompleteVoiceIndex(definitionId))
             endif
