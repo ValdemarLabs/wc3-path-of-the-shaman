@@ -37,7 +37,7 @@ the same voice profile used by their shop dialogue.
 | `GenericTaurenMale3` | Tauren Spirit Walker | Tauren spirit walker | `7fa831b0ab1646b58dc7571a65550662` | Shields, quartermaster, trade goods, and bartender; matched vendor quests |
 | `GenericSatyrFemale1` | Demoness | Mean, cunning Satyr/demon female | `a168d04c08e042c49311278cb7558473` | Velyssra, Malthera, Ithryssa, and Selyth vendor dialogue, matched vendor quests, and reusable generic quests |
 | `GenericSatyrMale1` | SatyrGeneric3 | Satyr male | `3c8c373ad71a46cab3d95f491cfff368` | Current male Satyr vendors and their quests |
-| `GenericDwarfMorgrimMale1` | DwarfMale1 | Morgrim dwarf male | `c090db335e8f4fef8427ac98572978c9` | Morgrim vendors and reusable Morgrim dialogue |
+| `GenericDwarfMorgrimMale1` | DwarfMale1 | Morgrim dwarf male | `c090db335e8f4fef8427ac98572978c9` | Morgrim vendors, matched vendor quests, and reusable Morgrim dialogue |
 | `GenericElarindorMale1` | Human (Emissary) | Elarindor male | `34a5f0dfbce3461180f1f8c788d3b7c0` | Weapons, reagents, and magister; matched vendor quests |
 | `GenericElarindorMale2` | ElfMale | Elarindor male | `772caa672ad846a49d7ea5c68648c6a8` | Shields and expedition supplies; matched vendor quests |
 | `GenericElarindorFemale1` | Elf (VereesaWindrunner) | Elarindor female | `eefc6b82be3d4907bf419c640d021b0b` | Armor, potions, and jewellery; matched vendor quests |
@@ -58,10 +58,10 @@ the same voice profile used by their shop dialogue.
 | `HeroWarrior` | HeroWarrior | Warrior AI hero | `8be8a11dd4524e6a813ac34ce1580008` | Drunk reaction lines and AI companion dialogue |
 | `Aveline` | AI_Aveline | Aveline AI hero | `829032b867d447ebbabc6c30ebba911c` | Drunk reactions, last-night witness lines, amends tasks, and forgiveness replies |
 
-Nazgrek and Zul'kis each register 41 generic lines: four randomized replies
+Nazgrek and Zul'kis each register 62 generic lines: four randomized replies
 for acceptance, kill completion, talk completion, fetch completion, progress,
 supply handoff, quest purchase, and escort completion, followed by three
-activity-specific progress replies for each of the three vendor escorts. Their
+activity-specific progress replies for each of the ten vendor escorts. Their
 text, keys, and sound registration are owned by `Voicelines_Nazgrek.j` and
 `Voicelines_Zulkis.j`.
 
