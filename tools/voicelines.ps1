@@ -28,6 +28,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $Speaker = @($Speaker | ForEach-Object { $_ -split ',' } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | ForEach-Object { $_.Trim() })
+$Keys = @($Keys | ForEach-Object { $_ -split ',' } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | ForEach-Object { $_.Trim() })
 
 $PrefixFolders = @{
     "Aradion" = "AradionFarseer"
@@ -415,7 +416,7 @@ function Get-JassRows {
             }
         }
 
-        $questVoiceTypes = @{}
+        $questVoiceTypes = [System.Collections.Generic.List[object]]::new()
         foreach ($m in [regex]::Matches($text, 'ExSound_RegisterSequence\(\s*(VL_[A-Z0-9_]+_TYPE)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*"((?:[^"\\]|\\.)*)"\s*\)')) {
             $typeConstant = $m.Groups[1].Value
             $firstLine = [int]$m.Groups[2].Value
@@ -426,6 +427,7 @@ function Get-JassRows {
                 'NAZGREK' { 'NAZGREK'; break }
                 'ZULKIS' { 'ZULKIS'; break }
                 'OGRE_BONECRUSHER' { 'BONECRUSHER'; break }
+                'DWARF' { 'DWARF'; break }
                 'ELARINDOR' { 'ELARINDOR'; break }
                 'GOBLIN' { 'GOBLIN'; break }
                 'HUMAN' { 'HUMAN'; break }
@@ -437,13 +439,14 @@ function Get-JassRows {
             if ([string]::IsNullOrWhiteSpace($textFamily)) { continue }
 
             $folder = ConvertFrom-JassString $m.Groups[4].Value
-            $questVoiceTypes[$typeConstant] = [pscustomobject]@{
+            $questVoiceTypes.Add([pscustomobject]@{
+                type_constant = $typeConstant
                 family = $textFamily
                 sound_type = $soundTypeByConstant[$typeConstant]
                 folder = $folder.Replace('Pots\Sound\Voicelines\', '').TrimEnd('\')
                 first_line = $firstLine
                 last_line = [int]$m.Groups[3].Value
-            }
+            })
         }
 
         $vendorQuestTexts = @{}
@@ -479,8 +482,8 @@ function Get-JassRows {
             }
         }
 
-        foreach ($typeConstant in $questVoiceTypes.Keys) {
-            $voiceType = $questVoiceTypes[$typeConstant]
+        foreach ($voiceType in $questVoiceTypes) {
+            $typeConstant = $voiceType.type_constant
             $textFamily = $voiceType.family
             for ($lineIndex = $voiceType.first_line; $lineIndex -le $voiceType.last_line; $lineIndex++) {
                 $lineText = ""
