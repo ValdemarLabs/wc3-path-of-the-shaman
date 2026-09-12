@@ -16,6 +16,70 @@
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
 
+## [13.9.2026]
+
+### Player-Facing Updates
+
+- Dungeon and exterior atmosphere now follows the selected player hero, allowing Nazgrek and Zul'kis to remain on opposite sides of a dungeon transition without applying the wrong zone settings.
+- Dungeon transitions now move only companions and pets focused on the hero using the entrance or exit.
+- In-progress conversations for Nara Stormhoof, Cedran Pike, and Selyth Venomcup's escorts now vary between three activity-specific vendor lines and three matching replies apiece for Nazgrek and Zul'kis.
+- Added seven one-time vendor escorts: three Orc routes, two Goblin routes, one Bonecrusher Ogre route, and one Morgrim Dwarf route. Four require guarding the merchant both to a visit and back to the starting point.
+- Five vendor escorts can now trigger route-specific enemy attacks during travel, while Kargun, Giznak, and Torren keep Trade locked until their relocation escort is turned in.
+
+### Technical Updates
+
+- Updated `Zones/ZoneEvent.j` and `DungeonsAndBosses/Dungeon.j` with per-hero spatial zone resolution, selection-driven presentation, generic transition callbacks, leader-filtered companion transitions, timed route-order suppression/restoration, tracked dungeon hero occupancy, and a reusable last-hero-exited callback.
+- Updated `QuestsAndDialogs/QuestsGeneric.j`, `QuestsAndDialogs/QuestsVendor.j`, and the three escort qVendor libraries with definition-specific vendor and player progress-dialogue pools that fall back to the existing generic pools for other activities.
+- Updated `Voicelines/Voicelines_Quests.j`, `Voicelines/Voicelines_Nazgrek.j`, `Voicelines/Voicelines_Zulkis.j`, and the voice documentation with 27 activity-specific escort progress lines, replacing the race-neutral `GenericQuest_0013-0015` pool.
+- Updated `QuestsAndDialogs/QuestsVendor.j` with reusable two-leg escort objectives, route-progress ambush definitions, hostile-wave ownership and cleanup, return-leg dialogue, and exact-origin completion tracking.
+- Updated six existing qVendor libraries and added `QuestsAndDialogs/QuestGivers/Vendors/qTorrenDeepsteel.j` with the seven new Normal escorts, race-specific rewards, progress pools, travel dialogue, and optional Trade gates and ambushes.
+- Updated `tools/voicelines.ps1` to scan Dwarf vendor-quest lines and accept comma-separated exact key lists for controlled FishAudio batches.
+
+### Imports
+
+- Generated 23 FishAudio escort review MP3s for Nara Stormhoof, Cedran Pike, Selyth Venomcup, Nazgrek, and Zul'kis. The files remain under `tools/temp/fishaudio-review` pending listening and promotion.
+- Generated another 27 FishAudio review MP3s for the activity-specific vendor, Nazgrek, and Zul'kis escort-progress variations.
+- Generated 107 FishAudio review MP3s for the seven new escorts: 65 vendor lines and 42 activity-specific Nazgrek/Zul'kis progress replies.
+
+### Actions Remaining
+
+- Listen to the complete set of 157 generated escort review files and copy accepted takes into the external master audio folder.
+- In World Editor, verify all seven new destination pairs and ground routes, especially the four exact-origin return legs and the currently unplaced Rixit Roadcoin/Snikka Sparkdust pair; then test ambush pathing and survivor cleanup.
+- Compile the full map with World Editor/JassHelper, then test split-party dungeon entry/exit, hero-selection atmosphere switching, leader-filtered companion movement, transition-route timeout restoration, and the last-hero-exited callback in multiplayer-sensitive conditions.
+
+
+## [12.9.2026]
+
+### Player-Facing Updates
+
+- Added the one-time Normal vendor escorts `A Road Beneath Open Sky`, `The Ledger Comes Home`, and `Bottles in the Gloom` for Nara Stormhoof, Cedran Pike, and Selyth Venomcup, with race-, trade-, and location-specific dialogue for Nazgrek, Zul'kis, and nearby AI companions.
+- Updated Cedran Pike's `The Travelling Manifest` text to use the canonical Cedran Pike and Merrick Wayland identities.
+
+### Technical Updates
+
+- Updated `QuestsAndDialogs/QuestsGeneric.j`, `QuestsAndDialogs/QuestsVendor.j`, and `Vendors/VendorDialogs.j` with reusable FollowSystem-backed vendor escorts, destination-vendor tracking, temporary route invulnerability, route-start restoration after abandonment, route chatter, and optional Trade gates that unlock after escort turn-in.
+- Updated `Voicelines/Voicelines_Quests.j`, `Voicelines/Voicelines_Nazgrek.j`, `Voicelines/Voicelines_Zulkis.j`, and `Voicelines/FishAudioVoiceIds.md` with escort-specific quest lines, sound-key ranges, and generation guidance.
+- Updated `SoundAndMusic/ExSound.j` and the voiceline tools so Undead Warlock barks and chat use `HeroUndeadWarlock`, while its replies use `HeroReplyLines/HeroUndeadWarlockReplyLines` instead of the Orc Warlock folders.
+
+### World Editor Updates Required
+
+- Verify that Nara starts a meaningful walk from Koro Windpack `o01D`, Cedran from Garrick Holt `n035`, and Selyth from Velyssra `n02Z`; keep each route ground-walkable and each pair more than 425 range apart.
+
+### Tool Updates
+
+- Fixed the WC3Manager item editor's Drop Sources grid so pending drop chance, guaranteed, quantity, weight, quest gate/state, and notes edits are committed and saved reliably; added direct quest-field editing plus Ctrl/Shift bulk editing and removal for selected unit rows.
+
+### Imports
+
+- Generated 85 FishAudio review MP3s for the Undead Warlock AI hero with the `UndeadMale` voice: 70 standard/chat lines under `HeroUndeadWarlock` and 15 companion replies under `HeroReplyLines/HeroUndeadWarlockReplyLines`. The files remain under `tools/temp/fishaudio-review` pending listening and promotion.
+- Updated `Voicelines/FishAudioVoiceIds.md` with the Undead Warlock AI hero's `UndeadMale` FishAudio reference ID and key patterns.
+
+### Actions Remaining
+
+- Compile the full map with World Editor/JassHelper, then runtime-test all three escort routes, AI-companion chatter, arrival tracking, abandonment/reacceptance, save/load restoration, and Nara/Cedran's Trade gates.
+- Exercise single-row grid saves and mixed-field bulk edits against a non-production database, then export loot JASS and confirm the edited values match the generated unit-specific registrations.
+
+
 ## [11.9.2026]
 
 ### Player-Facing Updates
