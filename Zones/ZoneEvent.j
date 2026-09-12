@@ -4,7 +4,7 @@ library ZoneEvent initializer Init requires ZonesCore, Table, DNC, ExMusic, TasQ
     ZoneEvent
 
     Author: Valdemar
-    Version: 1.2.1
+    Version: 1.3.0
 
     Purpose:
         Central handler for per-zone behaviour and transitions. Responsibilities
@@ -42,7 +42,10 @@ library ZoneEvent initializer Init requires ZonesCore, Table, DNC, ExMusic, TasQ
             Query whether a zone is enabled.
 
         - ZoneEvent_GetUnitZoneId(unit whichUnit) returns integer
-            Returns the last synchronized zone entered by a hero.
+            Returns the last synchronized or spatially resolved hero zone.
+
+        - ZoneEvent_ApplyUnitZone(unit whichUnit) returns nothing
+            Makes the selected hero's current location drive presentation.
 
         - ZoneEvent_GetZoneName(integer zoneId) returns string
             Retrieve the human-readable zone name from ZonesCore.
@@ -75,6 +78,11 @@ library ZoneEvent initializer Init requires ZonesCore, Table, DNC, ExMusic, TasQ
             Read ZoneEvent_EventZoneId and ZoneEvent_EventUnit inside the
             callback. These are intended for systems that should activate
             only while a player hero is nearby, such as AIRoutines.
+
+        - ZoneEvent_RegisterTransitionAction(code callback) returns nothing
+            Read ZoneEvent_EventTransitionZoneId,
+            ZoneEvent_EventTransitionUnit, the transition booleans, and the
+            start/target coordinates inside the callback.
 
         - ZoneEvent_RegisterEntranceTransition(zoneId, sourceRect, destinationRect, facing)
         - ZoneEvent_RegisterExitTransition(zoneId, sourceRect, destinationRect, facing)
@@ -159,7 +167,9 @@ globals
     private Table zoneFastPanOnEnter
     private trigger zoneEnterListeners = null
     private trigger zoneLeaveListeners = null
+    private trigger zoneTransitionListeners = null
     private trigger dayNightEventTrigger = null         // Trigger for day/night transitions
+    private trigger heroSelectionTrigger = null
     private timer dayNightUpdateTimer = null            // Timer for periodic day/night updates
     private timer dayNightResetTimer  = null            // Timer to reset day/night event flag
     private integer transitionCount = 0
@@ -168,7 +178,6 @@ globals
     private real array transitionFacing
     private boolean array transitionIsExit
     private trigger array transitionTrigger
-    private group transitionMoveGroup = null
     private real transitionMoveX = 0.00
     private real transitionMoveY = 0.00
     // Configurable sounds for zone discover/enter
@@ -179,6 +188,7 @@ globals
 
     // Set which hero to use for Day/Night event updates
     private unit UPDATE_UNIT = null
+    private unit activePresentationHero = null
     
     // Player group check (assumes udg_PlayerGroup from GUI)
     // Note: You may need to adjust this based on your actual player group variable
@@ -188,8 +198,6 @@ globals
     
     private string tempString = ""
     private unit z_EnteringUnit = null
-    private unit z_PendingParentZoneUnit = null
-    private integer z_PendingParentZoneId = 0
     private boolean cheat_Camlock = false
     
     // Zone questbox tracking
@@ -201,6 +209,14 @@ globals
     // Listener callback context
     integer ZoneEvent_EventZoneId = 0
     unit ZoneEvent_EventUnit = null
+    integer ZoneEvent_EventTransitionZoneId = 0
+    unit ZoneEvent_EventTransitionUnit = null
+    boolean ZoneEvent_EventTransitionIsExit = false
+    boolean ZoneEvent_EventTransitionUsesRoute = false
+    real ZoneEvent_EventTransitionStartX = 0.00
+    real ZoneEvent_EventTransitionStartY = 0.00
+    real ZoneEvent_EventTransitionTargetX = 0.00
+    real ZoneEvent_EventTransitionTargetY = 0.00
 
     // External variables (GUI) and systems
     /* ===  DNEEvent
@@ -524,280 +540,28 @@ public function SetFastPanOnEnter takes integer zoneId, boolean enabled returns 
     endif
 endfunction
 
-private function AddUnitsFromGroupToMoveGroup takes group sourceGroup, group targetGroup returns nothing
-    if sourceGroup != null and targetGroup != null then
-        call GroupAddGroup(sourceGroup, targetGroup)
-    endif
-endfunction
-
-private function AddUnitToMoveGroup takes group targetGroup, unit whichUnit returns nothing
-    if targetGroup != null and whichUnit != null and GetUnitTypeId(whichUnit) != 0 then
-        call GroupAddUnit(targetGroup, whichUnit)
-    endif
-endfunction
-
-private function AddControlledUnitsToMoveGroup takes group targetGroup returns nothing
-    call AddUnitsFromGroupToMoveGroup(udg_Companion_Group, targetGroup)
-    call AddUnitsFromGroupToMoveGroup(udg_TamedUnits, targetGroup)
-    call AddUnitToMoveGroup(targetGroup, udg_TamedUnit)
-endfunction
-
-//======================================================
-// Zone - MoveStart Handler
-// Move unit to startRegion and issue move to moveRegion
-//======================================================
-private function MoveStart takes ZoneData z, unit enteringUnit returns nothing
-    local real xStart = 0.0
-    local real yStart = 0.0
-    local real xMove = 0.0
-    local real yMove = 0.0
-    local unit u
-    local group tempGroup
-
-    /* ========== NOTE ==========
-    This function is called when a unit enters a zone that has defined startRegion and moveRegion.
-    It moves the entering unit to the center of the startRegion, then issues a move order to the center of the moveRegion.
-    Additionally, it moves any units in the Companion_Group and TamedUnits groups that are alive, applying the same move logic.
-
-    Other player units and/or Heroes are not affected by this function, as it is only triggered by the unit that entered the region (typically the player's hero).
-    E.g., Nazrek enters the region, so Nazrek is moved to startRegion and then ordered to move to moveRegion. Zulkis won't be moved.
-    >> We can later decide whether to have range check to move only the nearby alive companions, tamed, player units. 
-    >> Use WithinRange library to validate the range between the entering unit and the companions/tamed units before moving them)
-    */
-
-    // Basic validation
-    if z == null or enteringUnit == null then
+private function FireTransitionListener takes integer zoneId, unit triggeringUnit, boolean isExit, boolean usesRoute, real startX, real startY, real targetX, real targetY returns nothing
+    if zoneTransitionListeners == null or zoneId <= 0 or triggeringUnit == null then
         return
     endif
 
-    // Only Player(0)
-    if GetOwningPlayer(enteringUnit) != Player(0) then
-        return
-    endif
-
-    // Check regions exist
-    if z.startRegion == null or z.moveRegion == null then
-        return
-    endif
-
-    // Get center coordinates of startRegion and moveRegion
-    set xStart = (GetRectMinX(z.startRegion) + GetRectMaxX(z.startRegion)) * 0.5
-    set yStart = (GetRectMinY(z.startRegion) + GetRectMaxY(z.startRegion)) * 0.5
-    set xMove  = (GetRectMinX(z.moveRegion) + GetRectMaxX(z.moveRegion)) * 0.5
-    set yMove  = (GetRectMinY(z.moveRegion) + GetRectMaxY(z.moveRegion)) * 0.5
-
-    // Move entering unit to startRegion
-    call SetUnitPosition(enteringUnit, xStart, yStart)
-    call SetUnitFacing(enteringUnit, 215.0)
-    // Issue order to move to moveRegion
-    call IssuePointOrder(enteringUnit, "move", xMove, yMove)
-
-    // Move all companions and tamed units (IF ALIVE) using ONE tempGroup
-    set tempGroup = CreateGroup()
-    call AddControlledUnitsToMoveGroup(tempGroup)
-    // PLACEHOLDER; player other units/heroes
-    ///////////////////////////////
-
-    loop
-        set u = FirstOfGroup(tempGroup)
-        exitwhen u == null
-        call GroupRemoveUnit(tempGroup, u)
-        if FallenHeroState_IsAlive(u) then
-            call SetUnitPosition(u, xStart, yStart)
-            call IssuePointOrder(u, "move", xMove, yMove)
-        endif
-        // PLACEHOLDER: Add range check here if we want to only move nearby companions/tamed units
-        ///////////////////////////////
-    endloop
-
-    call DestroyGroup(tempGroup)
-
-    set u = null
-endfunction
-
-private function EnterPendingParentZoneDelayed takes nothing returns nothing
-    local timer t = GetExpiredTimer()
-    call ExecuteFunc("ZoneEvent_RunPendingParentZoneEnter")
-    if t != null then
-        call DestroyTimer(t)
-    endif
-    set t = null
-endfunction
-
-//======================================================
-// Zone - MoveOut Handler
-// Move unit to outRegion and issue move to moveOutRegion
-//======================================================
-private function MoveOut takes nothing returns nothing
-    local ZoneData z
-    local unit u = GetTriggerUnit()
-    local player trigPlayer = GetOwningPlayer(u)
-    local integer unitType = GetUnitTypeId(u)
-    local trigger trig = GetTriggeringTrigger()
-    local integer zoneId = 0
-    local integer currentZone = ZonesCore_GetCurrentZone()
-    local integer parentZoneId = 0
-    local real xStart = 0.0
-    local real yStart = 0.0
-    local real xMove = 0.0
-    local real yMove = 0.0
-    local group tempGroup
-
-    /* ========== NOTE ==========
-    This function is called when a unit leaves a zone that has defined outRegion and moveOutRegion.
-    It moves the entering unit to the center of the outRegion, then issues a move order to the center of the moveOutRegion.
-    Additionally, it moves any units in the Companion_Group and TamedUnits groups that are alive, applying the same move logic.
-
-    Other player units and/or Heroes are not affected by this function, as it is only triggered by the unit that entered the region (typically the player's hero).
-    E.g., Nazrek leaves the region, so Nazrek is moved to outRegion and then ordered to move to moveOutRegion. Zulkis won't be moved.
-    >> We can later decide whether to have range check to move only the nearby alive companions, tamed, player units. 
-    >> Use WithinRange library to validate the range between the entering unit and the companions/tamed units before moving them)
-    */
-
-    if not IsPlayerInForce(trigPlayer, udg_PlayerGroup) then
-        /* Disabled because alot of spammy debug messages
-        if DEBUG then
-            call Debug("Early exit: Player not in udg_PlayerGroup")
-        endif
-        */
-        return
-    endif
-    if not IsUnitType(u, UNIT_TYPE_HERO) then
-        /* Disabled because alot of spammy debug messages
-        if DEBUG then
-            call Debug("Early exit: Unit is not a hero")
-        endif
-        */
-        return
-    endif
-    if IsUnitTypeExcluded(unitType) then
-        /* Disabled because alot of spammy debug messages
-        if DEBUG then
-            call Debug("Early exit: Unit type is excluded")
-        endif
-        */
-        return
-    endif
-    set zoneId = triggerToZoneId.get(trig)
-    if zoneId == 0 then
-        if DEBUG then
-            call Debug("Could not find zoneId for this trigger")
-        endif
-        return
-    endif
-    if currentZone != 0 and zoneId != currentZone then
-        if DEBUG then
-            call Debug("Ignoring exit trigger for inactive zone " + I2S(zoneId) + " while current zone is " + I2S(currentZone))
-        endif
-        return
-    endif
-
-    set z = ZonesCore_GetZoneData(zoneId)
-
-    // Basic validation
-    if z == null or u == null then
-        return
-    endif
-
-    // Only Player(0)
-    if trigPlayer != Player(0) then
-        return
-    endif
-
-    // Check regions exist
-    if z.outRegion == null or z.moveOutRegion == null then
-        return
-    endif
-
-    if z.hasParentZone() then
-        set parentZoneId = z.getParentZoneId()
-        call ZonesCore_ResetZone()
-    endif
-
-    // Get center coordinates of outRegion and moveOutRegion
-    set xStart = (GetRectMinX(z.outRegion) + GetRectMaxX(z.outRegion)) * 0.5
-    set yStart = (GetRectMinY(z.outRegion) + GetRectMaxY(z.outRegion)) * 0.5
-    set xMove  = (GetRectMinX(z.moveOutRegion) + GetRectMaxX(z.moveOutRegion)) * 0.5
-    set yMove  = (GetRectMinY(z.moveOutRegion) + GetRectMaxY(z.moveOutRegion)) * 0.5
-
-    // Move entering unit to outRegion
-    if unitCurrentZone[GetHandleId(u)] == zoneId then
-        call unitCurrentZone.remove(GetHandleId(u))
-    endif
-    call SetUnitPosition(u, xStart, yStart)
-    call SetUnitFacing(u, 215.0)
-    // Issue order to move to moveOutRegion
-    call IssuePointOrder(u, "move", xMove, yMove)
-
-    // Move all companions and tamed units (IF ALIVE) using ONE tempGroup
-    set tempGroup = CreateGroup()
-    call AddControlledUnitsToMoveGroup(tempGroup)
-    // PLACEHOLDER; player other units/heroes
-    ///////////////////////////////
-
-    loop
-        set u = FirstOfGroup(tempGroup)
-        exitwhen u == null
-        call GroupRemoveUnit(tempGroup, u)
-        if FallenHeroState_IsAlive(u) then
-            call SetUnitPosition(u, xStart, yStart)
-            call IssuePointOrder(u, "move", xMove, yMove)
-        endif
-        // PLACEHOLDER: Add range check here if we want to only move nearby companions/tamed units
-        ///////////////////////////////
-    endloop
-
-    call DestroyGroup(tempGroup)
-
-    if parentZoneId > 0 then
-        if ZonesCore_GetCurrentZone() != parentZoneId then
-            set z_PendingParentZoneId = parentZoneId
-            set z_PendingParentZoneUnit = GetTriggerUnit()
-            call TimerStart(CreateTimer(), 0.00, false, function EnterPendingParentZoneDelayed)
-        endif
-    else
-        call ZonesCore_ResetZone()
-    endif
-
-    set trigPlayer = null
-    set u = null
-endfunction
-
-//===========================================================================
-// Zone Leave Cleanup Handler
-//===========================================================================
-private function HandleZoneLeaveCleanup takes integer zoneId, unit triggeringUnit returns nothing
-    local ZoneData z = ZonesCore_GetZoneData(zoneId)
-    if z == 0 or not z.hasLeaveHandler then
-        return  // No cleanup needed
-    endif
-    if DEBUG then
-        call Debug("Leaving: " + z.name + " (ID: " + I2S(zoneId) + ") - Running cleanup")
-    endif
-    // Zone-specific cleanup actions
-    // Add cleanup logic for specific zones here
-    if zoneId == 5 then
-        // Firelands - Remove VolcanoLoop sound
-        if DEBUG then
-            call Debug("Firelands cleanup: Removing VolcanoLoop sound")
-        endif
-        // Placeholder: call RemoveSound(gg_snd_VolcanoLoop, gg_rct_016Firelands)
-    endif
-    // Add more zone-specific cleanup here as needed
-endfunction
-
-//===========================================================================
-// Zone Music Handler
-//===========================================================================
-private function Zones_HandleZoneMusic takes ZoneData z returns nothing
-    set udg_ExMusicInteger = z.musicTrack
-    if DEBUG then
-        call Debug("Music track: " + I2S(z.musicTrack))
-        call Debug("udg_ExMusicInteger: " + I2S(udg_ExMusicInteger))
-    endif
-
-    call ExMusic_PlayTrack(udg_ExMusicInteger)
-    
+    set ZoneEvent_EventTransitionZoneId = zoneId
+    set ZoneEvent_EventTransitionUnit = triggeringUnit
+    set ZoneEvent_EventTransitionIsExit = isExit
+    set ZoneEvent_EventTransitionUsesRoute = usesRoute
+    set ZoneEvent_EventTransitionStartX = startX
+    set ZoneEvent_EventTransitionStartY = startY
+    set ZoneEvent_EventTransitionTargetX = targetX
+    set ZoneEvent_EventTransitionTargetY = targetY
+    call TriggerExecute(zoneTransitionListeners)
+    set ZoneEvent_EventTransitionZoneId = 0
+    set ZoneEvent_EventTransitionUnit = null
+    set ZoneEvent_EventTransitionIsExit = false
+    set ZoneEvent_EventTransitionUsesRoute = false
+    set ZoneEvent_EventTransitionStartX = 0.00
+    set ZoneEvent_EventTransitionStartY = 0.00
+    set ZoneEvent_EventTransitionTargetX = 0.00
+    set ZoneEvent_EventTransitionTargetY = 0.00
 endfunction
 
 private function FireZoneListener takes trigger listener, integer zoneId, unit triggeringUnit returns nothing
@@ -847,13 +611,281 @@ private function NotifyUnitZoneLeave takes integer zoneId, unit triggeringUnit r
     endif
 endfunction
 
-private function MoveRegisteredTransitionUnit takes nothing returns nothing
-    local unit whichUnit = GetEnumUnit()
+private function ApplyUnitZoneInternal takes unit whichUnit returns nothing
+    local player owner = null
+    local ZoneData z
+    local integer unitKey
+    local integer zoneId
+    local integer spatialZoneId
 
-    if FallenHeroState_IsAlive(whichUnit) then
-        call SetUnitPosition(whichUnit, transitionMoveX, transitionMoveY)
+    if whichUnit == null or not IsUnitType(whichUnit, UNIT_TYPE_HERO) then
+        return
     endif
-    set whichUnit = null
+    set owner = GetOwningPlayer(whichUnit)
+    if not IsPlayerInForce(owner, udg_PlayerGroup) then
+        set owner = null
+        return
+    endif
+
+    set unitKey = GetHandleId(whichUnit)
+    set zoneId = unitCurrentZone[unitKey]
+    set spatialZoneId = ZonesCore_GetZoneIdAtPoint(GetUnitX(whichUnit), GetUnitY(whichUnit))
+    if spatialZoneId > 0 and spatialZoneId != zoneId then
+        call NotifyUnitZoneEnter(spatialZoneId, whichUnit)
+        set zoneId = spatialZoneId
+    elseif zoneId > 0 and spatialZoneId == 0 then
+        set z = ZonesCore_GetZoneData(zoneId)
+        if z != 0 and z.isDungeon then
+            call NotifyUnitZoneLeave(zoneId, whichUnit)
+            set zoneId = 0
+        endif
+    endif
+
+    if zoneId > 0 then
+        set z = ZonesCore_GetZoneData(zoneId)
+        if z != 0 then
+            call ZonesCore_SetCurrentZone(zoneId)
+            call RunDNC(z.dncName)
+            call ApplyCurrentZoneEffectsInternal(owner, whichUnit)
+        endif
+    else
+        call ZonesCore_ResetZone()
+        call ClearAmbientSounds()
+        call DNC_Outdoors()
+        call CameraControl_ClearSpecialMode(owner)
+    endif
+    set owner = null
+endfunction
+
+//======================================================
+// Zone - MoveStart Handler
+// Move unit to startRegion and issue move to moveRegion
+//======================================================
+private function MoveStart takes ZoneData z, unit enteringUnit returns nothing
+    local real xStart = 0.0
+    local real yStart = 0.0
+    local real xMove = 0.0
+    local real yMove = 0.0
+
+    /* ========== NOTE ==========
+    This function is called when a unit enters a zone that has defined startRegion and moveRegion.
+    It moves the entering unit to the center of the startRegion, then issues a move order to the center of the moveRegion.
+    Additionally, it moves alive companions and pets focused on the entering hero, applying the same move logic.
+
+    Other player units and/or Heroes are not affected by this function, as it is only triggered by the unit that entered the region (typically the player's hero).
+    E.g., Nazrek enters the region, so Nazrek is moved to startRegion and then ordered to move to moveRegion. Zulkis won't be moved.
+    */
+
+    // Basic validation
+    if z == null or enteringUnit == null then
+        return
+    endif
+
+    // Only Player(0)
+    if GetOwningPlayer(enteringUnit) != Player(0) then
+        return
+    endif
+
+    // Check regions exist
+    if z.startRegion == null or z.moveRegion == null then
+        return
+    endif
+
+    // Get center coordinates of startRegion and moveRegion
+    set xStart = (GetRectMinX(z.startRegion) + GetRectMaxX(z.startRegion)) * 0.5
+    set yStart = (GetRectMinY(z.startRegion) + GetRectMaxY(z.startRegion)) * 0.5
+    set xMove  = (GetRectMinX(z.moveRegion) + GetRectMaxX(z.moveRegion)) * 0.5
+    set yMove  = (GetRectMinY(z.moveRegion) + GetRectMaxY(z.moveRegion)) * 0.5
+
+    // Move entering unit to startRegion
+    call SetUnitPosition(enteringUnit, xStart, yStart)
+    call SetUnitFacing(enteringUnit, 215.0)
+    // Issue order to move to moveRegion
+    call IssuePointOrder(enteringUnit, "move", xMove, yMove)
+    call FireTransitionListener(z.zoneId, enteringUnit, false, true, xStart, yStart, xMove, yMove)
+endfunction
+
+//======================================================
+// Zone - MoveOut Handler
+// Move unit to outRegion and issue move to moveOutRegion
+//======================================================
+private function MoveOut takes nothing returns nothing
+    local ZoneData z
+    local unit u = GetTriggerUnit()
+    local player trigPlayer = GetOwningPlayer(u)
+    local integer unitType = GetUnitTypeId(u)
+    local trigger trig = GetTriggeringTrigger()
+    local integer zoneId = 0
+    local integer parentZoneId = 0
+    local integer outsideZoneId = 0
+    local real xStart = 0.0
+    local real yStart = 0.0
+    local real xMove = 0.0
+    local real yMove = 0.0
+
+    /* ========== NOTE ==========
+    This function is called when a unit leaves a zone that has defined outRegion and moveOutRegion.
+    It moves the entering unit to the center of the outRegion, then issues a move order to the center of the moveOutRegion.
+    Additionally, it moves alive companions and pets focused on the exiting hero, applying the same move logic.
+
+    Other player units and/or Heroes are not affected by this function, as it is only triggered by the unit that entered the region (typically the player's hero).
+    E.g., Nazrek leaves the region, so Nazrek is moved to outRegion and then ordered to move to moveOutRegion. Zulkis won't be moved.
+    The companion controller is temporarily overridden until each forced exit
+    move finishes or times out, then its saved behavior is restored.
+    */
+
+    if not IsPlayerInForce(trigPlayer, udg_PlayerGroup) then
+        /* Disabled because alot of spammy debug messages
+        if DEBUG then
+            call Debug("Early exit: Player not in udg_PlayerGroup")
+        endif
+        */
+        set trig = null
+        set trigPlayer = null
+        set u = null
+        return
+    endif
+    if not IsUnitType(u, UNIT_TYPE_HERO) then
+        /* Disabled because alot of spammy debug messages
+        if DEBUG then
+            call Debug("Early exit: Unit is not a hero")
+        endif
+        */
+        set trig = null
+        set trigPlayer = null
+        set u = null
+        return
+    endif
+    if IsUnitTypeExcluded(unitType) then
+        /* Disabled because alot of spammy debug messages
+        if DEBUG then
+            call Debug("Early exit: Unit type is excluded")
+        endif
+        */
+        set trig = null
+        set trigPlayer = null
+        set u = null
+        return
+    endif
+    set zoneId = triggerToZoneId.get(trig)
+    if zoneId == 0 then
+        if DEBUG then
+            call Debug("Could not find zoneId for this trigger")
+        endif
+        set trig = null
+        set trigPlayer = null
+        set u = null
+        return
+    endif
+    if unitCurrentZone[GetHandleId(u)] > 0 and unitCurrentZone[GetHandleId(u)] != zoneId then
+        if DEBUG then
+            call Debug("Ignoring exit trigger for zone " + I2S(zoneId) + " because this hero is tracked in zone " + I2S(unitCurrentZone[GetHandleId(u)]))
+        endif
+        set trig = null
+        set trigPlayer = null
+        set u = null
+        return
+    endif
+
+    set z = ZonesCore_GetZoneData(zoneId)
+
+    // Basic validation
+    if z == null or u == null then
+        set trig = null
+        set trigPlayer = null
+        set u = null
+        return
+    endif
+
+    // Only Player(0)
+    if trigPlayer != Player(0) then
+        set trig = null
+        set trigPlayer = null
+        set u = null
+        return
+    endif
+
+    // Check regions exist
+    if z.outRegion == null or z.moveOutRegion == null then
+        set trig = null
+        set trigPlayer = null
+        set u = null
+        return
+    endif
+
+    if z.hasParentZone() then
+        set parentZoneId = z.getParentZoneId()
+    endif
+
+    // Get center coordinates of outRegion and moveOutRegion
+    set xStart = (GetRectMinX(z.outRegion) + GetRectMaxX(z.outRegion)) * 0.5
+    set yStart = (GetRectMinY(z.outRegion) + GetRectMaxY(z.outRegion)) * 0.5
+    set xMove  = (GetRectMinX(z.moveOutRegion) + GetRectMaxX(z.moveOutRegion)) * 0.5
+    set yMove  = (GetRectMinY(z.moveOutRegion) + GetRectMaxY(z.moveOutRegion)) * 0.5
+
+    // Move entering unit to outRegion
+    call NotifyUnitZoneLeave(zoneId, u)
+    call SetUnitPosition(u, xStart, yStart)
+    call SetUnitFacing(u, 215.0)
+    // Issue order to move to moveOutRegion
+    call IssuePointOrder(u, "move", xMove, yMove)
+    call FireTransitionListener(zoneId, u, true, true, xStart, yStart, xMove, yMove)
+
+    if parentZoneId <= 0 then
+        set outsideZoneId = ZonesCore_GetZoneIdAtPoint(xStart, yStart)
+    else
+        set outsideZoneId = parentZoneId
+    endif
+    if outsideZoneId > 0 and outsideZoneId != zoneId then
+        call NotifyUnitZoneEnter(outsideZoneId, GetTriggerUnit())
+    endif
+    if activePresentationHero == null then
+        set activePresentationHero = GetTriggerUnit()
+    endif
+    if activePresentationHero == GetTriggerUnit() then
+        call ApplyUnitZoneInternal(GetTriggerUnit())
+    endif
+
+    set trig = null
+    set trigPlayer = null
+    set u = null
+endfunction
+
+//===========================================================================
+// Zone Leave Cleanup Handler
+//===========================================================================
+private function HandleZoneLeaveCleanup takes integer zoneId, unit triggeringUnit returns nothing
+    local ZoneData z = ZonesCore_GetZoneData(zoneId)
+    if z == 0 or not z.hasLeaveHandler then
+        return  // No cleanup needed
+    endif
+    if DEBUG then
+        call Debug("Leaving: " + z.name + " (ID: " + I2S(zoneId) + ") - Running cleanup")
+    endif
+    // Zone-specific cleanup actions
+    // Add cleanup logic for specific zones here
+    if zoneId == 5 then
+        // Firelands - Remove VolcanoLoop sound
+        if DEBUG then
+            call Debug("Firelands cleanup: Removing VolcanoLoop sound")
+        endif
+        // Placeholder: call RemoveSound(gg_snd_VolcanoLoop, gg_rct_016Firelands)
+    endif
+    // Add more zone-specific cleanup here as needed
+endfunction
+
+//===========================================================================
+// Zone Music Handler
+//===========================================================================
+private function Zones_HandleZoneMusic takes ZoneData z returns nothing
+    set udg_ExMusicInteger = z.musicTrack
+    if DEBUG then
+        call Debug("Music track: " + I2S(z.musicTrack))
+        call Debug("udg_ExMusicInteger: " + I2S(udg_ExMusicInteger))
+    endif
+
+    call ExMusic_PlayTrack(udg_ExMusicInteger)
+    
 endfunction
 
 private function OnRegisteredTransition takes nothing returns nothing
@@ -863,6 +895,7 @@ private function OnRegisteredTransition takes nothing returns nothing
     local unit enteringUnit = GetTriggerUnit()
     local player owner = null
     local rect destination = null
+    local integer destinationZoneId = 0
 
     if transitionId <= 0 or enteringUnit == null or not systemEnabled then
         set whichTrigger = null
@@ -884,20 +917,23 @@ private function OnRegisteredTransition takes nothing returns nothing
     call SetUnitPosition(enteringUnit, transitionMoveX, transitionMoveY)
     call SetUnitFacing(enteringUnit, transitionFacing[transitionId])
 
-    call GroupClear(transitionMoveGroup)
-    call AddControlledUnitsToMoveGroup(transitionMoveGroup)
-    call GroupRemoveUnit(transitionMoveGroup, enteringUnit)
-    call ForGroup(transitionMoveGroup, function MoveRegisteredTransitionUnit)
-    call GroupClear(transitionMoveGroup)
+    call FireTransitionListener(zoneId, enteringUnit, transitionIsExit[transitionId], false, transitionMoveX, transitionMoveY, transitionMoveX, transitionMoveY)
 
     if transitionIsExit[transitionId] then
         call NotifyUnitZoneLeave(zoneId, enteringUnit)
         call HandleZoneLeaveCleanup(zoneId, enteringUnit)
-        call ZonesCore_ResetZone()
-        call DNC_Outdoors()
-        call CameraControl_ClearSpecialMode(owner)
+        set destinationZoneId = ZonesCore_GetZoneIdAtPoint(transitionMoveX, transitionMoveY)
+        if destinationZoneId > 0 and destinationZoneId != zoneId then
+            call NotifyUnitZoneEnter(destinationZoneId, enteringUnit)
+        endif
     else
         call NotifyUnitZoneEnter(zoneId, enteringUnit)
+    endif
+    if activePresentationHero == null then
+        set activePresentationHero = enteringUnit
+    endif
+    if activePresentationHero == enteringUnit then
+        call ApplyUnitZoneInternal(enteringUnit)
     endif
     call CameraControl_UpdateTargetCache(owner)
 
@@ -981,6 +1017,17 @@ private function HandleZoneEnter takes integer newZoneId, unit triggeringUnit, b
         return
     endif
     call NotifyUnitZoneEnter(newZoneId, triggeringUnit)
+    if activePresentationHero == null then
+        set activePresentationHero = triggeringUnit
+    endif
+    if triggeringUnit != activePresentationHero then
+        if allowEntranceMovement and z.startRegion != null and z.moveRegion != null then
+            call MoveStart(z, triggeringUnit)
+            call CameraControl_UpdateTargetCache(triggerPlayer)
+        endif
+        set triggerPlayer = null
+        return
+    endif
     if newZoneId == currentZone then
         if DEBUG then
             call Debug("Already in this zone - " + I2S(newZoneId) + " (return)")
@@ -1066,25 +1113,6 @@ private function HandleZoneEnter takes integer newZoneId, unit triggeringUnit, b
     endif
     set z_EnteringUnit = triggeringUnit
     set triggerPlayer = null
-endfunction
-
-public function RunPendingParentZoneEnter takes nothing returns nothing
-    local integer zoneId = z_PendingParentZoneId
-    local unit whichUnit = z_PendingParentZoneUnit
-
-    set z_PendingParentZoneId = 0
-    set z_PendingParentZoneUnit = null
-
-    if zoneId <= 0 or whichUnit == null then
-        set whichUnit = null
-        return
-    endif
-
-    if ZonesCore_GetCurrentZone() != zoneId then
-        call HandleZoneEnter(zoneId, whichUnit, true)
-    endif
-
-    set whichUnit = null
 endfunction
 
 //===========================================================================
@@ -1244,10 +1272,23 @@ public function EnableLeaveHandler takes integer zoneId, boolean enable returns 
 endfunction
 
 public function GetUnitZoneId takes unit whichUnit returns integer
+    local integer zoneId
+
     if whichUnit == null or unitCurrentZone == 0 then
         return 0
     endif
+    set zoneId = ZonesCore_GetZoneIdAtPoint(GetUnitX(whichUnit), GetUnitY(whichUnit))
+    if zoneId > 0 then
+        return zoneId
+    endif
     return unitCurrentZone[GetHandleId(whichUnit)]
+endfunction
+
+public function ApplyUnitZone takes unit whichUnit returns nothing
+    if whichUnit != null and IsUnitType(whichUnit, UNIT_TYPE_HERO) and IsPlayerInForce(GetOwningPlayer(whichUnit), udg_PlayerGroup) and not IsUnitTypeExcluded(GetUnitTypeId(whichUnit)) then
+        set activePresentationHero = whichUnit
+        call ApplyUnitZoneInternal(whichUnit)
+    endif
 endfunction
 
 public function RegisterEnterAction takes code callback returns nothing
@@ -1262,6 +1303,13 @@ public function RegisterLeaveAction takes code callback returns nothing
         set zoneLeaveListeners = CreateTrigger()
     endif
     call TriggerAddAction(zoneLeaveListeners, callback)
+endfunction
+
+public function RegisterTransitionAction takes code callback returns nothing
+    if zoneTransitionListeners == null then
+        set zoneTransitionListeners = CreateTrigger()
+    endif
+    call TriggerAddAction(zoneTransitionListeners, callback)
 endfunction
 
 //===========================================================================
@@ -1308,6 +1356,13 @@ private function OnDayNightEvent takes nothing returns nothing
     call TimerStart(dayNightUpdateTimer, 1.00, false, function DayNight_UpdateZone)   
     // Wait 3 seconds before resetting flag  
     call TimerStart(dayNightResetTimer, 3.00, false, function DayNight_ResetFlag)
+endfunction
+
+private function OnHeroSelected takes nothing returns nothing
+    local unit selectedUnit = GetTriggerUnit()
+
+    call ApplyUnitZone(selectedUnit)
+    set selectedUnit = null
 endfunction
 
 //===========================================================================
@@ -1388,6 +1443,7 @@ endfunction
 private function InitVariables takes nothing returns nothing
     // Initialize variables to global variables for Day/Night updates
     set UPDATE_UNIT = udg_Nazgrek
+    set activePresentationHero = udg_Nazgrek
 
     // Initialize sound variables to null
     set ZONE_DISCOVER_SOUND = gg_snd_Interface_ZoneDiscovered
@@ -1422,7 +1478,6 @@ private function Init takes nothing returns nothing
     set transitionTriggerToId = Table.create()
     set zoneCameraMode = Table.create()
     set zoneFastPanOnEnter = Table.create()
-    set transitionMoveGroup = CreateGroup()
 
     // Register zone enter triggers
     call RegisterZoneRegions() 
@@ -1434,6 +1489,10 @@ private function Init takes nothing returns nothing
     call TriggerRegisterVariableEvent(dayNightEventTrigger, "udg_DNE_DayNightEvent", EQUAL, 1.00)
     call TriggerRegisterVariableEvent(dayNightEventTrigger, "udg_DNE_DayNightEvent", EQUAL, 2.00)
     call TriggerAddAction(dayNightEventTrigger, function OnDayNightEvent)
+
+    set heroSelectionTrigger = CreateTrigger()
+    call TriggerRegisterPlayerUnitEvent(heroSelectionTrigger, Player(0), EVENT_PLAYER_UNIT_SELECTED, null)
+    call TriggerAddAction(heroSelectionTrigger, function OnHeroSelected)
 
     // Initialize variables (WE created global variables)
     call InitVariables()
