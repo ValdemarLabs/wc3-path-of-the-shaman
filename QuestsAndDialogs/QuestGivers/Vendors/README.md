@@ -1,13 +1,14 @@
 # Generic and vendor quest roster
 
 Import in this order: `QuestsGeneric.j`, `Voicelines_Quests.j`,
+`Voicelines_Nazgrek.j`, `Voicelines_Zulkis.j`,
 `FollowSystem.j`, `Companions.j`, `AI.j`, `QuestsVendor.j`, the desired
 `qVendorName.j` libraries, `VendorCatalogs.j`,
 all `VendorFactions/Vendor*.j` libraries, `VendorBags.j`, and `VendorDialogs.j`.
 `VendorDialogs.j` discovers placed vendor units and instantiates every quest
 registered for their unit type.
 
-Vendor quest acceptance/completion text, shared progress dialogue, sound-key
+Vendor quest acceptance/completion text, shared non-escort progress dialogue, sound-key
 ranges, and daily random pools are controlled from
 `Voicelines/Voicelines_Quests.j`. Nazgrek and Zul'kis generic reply text and
 registration are owned by `Voicelines_Nazgrek.j` and `Voicelines_Zulkis.j`.
@@ -44,7 +45,9 @@ or another state exit. Abandoning an active route also returns the merchant to
 the route's recorded start. Nara Stormhoof and Cedran Pike keep Trade locked until
 their escort is turned in. Selyth Venomcup remains willing to trade during the
 route. On acceptance, each merchant has a route-specific field line and may
-receive a short answer from one nearby active AI hero companion.
+receive a short answer from one nearby active AI hero companion. Each escort
+also has three vendor-specific progress lines and three matching progress
+replies apiece for Nazgrek and Zul'kis.
 
 The canonical vendor names below come from `VendorCatalogs.j` and match the
 quest-library filenames and library identifiers. Object Editor names may remain
@@ -72,7 +75,7 @@ unchanged.
 | `n030` | Malthera Duskmoss | Essence Without Questions | Daily | `GenericSatyrFemale1_1005-1006` |
 | `n031` | Ithryssa Runehorn | A Sealed Flask | Daily | `GenericSatyrFemale1_1007-1008` |
 | `n033` | Selyth Venomcup | Bitter Leaves | Daily | `GenericSatyrFemale1_1009-1010` |
-| `n033` | Selyth Venomcup | Bottles in the Gloom | Normal | `GenericSatyrFemale1_1028-1032` |
+| `n033` | Selyth Venomcup | Bottles in the Gloom | Normal | `GenericSatyrFemale1_1028-1035` |
 | `n038` | Faelrix Wayhoof | Silence on the Old Path (Ironjaw Basilisks) | Normal | `GenericSatyrMale1_1011-1012, 1017-1018` |
 | `n035` | Garrick Holt | Riverbane Iron | Daily | `GenericHumanMale1_1001-1002` |
 | `n035` | Garrick Holt | Riverbane's Reserve | Normal | `GenericHumanMale1_1019-1022` |
@@ -83,7 +86,7 @@ unchanged.
 | `n03F` | Owen Marlow | Stock the Smokehouse | Daily | `GenericHumanMale2_1009-1010` |
 | `n03E` | Tobin Slate | Lantern Fuel | Daily | `GenericHumanMale2_1011-1012` |
 | `n03P` | Cedran Pike | The Travelling Manifest | Daily | `GenericHumanMale2_1013-1014` |
-| `n03P` | Cedran Pike | The Ledger Comes Home | Normal | `GenericHumanMale2_1038-1042` |
+| `n03P` | Cedran Pike | The Ledger Comes Home | Normal | `GenericHumanMale2_1038-1045` |
 | `n03C` | Merrick Wayland | The Toll Road | Normal | `GenericHumanMale2_1015-1016, 1027-1028` |
 | `n03T` | Edwin Harrow | Morning Herbs | Daily | `GenericHumanMale1_1017-1018` |
 | `n03W` | Nackle Quickdeal | Essence Speculation | Daily | `GenericGoblinMale1_1001-1002` |
@@ -112,7 +115,7 @@ unchanged.
 | `o01C` | Tawa Deepvein | Stonebreaker's Measure | Daily | `GenericTaurenMale2_1003-1004` |
 | `o01D` | Koro Windpack | Gnolls on the Supply Trail | Daily | `GenericTaurenMale3_1005-1006` |
 | `o01E` | Nara Stormhoof | Shadow over the Long Road | Daily | `GenericTaurenMale1_1007-1008` |
-| `o01E` | Nara Stormhoof | A Road Beneath Open Sky | Normal | `GenericTaurenMale1_1015-1019` |
+| `o01E` | Nara Stormhoof | A Road Beneath Open Sky | Normal | `GenericTaurenMale1_1015-1022` |
 
 External audio uses one folder per reusable profile, for example
 `Pots\Sound\Voicelines\GenericOrcMale4\`, `GenericGoblinMale3\`, `GenericHumanMale2\`, or
@@ -129,10 +132,12 @@ uses the `1001+` range of the assigned reusable profile. Daily quests select
 one follow-up from a three-line objective/voice pool: Orc `1035-1043`, Satyr
 `1019-1027`, Human `1029-1037`, Goblin `1027-1035`, Bonecrusher `1017-1025`,
 Elarindor male/female `1017-1025`, and Tauren `1009-1014`.
-Nazgrek and Zul'kis use `NazgrekGeneric_0001-0028` and
-`ZulkisGeneric_0001-0028`. Four randomized personality-specific replies are
+Nazgrek and Zul'kis use `NazgrekGeneric_0001-0041` and
+`ZulkisGeneric_0001-0041`. Four randomized personality-specific replies are
 registered for each accept, kill completion, talk completion, fetch completion,
-progress, supply-handoff, and quest-purchase interaction.
+shared progress, supply-handoff, quest-purchase, and escort-completion
+interaction. Each vendor escort additionally registers three activity-specific
+progress replies per player hero from indices `0033-0041`.
 Missing files fall back to ExSound's text-duration estimation until recordings
 are imported.
 
