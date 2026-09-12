@@ -2,7 +2,7 @@
     VoicelinesZulkis
 
     Author: Valdemar
-    Version: 1.4.0
+    Version: 1.5.0
 
     Description:
     Speaker-owned story and reusable generic quest voicelines for Zul'kis.
@@ -128,6 +128,48 @@ globals
     constant string VL_ZULKIS_GENERIC_0040_TEXT = "I hear dem bottles, Selyth. Best keep movin'."
     constant string VL_ZULKIS_GENERIC_0041_KEY = "ZulkisGeneric_0041"
     constant string VL_ZULKIS_GENERIC_0041_TEXT = "Stay close, mon. I don't want to learn what ya cargo does when dropped."
+    constant string VL_ZULKIS_GENERIC_0042_KEY = "ZulkisGeneric_0042"
+    constant string VL_ZULKIS_GENERIC_0042_TEXT = "Keep da commission wrapped, Kargun. Ghorak's post ain't far."
+    constant string VL_ZULKIS_GENERIC_0043_KEY = "ZulkisGeneric_0043"
+    constant string VL_ZULKIS_GENERIC_0043_TEXT = "Walk behind me, mon. No roadside thief touches dat blade."
+    constant string VL_ZULKIS_GENERIC_0044_KEY = "ZulkisGeneric_0044"
+    constant string VL_ZULKIS_GENERIC_0044_TEXT = "Da arena can wait. We deliver da steel safe first."
+    constant string VL_ZULKIS_GENERIC_0045_KEY = "ZulkisGeneric_0045"
+    constant string VL_ZULKIS_GENERIC_0045_TEXT = "We still owe da road two crossings, Rukgar. Keep close."
+    constant string VL_ZULKIS_GENERIC_0046_KEY = "ZulkisGeneric_0046"
+    constant string VL_ZULKIS_GENERIC_0046_TEXT = "Hurgan's fire only be halfway. I guard ya return too."
+    constant string VL_ZULKIS_GENERIC_0047_KEY = "ZulkisGeneric_0047"
+    constant string VL_ZULKIS_GENERIC_0047_TEXT = "Hold dat ledger tight, mon. Gnolls smell a loaded caravan."
+    constant string VL_ZULKIS_GENERIC_0048_KEY = "ZulkisGeneric_0048"
+    constant string VL_ZULKIS_GENERIC_0048_TEXT = "Nargash's stores first, Gorthak. Den I bring ya back to command."
+    constant string VL_ZULKIS_GENERIC_0049_KEY = "ZulkisGeneric_0049"
+    constant string VL_ZULKIS_GENERIC_0049_TEXT = "Watch da jungle edge. Raiders know a quartermaster on sight."
+    constant string VL_ZULKIS_GENERIC_0050_KEY = "ZulkisGeneric_0050"
+    constant string VL_ZULKIS_GENERIC_0050_TEXT = "Save ya strength for da return road. Dis inspection got two legs."
+    constant string VL_ZULKIS_GENERIC_0051_KEY = "ZulkisGeneric_0051"
+    constant string VL_ZULKIS_GENERIC_0051_TEXT = "Keep ya samples packed, Giznak. Kargun judges dem at da forge."
+    constant string VL_ZULKIS_GENERIC_0052_KEY = "ZulkisGeneric_0052"
+    constant string VL_ZULKIS_GENERIC_0052_TEXT = "Ya guarantees mean nothin' if da blades never arrive. Stay close."
+    constant string VL_ZULKIS_GENERIC_0053_KEY = "ZulkisGeneric_0053"
+    constant string VL_ZULKIS_GENERIC_0053_TEXT = "I guard da steel. Ya argue its price when we get there."
+    constant string VL_ZULKIS_GENERIC_0054_KEY = "ZulkisGeneric_0054"
+    constant string VL_ZULKIS_GENERIC_0054_TEXT = "Settle ya contract quick, Rixit. Da shadows follow us home."
+    constant string VL_ZULKIS_GENERIC_0055_KEY = "ZulkisGeneric_0055"
+    constant string VL_ZULKIS_GENERIC_0055_TEXT = "I be guardin' ya, not ya fine print. Keep movin'."
+    constant string VL_ZULKIS_GENERIC_0056_KEY = "ZulkisGeneric_0056"
+    constant string VL_ZULKIS_GENERIC_0056_TEXT = "Snikka's counter be halfway, not safety. We return together."
+    constant string VL_ZULKIS_GENERIC_0057_KEY = "ZulkisGeneric_0057"
+    constant string VL_ZULKIS_GENERIC_0057_TEXT = "Grumbar still waits, Mugrok. Keep dat measurin' arm behind me."
+    constant string VL_ZULKIS_GENERIC_0058_KEY = "ZulkisGeneric_0058"
+    constant string VL_ZULKIS_GENERIC_0058_TEXT = "Da fitting only be half da task. I see ya and da armor home."
+    constant string VL_ZULKIS_GENERIC_0059_KEY = "ZulkisGeneric_0059"
+    constant string VL_ZULKIS_GENERIC_0059_TEXT = "Stay close, Mugrok. Strength don't stop an arrow ya never see."
+    constant string VL_ZULKIS_GENERIC_0060_KEY = "ZulkisGeneric_0060"
+    constant string VL_ZULKIS_GENERIC_0060_TEXT = "Durnik's forge lies ahead, Torren. Keep ya tools balanced."
+    constant string VL_ZULKIS_GENERIC_0061_KEY = "ZulkisGeneric_0061"
+    constant string VL_ZULKIS_GENERIC_0061_TEXT = "A cracked furnace ain't a place ta stay. I get ya under sound stone."
+    constant string VL_ZULKIS_GENERIC_0062_KEY = "ZulkisGeneric_0062"
+    constant string VL_ZULKIS_GENERIC_0062_TEXT = "Mind da slope, Torren. We lose neither smith nor anvil today."
 
     // Reusable player-dialog and ability-trainer replies.
     constant string VL_ZULKISDIALOG_GREET_1_KEY = "Zulkis_Greet1"
@@ -298,7 +340,7 @@ private function RegisterGenericQuestLines takes nothing returns nothing
 endfunction
 
 private function Init takes nothing returns nothing
-    call ExSound_RegisterSequence(VL_ZULKIS_GENERIC_TYPE, 1, 41, "Pots\\Sound\\Voicelines\\Zulkis\\ZulkisGeneric\\")
+    call ExSound_RegisterSequence(VL_ZULKIS_GENERIC_TYPE, 1, 62, "Pots\\Sound\\Voicelines\\Zulkis\\ZulkisGeneric\\")
     call RegisterGenericQuestLines()
     call Voicelines_RegisterKey(VL_ZULKIS_FOLDER, VL_ZULKIS_0015_KEY)
     call Voicelines_RegisterKey(VL_ZULKIS_FOLDER, VL_ZULKIS_0016_KEY)
