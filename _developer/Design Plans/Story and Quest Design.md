@@ -2,7 +2,7 @@
 
 - **Status:** Living master design plan
 - **Created:** 22 August 2026
-- **Last reviewed:** 3 September 2026
+- **Last reviewed:** 12 September 2026
 - **Scope:** Main story, side stories, generic quests, dungeon quests, quest-giver connections, and world-event dependencies
 
 ## 1. Purpose
@@ -183,7 +183,9 @@ At this revision, the core named qXXX libraries do not consistently assign the n
 
 ### Generic vendor quests
 
-`QuestsAndDialogs/QuestGivers/Vendors/README.md` is the implementation ledger for the vendor quest set. It currently records 58 quests across 50 qVendor libraries: 43 Daily and 15 Normal. Keep that README authoritative for exact vendor quest titles, rawcodes, objectives, and setup.
+`QuestsAndDialogs/QuestGivers/Vendors/README.md` is the implementation ledger for the vendor quest set. It currently records 61 quests across 50 qVendor libraries: 43 Daily and 18 Normal. Keep that README authoritative for exact vendor quest titles, rawcodes, objectives, and setup.
+
+Three one-time vendor escorts are implemented through `FollowSystem`: Nara Stormhoof travels to Koro Windpack's caravan post, Cedran Pike returns Riverbane's field ledgers to Garrick Holt's forge, and Selyth Venomcup withdraws volatile potion stock to Velyssra's enclave. The merchant is temporarily invulnerable during the route so a dead shop unit cannot strand a generic quest without a valid giver; prior invulnerability is restored when following ends, and an abandoned route returns the merchant to its recorded start. Nara and Cedran unlock trading only after the escort is turned in; Selyth can trade during her route. The shared escort path includes giver-specific travel dialogue and an optional nearby AI-companion response. Exact start placement, safe-hub placement, walkability, and meaningful route distance remain **Verify in WE**.
 
 Vendor kill objectives must never target the giver's own faction. Xyros Bloodwager's Daily now targets six Gnolls instead of Satyr Stalkers, and Faelrix Wayhoof's Normal quest targets eight Ironjaw Basilisks instead of Satyr Soulstealers. Their giver-owned offer, completion, and normal-quest extension lines name the concrete threat and consequence; shared hero acknowledgements remain concise connective dialogue. Revised recordings are intentionally deferred until the complete dialogue pass is approved.
 
