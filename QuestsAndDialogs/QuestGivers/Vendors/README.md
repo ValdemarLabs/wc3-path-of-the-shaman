@@ -1,7 +1,8 @@
 # Generic and vendor quest roster
 
 Import in this order: `QuestsGeneric.j`, `Voicelines_Quests.j`,
-`QuestsVendor.j`, the desired `qVendorName.j` libraries, `VendorCatalogs.j`,
+`FollowSystem.j`, `Companions.j`, `AI.j`, `QuestsVendor.j`, the desired
+`qVendorName.j` libraries, `VendorCatalogs.j`,
 all `VendorFactions/Vendor*.j` libraries, `VendorBags.j`, and `VendorDialogs.j`.
 `VendorDialogs.j` discovers placed vendor units and instantiates every quest
 registered for their unit type.
@@ -34,6 +35,17 @@ that choice into trade and require the requested catalog item to be purchased
 and returned. Other supply quests use a dialogue handoff and can replace their
 quest item through the same choice if it was lost before turn-in.
 
+Vendor escorts are always one-time Normal quests. The escorted merchant follows
+the accepting hero through `FollowSystem`; the destination is a 425-range area
+centered on an existing destination-vendor unit, so the quest does not depend on
+an invented rect. The merchant is temporarily invulnerable while following and
+returns to the unit's prior invulnerability state on safe arrival, abandonment,
+or another state exit. Abandoning an active route also returns the merchant to
+the route's recorded start. Nara Stormhoof and Cedran Pike keep Trade locked until
+their escort is turned in. Selyth Venomcup remains willing to trade during the
+route. On acceptance, each merchant has a route-specific field line and may
+receive a short answer from one nearby active AI hero companion.
+
 The canonical vendor names below come from `VendorCatalogs.j` and match the
 quest-library filenames and library identifiers. Object Editor names may remain
 unchanged.
@@ -60,6 +72,7 @@ unchanged.
 | `n030` | Malthera Duskmoss | Essence Without Questions | Daily | `GenericSatyrFemale1_1005-1006` |
 | `n031` | Ithryssa Runehorn | A Sealed Flask | Daily | `GenericSatyrFemale1_1007-1008` |
 | `n033` | Selyth Venomcup | Bitter Leaves | Daily | `GenericSatyrFemale1_1009-1010` |
+| `n033` | Selyth Venomcup | Bottles in the Gloom | Normal | `GenericSatyrFemale1_1028-1032` |
 | `n038` | Faelrix Wayhoof | Silence on the Old Path (Ironjaw Basilisks) | Normal | `GenericSatyrMale1_1011-1012, 1017-1018` |
 | `n035` | Garrick Holt | Riverbane Iron | Daily | `GenericHumanMale1_1001-1002` |
 | `n035` | Garrick Holt | Riverbane's Reserve | Normal | `GenericHumanMale1_1019-1022` |
@@ -70,6 +83,7 @@ unchanged.
 | `n03F` | Owen Marlow | Stock the Smokehouse | Daily | `GenericHumanMale2_1009-1010` |
 | `n03E` | Tobin Slate | Lantern Fuel | Daily | `GenericHumanMale2_1011-1012` |
 | `n03P` | Cedran Pike | The Travelling Manifest | Daily | `GenericHumanMale2_1013-1014` |
+| `n03P` | Cedran Pike | The Ledger Comes Home | Normal | `GenericHumanMale2_1038-1042` |
 | `n03C` | Merrick Wayland | The Toll Road | Normal | `GenericHumanMale2_1015-1016, 1027-1028` |
 | `n03T` | Edwin Harrow | Morning Herbs | Daily | `GenericHumanMale1_1017-1018` |
 | `n03W` | Nackle Quickdeal | Essence Speculation | Daily | `GenericGoblinMale1_1001-1002` |
@@ -98,6 +112,7 @@ unchanged.
 | `o01C` | Tawa Deepvein | Stonebreaker's Measure | Daily | `GenericTaurenMale2_1003-1004` |
 | `o01D` | Koro Windpack | Gnolls on the Supply Trail | Daily | `GenericTaurenMale3_1005-1006` |
 | `o01E` | Nara Stormhoof | Shadow over the Long Road | Daily | `GenericTaurenMale1_1007-1008` |
+| `o01E` | Nara Stormhoof | A Road Beneath Open Sky | Normal | `GenericTaurenMale1_1015-1019` |
 
 External audio uses one folder per reusable profile, for example
 `Pots\Sound\Voicelines\GenericOrcMale4\`, `GenericGoblinMale3\`, `GenericHumanMale2\`, or
@@ -120,6 +135,13 @@ registered for each accept, kill completion, talk completion, fetch completion,
 progress, supply-handoff, and quest-purchase interaction.
 Missing files fall back to ExSound's text-duration estimation until recordings
 are imported.
+
+Escort placement must be verified in World Editor. Place Nara a meaningful
+travel distance from Koro Windpack `o01D`, Cedran from Garrick Holt `n035`, and
+Selyth from Velyssra `n02Z`; keep each destination merchant in the intended safe
+hub. If giver and destination begin within 425 range, the accepted escort will
+finish immediately. Confirm each route is walkable and does not cross a portal
+or transport boundary that ordinary ground following cannot traverse.
 
 Approve the complete quest dialogue in context before generating Fish Audio.
 When an existing text constant changes, its old recording is stale and must stay
