@@ -2,7 +2,7 @@
     VoicelinesZulkis
 
     Author: Valdemar
-    Version: 1.2.0
+    Version: 1.3.0
 
     Description:
     Speaker-owned story and reusable generic quest voicelines for Zul'kis.
@@ -98,6 +98,16 @@ globals
     constant string VL_ZULKIS_GENERIC_0027_TEXT = "Dis commission needs somethin' from ya stock."
     constant string VL_ZULKIS_GENERIC_0028_KEY = "ZulkisGeneric_0028"
     constant string VL_ZULKIS_GENERIC_0028_TEXT = "I be here to buy what da quest requires."
+
+    // Reusable generic quest replies: escort completion.
+    constant string VL_ZULKIS_GENERIC_0029_KEY = "ZulkisGeneric_0029"
+    constant string VL_ZULKIS_GENERIC_0029_TEXT = "Ya be safe now, mon. Da road behind us."
+    constant string VL_ZULKIS_GENERIC_0030_KEY = "ZulkisGeneric_0030"
+    constant string VL_ZULKIS_GENERIC_0030_TEXT = "We reached shelter. Ya journey be finished."
+    constant string VL_ZULKIS_GENERIC_0031_KEY = "ZulkisGeneric_0031"
+    constant string VL_ZULKIS_GENERIC_0031_TEXT = "Da spirits watched da road. Set down ya burden."
+    constant string VL_ZULKIS_GENERIC_0032_KEY = "ZulkisGeneric_0032"
+    constant string VL_ZULKIS_GENERIC_0032_TEXT = "Ya made it home, mon. Open ya stall when ready."
 
     // Reusable player-dialog and ability-trainer replies.
     constant string VL_ZULKISDIALOG_GREET_1_KEY = "Zulkis_Greet1"
@@ -261,10 +271,14 @@ private function RegisterGenericQuestLines takes nothing returns nothing
     call QuestsGeneric_RegisterHeroVoiceVariant(QuestsGeneric_HERO_LINE_ASK_TO_BUY, VL_ZULKIS_GENERIC_TYPE, VL_ZULKIS_GENERIC_0026_TEXT, 26)
     call QuestsGeneric_RegisterHeroVoiceVariant(QuestsGeneric_HERO_LINE_ASK_TO_BUY, VL_ZULKIS_GENERIC_TYPE, VL_ZULKIS_GENERIC_0027_TEXT, 27)
     call QuestsGeneric_RegisterHeroVoiceVariant(QuestsGeneric_HERO_LINE_ASK_TO_BUY, VL_ZULKIS_GENERIC_TYPE, VL_ZULKIS_GENERIC_0028_TEXT, 28)
+    call QuestsGeneric_RegisterHeroVoiceVariant(QuestsGeneric_HERO_LINE_COMPLETE_ESCORT, VL_ZULKIS_GENERIC_TYPE, VL_ZULKIS_GENERIC_0029_TEXT, 29)
+    call QuestsGeneric_RegisterHeroVoiceVariant(QuestsGeneric_HERO_LINE_COMPLETE_ESCORT, VL_ZULKIS_GENERIC_TYPE, VL_ZULKIS_GENERIC_0030_TEXT, 30)
+    call QuestsGeneric_RegisterHeroVoiceVariant(QuestsGeneric_HERO_LINE_COMPLETE_ESCORT, VL_ZULKIS_GENERIC_TYPE, VL_ZULKIS_GENERIC_0031_TEXT, 31)
+    call QuestsGeneric_RegisterHeroVoiceVariant(QuestsGeneric_HERO_LINE_COMPLETE_ESCORT, VL_ZULKIS_GENERIC_TYPE, VL_ZULKIS_GENERIC_0032_TEXT, 32)
 endfunction
 
 private function Init takes nothing returns nothing
-    call ExSound_RegisterSequence(VL_ZULKIS_GENERIC_TYPE, 1, 28, "Pots\\Sound\\Voicelines\\Zulkis\\ZulkisGeneric\\")
+    call ExSound_RegisterSequence(VL_ZULKIS_GENERIC_TYPE, 1, 32, "Pots\\Sound\\Voicelines\\Zulkis\\ZulkisGeneric\\")
     call RegisterGenericQuestLines()
     call Voicelines_RegisterKey(VL_ZULKIS_FOLDER, VL_ZULKIS_0015_KEY)
     call Voicelines_RegisterKey(VL_ZULKIS_FOLDER, VL_ZULKIS_0016_KEY)
