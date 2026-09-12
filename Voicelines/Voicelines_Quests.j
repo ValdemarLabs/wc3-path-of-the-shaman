@@ -2,7 +2,7 @@
     VoicelinesQuests
 
     Author: Valdemar
-    Version: 4.3.0
+    Version: 4.4.0
 
     Description:
     Central source of truth for reusable and vendor quest dialogue, random
@@ -28,6 +28,7 @@ library VoicelinesQuests initializer Init requires QuestsGeneric, ExSound, Voice
         constant string VL_QUEST_HERO_COMPLETE_KILL = "The threat has been dealt with."
         constant string VL_QUEST_HERO_COMPLETE_TALK = "I spoke with the one you named."
         constant string VL_QUEST_HERO_COMPLETE_FETCH = "I brought what you asked for."
+        constant string VL_QUEST_HERO_COMPLETE_ESCORT = "You are safe. We reached the destination."
         constant string VL_QUEST_HERO_PROGRESS = "What remains to be done?"
         constant string VL_QUEST_GIVER_PROGRESS = "I am still waiting on "
         constant string VL_QUEST_HERO_REQUEST_SUPPLY = "I was sent to collect the supplies you are holding."
@@ -45,6 +46,11 @@ library VoicelinesQuests initializer Init requires QuestsGeneric, ExSound, Voice
         constant string VL_VENDORQUEST_TAUREN_0006 = "The trail breathes freely again. The next caravan will pass beneath a quieter sky."
         constant string VL_VENDORQUEST_TAUREN_0007 = "Shadowdancers stalk the long road ahead. Defeat eight before they learn our travelling rhythm."
         constant string VL_VENDORQUEST_TAUREN_0008 = "Their shadows have withdrawn. The road remembers the strength of your steps."
+        constant string VL_VENDORQUEST_TAUREN_0015 = "Shadowdancers drove my caravan from the open road. Walk with me to Koro Windpack's post, where the Horde can keep the route secure."
+        constant string VL_VENDORQUEST_TAUREN_0016 = "We have reached Koro's fires. My goods may travel again beneath an open sky."
+        constant string VL_VENDORQUEST_TAUREN_0017 = "Until I stand among friendly caravans, I will not unpack my stock or pretend this roadside is safe."
+        constant string VL_VENDORQUEST_TAUREN_0018 = "You guarded more than one merchant. Every traveler who follows this road will share the shelter you gave me."
+        constant string VL_VENDORQUEST_TAUREN_0019 = "Keep a steady pace. The earth is firm here, but the shadows beside the trail are restless."
 
         // Bonecrusher Ogre quest dialogue.
         constant string VL_VENDORQUEST_BONECRUSHER_0001 = "Stalkers scratch weapon carts. Break seven stalkers. Carts stop scratching."
@@ -123,8 +129,8 @@ library VoicelinesQuests initializer Init requires QuestsGeneric, ExSound, Voice
         constant string VL_VENDORQUEST_HUMAN_0010 = "Perfect timing. These can go straight onto the hooks."
         constant string VL_VENDORQUEST_HUMAN_0011 = "Seven bundles of fuel should keep the lower galleries lit through the shift."
         constant string VL_VENDORQUEST_HUMAN_0012 = "Dry and tightly packed. Nobody gets lost in the dark today."
-        constant string VL_VENDORQUEST_HUMAN_0013 = "Elias has today's travelling manifest. Bring the sealed copy back to me."
-        constant string VL_VENDORQUEST_HUMAN_0014 = "The figures match our ledger. That is rarer than it ought to be."
+        constant string VL_VENDORQUEST_HUMAN_0013 = "Merrick has today's travelling manifest. Bring the sealed copy back to me."
+        constant string VL_VENDORQUEST_HUMAN_0014 = "The figures match Riverbane's ledger. That is rarer than it ought to be."
         constant string VL_VENDORQUEST_HUMAN_0015 = "Nine dark trolls have turned my best road into their private toll gate. Clear it."
         constant string VL_VENDORQUEST_HUMAN_0016 = "The road is open. Trade will follow, and trouble will follow trade."
         constant string VL_VENDORQUEST_HUMAN_0017 = "I need eight fresh herbs before their morning potency fades."
@@ -139,6 +145,11 @@ library VoicelinesQuests initializer Init requires QuestsGeneric, ExSound, Voice
         constant string VL_VENDORQUEST_HUMAN_0026 = "The harbor cooks will speak of this catch long after the platters are empty."
         constant string VL_VENDORQUEST_HUMAN_0027 = "A safe road is a promise renewed by every traveler who reaches home."
         constant string VL_VENDORQUEST_HUMAN_0028 = "Trade returns first, then families. You have given both a reason to trust this road."
+        constant string VL_VENDORQUEST_HUMAN_0038 = "The last raid scattered my escort and left Riverbane's field ledgers in my hands. Get me to Garrick Holt's forge before another patrol finds this road."
+        constant string VL_VENDORQUEST_HUMAN_0039 = "Garrick's forge at last. Riverbane can account for its missing stores, and I can reopen the quartermaster's counter."
+        constant string VL_VENDORQUEST_HUMAN_0040 = "I will not sell the watch's reserves from an exposed roadside. First we reach Riverbane, then the counter opens."
+        constant string VL_VENDORQUEST_HUMAN_0041 = "You brought both quartermaster and ledger home. The next patrol leaves properly supplied because of you."
+        constant string VL_VENDORQUEST_HUMAN_0042 = "Stay near. These ledgers name every shortage in Riverbane, and thieves know paper can be worth more than coin."
 
         // Orc quest dialogue.
         constant string VL_VENDORQUEST_ORC_0001 = "A sharp blade starts with honest ore. Bring me five pieces before the forge cools."
@@ -195,6 +206,11 @@ library VoicelinesQuests initializer Init requires QuestsGeneric, ExSound, Voice
         constant string VL_VENDORQUEST_SATYR_0016 = "You have shown admirable restraint by returning every crystal. Almost suspicious restraint."
         constant string VL_VENDORQUEST_SATYR_0017 = "That old path carries my most delicate cargo. I cannot have ironjaws learning the taste of caravan guards."
         constant string VL_VENDORQUEST_SATYR_0018 = "The old path belongs to quiet wheels again. My clients need never know how close their cargo came to a basilisk's gut."
+        constant string VL_VENDORQUEST_SATYR_0028 = "My brews draw too many hungry eyes to this ruined path. Escort me to Velyssra's enclave before some brute mistakes medicine for easy plunder."
+        constant string VL_VENDORQUEST_SATYR_0029 = "Velyssra's wards are close enough. My bottles, my secrets, and regrettably I have all arrived intact."
+        constant string VL_VENDORQUEST_SATYR_0030 = "I can still sell what you need along the way. Do try not to jostle the volatile shelf."
+        constant string VL_VENDORQUEST_SATYR_0031 = "You displayed useful restraint. Most escorts stare at the bottles or the horns; you kept your eyes on the road."
+        constant string VL_VENDORQUEST_SATYR_0032 = "If something behind us hisses, keep walking. If the crate hisses, tell me immediately."
     endglobals
 
     private function RegisterDailySet takes string voiceType, integer objectiveType, integer firstLine, string lineA, string lineB, string lineC returns nothing
@@ -304,10 +320,13 @@ library VoicelinesQuests initializer Init requires QuestsGeneric, ExSound, Voice
         call QuestsGeneric_RegisterProgressVariant(QuestsGeneric_OBJECTIVE_PURCHASE, "The required goods have not been purchased yet.", QuestsGeneric_FormatSoundKey(VL_GENERIC_QUEST_TYPE, 10))
         call QuestsGeneric_RegisterProgressVariant(QuestsGeneric_OBJECTIVE_PURCHASE, "Return after you have bought the full order.", QuestsGeneric_FormatSoundKey(VL_GENERIC_QUEST_TYPE, 11))
         call QuestsGeneric_RegisterProgressVariant(QuestsGeneric_OBJECTIVE_PURCHASE, "The merchant still has what this commission needs.", QuestsGeneric_FormatSoundKey(VL_GENERIC_QUEST_TYPE, 12))
+        call QuestsGeneric_RegisterProgressVariant(QuestsGeneric_OBJECTIVE_ESCORT, "We have not reached safety yet.", QuestsGeneric_FormatSoundKey(VL_GENERIC_QUEST_TYPE, 13))
+        call QuestsGeneric_RegisterProgressVariant(QuestsGeneric_OBJECTIVE_ESCORT, "Stay close and keep us moving toward the destination.", QuestsGeneric_FormatSoundKey(VL_GENERIC_QUEST_TYPE, 14))
+        call QuestsGeneric_RegisterProgressVariant(QuestsGeneric_OBJECTIVE_ESCORT, "The road is not behind us yet.", QuestsGeneric_FormatSoundKey(VL_GENERIC_QUEST_TYPE, 15))
     endfunction
 
     private function Init takes nothing returns nothing
-        call QuestsGeneric_ConfigureSharedDialogue(VL_QUEST_HERO_ACCEPT, VL_QUEST_HERO_COMPLETE_KILL, VL_QUEST_HERO_COMPLETE_FETCH, VL_QUEST_HERO_COMPLETE_TALK, VL_QUEST_HERO_PROGRESS, VL_QUEST_GIVER_PROGRESS, VL_NAZGREK_GENERIC_TYPE, VL_ZULKIS_GENERIC_TYPE)
+        call QuestsGeneric_ConfigureSharedDialogue(VL_QUEST_HERO_ACCEPT, VL_QUEST_HERO_COMPLETE_KILL, VL_QUEST_HERO_COMPLETE_FETCH, VL_QUEST_HERO_COMPLETE_TALK, VL_QUEST_HERO_COMPLETE_ESCORT, VL_QUEST_HERO_PROGRESS, VL_QUEST_GIVER_PROGRESS, VL_NAZGREK_GENERIC_TYPE, VL_ZULKIS_GENERIC_TYPE)
         call ExSound_RegisterSequence(VL_GENERIC_ORC_MALE_1_TYPE, 1001, 1043, "Pots\\Sound\\Voicelines\\GenericOrcMale1\\")
         call ExSound_RegisterSequence(VL_GENERIC_ORC_MALE_2_TYPE, 1001, 1043, "Pots\\Sound\\Voicelines\\GenericOrcMale2\\")
         call ExSound_RegisterSequence(VL_GENERIC_ORC_MALE_3_TYPE, 1001, 1043, "Pots\\Sound\\Voicelines\\GenericOrcMale3\\")
@@ -318,9 +337,9 @@ library VoicelinesQuests initializer Init requires QuestsGeneric, ExSound, Voice
         call ExSound_RegisterSequence(VL_GENERIC_ORC_MALE_8_TYPE, 1001, 1043, "Pots\\Sound\\Voicelines\\GenericOrcMale8\\")
         call ExSound_RegisterSequence(VL_GENERIC_ORC_MALE_9_TYPE, 1001, 1043, "Pots\\Sound\\Voicelines\\GenericOrcMale9\\")
         call ExSound_RegisterSequence(VL_GENERIC_SATYR_MALE_1_TYPE, 1001, 1027, "Pots\\Sound\\Voicelines\\GenericSatyrMale1\\")
-        call ExSound_RegisterSequence(VL_GENERIC_SATYR_FEMALE_1_TYPE, 1001, 1027, "Pots\\Sound\\Voicelines\\GenericSatyrFemale1\\")
+        call ExSound_RegisterSequence(VL_GENERIC_SATYR_FEMALE_1_TYPE, 1001, 1032, "Pots\\Sound\\Voicelines\\GenericSatyrFemale1\\")
         call ExSound_RegisterSequence(VL_GENERIC_HUMAN_MALE_1_TYPE, 1001, 1037, "Pots\\Sound\\Voicelines\\GenericHumanMale1\\")
-        call ExSound_RegisterSequence(VL_GENERIC_HUMAN_MALE_2_TYPE, 1001, 1037, "Pots\\Sound\\Voicelines\\GenericHumanMale2\\")
+        call ExSound_RegisterSequence(VL_GENERIC_HUMAN_MALE_2_TYPE, 1001, 1042, "Pots\\Sound\\Voicelines\\GenericHumanMale2\\")
         call ExSound_RegisterSequence(VL_GENERIC_GOBLIN_MALE_1_TYPE, 1001, 1035, "Pots\\Sound\\Voicelines\\GenericGoblinMale1\\")
         call ExSound_RegisterSequence(VL_GENERIC_GOBLIN_MALE_2_TYPE, 1001, 1035, "Pots\\Sound\\Voicelines\\GenericGoblinMale2\\")
         call ExSound_RegisterSequence(VL_GENERIC_GOBLIN_MALE_3_TYPE, 1001, 1035, "Pots\\Sound\\Voicelines\\GenericGoblinMale3\\")
@@ -330,10 +349,10 @@ library VoicelinesQuests initializer Init requires QuestsGeneric, ExSound, Voice
         call ExSound_RegisterSequence(VL_GENERIC_ELARINDOR_MALE_2_TYPE, 1001, 1025, "Pots\\Sound\\Voicelines\\GenericElarindorMale2\\")
         call ExSound_RegisterSequence(VL_GENERIC_ELARINDOR_FEMALE_1_TYPE, 1001, 1025, "Pots\\Sound\\Voicelines\\GenericElarindorFemale1\\")
         call ExSound_RegisterSequence(VL_GENERIC_ELARINDOR_FEMALE_2_TYPE, 1001, 1025, "Pots\\Sound\\Voicelines\\GenericElarindorFemale2\\")
-        call ExSound_RegisterSequence(VL_GENERIC_TAUREN_MALE_1_TYPE, 1001, 1014, "Pots\\Sound\\Voicelines\\GenericTaurenMale1\\")
+        call ExSound_RegisterSequence(VL_GENERIC_TAUREN_MALE_1_TYPE, 1001, 1019, "Pots\\Sound\\Voicelines\\GenericTaurenMale1\\")
         call ExSound_RegisterSequence(VL_GENERIC_TAUREN_MALE_2_TYPE, 1001, 1014, "Pots\\Sound\\Voicelines\\GenericTaurenMale2\\")
         call ExSound_RegisterSequence(VL_GENERIC_TAUREN_MALE_3_TYPE, 1001, 1014, "Pots\\Sound\\Voicelines\\GenericTaurenMale3\\")
-        call ExSound_RegisterSequence(VL_GENERIC_QUEST_TYPE, 1, 12, "Pots\\Sound\\Voicelines\\GenericQuest\\")
+        call ExSound_RegisterSequence(VL_GENERIC_QUEST_TYPE, 1, 15, "Pots\\Sound\\Voicelines\\GenericQuest\\")
         call RegisterDailyDialogue()
         call RegisterProgressDialogue()
     endfunction
