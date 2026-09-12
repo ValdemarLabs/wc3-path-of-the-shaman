@@ -2,7 +2,7 @@
         VoicelinesNazgrek
 
         Author: Valdemar
-    Version: 1.3.0
+    Version: 1.4.0
 
         Description:
         Speaker-owned story and reusable generic quest voicelines for Nazgrek.
@@ -127,6 +127,48 @@
         constant string VL_NAZGREK_GENERIC_0040_TEXT = "I hear the bottles, Selyth. We should keep moving."
         constant string VL_NAZGREK_GENERIC_0041_KEY = "NazgrekGeneric_0041"
         constant string VL_NAZGREK_GENERIC_0041_TEXT = "Stay close. I would rather not test what your cargo does when dropped."
+        constant string VL_NAZGREK_GENERIC_0042_KEY = "NazgrekGeneric_0042"
+        constant string VL_NAZGREK_GENERIC_0042_TEXT = "Keep the commission wrapped, Kargun. Ghorak's post is not far."
+        constant string VL_NAZGREK_GENERIC_0043_KEY = "NazgrekGeneric_0043"
+        constant string VL_NAZGREK_GENERIC_0043_TEXT = "Walk behind my shoulder. No roadside thief touches that blade."
+        constant string VL_NAZGREK_GENERIC_0044_KEY = "NazgrekGeneric_0044"
+        constant string VL_NAZGREK_GENERIC_0044_TEXT = "The arena can wait a few breaths. We deliver the steel safely."
+        constant string VL_NAZGREK_GENERIC_0045_KEY = "NazgrekGeneric_0045"
+        constant string VL_NAZGREK_GENERIC_0045_TEXT = "We still owe the road two crossings, Rukgar. Keep close."
+        constant string VL_NAZGREK_GENERIC_0046_KEY = "NazgrekGeneric_0046"
+        constant string VL_NAZGREK_GENERIC_0046_TEXT = "Hurgan's fire is only the midpoint. I will guard your return as well."
+        constant string VL_NAZGREK_GENERIC_0047_KEY = "NazgrekGeneric_0047"
+        constant string VL_NAZGREK_GENERIC_0047_TEXT = "Hold the provision ledger tight. Gnolls can smell a loaded caravan."
+        constant string VL_NAZGREK_GENERIC_0048_KEY = "NazgrekGeneric_0048"
+        constant string VL_NAZGREK_GENERIC_0048_TEXT = "Nargash's stores come first, Gorthak. Then I bring you back to command."
+        constant string VL_NAZGREK_GENERIC_0049_KEY = "NazgrekGeneric_0049"
+        constant string VL_NAZGREK_GENERIC_0049_TEXT = "Watch the jungle edge. Raiders will know a quartermaster on sight."
+        constant string VL_NAZGREK_GENERIC_0050_KEY = "NazgrekGeneric_0050"
+        constant string VL_NAZGREK_GENERIC_0050_TEXT = "Save your strength for the return road. This inspection has two legs."
+        constant string VL_NAZGREK_GENERIC_0051_KEY = "NazgrekGeneric_0051"
+        constant string VL_NAZGREK_GENERIC_0051_TEXT = "Keep your samples packed, Giznak. Kargun will judge them at the forge."
+        constant string VL_NAZGREK_GENERIC_0052_KEY = "NazgrekGeneric_0052"
+        constant string VL_NAZGREK_GENERIC_0052_TEXT = "Your guarantees mean little if the blades never reach inspection. Stay close."
+        constant string VL_NAZGREK_GENERIC_0053_KEY = "NazgrekGeneric_0053"
+        constant string VL_NAZGREK_GENERIC_0053_TEXT = "I will guard the steel. You can argue its price when we arrive."
+        constant string VL_NAZGREK_GENERIC_0054_KEY = "NazgrekGeneric_0054"
+        constant string VL_NAZGREK_GENERIC_0054_TEXT = "Settle your contract quickly, Rixit. The shadows will follow us home."
+        constant string VL_NAZGREK_GENERIC_0055_KEY = "NazgrekGeneric_0055"
+        constant string VL_NAZGREK_GENERIC_0055_TEXT = "I am guarding you, not your fine print. Keep moving."
+        constant string VL_NAZGREK_GENERIC_0056_KEY = "NazgrekGeneric_0056"
+        constant string VL_NAZGREK_GENERIC_0056_TEXT = "Snikka's counter is halfway, not safety. We return together."
+        constant string VL_NAZGREK_GENERIC_0057_KEY = "NazgrekGeneric_0057"
+        constant string VL_NAZGREK_GENERIC_0057_TEXT = "Grumbar still waits, Mugrok. Keep that measuring arm behind me."
+        constant string VL_NAZGREK_GENERIC_0058_KEY = "NazgrekGeneric_0058"
+        constant string VL_NAZGREK_GENERIC_0058_TEXT = "The fitting is only half the task. I will see you and the armor home."
+        constant string VL_NAZGREK_GENERIC_0059_KEY = "NazgrekGeneric_0059"
+        constant string VL_NAZGREK_GENERIC_0059_TEXT = "Stay close, Mugrok. Strength does not stop an arrow you never see."
+        constant string VL_NAZGREK_GENERIC_0060_KEY = "NazgrekGeneric_0060"
+        constant string VL_NAZGREK_GENERIC_0060_TEXT = "Durnik's forge lies ahead, Torren. Keep your tools balanced."
+        constant string VL_NAZGREK_GENERIC_0061_KEY = "NazgrekGeneric_0061"
+        constant string VL_NAZGREK_GENERIC_0061_TEXT = "A cracked furnace is no place to remain. I will get you under sound stone."
+        constant string VL_NAZGREK_GENERIC_0062_KEY = "NazgrekGeneric_0062"
+        constant string VL_NAZGREK_GENERIC_0062_TEXT = "Mind the slope, Torren. We lose neither smith nor anvil today."
 
         // Legacy Excel draft/reference rows not yet wired to active code.
 
@@ -793,7 +835,7 @@
     endfunction
 
     private function Init takes nothing returns nothing
-        call ExSound_RegisterSequence(VL_NAZGREK_GENERIC_TYPE, 1, 41, "Pots\\Sound\\Voicelines\\Nazgrek\\NazgrekGeneric\\")
+        call ExSound_RegisterSequence(VL_NAZGREK_GENERIC_TYPE, 1, 62, "Pots\\Sound\\Voicelines\\Nazgrek\\NazgrekGeneric\\")
         call RegisterGenericQuestLines()
         call Voicelines_RegisterKey(VL_NAZGREK_FOLDER, VL_NAZGREK_0331_KEY)
         call Voicelines_RegisterKey(VL_NAZGREK_FOLDER, VL_NAZGREK_0332_KEY)
