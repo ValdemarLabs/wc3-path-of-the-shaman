@@ -2,7 +2,7 @@
     QuestsVendor
 
     Author: Valdemar
-    Version: 1.5.0
+    Version: 1.6.0
 
     Description:
     Shop-vendor adapter for QuestsGeneric. Generic giver quests are delegated
@@ -15,7 +15,7 @@
 
     How to install:
     Import after QuestsGeneric, VoicelinesQuests, Shop, VendorLines,
-    FollowSystem, Companions, AI, and Table. VendorDialogs may require this
+    FollowSystem, UnitSpawn, Companions, AI, and Table. VendorDialogs may require this
     library and register discovered vendors.
 
     API:
@@ -25,6 +25,8 @@
     - QuestsVendor_SetSupplyRequiresPurchase overrides stock detection.
     - QuestsVendor_SetEscortTradeLocked gates Trade until escort completion.
     - QuestsVendor_SetEscortTravelDialogue adds route and companion chatter.
+    - QuestsVendor_SetEscortRoundTrip adds a return leg to the start point.
+    - QuestsVendor_RegisterEscortAmbush adds a route-progress enemy attack.
     - QuestsVendor_RegisterEscortProgressVariant adds giver progress dialogue.
     - QuestsVendor_RegisterEscortHeroProgressVariant adds hero replies.
     - QuestsVendor_SetFactionReward/SetExtendedDialogue configure definitions.
@@ -36,14 +38,20 @@
     - QuestsVendor_IsTradeUnlocked/GetTradeLockText expose escort trade gates.
 
 **/
-library QuestsVendor initializer Init requires QuestsGeneric, VoicelinesQuests, QuestGiver, QuestMaster, DialogSystem, DialogInteraction, HeroItemCheck, VendorLines, Shop, FollowSystem, Companions, AI, Table
+library QuestsVendor initializer Init requires QuestsGeneric, VoicelinesQuests, QuestGiver, QuestMaster, DialogSystem, DialogInteraction, HeroItemCheck, VendorLines, Shop, FollowSystem, UnitSpawn, Companions, AI, Table
     globals
         private constant integer QV_MAX_SUPPLY_DEFINITIONS = 32
         private constant integer QV_MAX_ESCORT_DEFINITIONS = 16
+        private constant integer QV_MAX_ESCORT_AMBUSHES = 32
+        private constant integer QV_AMBUSH_KEY_STRIDE = 64
         private constant integer QV_TARGET_ACTION_BASE = 20000
         private constant integer QV_PENDING_HANDOFF = 1
         private constant real QV_ESCORT_DESTINATION_RADIUS = 425.00
         private constant real QV_ESCORT_FOLLOW_MAX_DISTANCE = 2400.00
+        private constant real QV_ESCORT_CHECK_INTERVAL = 0.50
+
+        public constant integer ESCORT_LEG_OUTBOUND = 1
+        public constant integer ESCORT_LEG_RETURN = 2
 
         private integer QV_SupplyCount = 0
         private integer array QV_SupplyDefinitionId
@@ -66,6 +74,10 @@ library QuestsVendor initializer Init requires QuestsGeneric, VoicelinesQuests, 
         private string array QV_EscortTravelText
         private integer array QV_EscortTravelVoiceIndex
         private string array QV_EscortCompanionReply
+        private boolean array QV_EscortRoundTrip
+        private string array QV_EscortReturnName
+        private string array QV_EscortReturnText
+        private integer array QV_EscortReturnVoiceIndex
         private Table QV_EscortIndexByDefinition = 0
         private Table QV_EscortTrackerRegistered = 0
         private Table QV_EscortDestinationRect = 0
@@ -75,6 +87,21 @@ library QuestsVendor initializer Init requires QuestsGeneric, VoicelinesQuests, 
         private Table QV_EscortOriginX = 0
         private Table QV_EscortOriginY = 0
         private Table QV_EscortOriginFacing = 0
+        private Table QV_EscortLeg = 0
+        private Table QV_EscortLegDistance = 0
+
+        private integer QV_AmbushCount = 0
+        private integer array QV_AmbushDefinitionId
+        private integer array QV_AmbushLeg
+        private real array QV_AmbushProgress
+        private integer array QV_AmbushEnemyUnitType
+        private integer array QV_AmbushEnemyCount
+        private real array QV_AmbushSpawnDistance
+        private string array QV_AmbushAlertText
+        private integer array QV_AmbushAlertVoiceIndex
+        private Table QV_AmbushTriggered = 0
+        private Table QV_AmbushWave = 0
+        private unit QV_AmbushOrderTarget = null
 
         private integer QV_PendingQuestId = 0
         private integer QV_PendingSupplyIndex = 0
@@ -170,6 +197,47 @@ library QuestsVendor initializer Init requires QuestsGeneric, VoicelinesQuests, 
         set QV_EscortTravelText[escortIndex] = vendorText
         set QV_EscortTravelVoiceIndex[escortIndex] = vendorVoiceIndex
         set QV_EscortCompanionReply[escortIndex] = companionReply
+    endfunction
+
+    public function SetEscortRoundTrip takes integer definitionId, string returnName, string returnText, integer returnVoiceIndex returns nothing
+        local integer escortIndex = QV_EscortIndexByDefinition.integer[definitionId]
+
+        if escortIndex <= 0 then
+            return
+        endif
+        set QV_EscortRoundTrip[escortIndex] = true
+        set QV_EscortReturnName[escortIndex] = returnName
+        set QV_EscortReturnText[escortIndex] = returnText
+        set QV_EscortReturnVoiceIndex[escortIndex] = returnVoiceIndex
+    endfunction
+
+    public function RegisterEscortAmbush takes integer definitionId, integer leg, real progress, integer enemyUnitTypeId, integer enemyCount, real spawnDistance, string alertText, integer alertVoiceIndex returns nothing
+        if QV_EscortIndexByDefinition.integer[definitionId] <= 0 or QV_AmbushCount >= QV_MAX_ESCORT_AMBUSHES or enemyUnitTypeId == 0 or enemyCount <= 0 then
+            return
+        endif
+        if leg != ESCORT_LEG_RETURN then
+            set leg = ESCORT_LEG_OUTBOUND
+        endif
+        if leg == ESCORT_LEG_RETURN and not QV_EscortRoundTrip[QV_EscortIndexByDefinition.integer[definitionId]] then
+            return
+        endif
+        if progress < 0.10 then
+            set progress = 0.10
+        elseif progress > 0.90 then
+            set progress = 0.90
+        endif
+        if spawnDistance < 250.00 then
+            set spawnDistance = 250.00
+        endif
+        set QV_AmbushCount = QV_AmbushCount + 1
+        set QV_AmbushDefinitionId[QV_AmbushCount] = definitionId
+        set QV_AmbushLeg[QV_AmbushCount] = leg
+        set QV_AmbushProgress[QV_AmbushCount] = progress
+        set QV_AmbushEnemyUnitType[QV_AmbushCount] = enemyUnitTypeId
+        set QV_AmbushEnemyCount[QV_AmbushCount] = enemyCount
+        set QV_AmbushSpawnDistance[QV_AmbushCount] = spawnDistance
+        set QV_AmbushAlertText[QV_AmbushCount] = alertText
+        set QV_AmbushAlertVoiceIndex[QV_AmbushCount] = alertVoiceIndex
     endfunction
 
     public function RegisterEscortProgressVariant takes integer definitionId, string text, integer voiceIndex returns nothing
@@ -313,6 +381,220 @@ library QuestsVendor initializer Init requires QuestsGeneric, VoicelinesQuests, 
         set vendor = null
     endfunction
 
+    private function QV_GetAmbushKey takes integer questId, integer ambushIndex returns integer
+        return questId*QV_AMBUSH_KEY_STRIDE + ambushIndex
+    endfunction
+
+    private function QV_OrderAmbushUnit takes nothing returns nothing
+        local unit attacker = GetEnumUnit()
+
+        if attacker != null and QV_AmbushOrderTarget != null then
+            call IssueTargetOrder(attacker, "attack", QV_AmbushOrderTarget)
+        endif
+        set attacker = null
+    endfunction
+
+    private function QV_CleanupEscortAmbushes takes integer questId, integer definitionId returns nothing
+        local integer ambushIndex = 1
+        local integer ambushKey
+        local Wave wave
+
+        loop
+            exitwhen ambushIndex > QV_AmbushCount
+            if QV_AmbushDefinitionId[ambushIndex] == definitionId then
+                set ambushKey = QV_GetAmbushKey(questId, ambushIndex)
+                set wave = QV_AmbushWave.integer[ambushKey]
+                if wave != 0 then
+                    call wave.destroy()
+                endif
+                call QV_AmbushWave.integer.remove(ambushKey)
+                call QV_AmbushTriggered.boolean.remove(ambushKey)
+            endif
+            set ambushIndex = ambushIndex + 1
+        endloop
+    endfunction
+
+    private function QV_ClearEscortLeg takes integer questId returns nothing
+        call QV_EscortLeg.integer.remove(questId)
+        call QV_EscortLegDistance.real.remove(questId)
+    endfunction
+
+    private function QV_PrepareEscortLeg takes integer questId, integer escortIndex, unit vendor, integer leg returns nothing
+        local real targetX
+        local real targetY
+        local real dx
+        local real dy
+
+        if questId <= 0 or escortIndex <= 0 or vendor == null then
+            set vendor = null
+            return
+        endif
+        if leg == ESCORT_LEG_RETURN then
+            set targetX = QV_EscortOriginX.real[questId]
+            set targetY = QV_EscortOriginY.real[questId]
+        elseif QV_EscortDestination[escortIndex] != null then
+            set targetX = GetUnitX(QV_EscortDestination[escortIndex])
+            set targetY = GetUnitY(QV_EscortDestination[escortIndex])
+        else
+            set vendor = null
+            return
+        endif
+        set QV_EscortLeg.integer[questId] = leg
+        set dx = targetX - GetUnitX(vendor)
+        set dy = targetY - GetUnitY(vendor)
+        set QV_EscortLegDistance.real[questId] = SquareRoot(dx*dx + dy*dy)
+        set vendor = null
+    endfunction
+
+    private function QV_GetEscortLegProgress takes integer questId, integer escortIndex, unit vendor returns real
+        local integer leg = QV_EscortLeg.integer[questId]
+        local real routeDistance = QV_EscortLegDistance.real[questId]
+        local real targetX
+        local real targetY
+        local real dx
+        local real dy
+        local real progress
+
+        if routeDistance <= 0.00 or vendor == null then
+            set vendor = null
+            return 0.00
+        endif
+        if leg == ESCORT_LEG_RETURN then
+            set targetX = QV_EscortOriginX.real[questId]
+            set targetY = QV_EscortOriginY.real[questId]
+        elseif QV_EscortDestination[escortIndex] != null then
+            set targetX = GetUnitX(QV_EscortDestination[escortIndex])
+            set targetY = GetUnitY(QV_EscortDestination[escortIndex])
+        else
+            set vendor = null
+            return 0.00
+        endif
+        set dx = targetX - GetUnitX(vendor)
+        set dy = targetY - GetUnitY(vendor)
+        set progress = 1.00 - SquareRoot(dx*dx + dy*dy)/routeDistance
+        set vendor = null
+        if progress < 0.00 then
+            return 0.00
+        elseif progress > 1.00 then
+            return 1.00
+        endif
+        return progress
+    endfunction
+
+    private function QV_SpawnEscortAmbush takes integer questId, integer escortIndex, integer ambushIndex, unit vendor returns nothing
+        local integer ambushKey = QV_GetAmbushKey(questId, ambushIndex)
+        local real angle = GetRandomReal(0.00, 360.00)*bj_DEGTORAD
+        local real centerX = GetUnitX(vendor) + QV_AmbushSpawnDistance[ambushIndex]*Cos(angle)
+        local real centerY = GetUnitY(vendor) + QV_AmbushSpawnDistance[ambushIndex]*Sin(angle)
+        local string soundKey = ""
+        local Wave wave = Wave.create()
+
+        set QV_AmbushTriggered.boolean[ambushKey] = true
+        call UnitSpawn_SpawnUnitRandomlyForWaveEx(wave, Player(PLAYER_NEUTRAL_AGGRESSIVE), QV_AmbushEnemyUnitType[ambushIndex], centerX, centerY, 140.00, QV_AmbushEnemyCount[ambushIndex], "", 0.00, "", 0.00, false, null, null)
+        set QV_AmbushWave.integer[ambushKey] = wave
+        set QV_AmbushOrderTarget = vendor
+        call ForGroup(wave.units, function QV_OrderAmbushUnit)
+        set QV_AmbushOrderTarget = null
+        if QV_AmbushAlertVoiceIndex[ambushIndex] > 0 then
+            set soundKey = QuestsGeneric_FormatSoundKey(QV_EscortVoiceType[escortIndex], QV_AmbushAlertVoiceIndex[ambushIndex])
+        endif
+        if QV_AmbushAlertText[ambushIndex] != null and QV_AmbushAlertText[ambushIndex] != "" then
+            call DialogSystem_QueueFieldLine(vendor, VendorLines_GetVendorSpeakerName(vendor), soundKey, QV_AmbushAlertText[ambushIndex])
+        endif
+        set vendor = null
+    endfunction
+
+    private function QV_CheckEscortAmbushes takes integer questId, integer definitionId, integer escortIndex, unit vendor returns nothing
+        local integer ambushIndex = 1
+        local integer leg = QV_EscortLeg.integer[questId]
+        local integer ambushKey
+        local real progress = QV_GetEscortLegProgress(questId, escortIndex, vendor)
+
+        loop
+            exitwhen ambushIndex > QV_AmbushCount
+            if QV_AmbushDefinitionId[ambushIndex] == definitionId and QV_AmbushLeg[ambushIndex] == leg then
+                set ambushKey = QV_GetAmbushKey(questId, ambushIndex)
+                if not QV_AmbushTriggered.boolean[ambushKey] and progress >= QV_AmbushProgress[ambushIndex] then
+                    call QV_SpawnEscortAmbush(questId, escortIndex, ambushIndex, vendor)
+                endif
+            endif
+            set ambushIndex = ambushIndex + 1
+        endloop
+        set vendor = null
+    endfunction
+
+    private function QV_BeginEscortReturnLeg takes integer questId, integer escortIndex, unit vendor returns nothing
+        local string soundKey = ""
+
+        call QV_PrepareEscortLeg(questId, escortIndex, vendor, ESCORT_LEG_RETURN)
+        call QuestGiver_UpdateRequirementText(questId, 1, "Escort " + VendorLines_GetVendorSpeakerName(vendor) + " back to " + QV_EscortReturnName[escortIndex])
+        call QuestGiver_SetObjectiveTarget(questId, 1, null)
+        if QV_EscortReturnVoiceIndex[escortIndex] > 0 then
+            set soundKey = QuestsGeneric_FormatSoundKey(QV_EscortVoiceType[escortIndex], QV_EscortReturnVoiceIndex[escortIndex])
+        endif
+        if QV_EscortReturnText[escortIndex] != null and QV_EscortReturnText[escortIndex] != "" then
+            call DialogSystem_QueueFieldLine(vendor, VendorLines_GetVendorSpeakerName(vendor), soundKey, QV_EscortReturnText[escortIndex])
+        endif
+        set vendor = null
+    endfunction
+
+    private function QV_CheckRoundTripProgress takes integer questId, integer escortIndex, unit vendor returns nothing
+        local integer leg = QV_EscortLeg.integer[questId]
+        local real dx
+        local real dy
+        local QuestData q
+
+        if not QV_EscortRoundTrip[escortIndex] or vendor == null then
+            set vendor = null
+            return
+        endif
+        if leg == ESCORT_LEG_OUTBOUND and QV_EscortDestination[escortIndex] != null then
+            set dx = GetUnitX(QV_EscortDestination[escortIndex]) - GetUnitX(vendor)
+            set dy = GetUnitY(QV_EscortDestination[escortIndex]) - GetUnitY(vendor)
+            if dx*dx + dy*dy <= QV_ESCORT_DESTINATION_RADIUS*QV_ESCORT_DESTINATION_RADIUS then
+                call QV_BeginEscortReturnLeg(questId, escortIndex, vendor)
+            endif
+        elseif leg == ESCORT_LEG_RETURN then
+            set dx = QV_EscortOriginX.real[questId] - GetUnitX(vendor)
+            set dy = QV_EscortOriginY.real[questId] - GetUnitY(vendor)
+            if dx*dx + dy*dy <= QV_ESCORT_DESTINATION_RADIUS*QV_ESCORT_DESTINATION_RADIUS then
+                set q = QuestMaster_GetById(questId)
+                if q != 0 then
+                    call QuestGiver_SetRequirementCompleted(questId, 1, true)
+                    call QuestGiver_SetStateByNameAndGiver(q.name, q.giver, QUEST_STATE_READY_TURNIN)
+                    call q.addReturnRequirement()
+                endif
+            endif
+        endif
+        set vendor = null
+    endfunction
+
+    private function QV_OnEscortCheck takes nothing returns nothing
+        local integer index = 1
+        local integer questId
+        local integer definitionId
+        local integer escortIndex
+        local QuestData q
+
+        loop
+            exitwhen index > QuestsGeneric_GetQuestCount()
+            set questId = QuestsGeneric_GetQuestIdByIndex(index)
+            set definitionId = QuestsGeneric_GetDefinitionForQuest(questId)
+            set escortIndex = QV_EscortIndexByDefinition.integer[definitionId]
+            if escortIndex > 0 then
+                set q = QuestMaster_GetById(questId)
+                if q != 0 and q.active and q.state == QUEST_STATE_IN_PROGRESS and DialogInteraction_IsUnitAlive(q.giver) then
+                    if not QV_EscortLeg.integer.has(questId) then
+                        call QV_PrepareEscortLeg(questId, escortIndex, q.giver, ESCORT_LEG_OUTBOUND)
+                    endif
+                    call QV_CheckEscortAmbushes(questId, definitionId, escortIndex, q.giver)
+                    call QV_CheckRoundTripProgress(questId, escortIndex, q.giver)
+                endif
+            endif
+            set index = index + 1
+        endloop
+    endfunction
+
     private function QV_StartEscort takes integer questId, integer escortIndex, unit vendor, unit hero returns nothing
         local QuestData q = QuestMaster_GetById(questId)
 
@@ -322,6 +604,7 @@ library QuestsVendor initializer Init requires QuestsGeneric, VoicelinesQuests, 
             return
         endif
         call QV_RecordEscortOrigin(questId, vendor)
+        call QV_PrepareEscortLeg(questId, escortIndex, vendor, ESCORT_LEG_OUTBOUND)
         set QV_EscortLeader.unit[questId] = hero
         call QV_ProtectEscort(questId, vendor)
         call FollowSystem_SetFollow(vendor, hero, QV_ESCORT_FOLLOW_MAX_DISTANCE, true, 5.00, FOLLOW_STYLE_PASSIVE, true, true)
@@ -346,6 +629,7 @@ library QuestsVendor initializer Init requires QuestsGeneric, VoicelinesQuests, 
         local rect destinationRect
         local unit destination
         local real radius = QV_ESCORT_DESTINATION_RADIUS
+        local QuestData q
 
         if questId <= 0 or escortIndex <= 0 or vendor == null then
             set vendor = null
@@ -353,6 +637,21 @@ library QuestsVendor initializer Init requires QuestsGeneric, VoicelinesQuests, 
         endif
         set destination = QV_EscortDestination[escortIndex]
         if destination == null then
+            set vendor = null
+            set destination = null
+            return
+        endif
+        if QV_EscortRoundTrip[escortIndex] then
+            set q = QuestMaster_GetById(questId)
+            if q != 0 then
+                if QV_EscortLeg.integer[questId] == ESCORT_LEG_RETURN then
+                    call q.setRequirement(1, "Escort " + VendorLines_GetVendorSpeakerName(vendor) + " back to " + QV_EscortReturnName[escortIndex])
+                    call QuestGiver_SetObjectiveTarget(questId, 1, null)
+                else
+                    call q.setRequirement(1, "Escort " + VendorLines_GetVendorSpeakerName(vendor) + " to " + QV_EscortDestinationName[escortIndex] + " and back to " + QV_EscortReturnName[escortIndex])
+                    call QuestGiver_SetObjectiveTarget(questId, 1, destination)
+                endif
+            endif
             set vendor = null
             set destination = null
             return
@@ -570,6 +869,9 @@ library QuestsVendor initializer Init requires QuestsGeneric, VoicelinesQuests, 
                 set escortIndex = QV_EscortIndexByDefinition.integer[definitionId]
                 if escortIndex > 0 and QV_EscortTradeLocked[escortIndex] and not q.completed then
                     set vendor = null
+                    if QV_EscortRoundTrip[escortIndex] then
+                        return "Escort " + VendorLines_GetVendorSpeakerName(q.giver) + " to " + QV_EscortDestinationName[escortIndex] + " and back before trading."
+                    endif
                     return "Escort " + VendorLines_GetVendorSpeakerName(q.giver) + " to " + QV_EscortDestinationName[escortIndex] + " before trading."
                 endif
             endif
@@ -748,8 +1050,12 @@ library QuestsVendor initializer Init requires QuestsGeneric, VoicelinesQuests, 
             endif
         elseif q.state == QUEST_STATE_READY_TURNIN then
             call QV_StopEscort(questId, q.giver)
+            call QV_CleanupEscortAmbushes(questId, definitionId)
+            call QV_ClearEscortLeg(questId)
         else
             call QV_StopEscort(questId, q.giver)
+            call QV_CleanupEscortAmbushes(questId, definitionId)
+            call QV_ClearEscortLeg(questId)
             if q.state == QUEST_STATE_COMPLETE then
                 call QV_ClearEscortOrigin(questId)
             else
@@ -774,6 +1080,7 @@ library QuestsVendor initializer Init requires QuestsGeneric, VoicelinesQuests, 
 
     private function Init takes nothing returns nothing
         local timer initTimer
+        local timer escortTimer
 
         set QV_SupplyIndexByDefinition = Table.create()
         set QV_SupplyClaimed = Table.create()
@@ -786,10 +1093,17 @@ library QuestsVendor initializer Init requires QuestsGeneric, VoicelinesQuests, 
         set QV_EscortOriginX = Table.create()
         set QV_EscortOriginY = Table.create()
         set QV_EscortOriginFacing = Table.create()
+        set QV_EscortLeg = Table.create()
+        set QV_EscortLegDistance = Table.create()
+        set QV_AmbushTriggered = Table.create()
+        set QV_AmbushWave = Table.create()
         call QuestMaster_AddDailyResetAction(function QV_OnDailyReset)
         call QuestMaster_AddStateChangedAction(function QV_OnQuestStateChanged)
+        set escortTimer = CreateTimer()
+        call TimerStart(escortTimer, QV_ESCORT_CHECK_INTERVAL, true, function QV_OnEscortCheck)
         set initTimer = CreateTimer()
         call TimerStart(initTimer, 0.10, false, function QV_RegisterExistingDelayed)
         set initTimer = null
+        set escortTimer = null
     endfunction
 endlibrary
