@@ -2,7 +2,7 @@
     VoicelinesZulkis
 
     Author: Valdemar
-    Version: 1.3.0
+    Version: 1.4.0
 
     Description:
     Speaker-owned story and reusable generic quest voicelines for Zul'kis.
@@ -108,6 +108,26 @@ globals
     constant string VL_ZULKIS_GENERIC_0031_TEXT = "Da spirits watched da road. Set down ya burden."
     constant string VL_ZULKIS_GENERIC_0032_KEY = "ZulkisGeneric_0032"
     constant string VL_ZULKIS_GENERIC_0032_TEXT = "Ya made it home, mon. Open ya stall when ready."
+
+    // Definition-specific vendor escort progress replies.
+    constant string VL_ZULKIS_GENERIC_0033_KEY = "ZulkisGeneric_0033"
+    constant string VL_ZULKIS_GENERIC_0033_TEXT = "Koro's post still be ahead. Stay close, Nara."
+    constant string VL_ZULKIS_GENERIC_0034_KEY = "ZulkisGeneric_0034"
+    constant string VL_ZULKIS_GENERIC_0034_TEXT = "Keep ya pace, Nara. I won't let da shadows cut ya off."
+    constant string VL_ZULKIS_GENERIC_0035_KEY = "ZulkisGeneric_0035"
+    constant string VL_ZULKIS_GENERIC_0035_TEXT = "We ain't at da caravan fires yet. Move with me, mon."
+    constant string VL_ZULKIS_GENERIC_0036_KEY = "ZulkisGeneric_0036"
+    constant string VL_ZULKIS_GENERIC_0036_TEXT = "Garrick's forge still be ahead. Keep dem ledgers covered."
+    constant string VL_ZULKIS_GENERIC_0037_KEY = "ZulkisGeneric_0037"
+    constant string VL_ZULKIS_GENERIC_0037_TEXT = "Riverbane needs dose records whole. We keep movin'."
+    constant string VL_ZULKIS_GENERIC_0038_KEY = "ZulkisGeneric_0038"
+    constant string VL_ZULKIS_GENERIC_0038_TEXT = "Stay behind me, Cedran. Dis road ain't secure."
+    constant string VL_ZULKIS_GENERIC_0039_KEY = "ZulkisGeneric_0039"
+    constant string VL_ZULKIS_GENERIC_0039_TEXT = "Velyssra's wards still be ahead. Keep dat crate steady."
+    constant string VL_ZULKIS_GENERIC_0040_KEY = "ZulkisGeneric_0040"
+    constant string VL_ZULKIS_GENERIC_0040_TEXT = "I hear dem bottles, Selyth. Best keep movin'."
+    constant string VL_ZULKIS_GENERIC_0041_KEY = "ZulkisGeneric_0041"
+    constant string VL_ZULKIS_GENERIC_0041_TEXT = "Stay close, mon. I don't want to learn what ya cargo does when dropped."
 
     // Reusable player-dialog and ability-trainer replies.
     constant string VL_ZULKISDIALOG_GREET_1_KEY = "Zulkis_Greet1"
@@ -278,7 +298,7 @@ private function RegisterGenericQuestLines takes nothing returns nothing
 endfunction
 
 private function Init takes nothing returns nothing
-    call ExSound_RegisterSequence(VL_ZULKIS_GENERIC_TYPE, 1, 32, "Pots\\Sound\\Voicelines\\Zulkis\\ZulkisGeneric\\")
+    call ExSound_RegisterSequence(VL_ZULKIS_GENERIC_TYPE, 1, 41, "Pots\\Sound\\Voicelines\\Zulkis\\ZulkisGeneric\\")
     call RegisterGenericQuestLines()
     call Voicelines_RegisterKey(VL_ZULKIS_FOLDER, VL_ZULKIS_0015_KEY)
     call Voicelines_RegisterKey(VL_ZULKIS_FOLDER, VL_ZULKIS_0016_KEY)
