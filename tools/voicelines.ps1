@@ -45,7 +45,7 @@ $PrefixFolders = @{
     "HeroRestoshaman" = "HeroRestoshaman"
     "HeroRogue" = "HeroRogue"
     "HeroShaman" = "HeroRestoshaman"
-    "HeroUndeadWarlock" = "HeroWarlock"
+    "HeroUndeadWarlock" = "HeroUndeadWarlock"
     "HeroWarlock" = "HeroWarlock"
     "HeroWarrior" = "HeroWarrior"
     "HumanFemale1" = "HumanFemale1"
@@ -115,7 +115,7 @@ function Get-ExpectedFolderForKey {
         return "Aveline\ChatOther"
     }
     if ($Key -match "^(Hero[A-Za-z]+_Chat.+?)UndeadWarlock$") {
-        return "HeroReplyLines\HeroWarlockReplyLines"
+        return "HeroReplyLines\HeroUndeadWarlockReplyLines"
     }
     if ($Key -match "^(Hero[A-Za-z]+_Chat.+?)(Engineer|Paladin|Rogue|Shaman|Warlock|Warrior)$") {
         return "HeroReplyLines\Hero$($matches[2])ReplyLines"
@@ -851,7 +851,7 @@ $apiKey = Get-RequiredEnvironmentValue -Name "FISH_API_KEY"
 $generated = 0
 $skipped = 0
 foreach ($row in $generationRows) {
-    $folder = @($row.expected_folder -split " \\|\\| " | Sort-Object Length -Descending)[0]
+    $folder = @($row.expected_folder -split '\s+\|\|\s+' | Sort-Object Length -Descending)[0]
     $outputDir = Join-Path $TempRoot $folder
     $outputPath = Join-Path $outputDir $row.file_name
     New-Item -ItemType Directory -Path $outputDir -Force | Out-Null

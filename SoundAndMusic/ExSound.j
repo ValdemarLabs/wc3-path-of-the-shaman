@@ -1239,6 +1239,30 @@ private function Init takes nothing returns nothing
     call ExSound_Register("HeroWarlock_ChatWarrior4", "Pots\\Sound\\Voicelines\\HeroWarlock\\ChatOther\\HeroWarlock_ChatWarrior4.mp3")
 
     //=================================================================
+    // HeroUndeadWarlock Event/chat lines
+    call ExSound_RegisterSequence("HeroUndeadWarlock_Aggressive", 1, 3, "Pots\\Sound\\Voicelines\\HeroUndeadWarlock\\")
+    call ExSound_RegisterSequence("HeroUndeadWarlock_Attacking", 1, 3, "Pots\\Sound\\Voicelines\\HeroUndeadWarlock\\")
+    call ExSound_RegisterSequence("HeroUndeadWarlock_Casting", 1, 3, "Pots\\Sound\\Voicelines\\HeroUndeadWarlock\\")
+    call ExSound_RegisterSequence("HeroUndeadWarlock_DropItems", 1, 3, "Pots\\Sound\\Voicelines\\HeroUndeadWarlock\\")
+    call ExSound_RegisterSequence("HeroUndeadWarlock_Farewell", 1, 2, "Pots\\Sound\\Voicelines\\HeroUndeadWarlock\\")
+    call ExSound_RegisterSequence("HeroUndeadWarlock_Greet", 1, 4, "Pots\\Sound\\Voicelines\\HeroUndeadWarlock\\")
+    call ExSound_RegisterSequence("HeroUndeadWarlock_HoldPositions", 1, 2, "Pots\\Sound\\Voicelines\\HeroUndeadWarlock\\")
+    call ExSound_RegisterSequence("HeroUndeadWarlock_Idle", 1, 3, "Pots\\Sound\\Voicelines\\HeroUndeadWarlock\\")
+    call ExSound_RegisterSequence("HeroUndeadWarlock_ItemGiven", 1, 3, "Pots\\Sound\\Voicelines\\HeroUndeadWarlock\\")
+    call ExSound_RegisterSequence("HeroUndeadWarlock_Kicked", 1, 2, "Pots\\Sound\\Voicelines\\HeroUndeadWarlock\\")
+    call ExSound_RegisterSequence("HeroUndeadWarlock_Killing", 1, 3, "Pots\\Sound\\Voicelines\\HeroUndeadWarlock\\")
+    call ExSound_RegisterSequence("HeroUndeadWarlock_Moving", 1, 3, "Pots\\Sound\\Voicelines\\HeroUndeadWarlock\\")
+    call ExSound_RegisterSequence("HeroUndeadWarlock_Normal", 1, 3, "Pots\\Sound\\Voicelines\\HeroUndeadWarlock\\")
+    call ExSound_RegisterSequence("HeroUndeadWarlock_OtherDies", 1, 3, "Pots\\Sound\\Voicelines\\HeroUndeadWarlock\\")
+    call ExSound_RegisterSequence("HeroUndeadWarlock_Passive", 1, 2, "Pots\\Sound\\Voicelines\\HeroUndeadWarlock\\")
+    call ExSound_RegisterSequence("HeroUndeadWarlock_ChatEngineer", 1, 4, "Pots\\Sound\\Voicelines\\HeroUndeadWarlock\\ChatOther\\")
+    call ExSound_RegisterSequence("HeroUndeadWarlock_ChatGeneral", 1, 7, "Pots\\Sound\\Voicelines\\HeroUndeadWarlock\\ChatOther\\")
+    call ExSound_RegisterSequence("HeroUndeadWarlock_ChatPaladin", 1, 5, "Pots\\Sound\\Voicelines\\HeroUndeadWarlock\\ChatOther\\")
+    call ExSound_RegisterSequence("HeroUndeadWarlock_ChatRogue", 1, 4, "Pots\\Sound\\Voicelines\\HeroUndeadWarlock\\ChatOther\\")
+    call ExSound_RegisterSequence("HeroUndeadWarlock_ChatShaman", 1, 4, "Pots\\Sound\\Voicelines\\HeroUndeadWarlock\\ChatOther\\")
+    call ExSound_RegisterSequence("HeroUndeadWarlock_ChatWarrior", 1, 4, "Pots\\Sound\\Voicelines\\HeroUndeadWarlock\\ChatOther\\")
+
+    //=================================================================
     // HeroWarrior Event/chat lines
     call ExSound_Register("HeroWarrior_Aggressive1", "Pots\\Sound\\Voicelines\\HeroWarrior\\HeroWarrior_Aggressive1.mp3")
     call ExSound_Register("HeroWarrior_Aggressive2", "Pots\\Sound\\Voicelines\\HeroWarrior\\HeroWarrior_Aggressive2.mp3")
@@ -1624,21 +1648,21 @@ private function Init takes nothing returns nothing
 
     //=================================================================
     // Hero Reply Lines - Undead Warlock
-    call ExSound_RegisterKeyInFolder("HeroRogue_ChatGeneral1UndeadWarlock", "Pots\\Sound\\Voicelines\\HeroReplyLines\\HeroWarlockReplyLines\\")
-    call ExSound_RegisterKeyInFolder("HeroRogue_ChatWarlock1UndeadWarlock", "Pots\\Sound\\Voicelines\\HeroReplyLines\\HeroWarlockReplyLines\\")
-    call ExSound_RegisterKeyInFolder("HeroRogue_ChatShaman3UndeadWarlock", "Pots\\Sound\\Voicelines\\HeroReplyLines\\HeroWarlockReplyLines\\")
-    call ExSound_RegisterKeyInFolder("HeroShaman_ChatGeneral1UndeadWarlock", "Pots\\Sound\\Voicelines\\HeroReplyLines\\HeroWarlockReplyLines\\")
-    call ExSound_RegisterKeyInFolder("HeroShaman_ChatWarlock1UndeadWarlock", "Pots\\Sound\\Voicelines\\HeroReplyLines\\HeroWarlockReplyLines\\")
-    call ExSound_RegisterKeyInFolder("HeroShaman_ChatWarlock4UndeadWarlock", "Pots\\Sound\\Voicelines\\HeroReplyLines\\HeroWarlockReplyLines\\")
-    call ExSound_RegisterKeyInFolder("HeroWarrior_ChatGeneral1UndeadWarlock", "Pots\\Sound\\Voicelines\\HeroReplyLines\\HeroWarlockReplyLines\\")
-    call ExSound_RegisterKeyInFolder("HeroWarrior_ChatWarlock1UndeadWarlock", "Pots\\Sound\\Voicelines\\HeroReplyLines\\HeroWarlockReplyLines\\")
-    call ExSound_RegisterKeyInFolder("HeroWarrior_ChatWarlock3UndeadWarlock", "Pots\\Sound\\Voicelines\\HeroReplyLines\\HeroWarlockReplyLines\\")
-    call ExSound_RegisterKeyInFolder("HeroEngineer_ChatGeneral1UndeadWarlock", "Pots\\Sound\\Voicelines\\HeroReplyLines\\HeroWarlockReplyLines\\")
-    call ExSound_RegisterKeyInFolder("HeroEngineer_ChatWarlock2UndeadWarlock", "Pots\\Sound\\Voicelines\\HeroReplyLines\\HeroWarlockReplyLines\\")
-    call ExSound_RegisterKeyInFolder("HeroEngineer_ChatWarlock5UndeadWarlock", "Pots\\Sound\\Voicelines\\HeroReplyLines\\HeroWarlockReplyLines\\")
-    call ExSound_RegisterKeyInFolder("HeroPaladin_ChatGeneral1UndeadWarlock", "Pots\\Sound\\Voicelines\\HeroReplyLines\\HeroWarlockReplyLines\\")
-    call ExSound_RegisterKeyInFolder("HeroPaladin_ChatWarlock1UndeadWarlock", "Pots\\Sound\\Voicelines\\HeroReplyLines\\HeroWarlockReplyLines\\")
-    call ExSound_RegisterKeyInFolder("HeroPaladin_ChatWarlock3UndeadWarlock", "Pots\\Sound\\Voicelines\\HeroReplyLines\\HeroWarlockReplyLines\\")
+    call ExSound_RegisterKeyInFolder("HeroRogue_ChatGeneral1UndeadWarlock", "Pots\\Sound\\Voicelines\\HeroReplyLines\\HeroUndeadWarlockReplyLines\\")
+    call ExSound_RegisterKeyInFolder("HeroRogue_ChatWarlock1UndeadWarlock", "Pots\\Sound\\Voicelines\\HeroReplyLines\\HeroUndeadWarlockReplyLines\\")
+    call ExSound_RegisterKeyInFolder("HeroRogue_ChatShaman3UndeadWarlock", "Pots\\Sound\\Voicelines\\HeroReplyLines\\HeroUndeadWarlockReplyLines\\")
+    call ExSound_RegisterKeyInFolder("HeroShaman_ChatGeneral1UndeadWarlock", "Pots\\Sound\\Voicelines\\HeroReplyLines\\HeroUndeadWarlockReplyLines\\")
+    call ExSound_RegisterKeyInFolder("HeroShaman_ChatWarlock1UndeadWarlock", "Pots\\Sound\\Voicelines\\HeroReplyLines\\HeroUndeadWarlockReplyLines\\")
+    call ExSound_RegisterKeyInFolder("HeroShaman_ChatWarlock4UndeadWarlock", "Pots\\Sound\\Voicelines\\HeroReplyLines\\HeroUndeadWarlockReplyLines\\")
+    call ExSound_RegisterKeyInFolder("HeroWarrior_ChatGeneral1UndeadWarlock", "Pots\\Sound\\Voicelines\\HeroReplyLines\\HeroUndeadWarlockReplyLines\\")
+    call ExSound_RegisterKeyInFolder("HeroWarrior_ChatWarlock1UndeadWarlock", "Pots\\Sound\\Voicelines\\HeroReplyLines\\HeroUndeadWarlockReplyLines\\")
+    call ExSound_RegisterKeyInFolder("HeroWarrior_ChatWarlock3UndeadWarlock", "Pots\\Sound\\Voicelines\\HeroReplyLines\\HeroUndeadWarlockReplyLines\\")
+    call ExSound_RegisterKeyInFolder("HeroEngineer_ChatGeneral1UndeadWarlock", "Pots\\Sound\\Voicelines\\HeroReplyLines\\HeroUndeadWarlockReplyLines\\")
+    call ExSound_RegisterKeyInFolder("HeroEngineer_ChatWarlock2UndeadWarlock", "Pots\\Sound\\Voicelines\\HeroReplyLines\\HeroUndeadWarlockReplyLines\\")
+    call ExSound_RegisterKeyInFolder("HeroEngineer_ChatWarlock5UndeadWarlock", "Pots\\Sound\\Voicelines\\HeroReplyLines\\HeroUndeadWarlockReplyLines\\")
+    call ExSound_RegisterKeyInFolder("HeroPaladin_ChatGeneral1UndeadWarlock", "Pots\\Sound\\Voicelines\\HeroReplyLines\\HeroUndeadWarlockReplyLines\\")
+    call ExSound_RegisterKeyInFolder("HeroPaladin_ChatWarlock1UndeadWarlock", "Pots\\Sound\\Voicelines\\HeroReplyLines\\HeroUndeadWarlockReplyLines\\")
+    call ExSound_RegisterKeyInFolder("HeroPaladin_ChatWarlock3UndeadWarlock", "Pots\\Sound\\Voicelines\\HeroReplyLines\\HeroUndeadWarlockReplyLines\\")
     
     //=================================================================
     // Hero Reply Lines - Warrior    

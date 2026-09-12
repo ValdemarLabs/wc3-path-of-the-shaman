@@ -22,7 +22,7 @@ $SpeakerDefinitions = @(
     [pscustomobject]@{ Name = "RestoShaman"; Folder = "HeroRestoshaman"; File = "Voicelines_RestoShaman.j"; Library = "VoicelinesRestoShaman"; Const = "RESTOSHAMAN"; KeyPrefixes = @("HeroRestoshaman", "HeroShaman") },
     [pscustomobject]@{ Name = "Rogue"; Folder = "HeroRogue"; File = "Voicelines_Rogue.j"; Library = "VoicelinesRogue"; Const = "ROGUE"; KeyPrefixes = @("HeroRogue") },
     [pscustomobject]@{ Name = "Warlock"; Folder = "HeroWarlock"; File = "Voicelines_Warlock.j"; Library = "VoicelinesWarlock"; Const = "WARLOCK"; KeyPrefixes = @("HeroWarlock") },
-    [pscustomobject]@{ Name = "UndeadWarlock"; Folder = "HeroWarlock"; File = "Voicelines_UndeadWarlock.j"; Library = "VoicelinesUndeadWarlock"; Const = "UNDEADWARLOCK"; KeyPrefixes = @("HeroUndeadWarlock") },
+    [pscustomobject]@{ Name = "UndeadWarlock"; Folder = "HeroUndeadWarlock"; File = "Voicelines_UndeadWarlock.j"; Library = "VoicelinesUndeadWarlock"; Const = "UNDEADWARLOCK"; KeyPrefixes = @("HeroUndeadWarlock") },
     [pscustomobject]@{ Name = "Warrior"; Folder = "HeroWarrior"; File = "Voicelines_Warrior.j"; Library = "VoicelinesWarrior"; Const = "WARRIOR"; KeyPrefixes = @("HeroWarrior") },
     [pscustomobject]@{ Name = "HumanFemale1"; Folder = "HumanFemale1"; File = "Voicelines_HumanFemale1.j"; Library = "VoicelinesHumanFemale1"; Const = "HUMANFEMALE1"; KeyPrefixes = @("HumanFemale1") },
     [pscustomobject]@{ Name = "Jinzun"; Folder = "Jinzun"; File = "Voicelines_Jinzun.j"; Library = "VoicelinesJinzun"; Const = "JINZUN"; KeyPrefixes = @("Jinzun") },
