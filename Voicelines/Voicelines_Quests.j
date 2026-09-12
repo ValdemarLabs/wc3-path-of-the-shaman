@@ -2,7 +2,7 @@
     VoicelinesQuests
 
     Author: Valdemar
-    Version: 4.5.0
+    Version: 4.6.0
 
     Description:
     Central source of truth for reusable and vendor quest dialogue, random
@@ -72,6 +72,26 @@ library VoicelinesQuests initializer Init requires QuestsGeneric, ExSound, Voice
         constant string VL_VENDORQUEST_BONECRUSHER_0014 = "Mugrok remembers strong hands. Strong hands get strong steel."
         constant string VL_VENDORQUEST_BONECRUSHER_0015 = "This is not one-night stew. This is stew people remember after winter."
         constant string VL_VENDORQUEST_BONECRUSHER_0016 = "Hukka saves best bowl for you. Maybe second-best. Hukka still hungry."
+        constant string VL_VENDORQUEST_BONECRUSHER_0026 = "Grumbar says Mugrok's arm needs armor fitting. Walk with Mugrok there, then walk back with Mugrok and new armor."
+        constant string VL_VENDORQUEST_BONECRUSHER_0027 = "Mugrok went there, got armor, came back. Good guard earns heavy coin."
+        constant string VL_VENDORQUEST_BONECRUSHER_0028 = "Grumbar measures twice because Mugrok keeps flexing. You keep trouble away both ways."
+        constant string VL_VENDORQUEST_BONECRUSHER_0029 = "New armor fits. Now Mugrok's weapon cart has its strong arm back."
+        constant string VL_VENDORQUEST_BONECRUSHER_0030 = "Stay close. Mugrok walks to Grumbar, then Mugrok walks home."
+        constant string VL_VENDORQUEST_BONECRUSHER_0031 = "Grumbar still ahead. Mugrok does not want arrows in measuring arm."
+        constant string VL_VENDORQUEST_BONECRUSHER_0032 = "Mugrok must come back after fitting. Job has two walks, not one."
+        constant string VL_VENDORQUEST_BONECRUSHER_0033 = "Keep moving. Armor does not fit itself, even when Mugrok asks loudly."
+        constant string VL_VENDORQUEST_BONECRUSHER_0034 = "Armor fitted. Turn around. Mugrok's weapon cart waits at home."
+        constant string VL_VENDORQUEST_BONECRUSHER_0035 = "Stalkers! Break them before they scratch Mugrok or new armor!"
+
+        // Morgrim Dwarf quest dialogue.
+        constant string VL_VENDORQUEST_DWARF_0001 = "A furnace crack drove me from my anvil. Escort me to Durnik Forgefather's hall, and I can trade from solid stone again."
+        constant string VL_VENDORQUEST_DWARF_0002 = "Durnik's fires are sound and my tools are under a proper roof. You've earned honest Morgrim coin."
+        constant string VL_VENDORQUEST_DWARF_0003 = "Until I reach a working forge, I've no bench, no stock, and no business pretending otherwise."
+        constant string VL_VENDORQUEST_DWARF_0004 = "You brought a smith and his livelihood through together. The clan remembers work like that."
+        constant string VL_VENDORQUEST_DWARF_0005 = "Mind the steep ground. A loose hammer is dangerous, but a loose anvil is worse."
+        constant string VL_VENDORQUEST_DWARF_0006 = "Durnik's chimney is still ahead. Keep me and the tool chest moving."
+        constant string VL_VENDORQUEST_DWARF_0007 = "These slopes punish haste. Hold a steady line to the forge hall."
+        constant string VL_VENDORQUEST_DWARF_0008 = "No stopping yet. I open the ledger only after my tools reach Durnik's stone floor."
 
         // Elarindor quest dialogue.
         constant string VL_VENDORQUEST_ELARINDOR_0001 = "The wraiths circle closer whenever the forge burns. Destroy six before their hunger reaches the anvils."
@@ -118,6 +138,24 @@ library VoicelinesQuests initializer Init requires QuestsGeneric, ExSound, Voice
         constant string VL_VENDORQUEST_GOBLIN_0024 = "When this pays off, remember who generously allowed you to help."
         constant string VL_VENDORQUEST_GOBLIN_0025 = "The arena remembers spectacle longer than mercy. Give the crowd a story worth repeating."
         constant string VL_VENDORQUEST_GOBLIN_0026 = "Your name sells tickets now. I consider that a successful partnership."
+        constant string VL_VENDORQUEST_GOBLIN_0036 = "Kargun wants to inspect my newest edge, and I want witnesses when he admits it is excellent. Escort me to his forge."
+        constant string VL_VENDORQUEST_GOBLIN_0037 = "Kargun called the edge serviceable. From an orc smith, that is practically a standing ovation. My counter is open!"
+        constant string VL_VENDORQUEST_GOBLIN_0038 = "I packed samples, contracts, and three different guarantees. Your job is making sure all four of us arrive."
+        constant string VL_VENDORQUEST_GOBLIN_0039 = "The inspection is done, the route is proven, and my finest stock is finally for sale."
+        constant string VL_VENDORQUEST_GOBLIN_0040 = "Walk close enough to look expensive. Bandits prefer merchants who seem poorly insured."
+        constant string VL_VENDORQUEST_GOBLIN_0041 = "Kargun's forge is ahead. Try not to chip the merchandise while protecting it."
+        constant string VL_VENDORQUEST_GOBLIN_0042 = "We are still traveling, which means my hazard fee is still accumulating."
+        constant string VL_VENDORQUEST_GOBLIN_0043 = "Keep moving. Every delay gives Kargun time to invent another inspection charge."
+        constant string VL_VENDORQUEST_GOBLIN_0044 = "Snikka and I have contract terms to settle in person. Guard me there and back before either of us discovers another fee."
+        constant string VL_VENDORQUEST_GOBLIN_0045 = "Agreement signed, return trip survived, and every surcharge assigned to someone else. Beautiful work!"
+        constant string VL_VENDORQUEST_GOBLIN_0046 = "This negotiation requires charm, leverage, and someone dangerous standing behind me. You are the third item."
+        constant string VL_VENDORQUEST_GOBLIN_0047 = "The contract is profitable, the ink is dry, and I returned with the same number of limbs."
+        constant string VL_VENDORQUEST_GOBLIN_0048 = "Stay visible. A well-armed escort improves my bargaining position before we even arrive."
+        constant string VL_VENDORQUEST_GOBLIN_0049 = "Snikka's counter is still ahead, along with several deeply suspicious contract clauses."
+        constant string VL_VENDORQUEST_GOBLIN_0050 = "Remember, we return after the meeting. I never leave a profitable route after only charging one way."
+        constant string VL_VENDORQUEST_GOBLIN_0051 = "Keep pace. Interest grows while we walk, and somehow Snikka always rounds upward."
+        constant string VL_VENDORQUEST_GOBLIN_0052 = "Terms accepted! Turn us around before Snikka reads the smallest print."
+        constant string VL_VENDORQUEST_GOBLIN_0053 = "Shadowdancers! Protect the contract first, me second, and the coin purse equally first!"
 
         // Human quest dialogue.
         constant string VL_VENDORQUEST_HUMAN_0001 = "The patrols have bent half my stock. Six pieces of iron ore will put us ahead again."
@@ -192,6 +230,35 @@ library VoicelinesQuests initializer Init requires QuestsGeneric, ExSound, Voice
         constant string VL_VENDORQUEST_ORC_0032 = "When my caravan crosses safely, your work travels with every crate."
         constant string VL_VENDORQUEST_ORC_0033 = "Coastal stores feed warriors far beyond the jungle. Guarding them guards the whole line."
         constant string VL_VENDORQUEST_ORC_0034 = "The clan will eat, march, and fight because those stores still stand."
+        constant string VL_VENDORQUEST_ORC_0044 = "Ghorak waits at the arena with a commission blade. Escort me and the steel to his quartermaster's post."
+        constant string VL_VENDORQUEST_ORC_0045 = "The blade reached Ghorak without bending or blood-rust. My forge can trade from this post now."
+        constant string VL_VENDORQUEST_ORC_0046 = "I carry the blade. You keep every unworthy hand away from it."
+        constant string VL_VENDORQUEST_ORC_0047 = "The arena will remember the first edge delivered under your guard."
+        constant string VL_VENDORQUEST_ORC_0048 = "Keep formation. Commissioned steel does not travel alone."
+        constant string VL_VENDORQUEST_ORC_0049 = "Ghorak's post is ahead. Keep the blade clear of dust and thieves."
+        constant string VL_VENDORQUEST_ORC_0050 = "The commission stays wrapped until the quartermaster receives it."
+        constant string VL_VENDORQUEST_ORC_0051 = "Walk at my shoulder. This steel reaches the arena untested by roadside scum."
+        constant string VL_VENDORQUEST_ORC_0052 = "Dark trolls! They want the blade. Show them why they cannot have it!"
+        constant string VL_VENDORQUEST_ORC_0053 = "Hurgan must settle provisions for my next caravan. Guard me to his cooking fire and back to this route."
+        constant string VL_VENDORQUEST_ORC_0054 = "The stores are counted, the return road is behind us, and the caravan can roll."
+        constant string VL_VENDORQUEST_ORC_0055 = "A merchant who leaves his route unguarded returns to an empty route. That is why you walk both legs."
+        constant string VL_VENDORQUEST_ORC_0056 = "Hurgan filled the manifests, and you brought their owner home. Good work."
+        constant string VL_VENDORQUEST_ORC_0057 = "Stay near. Gnolls know a provision ledger points toward fuller wagons."
+        constant string VL_VENDORQUEST_ORC_0058 = "Hurgan's fire is ahead. We settle the caravan stores there."
+        constant string VL_VENDORQUEST_ORC_0059 = "Do not wander. I need protection on the visit and on the road home."
+        constant string VL_VENDORQUEST_ORC_0060 = "The route waits behind us, but first we reach Hurgan and count every sack."
+        constant string VL_VENDORQUEST_ORC_0061 = "The provisions are settled. Turn back; my caravan will not guard itself."
+        constant string VL_VENDORQUEST_ORC_0062 = "Gnolls on the road! Guard the ledger and break their charge!"
+        constant string VL_VENDORQUEST_ORC_0063 = "Nargash reports gaps in the coastal stores. Guard me to his smoke racks for inspection, then back to command."
+        constant string VL_VENDORQUEST_ORC_0064 = "Every rack was counted and we returned with the route secure. The coast can stay supplied."
+        constant string VL_VENDORQUEST_ORC_0065 = "A quartermaster verifies stores with his own eyes. You make sure mine see both roads."
+        constant string VL_VENDORQUEST_ORC_0066 = "The inspection is logged. Your protection keeps those numbers honest."
+        constant string VL_VENDORQUEST_ORC_0067 = "Keep watch on the tree line. Raiders know exactly what a quartermaster carries."
+        constant string VL_VENDORQUEST_ORC_0068 = "Nargash's smoke racks are ahead. We inspect them, then return to command."
+        constant string VL_VENDORQUEST_ORC_0069 = "This duty ends where it began. Save strength for the road back."
+        constant string VL_VENDORQUEST_ORC_0070 = "Stay close. A missing quartermaster can lose more supplies than a burned wagon."
+        constant string VL_VENDORQUEST_ORC_0071 = "The coastal count is complete. Turn back; command needs the figures."
+        constant string VL_VENDORQUEST_ORC_0072 = "Satyr raiders! Hold them here before they reach the stores!"
 
         // Satyr quest dialogue.
         constant string VL_VENDORQUEST_SATYR_0001 = "Six gnolls are stalking the road my recruits use to reach the arena. Cull them before I lose another promising wager."
@@ -342,6 +409,9 @@ library VoicelinesQuests initializer Init requires QuestsGeneric, ExSound, Voice
         call ExSound_RegisterSequence(VL_GENERIC_ORC_MALE_7_TYPE, 1001, 1043, "Pots\\Sound\\Voicelines\\GenericOrcMale7\\")
         call ExSound_RegisterSequence(VL_GENERIC_ORC_MALE_8_TYPE, 1001, 1043, "Pots\\Sound\\Voicelines\\GenericOrcMale8\\")
         call ExSound_RegisterSequence(VL_GENERIC_ORC_MALE_9_TYPE, 1001, 1043, "Pots\\Sound\\Voicelines\\GenericOrcMale9\\")
+        call ExSound_RegisterSequence(VL_GENERIC_ORC_MALE_9_TYPE, 1044, 1052, "Pots\\Sound\\Voicelines\\GenericOrcMale9\\")
+        call ExSound_RegisterSequence(VL_GENERIC_ORC_MALE_3_TYPE, 1053, 1062, "Pots\\Sound\\Voicelines\\GenericOrcMale3\\")
+        call ExSound_RegisterSequence(VL_GENERIC_ORC_MALE_8_TYPE, 1063, 1072, "Pots\\Sound\\Voicelines\\GenericOrcMale8\\")
         call ExSound_RegisterSequence(VL_GENERIC_SATYR_MALE_1_TYPE, 1001, 1027, "Pots\\Sound\\Voicelines\\GenericSatyrMale1\\")
         call ExSound_RegisterSequence(VL_GENERIC_SATYR_FEMALE_1_TYPE, 1001, 1035, "Pots\\Sound\\Voicelines\\GenericSatyrFemale1\\")
         call ExSound_RegisterSequence(VL_GENERIC_HUMAN_MALE_1_TYPE, 1001, 1037, "Pots\\Sound\\Voicelines\\GenericHumanMale1\\")
@@ -350,7 +420,11 @@ library VoicelinesQuests initializer Init requires QuestsGeneric, ExSound, Voice
         call ExSound_RegisterSequence(VL_GENERIC_GOBLIN_MALE_2_TYPE, 1001, 1035, "Pots\\Sound\\Voicelines\\GenericGoblinMale2\\")
         call ExSound_RegisterSequence(VL_GENERIC_GOBLIN_MALE_3_TYPE, 1001, 1035, "Pots\\Sound\\Voicelines\\GenericGoblinMale3\\")
         call ExSound_RegisterSequence(VL_GENERIC_GOBLIN_MALE_4_TYPE, 1001, 1035, "Pots\\Sound\\Voicelines\\GenericGoblinMale4\\")
+        call ExSound_RegisterSequence(VL_GENERIC_GOBLIN_MALE_1_TYPE, 1036, 1043, "Pots\\Sound\\Voicelines\\GenericGoblinMale1\\")
+        call ExSound_RegisterSequence(VL_GENERIC_GOBLIN_MALE_2_TYPE, 1044, 1053, "Pots\\Sound\\Voicelines\\GenericGoblinMale2\\")
         call ExSound_RegisterSequence(VL_GENERIC_OGRE_BONECRUSHER_MALE_1_TYPE, 1001, 1025, "Pots\\Sound\\Voicelines\\GenericOgreBonecrusherMale1\\")
+        call ExSound_RegisterSequence(VL_GENERIC_OGRE_BONECRUSHER_MALE_1_TYPE, 1026, 1035, "Pots\\Sound\\Voicelines\\GenericOgreBonecrusherMale1\\")
+        call ExSound_RegisterSequence(VL_GENERIC_DWARF_MORGRIM_MALE_1_TYPE, 1001, 1008, "Pots\\Sound\\Voicelines\\GenericDwarfMorgrimMale1\\")
         call ExSound_RegisterSequence(VL_GENERIC_ELARINDOR_MALE_1_TYPE, 1001, 1025, "Pots\\Sound\\Voicelines\\GenericElarindorMale1\\")
         call ExSound_RegisterSequence(VL_GENERIC_ELARINDOR_MALE_2_TYPE, 1001, 1025, "Pots\\Sound\\Voicelines\\GenericElarindorMale2\\")
         call ExSound_RegisterSequence(VL_GENERIC_ELARINDOR_FEMALE_1_TYPE, 1001, 1025, "Pots\\Sound\\Voicelines\\GenericElarindorFemale1\\")
