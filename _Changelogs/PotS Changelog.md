@@ -28,6 +28,8 @@
 
 ### Technical Updates
 
+- Updated `_Blizzard/common.j` and `_Blizzard/blizzard.j` to the Warcraft III 3.0.0 build 24268 API snapshot, with the prior scripts retained under `_Blizzard/Archive/` for comparison.
+- Updated `AGENTS.md`, the JASS Master skill, and the Warcraft Ability Insight skill to use the active 3.0 Blizzard scripts for exact native signatures, treat archived scripts as historical, and flag 3.0-only compatibility and runtime-validation requirements.
 - Updated `Zones/ZoneEvent.j` and `DungeonsAndBosses/Dungeon.j` with per-hero spatial zone resolution, selection-driven presentation, generic transition callbacks, leader-filtered companion transitions, timed route-order suppression/restoration, tracked dungeon hero occupancy, and a reusable last-hero-exited callback.
 - Updated `QuestsAndDialogs/QuestsGeneric.j`, `QuestsAndDialogs/QuestsVendor.j`, and the three escort qVendor libraries with definition-specific vendor and player progress-dialogue pools that fall back to the existing generic pools for other activities.
 - Updated `Voicelines/Voicelines_Quests.j`, `Voicelines/Voicelines_Nazgrek.j`, `Voicelines/Voicelines_Zulkis.j`, and the voice documentation with 27 activity-specific escort progress lines, replacing the race-neutral `GenericQuest_0013-0015` pool.
