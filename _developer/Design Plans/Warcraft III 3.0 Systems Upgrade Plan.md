@@ -1,0 +1,387 @@
+# Warcraft III 3.0 Systems Upgrade Plan
+
+Status: Proposed  
+Target baseline: Warcraft III 3.0.0, build 24268  
+Primary API references: [`_Blizzard/common.j`](../../_Blizzard/common.j) and [`_Blizzard/blizzard.j`](../../_Blizzard/blizzard.j)  
+Patch reference: [Warcraft III: Reforged - Forsaken Kingdom Patch Notes](https://us.forums.blizzard.com/en/warcraft3/t/warcraft-iii-reforged-forsaken-kingdom-patch-notes/38400)
+
+## Purpose
+
+Evaluate and adopt Warcraft III 3.0 World Editor features and natives where they materially simplify PotS systems, improve player experience, or remove fragile workarounds. Adoption must be incremental: declaration presence in `common.j` does not prove runtime behavior, save/load behavior, multiplayer safety, or compatibility with PotS custom UI.
+
+The separate 16-bit launcher and World Editor crash investigation is intentionally outside this plan.
+
+## Decisions and constraints
+
+- Warcraft III 3.0.0 becomes the minimum version for code that uses these APIs.
+- PotS data and gameplay rules remain authoritative until a native replacement has demonstrated feature parity.
+- Do not replace the current inventory and equipment system wholesale. Blizzard exposes a 30-slot extended bag and 9 loadout slots, while PotS supports 12-80 stored-item slots and 20 equipment positions.
+- Introduce a bridge around native equipment instead of spreading direct native calls across gameplay systems.
+- Keep existing implementations as rollback paths until their replacements pass full-map and multiplayer testing.
+- Do not convert the project to Lua. Use the new GUI-to-Lua and Copy As Script tools only for investigation; converted PotS triggers should continue to target maintained JASS/vJASS libraries.
+- Treat Object Editor, terrain, placed-object, minimap-paint, lighting, water, fog, sound-variable, and post-processing edits as manual World Editor work.
+- Use the exact native spellings from the 3.0 scripts, including `UnitHasAnyItemEquiped` and the `envMapStrengthy` parameter typo where applicable.
+
+## Priority overview
+
+| Priority | Capability | PotS targets | Expected value |
+| --- | --- | --- | --- |
+| P0 | Equipment classification, equipment type, item tag, extended bag, equip events | `WC3ItemManager`, `DInventory`, `DEquipment`, `ItemHook`, `UnitStats` | Very high |
+| P0 | Remaining/percentage ability cooldown control | `ShamanCommon`, talent-driven cooldowns | High |
+| P1 | Expanded fog and HD water | `FogSystem`, `Storm`, `WeatherSystemV4`, zones | High |
+| P1 | Doodad enumeration, instance animation, rotation, and color | `DoodadManager`, `DoodadRender`, procedural destructibles | High |
+| P1 | Free-camera ownership and input queries | `CameraControl`, `DialogCamera`, `DynamicMinimap` | High |
+| P1 | Dynamic minimap generation within camera bounds | `DynamicMinimap` | Potentially very high |
+| P2 | Special-effect animation queue and blend control | `SpeciFX`, ability visuals | Medium |
+| P2 | Per-player HUD skin and Forsaken skin | `Interface`, `MasterUI`, custom frame systems | Medium |
+| P2 | Item, doodad, and destructible team color | Loot ownership and environment presentation | Medium |
+| P3 | Attack cooldown reset and global aura toggling | Selected combat/state transitions | Situational |
+| P3 | Lighting editor, omni lights, decals, shadow blockers, post processing | Environment authoring | Visual/optimization work |
+
+## Phase 0 - Native behavior test maps
+
+Before production integration, create small focused harnesses beside the affected systems.
+
+- [ ] Create `ItemSystems/Warcraft300Inventory_testing.j` and an isolated test map.
+- [ ] Create `EnvironmentSystems/Warcraft300Environment_testing.j` and an isolated HD test map.
+- [ ] Create `Camera/Warcraft300Camera_testing.j` and test with custom UI loaded.
+- [ ] Record the exact editor and client build used for every result.
+- [ ] Test host, second player, reconnect-equivalent map reload, hero death/revival, morphing, item transfer, and item destruction.
+- [ ] Separate synchronized gameplay state from local visual and camera calls.
+- [ ] Verify behavior in HD and Classic graphics modes where applicable.
+- [ ] Do not merge a production migration based only on successful compilation.
+
+### Inventory probe matrix
+
+- [ ] Determine which Object Editor unit ability or field enables the native extended bag and equipment panel.
+- [ ] Reproduce the behavior of Garek's Backpack in an isolated map and document all required object data.
+- [ ] Confirm that `UnitExtendedInventorySize` reports actual capacity and whether capacity can vary by unit.
+- [ ] Confirm bag slot indexing and bounds for `UnitItemInBagSlot`.
+- [ ] Confirm `UnitEquipItem`, `UnitUnequipItem`, and `UnitUnequipItemFromSlot` ownership and failure behavior.
+- [ ] Confirm `EVENT_PLAYER_UNIT_EQUIP_ITEM` and `EVENT_PLAYER_UNIT_UNEQUIP_ITEM` event order, `GetTriggerUnit`, `GetEquippedItem`, and `GetUnequippedItem`.
+- [ ] Confirm whether `UnitUseItem`, `UnitUseItemPoint`, and `UnitUseItemTarget` work directly on bagged items.
+- [ ] Confirm direct bag use fires `EVENT_PLAYER_UNIT_USE_ITEM`, consumes charges, observes cooldown groups, and destroys perishable zero-charge items normally.
+- [ ] Confirm behavior when an item is transferred, pawned, dropped on death, removed with `RemoveItem`, or destroyed while equipped.
+- [ ] Confirm the native 3D equipment character display works for both PotS heroes, alternate unit skins, morphs, hero glow settings, and local selection changes.
+
+## Phase 1 - Extend WC3ItemManager and W3T round trips
+
+### Data model
+
+- [ ] Add `Equipment` to every `wc3_classification` selector and normalizer. It maps to Object Editor field `icla` and runtime `ITEM_TYPE_EQUIPMENT`.
+- [ ] Add a dedicated `wc3_item_tag` column instead of overloading PotS item class, rarity, drop source, or notes.
+- [ ] Support `Undefined`, `Droppable`, `Quest Reward`, `Boss Drop`, `Secret`, `Puzzle`, `World`, and `Shop`, matching `ITEMTAG_TYPE_*`.
+- [ ] Add a dedicated `wc3_equipment_type` column for `None`, `Head`, `Chest`, `Gloves`, `Boots`, `Ring`, `Primary`, `Offhand`, and `Trinket`.
+- [ ] Keep `equipment_slot` as the richer PotS `DEquipment` slot. Native equipment type and PotS equipment slot are related but not interchangeable.
+- [ ] Add a numbered SQL migration after the current migration set, then update `database/schema.sql`, `database/schema_wc3_full_support.sql`, and configuration labels.
+- [ ] Add database constraints or centralized normalization so UI, import, batch edit, and scripts use identical values.
+
+### Item editor and batch editor
+
+- [ ] Update `WC3ItemManager/ItemEditForm.cs` with Equipment classification, native equipment type, and item tag controls.
+- [ ] Update `WC3ItemManager/BatchItemEditDialog.cs` with the same fields and mixed-value behavior.
+- [ ] Update `WC3ItemManager/ConfigurationForm.cs` and the main item grid/filter configuration.
+- [ ] Show a warning when `deq_compatible` is enabled but native classification/type is inconsistent.
+- [ ] Add an explicit "native inventory compatible" preview rather than silently changing existing items.
+
+### W3T import/export
+
+- [ ] Update `core/wc3_w3t_exporter.py`, `core/wc3_w3t_importer.py`, `parsers/wc3_w3t_parser.py`, and the active v2 importer.
+- [ ] Export/import `icla = Equipment` without falling back to Permanent or Miscellaneous.
+- [ ] Export/import `itag` and preserve unknown values through `original_modifications`.
+- [ ] Determine the native equipment-type Object Editor raw field by round-tripping a hand-authored 3.0 test item; do not guess it from the display name `equipment`.
+- [ ] Update W3T coverage and diagnostic scripts to report the three native classification fields separately.
+- [ ] Add byte-level golden tests for old and 3.0 W3T samples, including empty/default values.
+- [ ] Verify that an old W3T can still be imported and re-exported without adding unintended 3.0 fields to every item.
+
+### Backfill policy
+
+Use an audit report before changing production rows. A Warcraft item can have only one native tag, while PotS loot metadata can describe several roles.
+
+- [ ] Propose `Equipment` only for items already marked `deq_compatible`; do not apply automatically without review.
+- [ ] Map exact PotS equipment slots to the closest native equipment type and list unsupported slots.
+- [ ] Prefer explicit tags. Suggested inference priority is Secret/Puzzle, Quest Reward, Boss Drop, Shop, World, Droppable, then Undefined.
+- [ ] Never replace PotS rarity, loot-tier, quest gating, or specific-drop metadata with the single native tag.
+- [ ] Generate before/after SQL reports listing every inferred value and ambiguity.
+
+## Phase 2 - Native inventory and DEquipment bridge
+
+Create a small bridge library, tentatively `DestroyerInventoryAndEquipmentSystem/PoTs/DNativeInventoryBridge.j`, only after the probe matrix is complete.
+
+### Slot mapping
+
+| Native loadout slot | PotS `DEquipment` slot | Policy |
+| --- | ---: | --- |
+| Head | 1 | Direct candidate |
+| Chest | 5 | Direct candidate |
+| Gloves | 7 | Direct candidate |
+| Boots | 12 | Direct candidate |
+| Ring | 8 | Direct candidate |
+| RingAlt | 9 | Direct candidate |
+| Primary | 19 | Direct candidate |
+| Offhand | 20 | Direct candidate |
+| Trinket | 17 | Primary trinket only |
+| No native equivalent | 2, 3, 4, 6, 10, 11, 18 | Keep custom: Neck, Shoulder, Back, Bracers, Belt, Legs, second Trinket |
+
+PotS slots 13-16 are currently unused and must not be repurposed implicitly.
+
+### Authority and event flow
+
+- [ ] Choose one authoritative location for every item handle. Never mirror one handle into native and custom slots simultaneously.
+- [ ] Route native equip/unequip events into existing `AddDEqStatsOfItemToUnit`, `RemoveDEqStatsOfItemFromUnit`, frame refresh, set bonus, and item-handle tracking paths.
+- [ ] Add re-entrancy guards so a bridge-triggered native event cannot equip or unequip the same item twice.
+- [ ] Preserve two-handed Primary/Offhand rules and PotS dual-wield abilities.
+- [ ] Preserve item-set counts, named items, growth items, requirements, item score, and tooltip generation.
+- [ ] Decide whether native slots are authoritative for the nine mapped positions or only a presentation layer. Do not support both modes concurrently in one release.
+- [ ] Keep the PotS UI for unsupported slots and capacities above the native 30-slot limit.
+
+### Direct consumable use
+
+- [ ] If the probe succeeds, add one `DInventory` action that calls the appropriate `UnitUseItem*` native on the stored handle.
+- [ ] Support immediate, point-target, unit-target, and destructible-target items without first moving them through the six quick slots.
+- [ ] Refresh charge text, stack state, cooldown display, `ItemHook`, `UnitStats`, Resource Energy/Rage, cooking, and quest state after use.
+- [ ] Define failure behavior when the target is invalid, the item is cooling down, or the hero cannot use the item.
+- [ ] Keep the existing six-slot transfer route as a fallback until all target modes pass testing.
+
+### Native 3D equipment presentation
+
+- [ ] Determine whether the native character display can be opened or embedded without replacing PotS fullscreen frames.
+- [ ] Test it after `Interface`, `FullscreenUI`, `MasterUI`, and `DEquipment` initialization.
+- [ ] Verify portrait/model updates after morph, revive, skin change, equipment change, and hero selection.
+- [ ] If the native display cannot coexist cleanly, retain the PotS equipment UI and prototype a separate visual-only model panel rather than coupling gameplay state to undocumented frames.
+
+## Phase 3 - Update every item consumer
+
+Inventory support is incomplete until systems stop assuming that all usable items live in six native slots or only in PotS tables.
+
+- [ ] `ItemSystems/ItemHook.j`: register equip/unequip responses and validate create/destroy tracking for bagged and equipped items.
+- [ ] `UnitSystems/UnitStats.j`: recalculate on native equip/unequip and prevent duplicate stat application when the bridge is active.
+- [ ] `DestroyerInventoryAndEquipmentSystem/PoTs/HeroItemCheck.j`: search/remove across quick slots, native bag, native equipment, and PotS storage according to category policy.
+- [ ] `Death/Death.j` and `Death/Revival.j`: include native bag/equipment in difficulty-based loss and exact restoration.
+- [ ] `Professions/Professions.j` and `Professions/ProfessionsCooking.j`: locate ingredients/tools and process direct consumable-use events safely.
+- [ ] `AI/AI.j`: teach inventory helpers about bagged/equipped state before AI heroes use or transfer items.
+- [ ] `PlayerHome/PlayerHome.j`: find the Traveler's Journal without assuming a quick-inventory slot.
+- [ ] `Resources/ResourceEnergy.j` and `Resources/ResourceRage.j`: refresh resource state after native equip, unequip, and bag use.
+- [ ] `ItemSystems/ItemCleanup.j`: treat native bagged/equipped items as owned and protected from ground cleanup.
+- [ ] `ItemLootSystems/ItemLootSystem.j`, `UI/ShopUI.j`, and vendor delivery: choose a deterministic destination and full-inventory fallback.
+- [ ] `QuestsAndDialogs/QuestGiver.j`: include native inventory categories in quest-item checks without changing quest ownership rules.
+
+### Filtered random items
+
+- [ ] Prototype `ChooseRandomItemExWithFilter` using level, `itemtype`, `equipmentType`, and `itemTag`.
+- [ ] Use it only where engine-side random selection is desirable. PotS loot tables retain authority over rarity, weights, quantities, quest gates, zones, bosses, and specific sources.
+- [ ] Confirm deterministic synchronized results in multiplayer before using it for gameplay drops.
+
+### Team-colored items
+
+- [ ] Prototype `SetItemColor` for ownership or faction communication, not rarity coloring; it accepts a `playercolor`, not arbitrary RGB.
+- [ ] Test ground, bag, equipment, native 3D display, transfer, and neutral ownership behavior.
+- [ ] Do not enable globally unless the visual language is understandable in both HD and Classic modes.
+
+## Phase 4 - Ability cooldowns, aura state, and attack resets
+
+### Cooldown API
+
+Target natives:
+
+- `BlzGetUnitAbilityCooldownPercent`
+- `BlzSetUnitAbilityCooldownRemaining`
+- `BlzSetUnitAbilityCooldownPercent`
+- `BlzAdjustUnitAbilityCooldownRemaining`
+- `BlzAdjustUnitAbilityCooldownPercent`
+
+Implementation work:
+
+- [ ] Build a semantics test for positive/negative adjustment, values outside 0-100%, abilities not cooling down, charge-based abilities, transformed units, and ability level changes.
+- [ ] Refactor `Abilities/Shaman/ShamanCommon.j` so talent cooldown reduction adjusts the active cooldown instead of restarting it through `BlzStartUnitAbilityCooldown`.
+- [ ] Update `ShamanAncestralWard.j` to set remaining cooldown explicitly where its scripted cast requires a fixed value.
+- [ ] Review `ShamanSummonElemental.j` cooldown gating and all future talent effects against the shared helper.
+- [ ] Add focused tests proving repeated callbacks cannot apply the same reduction more than once.
+- [ ] Keep UI cooldown display consistent with the actual engine cooldown.
+
+### Aura toggling
+
+- [ ] Test `BlzUnitEnableAuras(unit, enable, affectsUI)` with learned auras, item auras, hidden spellbook auras, totems, dead units, morphs, and illusions.
+- [ ] Use it only for states that intentionally suppress every aura on a unit, such as controlled transitions or special encounter states.
+- [ ] Do not replace the targeted buff cleanup in `ResourceEnergy` or `ResourceRage`; removing received mana-regeneration buffs is not equivalent to disabling all aura abilities emitted by that unit.
+- [ ] Verify that UI state restoration is exact after nested disable/enable requests.
+
+### Attack cooldown reset
+
+- [ ] Test `BlzResetUnitAttack(unit, weaponIndex)` with weapon indices 0 and 1, melee/ranged heroes, attack-speed bonuses, and interrupted attacks.
+- [ ] Adopt only for an explicitly designed "immediate next swing" mechanic. Do not replace generic `IssueImmediateOrder(..., "stop")` calls.
+- [ ] Consider `ShamanStormstrike` or a future windfury-style proc only after combat design approves the behavioral change.
+
+## Phase 5 - Camera, input, and minimap
+
+### CameraControl
+
+- [ ] Prototype `BlzCameraSetCameraType`/`BlzCameraGetCameraType` and document valid integer camera types.
+- [ ] Use `SetCameraFieldControlledByInput` to give the engine or PotS exclusive ownership of each camera field during Normal, Advanced, Developer, dialog, death, travel, and fullscreen cinematic modes.
+- [ ] Evaluate `CAMERA_FIELD_ZABSOLUTE`, depth-of-field distance, and depth-of-field scale for cinematic presets only.
+- [ ] Evaluate `EnableCameraBlocker` and `AddCameraBlocker` for authored zone restrictions instead of repeated corrective camera movement.
+- [ ] Preserve `CameraControl_Suspend*`, resume state, `DialogCamera`, death camera, travel camera, and DynamicMinimap contracts.
+
+### Input and coordinate APIs
+
+- [ ] Evaluate `BlzIsKeyPressed`, `BlzIsMetaKeyPressed`, and `BlzIsMouseButtonPressed` for robust modifier and held-input state.
+- [ ] Evaluate `BlzGetMouseScreenPosX/Y` plus pixel/frame conversion for UI hit testing and drag interactions.
+- [ ] Keep local input and camera results out of synchronized gameplay writes unless explicitly synchronized.
+- [ ] Replace `CameraControl`'s hidden item pathing probe with `BlzIsTerrainPathableEx` only if it matches the current collision behavior around items, cliffs, destructibles, water, and narrow passages.
+
+### Dynamic minimap
+
+- [ ] Enable the new "generate dynamically within camera bounds" option in a copy of the map.
+- [ ] Compare it against `DynamicMinimap/DynamicMinimap_lastWorking.j` for resolution, painted colors, fog-of-war behavior, pings, quest icons, camera-bound transitions, and performance.
+- [ ] Determine whether native generation eliminates the imported chunk textures and the risky `SetCameraBounds` transaction.
+- [ ] Keep chunked/full-map modes until the native option passes long-session and multiplayer testing.
+- [ ] If native generation wins, remove imports and conversion tooling in a separate cleanup commit after rollback assets are archived.
+
+## Phase 6 - Fog, HD water, lighting, and weather
+
+### FogSystem state model
+
+Extend `EnvironmentSystems/FogSystem.j` and zone data from the current start/end/RGB model to a complete preset:
+
+- Fog style (`FOG_STYLE_LINEAR`, `EXP`, `EXP2`, `HEIGHT`, `NEW_EXP`, `NEW_EXP_2`)
+- Z start and end
+- Density
+- Height start and end
+- Linear start and end
+- Maximum linear density/opacity
+- Draw over sky
+- RGB color
+
+Tasks:
+
+- [ ] Add a `FogPreset`-style data structure or equivalent explicit arrays with copy/apply/interpolate operations.
+- [ ] Update `Zones/ZonesCore.j` and zone configuration without changing current visuals by default.
+- [ ] Update `Stormv2.j` so lightning flashes save, modify, and restore every fog field rather than only legacy fields.
+- [ ] Reconcile `WeatherSystemV4`, `DNC`, fullscreen UI fog overrides, dungeon transitions, and per-selected-hero zone presentation.
+- [ ] Test which fog setters are safe as local visual calls and document the multiplayer rule.
+- [ ] Author representative linear, height, exponential, dungeon, snow, rain, and storm presets in the World Editor with live preview.
+
+### HD water
+
+- [ ] Create a small `HDWater` controller only if runtime zone/weather changes are needed.
+- [ ] Wrap `SetHDWaterParamsEx` or individual `BlzSetHDWater*` calls behind named presets.
+- [ ] Test color override, displacement, opacity, reflectivity, emissivity, edge softness, wave strength, environment-map strength, and `SetWaterDeforms`.
+- [ ] Determine whether calls are global synchronized presentation or safely local before varying them per selected hero.
+- [ ] Integrate with zones, dungeons, day/night, rain, and storm only after transition behavior is stable.
+- [ ] Verify Classic-mode fallback and the effect on rain ripple water detection.
+
+### Lighting and post processing
+
+- [ ] Use the lighting editor to establish baseline day, night, dungeon, storm, and Forsaken-area profiles.
+- [ ] Replace suitable decorative emissive effects with editable omni lights where this reduces model/effect overhead.
+- [ ] Test shadow-casting omni lights against `DoodadRender` and graphics quality settings.
+- [ ] Use `BlzSetMinShadowCastingPointLightCount` only through a graphics preset; benchmark GPU cost before raising it.
+- [ ] Create map-level post-processing presets conservatively and verify readability of PotS UI, fog, water, and cinematics.
+- [ ] Document all manual values so the World Editor remains the source of truth.
+
+## Phase 7 - Doodads, destructibles, decals, and shadows
+
+### DoodadRender modernization
+
+Target natives include `BlzGetNumDoodads`, doodad index getters, `BlzSetSingleDoodadAnimation`, and single/area color setters.
+
+- [ ] Test whether doodad indices are stable across clients, map saves, variations, and editor rebuilds.
+- [ ] Build a runtime spatial index from doodad X/Y/rawcode only if initialization time and memory beat the current rect-by-rawcode approach.
+- [ ] Compare single-instance hide/show against `SetDoodadAnimationRect` for call count, correctness, and FPS on the current approximately 50,000 placements.
+- [ ] Preserve `DoodadManager` per-type render distances and fullscreen cinematic suspension.
+- [ ] Use exact instance animation to avoid hiding nearby same-type doodads outside the intended cell.
+- [ ] Retain the generated `war3map.doo` reference workflow if runtime enumeration is slower or index behavior is unstable.
+
+### Rotation, local axes, and colors
+
+- [ ] Use World Editor pitch/roll and local-axis scaling for environmental art that currently needs pre-rotated models.
+- [ ] Review procedural creation in `BridgesAndGates/BridgeSystem.j`, traps, and scripted scenery for `BlzCreateDestructable*PitchRoll*` opportunities.
+- [ ] Use `SetDoodadColor`, `BlzSetSingleDoodadColor`, `SetDestructableColor`, and `SetDestructableVertexColor` only for clear faction/state communication.
+- [ ] Confirm color and orientation survive death, revival, replacement, hiding, and save/load-equivalent recreation.
+- [ ] Verify pathing and selection remain aligned with rotated visuals.
+
+### HD authoring pass
+
+- [ ] Add water doodads only where terrain water cannot produce the required shape.
+- [ ] Use HD decals for roads, damage, ritual markings, and environmental storytelling after testing draw order and fog behavior.
+- [ ] Place shadow blockers where hidden interiors or performance-sensitive spaces benefit.
+- [ ] Apply "disable HD shadow" to high-count decorations when the visual loss is acceptable.
+- [ ] Use the light-range visualization during the same pass to prevent unnecessary overlap.
+
+## Phase 8 - Special effects, HUD, sound, and editor workflow
+
+### SpeciFX
+
+- [ ] Add named-animation APIs using `BlzSetSpecialEffectAnimation` and `BlzQueueSpecialEffectAnimation`.
+- [ ] Add an optional blend-time API using `BlzSetSpecialEffectAnimationBlendTime`.
+- [ ] Keep existing `animtype` support through `BlzPlaySpecialEffect` for backward compatibility.
+- [ ] Test queued animation cleanup, invalid animation names, time scale, looping models, and effect destruction.
+- [ ] Migrate only effects that currently require recreation or timers solely to sequence animations.
+
+### HUD skins and hero presentation
+
+- [ ] Prototype `SetPlayerRaceSkin` with Human, Orc, and Forsaken HUDs for each player.
+- [ ] Apply the skin before custom UI frame discovery and record which origin-frame names, sizes, and anchors change.
+- [ ] Regression-test `Interface`, `MasterUI`, `FullscreenUI`, `UIChanges`, quest UI, stats UI, abilities UI, shops, and inventory/equipment.
+- [ ] Keep a default HUD option if the Forsaken skin reduces readability or breaks custom layouts.
+- [ ] Evaluate `UNIT_BF_FORCE_DISPLAY_HP` for invulnerable buildings that should retain visible health; make the actual object-data choice manually in World Editor.
+
+### Sound variables
+
+- [ ] Use the editable sound-variable path feature to repair paths without recreating GUI sound variables.
+- [ ] Re-export or refresh `SoundAndMusic/SoundEditorSounds.json` and `ExSoundEditorSounds.j` after approved changes.
+- [ ] Confirm `ExSound` path lookup, labels, 3D settings, durations, and imported-file registration remain correct.
+
+### Trigger-authoring workflow
+
+- [ ] Use Copy As Script to capture remaining GUI behavior before converting it into maintained PotS libraries.
+- [ ] Use the new GUI leak-cleaning actions for GUI triggers that will remain GUI.
+- [ ] Do not accept automatic Lua conversion as a final PotS implementation.
+- [ ] Increase the editor undo-stack limit after measuring memory use on the full map.
+- [ ] Use the string-ID adjustment tool only with a saved backup and a before/after reference audit.
+
+## Phase 9 - Rollout order
+
+1. Complete native probe maps and record semantics.
+2. Add ItemManager schema/UI/W3T support without changing production item behavior.
+3. Backfill a small reviewed equipment/tag test set.
+4. Implement the native inventory bridge behind a disabled configuration flag.
+5. Integrate equip/unequip and direct bag-use events with item consumers.
+6. Convert cooldown helpers and extend SpeciFX.
+7. Prototype camera and dynamic-minimap replacements.
+8. Extend fog and water state, then author lighting/post-processing presets.
+9. Modernize doodad handling only after performance comparison.
+10. Enable features independently, with one changelog entry and rollback path per workstream.
+
+## Validation gates
+
+### Compilation
+
+- [ ] Focused test map compiles with the 3.0 `common.j`/`blizzard.j` snapshot.
+- [ ] Full map compiles through the normal World Editor/JassHelper workflow.
+- [ ] No archived Blizzard script is accidentally used by JassHelper or editor tooling.
+
+### Inventory and equipment
+
+- [ ] No item duplication, disappearance, handle reuse, or zero-charge resurrection.
+- [ ] Stats and set bonuses apply exactly once and are removed exactly once.
+- [ ] Two-handed/offhand and dual-wield restrictions remain correct.
+- [ ] Quest items, profession ingredients, shops, loot, death loss, revival restoration, and cleanup see the correct storage categories.
+- [ ] Directly used consumables support all target modes and share cooldowns correctly.
+- [ ] Native and PotS UI stay synchronized after every operation.
+
+### Multiplayer and local presentation
+
+- [ ] Equip, unequip, item use, random selection, fog, water, camera, and UI tests run with at least two players.
+- [ ] Local camera/input/HUD calls do not create synchronized state divergence.
+- [ ] Selected heroes may occupy different zones without applying another player's fog or camera state.
+
+### Performance and visual modes
+
+- [ ] Compare long-session FPS and memory before/after doodad, minimap, lighting, water, and post-processing changes.
+- [ ] Verify HD and Classic modes at low and high graphics settings.
+- [ ] Verify all new model, texture, sound, decal, water, and light assets resolve without editor-log warnings.
+
+## Completion criteria
+
+This plan is complete when each adopted workstream has documented runtime semantics, focused and full-map compile results, multiplayer validation where relevant, an explicit rollback route, updated developer documentation, and a current-date changelog entry. Features that fail parity or safety testing should remain documented prototypes rather than production dependencies.
