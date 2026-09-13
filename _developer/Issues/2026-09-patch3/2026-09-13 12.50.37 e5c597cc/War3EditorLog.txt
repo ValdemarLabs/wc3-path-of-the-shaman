@@ -1,0 +1,287 @@
+9/13 12:22:07.025  CWorldEditApp::StartUp
+9/13 12:22:07.025  Command Line: "C:\Program Files (x86)\Warcraft III\_retail_\x86_64\World Editor.exe" -launch -uid w3
+9/13 12:22:07.168  Opening mod - War3.w3mod
+9/13 12:22:07.300  prism: Info: name: AMD Radeon RX 9060 XT
+9/13 12:22:07.300  prism: Info: driverVersion: 0x00200000794103ec
+9/13 12:22:07.300  prism: Info: driverDate: 2026-08-17
+9/13 12:22:07.300  prism: Info: vendorId: AMD
+9/13 12:22:07.300  prism: Info: deviceId: 0x7590
+9/13 12:22:07.300  prism: Info: subsystemVendorId: 0x1458
+9/13 12:22:07.300  prism: Info: subsystemId: 0x2429
+9/13 12:22:07.300  prism: Info: revisionId: 0xc0
+9/13 12:22:07.300  prism: Info: type: Discrete
+9/13 12:22:07.300  prism: Info: virtualizationMode: Unknown
+9/13 12:22:07.300  prism: Info: luid: 000000000001173b
+9/13 12:22:07.300  prism: Info: index: 0
+9/13 12:22:07.300  prism: Info: PCI bus slot: 10
+9/13 12:22:07.300  prism: Info: Max queues: 1 graphics, 1 compute, 1 copy
+9/13 12:22:07.300  prism: Info: Hybrid Graphics: 0
+9/13 12:22:07.300  prism: Info: api: Dx11
+9/13 12:22:07.300  prism: Info: supported: 1
+9/13 12:22:07.300  prism: Info: vendorId: AMD
+9/13 12:22:07.300  prism: Info: deviceId: 0x7590
+9/13 12:22:07.300  prism: Info: amd.family: RDNA4
+9/13 12:22:07.300  prism: Info: amd.numCUs: 32
+9/13 12:22:07.300  prism: Info: amd.numWGPs: 16
+9/13 12:22:07.300  prism: Info: amd.numROPs: 32
+9/13 12:22:07.300  prism: Info: amd.coreClock: 2780 MHz
+9/13 12:22:07.300  prism: Info: amd.memoryClock: 2518 MHz
+9/13 12:22:07.300  prism: Info: amd.memoryBandwidth: 322304 MB/s
+9/13 12:22:07.300  prism: Info: amd.teraFlops: 22.7738
+9/13 12:22:07.300  prism: Info: amd.driverVersion: 26.10.41.01-260811a-203304C-AMD-Software-Adrenalin-Edition
+9/13 12:22:07.300  prism: Info: amd.radeonSoftwareVersion: 26.8.1
+9/13 12:22:07.300  prism: Info: windowsVersion: 11
+9/13 12:22:07.300  prism: Info: windowsBuildNumber: 26200
+9/13 12:22:07.300  prism: Info: dx11.driverCommandLists: 0
+9/13 12:22:07.300  prism: Info: dxFeatureLevel: 11.1
+9/13 12:22:07.300  prism: Info: typedUavLoadAdditionalFormats: 1
+9/13 12:22:07.300  prism: Info: preferredShaderModel: Dx50
+9/13 12:22:07.300  prism: Info: supportedShaderModels:
+9/13 12:22:07.300  prism: Info:   Dx40Level91
+9/13 12:22:07.300  prism: Info:   Dx40Level93
+9/13 12:22:07.300  prism: Info:   Dx40
+9/13 12:22:07.300  prism: Info:   Dx41
+9/13 12:22:07.300  prism: Info:   Dx50
+9/13 12:22:07.300  prism: Info: maxBufferSize: 4243587072
+9/13 12:22:07.300  prism: Info: max1dTextureSize: 16384
+9/13 12:22:07.300  prism: Info: max2dTextureSize: 16384
+9/13 12:22:07.300  prism: Info: maxCubeTextureSize: 16384
+9/13 12:22:07.300  prism: Info: max3dTextureSize: 2048
+9/13 12:22:07.300  prism: Info: maxArrayLayers: 2048
+9/13 12:22:07.300  prism: Info: maxCommandBufferPageSize: 0
+9/13 12:22:07.300  prism: Info: maxConstantBufferRange: 65536
+9/13 12:22:07.300  prism: Info: maxTypedBufferRange: 4243587072
+9/13 12:22:07.300  prism: Info: maxStructuredBufferRange: 4243587072
+9/13 12:22:07.300  prism: Info: drawIndirectArgsAlign: 4
+9/13 12:22:07.300  prism: Info: dispatchIndirectArgsAlign: 4
+9/13 12:22:07.300  prism: Info: constantBufferOffsetAlign: 256
+9/13 12:22:07.300  prism: Info: constantBufferViewSizeAlign: 256
+9/13 12:22:07.300  prism: Info: typedBufferOffsetAlign: 16
+9/13 12:22:07.300  prism: Info: structuredBufferOffsetAlign: 16
+9/13 12:22:07.300  prism: Info: bufferTextureCopyRowPitchAlign: 256
+9/13 12:22:07.300  prism: Info: bufferTextureCopyOffsetAlign: 1024
+9/13 12:22:07.300  prism: Info: rwBufferClearUintSupport: 7
+9/13 12:22:07.300  prism: Info: rwBufferClearFloatSupport: 4
+9/13 12:22:07.300  prism: Info: raytracingShaderIdentifierSize: 0
+9/13 12:22:07.300  prism: Info: raytracingShaderTableAlign: 64
+9/13 12:22:07.300  prism: Info: raytracingShaderRecordAlign: 32
+9/13 12:22:07.300  prism: Info: raytracingAccelerationStructureAlign: 256
+9/13 12:22:07.300  prism: Info: raytracingInstanceAlign: 256
+9/13 12:22:07.300  prism: Info: raytracingInstanceStride: 0
+9/13 12:22:07.300  prism: Info: raytracingGeometryTransformAlign: 16
+9/13 12:22:07.300  prism: Info: raytracingGeometryTransformStride: 0
+9/13 12:22:07.300  prism: Info: raytracingBoundingBoxAlign: 8
+9/13 12:22:07.300  prism: Info: raytracingTriangleFanAlign: 0
+9/13 12:22:07.300  prism: Info: maxAnisotropy: 16
+9/13 12:22:07.300  prism: Info: maxColorAttachments: 8
+9/13 12:22:07.300  prism: Info: maxVertexShaderAttributes: 32
+9/13 12:22:07.300  prism: Info: minWaveLaneCount: 0
+9/13 12:22:07.300  prism: Info: maxWaveLaneCount: 0
+9/13 12:22:07.300  prism: Info: maxTraceRecursionDepth: 0
+9/13 12:22:07.300  prism: Info: maxViewportExtent: 65535x65535
+9/13 12:22:07.300  prism: Info: minViewportBounds: -32768
+9/13 12:22:07.300  prism: Info: maxViewportBounds: 32767
+9/13 12:22:07.300  prism: Info: minLodBias: -16
+9/13 12:22:07.300  prism: Info: maxLodBias: 15.99
+9/13 12:22:07.300  prism: Info: maxLodSnap: 0
+9/13 12:22:07.300  prism: Info: shaderRWTier: 5
+9/13 12:22:07.300  prism: Info: resourceBindingTier: 0
+9/13 12:22:07.300  prism: Info: resourceHeapTier: 0
+9/13 12:22:07.300  prism: Info: raytracingTier: 0
+9/13 12:22:07.300  prism: Info: variableRateShadingTier: 0
+9/13 12:22:07.300  prism: Info: meshShaderTier: 0
+9/13 12:22:07.300  prism: Info: synchronizationTier: 0
+9/13 12:22:07.300  prism: Info: bundleCmdListTier: 0
+9/13 12:22:07.300  prism: Info: minMaxFilterOps: 1
+9/13 12:22:07.300  prism: Info: mirrorOnce: 1
+9/13 12:22:07.300  prism: Info: borderColor: 1
+9/13 12:22:07.300  prism: Info: minLod: 1
+9/13 12:22:07.300  prism: Info: maxLod: 1
+9/13 12:22:07.300  prism: Info: fractionalMinLod: 1
+9/13 12:22:07.300  prism: Info: lodBias: 1
+9/13 12:22:07.300  prism: Info: multiMipRWTextureView: 0
+9/13 12:22:07.300  prism: Info: dualSrcBlend: 1
+9/13 12:22:07.300  prism: Info: separateAlphaBlend: 1
+9/13 12:22:07.300  prism: Info: alphaToCoverage: 1
+9/13 12:22:07.300  prism: Info: independentBlend: 1
+9/13 12:22:07.300  prism: Info: wireframe: 1
+9/13 12:22:07.300  prism: Info: depthBiasClamp: 1
+9/13 12:22:07.300  prism: Info: depthClamp: 1
+9/13 12:22:07.300  prism: Info: depthBoundsTest: 1
+9/13 12:22:07.300  prism: Info: stencilTextureView: 1
+9/13 12:22:07.300  prism: Info: geometryShader: 0
+9/13 12:22:07.300  prism: Info: tessellationShader: 0
+9/13 12:22:07.300  prism: Info: computeShader: 1
+9/13 12:22:07.300  prism: Info: tileShader: 0
+9/13 12:22:07.300  prism: Info: explicitShaderEntryPoint: 0
+9/13 12:22:07.300  prism: Info: programmableSamplePositions: 0
+9/13 12:22:07.300  prism: Info: instancing: 1
+9/13 12:22:07.300  prism: Info: baseVertex: 1
+9/13 12:22:07.300  prism: Info: baseInstance: 1
+9/13 12:22:07.300  prism: Info: drawIndirect: 1
+9/13 12:22:07.300  prism: Info: drawIndirectBaseInstance: 1
+9/13 12:22:07.300  prism: Info: drawIndirectCountBuffer: 1
+9/13 12:22:07.300  prism: Info: deviceLocalConstantBufferOffsets: 1
+9/13 12:22:07.300  prism: Info: deviceLocalQueries: 0
+9/13 12:22:07.300  prism: Info: overlappingOcclusionQueries: 1
+9/13 12:22:07.300  prism: Info: precision16Bits: 1
+9/13 12:22:07.300  prism: Info: rasterOrderViews: 1
+9/13 12:22:07.300  prism: Info: exclusiveFullscreen: 1
+9/13 12:22:07.300  prism: Info: uma: 0
+9/13 12:22:07.300  prism: Info: streamOut: 1
+9/13 12:22:07.300  prism: Info: barycentrics: 0
+9/13 12:22:07.300  prism: Info: placedUploads: 0
+9/13 12:22:07.300  prism: Info: frameCaptureToTool: 0
+9/13 12:22:07.300  prism: Info: frameCaptureToFile: 0
+9/13 12:22:07.300  prism: Info: waveOps: 0
+9/13 12:22:07.300  prism: Info: clockCalibration: 0
+9/13 12:22:07.300  prism: Info: schedulableSwapChain: 0
+9/13 12:22:07.300  prism: Info: pipelineStageFlagsIgnored: 0
+9/13 12:22:07.300  prism: Info: swapChainVsyncThresholdTop: 0
+9/13 12:22:07.300  prism: Info: swapChainVsyncThresholdBottom: 0
+9/13 12:22:07.300  prism: Info: multiShaderStageBinding: 0
+9/13 12:22:07.300  prism: Info: commonStatePromotion: 0
+9/13 12:22:07.300  prism: Info: generateMips: 1
+9/13 12:22:07.300  prism: Info: offlineBvh: 0
+9/13 12:22:07.300  prism: Info: registerSpaces: 0
+9/13 12:22:07.300  prism: Info: unboundedRanges: 0
+9/13 12:22:07.300  prism: Info: conservativeRaster: 0
+9/13 12:22:07.300  prism: Info: supportedQueries:
+9/13 12:22:07.300  prism: Info:   BinaryOcclusion
+9/13 12:22:07.300  prism: Info:   CountingOcclusion
+9/13 12:22:07.300  prism: Info:   Timestamp
+9/13 12:22:07.300  prism: Info: supportedPresentStatistics:
+9/13 12:22:07.300  prism: Info:   VBlankInterval
+9/13 12:22:07.300  prism: Info:   VBlankTime
+9/13 12:22:09.262  SysMsg: Failed to load Environment Map for tileset L
+9/13 12:22:09.289  OpenMap rejected invalid path: 
+9/13 12:22:09.561  SysMsg:  
+9/13 12:27:32.699  SysMsg: Referencing unknown database field: 'netsafe' (UI/SkinMetaData.slk)
+9/13 12:27:32.828  Opening map - C:/Users/Valtteri/Documents/Warcraft III/Maps/test2029-09/test2026.w3m
+9/13 12:27:32.828  Opening mod - C:/Users/Valtteri/Documents/Warcraft III/Maps/test2029-09/test2026.w3m
+9/13 12:27:33.012  SysMsg: Failed to load Environment Map for tileset L
+9/13 12:27:33.057  SysMsg: Referencing unknown database field: 'netsafe' (UI/SkinMetaData.slk)
+9/13 12:27:33.377  Opening map - C:/Users/Valtteri/Documents/Warcraft III/Maps/test2029-09/test2026.w3m
+9/13 12:27:33.377  Opening mod - C:/Users/Valtteri/Documents/Warcraft III/Maps/test2029-09/test2026.w3m
+9/13 12:30:24.893  Opening map - C:/Users/Valtteri/Documents/Warcraft III/Maps/test2029-09/test2026.w3m
+9/13 12:30:24.893  Opening mod - C:/Users/Valtteri/Documents/Warcraft III/Maps/test2029-09/test2026.w3m
+9/13 12:30:24.893  Opening map - C:/Users/Valtteri/Documents/Warcraft III/Maps/test2029-09/test2026.w3mTemp/
+9/13 12:30:24.893  Opening mod - C:/Users/Valtteri/Documents/Warcraft III/Maps/test2029-09/test2026.w3mTemp/
+9/13 12:30:26.001  Opening map - C:/Users/Valtteri/Documents/Warcraft III/Maps/test2029-09/test2026.w3m
+9/13 12:30:26.001  Opening mod - C:/Users/Valtteri/Documents/Warcraft III/Maps/test2029-09/test2026.w3m
+9/13 12:30:29.312  SysMsg: Referencing unknown database field: 'netsafe' (Doodads/DoodadMetaData.slk)
+9/13 12:31:19.882  Opening map - C:/Users/Valtteri/Documents/Warcraft III/Maps/test2029-09/test2026.w3m
+9/13 12:31:19.882  Opening mod - C:/Users/Valtteri/Documents/Warcraft III/Maps/test2029-09/test2026.w3m
+9/13 12:31:19.882  Opening map - C:/Users/Valtteri/Documents/Warcraft III/Maps/test2029-09/test2026.w3mTemp/
+9/13 12:31:19.882  Opening mod - C:/Users/Valtteri/Documents/Warcraft III/Maps/test2029-09/test2026.w3mTemp/
+9/13 12:31:20.878  Opening map - C:/Users/Valtteri/Documents/Warcraft III/Maps/test2029-09/test2026.w3m
+9/13 12:31:20.878  Opening mod - C:/Users/Valtteri/Documents/Warcraft III/Maps/test2029-09/test2026.w3m
+9/13 12:37:24.986  Opening map - C:/Users/Valtteri/Documents/Warcraft III/Maps/test2029-09/test2026.w3m
+9/13 12:37:24.986  Opening mod - C:/Users/Valtteri/Documents/Warcraft III/Maps/test2029-09/test2026.w3m
+9/13 12:37:24.986  Opening map - C:/Users/Valtteri/Documents/Warcraft III/Maps/test2029-09/test2026.w3mTemp/
+9/13 12:37:24.986  Opening mod - C:/Users/Valtteri/Documents/Warcraft III/Maps/test2029-09/test2026.w3mTemp/
+9/13 12:37:26.090  Opening map - C:/Users/Valtteri/Documents/Warcraft III/Maps/test2029-09/test2026.w3m
+9/13 12:37:26.090  Opening mod - C:/Users/Valtteri/Documents/Warcraft III/Maps/test2029-09/test2026.w3m
+9/13 12:38:20.765  model creation failed - Objects/InventoryItems/GarithosHead/GarithosHead.mdl
+9/13 12:38:20.765  model creation failed - Objects/InventoryItems/GarithosHead/GarithosHead.mdl
+9/13 12:38:25.941  model creation failed - Objects/InventoryItems/ItemWeapon/ItemWeapon1.mdl
+9/13 12:38:25.941  model creation failed - Objects/InventoryItems/ItemWeapon/ItemWeapon1.mdl
+9/13 12:38:26.953  model creation failed - Objects/InventoryItems/ItemChest/ItemChest1.mdl
+9/13 12:38:26.955  model creation failed - Objects/InventoryItems/ItemChest/ItemChest1.mdl
+9/13 12:38:28.844  model creation failed - Objects/InventoryItems/ItemTrinket/ItemTrinket1.mdl
+9/13 12:38:28.845  model creation failed - Objects/InventoryItems/ItemTrinket/ItemTrinket1.mdl
+9/13 12:38:29.268  model creation failed - Objects/InventoryItems/ItemOffhand/ItemOffhand0.mdl
+9/13 12:38:29.268  model creation failed - Objects/InventoryItems/ItemOffhand/ItemOffhand0.mdl
+9/13 12:38:36.114  model creation failed - Objects/InventoryItems/ItemRing/ItemRing0.mdl
+9/13 12:38:36.114  model creation failed - Objects/InventoryItems/ItemRing/ItemRing0.mdl
+9/13 12:38:38.162  model creation failed - Objects/InventoryItems/ItemTrinket/ItemTrinket1.mdl
+9/13 12:38:38.162  model creation failed - Objects/InventoryItems/ItemTrinket/ItemTrinket1.mdl
+9/13 12:38:48.513  SysMsg: Missing string: WESTRING_COD_TYPE_ITEMTAG
+9/13 12:39:56.991  Opening map - C:/Users/Valtteri/Documents/Warcraft III/Maps/test2029-09/test2026.w3m
+9/13 12:39:56.991  Opening mod - C:/Users/Valtteri/Documents/Warcraft III/Maps/test2029-09/test2026.w3m
+9/13 12:39:56.991  Opening map - C:/Users/Valtteri/Documents/Warcraft III/Maps/test2029-09/test2026.w3mTemp/
+9/13 12:39:56.991  Opening mod - C:/Users/Valtteri/Documents/Warcraft III/Maps/test2029-09/test2026.w3mTemp/
+9/13 12:39:58.048  Opening map - C:/Users/Valtteri/Documents/Warcraft III/Maps/test2029-09/test2026.w3m
+9/13 12:39:58.048  Opening mod - C:/Users/Valtteri/Documents/Warcraft III/Maps/test2029-09/test2026.w3m
+9/13 12:46:24.469  Opening map - C:/Users/Valtteri/Documents/Warcraft III/Maps/EpicQuests/Epic Quests.w3x
+9/13 12:46:24.469  Opening mod - C:/Users/Valtteri/Documents/Warcraft III/Maps/EpicQuests/Epic Quests.w3x
+9/13 12:46:29.629  SysMsg: Referencing unknown database field: 'occlusion' (Units/DestructableData.slk)
+9/13 12:46:29.629  SysMsg: Referencing unknown database field: 'customTeamColor' (Units/DestructableData.slk)
+9/13 12:46:29.629  SysMsg: Referencing unknown database field: 'teamColor' (Units/DestructableData.slk)
+9/13 12:46:29.801  model creation failed - Doodads\Northrend\Water\FloatingPlank\FloatingPlank0.mdl
+9/13 12:46:29.801  SysMsg: Could not load file: Doodads\Northrend\Water\FloatingPlank\FloatingPlank0.mdl
+9/13 12:46:29.801  model creation failed - Doodads\Northrend\Water\FloatingPlank\FloatingPlank0.mdl
+9/13 12:46:33.606  model creation failed - Doodads\Cityscape\Props\LanternPost\LanternPost0.mdl
+9/13 12:46:33.606  SysMsg: Could not load file: Doodads\Cityscape\Props\LanternPost\LanternPost0.mdl
+9/13 12:46:34.622  model creation failed - Doodads\Northrend\Water\FloatingPlank\FloatingPlank0.mdl
+9/13 12:46:34.629  model creation failed - Doodads\Northrend\Water\FloatingPlank\FloatingPlank0.mdl
+9/13 12:46:34.790  model creation failed - Doodads\Northrend\Water\FloatingPlank\FloatingPlank0.mdl
+9/13 12:46:34.790  model creation failed - Doodads\Northrend\Water\FloatingPlank\FloatingPlank0.mdl
+9/13 12:46:35.064  model creation failed - Doodads\Northrend\Water\FloatingPlank\FloatingPlank0.mdl
+9/13 12:46:35.176  model creation failed - Doodads\Cityscape\Props\LanternPost\LanternPost0.mdl
+9/13 12:46:35.310  model creation failed - Doodads\Northrend\Water\FloatingPlank\FloatingPlank0.mdl
+9/13 12:46:35.310  model creation failed - Doodads\Northrend\Water\FloatingPlank\FloatingPlank0.mdl
+9/13 12:46:35.310  model creation failed - Doodads\Northrend\Water\FloatingPlank\FloatingPlank0.mdl
+9/13 12:46:35.310  model creation failed - Doodads\Northrend\Water\FloatingPlank\FloatingPlank0.mdl
+9/13 12:46:35.571  model creation failed - Doodads\Northrend\Water\FloatingPlank\FloatingPlank0.mdl
+9/13 12:46:36.344  model creation failed - Doodads\Northrend\Water\FloatingPlank\FloatingPlank0.mdl
+9/13 12:46:37.280  model creation failed - Doodads\Cityscape\Props\LanternPost\LanternPost0.mdl
+9/13 12:46:37.280  model creation failed - Doodads\Cityscape\Props\LanternPost\LanternPost0.mdl
+9/13 12:46:37.294  model creation failed - Doodads\Cityscape\Props\LanternPost\LanternPost0.mdl
+9/13 12:46:37.442  model creation failed - Doodads\LordaeronSummer\Props\CauldronWithHeads\CauldronWithHeads0.mdl
+9/13 12:46:37.442  SysMsg: Could not load file: Doodads\LordaeronSummer\Props\CauldronWithHeads\CauldronWithHeads0.mdl
+9/13 12:46:37.867  Solid texture substituted - ReplaceableTextures\TeamColor\Black32.blp
+9/13 12:46:38.530  model creation failed - Doodads\Northrend\Water\FloatingPlank\FloatingPlank0.mdl
+9/13 12:46:38.793  model creation failed - .mdl.mdl
+9/13 12:46:38.793  SysMsg: Could not load file: .mdl.mdl
+9/13 12:46:40.440  model creation failed - https://www.hiveworkshop.com/members/sarsaparilla.295950/
+9/13 12:46:40.440  model creation failed - https://www.patreon.com/user?u=52986355
+9/13 12:46:42.115  model creation failed - BagIsInvisible.mdl
+9/13 12:46:42.115  SysMsg: Could not load file: BagIsInvisible.mdl
+9/13 12:46:42.615  model creation failed - https://www.hiveworkshop.com/members/sarsaparilla.295950/
+9/13 12:46:42.615  model creation failed - https://www.patreon.com/user?u=52986355
+9/13 12:48:43.318  SysMsg: Referencing unknown database field: 'occlusion' (Units/DestructableData.slk)
+9/13 12:48:43.318  SysMsg: Referencing unknown database field: 'customTeamColor' (Units/DestructableData.slk)
+9/13 12:48:43.318  SysMsg: Referencing unknown database field: 'teamColor' (Units/DestructableData.slk)
+9/13 12:48:43.318  SysMsg: Could not load file: Doodads\Northrend\Water\FloatingPlank\FloatingPlank0.mdl
+9/13 12:48:43.318  SysMsg: Could not load file: Doodads\Cityscape\Props\LanternPost\LanternPost0.mdl
+9/13 12:48:43.318  SysMsg: Could not load file: Doodads\LordaeronSummer\Props\CauldronWithHeads\CauldronWithHeads0.mdl
+9/13 12:48:43.318  SysMsg: Could not load file: .mdl.mdl
+9/13 12:48:43.318  SysMsg: Could not load file: BagIsInvisible.mdl
+9/13 12:48:43.318  SysMsg: Failed to load Environment Map for tileset A
+9/13 12:50:29.123  SysMsg: Referencing unknown database field: 'occlusion' (Units/UnitUI.slk)
+9/13 12:50:29.123  SysMsg: Referencing unknown database field: 'showAirToGround' (Units/UnitUI.slk)
+9/13 12:50:29.123  SysMsg: Referencing unknown database field: 'equipment' (Units/ItemData.slk)
+9/13 12:50:29.123  SysMsg: Referencing unknown database field: 'tag' (Units/ItemData.slk)
+9/13 12:50:29.123  SysMsg: Referencing unknown database field: 'teamColor' (Units/ItemData.slk)
+9/13 12:50:29.123  SysMsg: Referencing unknown database field: 'customTeamColor' (Units/ItemData.slk)
+9/13 12:50:29.131  SysMsg: Referencing unknown database field: 'netsafe' (UI/SkinMetaData.slk)
+9/13 12:50:29.440  Opening map - C:/Users/Valtteri/Documents/Warcraft III/Maps/EpicQuests/Epic Quests.w3x
+9/13 12:50:29.440  Opening mod - C:/Users/Valtteri/Documents/Warcraft III/Maps/EpicQuests/Epic Quests.w3x
+9/13 12:50:31.410  SysMsg: Referencing unknown database field: 'invulnerable' (Units/ItemData.slk)
+9/13 12:50:37.446  NGDP Diagnostic Log:
+9/13 12:50:37.446  2026-09-13T12:22:07 {74ec} [INFO] - NGDP initialization - (archive: true, cache: false, Async: true)
+9/13 12:50:37.446  2026-09-13T12:22:07 {7e10} [INFO] - adding network address 95.175.121.8:443 for server https://level3.ssl.blizzard.com/
+9/13 12:50:37.446  2026-09-13T12:22:07 {7e10} [INFO] - adding network address 95.175.121.25:443 for server https://level3.ssl.blizzard.com/
+9/13 12:50:37.446  2026-09-13T12:22:07 {7e10} [INFO] - adding network address 137.221.64.2:443 for server https://eu.cdn.blizzard.com/
+9/13 12:50:37.446  2026-09-13T12:22:07 {7e10} [INFO] - adding network address 137.221.64.4:443 for server https://eu.cdn.blizzard.com/
+9/13 12:50:37.446  2026-09-13T12:22:07 {7e10} [INFO] - adding network address 137.221.64.6:443 for server https://eu.cdn.blizzard.com/
+9/13 12:50:37.446  2026-09-13T12:22:07 {7e10} [INFO] - adding network address 137.221.64.7:443 for server https://eu.cdn.blizzard.com/
+9/13 12:50:37.446  2026-09-13T12:22:07 {7e10} [INFO] - adding network address 137.221.64.1:443 for server https://eu.cdn.blizzard.com/
+9/13 12:50:37.446  2026-09-13T12:22:07 {7e10} [INFO] - adding network address 137.221.64.5:443 for server https://eu.cdn.blizzard.com/
+9/13 12:50:37.446  2026-09-13T12:22:07 {7e10} [INFO] - adding network address 137.221.64.3:443 for server https://eu.cdn.blizzard.com/
+9/13 12:50:37.446  2026-09-13T12:22:07 {7e10} [INFO] - adding network address 137.221.64.8:443 for server https://eu.cdn.blizzard.com/
+9/13 12:50:37.446  2026-09-13T12:22:07 {7e10} [INFO] - adding network address 95.175.121.25:80 for server http://level3.blizzard.com/
+9/13 12:50:37.446  2026-09-13T12:22:07 {7e10} [INFO] - adding network address 95.175.121.8:80 for server http://level3.blizzard.com/
+9/13 12:50:37.446  2026-09-13T12:22:07 {7e10} [INFO] - adding network address 137.221.64.2:80 for server http://eu.cdn.blizzard.com/
+9/13 12:50:37.446  2026-09-13T12:22:07 {7e10} [INFO] - adding network address 137.221.64.4:80 for server http://eu.cdn.blizzard.com/
+9/13 12:50:37.446  2026-09-13T12:22:07 {7e10} [INFO] - adding network address 137.221.64.6:80 for server http://eu.cdn.blizzard.com/
+9/13 12:50:37.446  2026-09-13T12:22:07 {7e10} [INFO] - adding network address 137.221.64.7:80 for server http://eu.cdn.blizzard.com/
+9/13 12:50:37.446  2026-09-13T12:22:07 {7e10} [INFO] - adding network address 137.221.64.1:80 for server http://eu.cdn.blizzard.com/
+9/13 12:50:37.446  2026-09-13T12:22:07 {7e10} [INFO] - adding network address 137.221.64.5:80 for server http://eu.cdn.blizzard.com/
+9/13 12:50:37.446  2026-09-13T12:22:07 {7e10} [INFO] - adding network address 137.221.64.3:80 for server http://eu.cdn.blizzard.com/
+9/13 12:50:37.446  2026-09-13T12:22:07 {7e10} [INFO] - adding network address 137.221.64.8:80 for server http://eu.cdn.blizzard.com/
+9/13 12:50:37.446  2026-09-13T12:22:07 {74ec} [INFO] - Initialization step - FETCHING_CDN_CONFIG
+9/13 12:50:37.446  2026-09-13T12:22:07 {74ec} [INFO] - Initialization step - FETCHING_BUILD_CONFIG
+9/13 12:50:37.446  2026-09-13T12:22:07 {74ec} [INFO] - no patch configuration
+9/13 12:50:37.446  2026-09-13T12:22:07 {74ec} [INFO] - Prepatch
