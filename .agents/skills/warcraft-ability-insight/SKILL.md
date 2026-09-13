@@ -12,7 +12,7 @@ Use the repository's searchable [Warcraft 3 WE Ability Insight](<../../../_devel
 1. Define the required gameplay behavior and its constraints: active/passive/autocast, target types, stacking, dispel/steal behavior, damage or healing semantics, AI use, and multiplayer sensitivity.
 2. Search the Markdown by base-ability name, four-character rawcode, and relevant tag or field term. Use the generated table of contents for neighboring alternatives.
 3. Read the entire matching ability section, not only the matching line. Follow every inline comment link and check `Latest tested version`, `TODO`, `Unused`, `Dummy Ability`, and `Depreciated` labels.
-4. Compare the findings with the closest PotS ability implementation and current Object Editor data. Check `_Blizzard/common.j` and `_Blizzard/Blizzard.j` before assuming a native or helper is unavailable.
+4. Compare the findings with the closest PotS ability implementation and current Object Editor data. Treat `_Blizzard/common.j` and `_Blizzard/blizzard.j` as the active Warcraft III 3.0.0, build 24268 API snapshot; search them for exact declarations and field constants before assuming a native or helper is unavailable. Treat `_Blizzard/Archive/` only as historical comparison material.
 5. Choose a stock base ability only when its documented hardcoded behavior fits the use case. Prefer explicit JASS control when an Object Editor field is documented as ignored, refresh-dependent, unsafe, or patch-sensitive.
 6. Keep JASS changes in the repository and report rawcode creation, field configuration, buff creation, icons, orders, and other Object Editor work as manual World Editor follow-up.
 7. Validate compile order and cleanup in JassHelper, then test the affected ability in a focused map and the full map. Test multiplayer when orders, local UI, synchronization, ownership, morphing, or documented desync risks are involved.
@@ -20,6 +20,8 @@ Use the repository's searchable [Warcraft 3 WE Ability Insight](<../../../_devel
 ## Evidence rules
 
 - Treat the reference as a versioned collection of observations, not a guarantee for the current Warcraft III patch.
+- Do not infer native signatures from patch-note prose. Verify parameter order, return types, field constants, and related handle types in the active local Blizzard scripts. This is especially important for the 3.0 cooldown APIs, `BlzResetUnitAttack`, and `BlzUnitEnableAuras`.
+- Flag use of 3.0-only natives as a minimum-client requirement and validate their runtime behavior in the current game build; declaration presence proves availability, not gameplay semantics or multiplayer safety.
 - Keep the documented rawcode casing when searching, while checking suspicious `I`/`l` and upper/lower-case variants against actual Object Editor data.
 - Distinguish negative damage from healing and negative healing; armor, resistance, attribution, and kill credit can differ.
 - Do not rely on a shared buff ID or a changed buff ID to stack unless the selected base ability's section supports it in the relevant patch.

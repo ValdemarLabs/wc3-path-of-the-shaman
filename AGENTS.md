@@ -2,7 +2,7 @@
 
 ## Project Structure & Module Organization
 
-Path of the Shaman is primarily vJASS/JassHelper code grouped by gameplay feature. Add source to the existing domain folder, such as `Abilities/`, `Arena/`, `QuestsAndDialogs/`, `UI/`, or `UnitSystems/`. Shared and imported dependencies live in `_CoreSystems/`; use `_Blizzard/common.j` and `_Blizzard/Blizzard.j` as native and helper references. Frame definitions and load lists are under `_fdf/` and `_tocs/`. Database-generated JASS is written to `WC3_Export/`, while the Windows item tool lives in `WC3_Database/WC3ItemManager/`. Tests are generally focused `.j` harnesses beside their systems. Treat `backups/`, `_Old*`, `bin/`, and `obj/` as historical or generated unless explicitly targeted.
+Path of the Shaman is primarily vJASS/JassHelper code grouped by gameplay feature. Add source to the existing domain folder, such as `Abilities/`, `Arena/`, `QuestsAndDialogs/`, `UI/`, or `UnitSystems/`. Shared and imported dependencies live in `_CoreSystems/`; use `_Blizzard/common.j` and `_Blizzard/blizzard.j` as native and helper references. Frame definitions and load lists are under `_fdf/` and `_tocs/`. Database-generated JASS is written to `WC3_Export/`, while the Windows item tool lives in `WC3_Database/WC3ItemManager/`. Tests are generally focused `.j` harnesses beside their systems. Treat `backups/`, `_Old*`, `bin/`, and `obj/` as historical or generated unless explicitly targeted.
 
 ## Build, Test, and Development Commands
 
@@ -20,6 +20,10 @@ The installer command requires prepared `Installer/payload/` content and Inno Se
 ## World Editor export boundaries
 
 Treat `_MISC/war3map.wts` as a read-only, point-in-time export from the Warcraft III World Editor. It may be inspected as supporting evidence but must never be edited. The user performs map-specific Object Editor, GUI trigger, placed-unit, region, and string changes in World Editor; report those changes as manual WE follow-up instead of modifying exported map data.
+
+## Blizzard API baseline
+
+Treat `_Blizzard/common.j` and `_Blizzard/blizzard.j` as the active Warcraft III 3.0.0, build 24268 API snapshot. Files under `_Blizzard/Archive/` are historical comparison material, not the availability baseline. Before implementing a native-dependent feature, search the active files for the exact declaration, parameter order, return type, related constants, and handle inheritance; patch-note summaries and older online JASS references are not sufficient for signature checks. Prefer a `common.j` native over a duplicate custom wrapper, and inspect `blizzard.j` before adding a BJ-style helper. New 3.0 APIs include ability cooldown control, aura toggling, attack reset, equipment/loadout, fog and HD-water controls, input/camera queries, and doodad/destructable transforms and colors. When using a 3.0-only API, identify the minimum game version in the handoff and validate it in the current World Editor/JassHelper and game client, including multiplayer testing for local input, camera, frame, or synchronization-sensitive behavior.
 
 ## Coding Style & Naming Conventions
 
