@@ -28,6 +28,7 @@
 
 ### Technical Updates
 
+- Added `_developer/Design Plans/Warcraft III 3.0 Systems Upgrade Plan.md` with a staged roadmap for native equipment and extended inventory, ItemManager/W3T fields, cooldown and aura APIs, camera and minimap changes, expanded fog and HD water, doodad controls, special-effect animation, HUD skins, and World Editor authoring features.
 - Updated `_Blizzard/common.j` and `_Blizzard/blizzard.j` to the Warcraft III 3.0.0 build 24268 API snapshot, with the prior scripts retained under `_Blizzard/Archive/` for comparison.
 - Updated `AGENTS.md`, the JASS Master skill, and the Warcraft Ability Insight skill to use the active 3.0 Blizzard scripts for exact native signatures, treat archived scripts as historical, and flag 3.0-only compatibility and runtime-validation requirements.
 - Updated `Zones/ZoneEvent.j` and `DungeonsAndBosses/Dungeon.j` with per-hero spatial zone resolution, selection-driven presentation, generic transition callbacks, leader-filtered companion transitions, timed route-order suppression/restoration, tracked dungeon hero occupancy, and a reusable last-hero-exited callback.
