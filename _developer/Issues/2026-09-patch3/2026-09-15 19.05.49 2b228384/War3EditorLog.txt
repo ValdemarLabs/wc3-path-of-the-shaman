@@ -1,0 +1,242 @@
+9/15 17:50:56.454  CWorldEditApp::StartUp
+9/15 17:50:56.454  Command Line: "C:\Program Files (x86)\Warcraft III\_retail_\x86_64\World Editor.exe" -launch -uid w3
+9/15 17:50:56.607  Opening mod - War3.w3mod
+9/15 17:50:56.753  prism: Info: name: AMD Radeon RX 9060 XT
+9/15 17:50:56.753  prism: Info: driverVersion: 0x00200000794103ec
+9/15 17:50:56.753  prism: Info: driverDate: 2026-08-17
+9/15 17:50:56.753  prism: Info: vendorId: AMD
+9/15 17:50:56.753  prism: Info: deviceId: 0x7590
+9/15 17:50:56.753  prism: Info: subsystemVendorId: 0x1458
+9/15 17:50:56.753  prism: Info: subsystemId: 0x2429
+9/15 17:50:56.753  prism: Info: revisionId: 0xc0
+9/15 17:50:56.753  prism: Info: type: Discrete
+9/15 17:50:56.753  prism: Info: virtualizationMode: Unknown
+9/15 17:50:56.753  prism: Info: luid: 0000000000012394
+9/15 17:50:56.753  prism: Info: index: 0
+9/15 17:50:56.753  prism: Info: PCI bus slot: 10
+9/15 17:50:56.753  prism: Info: Max queues: 1 graphics, 1 compute, 1 copy
+9/15 17:50:56.753  prism: Info: Hybrid Graphics: 0
+9/15 17:50:56.753  prism: Info: api: Dx11
+9/15 17:50:56.753  prism: Info: supported: 1
+9/15 17:50:56.753  prism: Info: vendorId: AMD
+9/15 17:50:56.753  prism: Info: deviceId: 0x7590
+9/15 17:50:56.753  prism: Info: amd.family: RDNA4
+9/15 17:50:56.753  prism: Info: amd.numCUs: 32
+9/15 17:50:56.753  prism: Info: amd.numWGPs: 16
+9/15 17:50:56.753  prism: Info: amd.numROPs: 32
+9/15 17:50:56.753  prism: Info: amd.coreClock: 2780 MHz
+9/15 17:50:56.753  prism: Info: amd.memoryClock: 2518 MHz
+9/15 17:50:56.753  prism: Info: amd.memoryBandwidth: 322304 MB/s
+9/15 17:50:56.753  prism: Info: amd.teraFlops: 22.7738
+9/15 17:50:56.753  prism: Info: amd.driverVersion: 26.10.41.01-260811a-203304C-AMD-Software-Adrenalin-Edition
+9/15 17:50:56.753  prism: Info: amd.radeonSoftwareVersion: 26.8.1
+9/15 17:50:56.753  prism: Info: windowsVersion: 11
+9/15 17:50:56.753  prism: Info: windowsBuildNumber: 26200
+9/15 17:50:56.753  prism: Info: dx11.driverCommandLists: 0
+9/15 17:50:56.753  prism: Info: dxFeatureLevel: 11.1
+9/15 17:50:56.753  prism: Info: typedUavLoadAdditionalFormats: 1
+9/15 17:50:56.753  prism: Info: preferredShaderModel: Dx50
+9/15 17:50:56.753  prism: Info: supportedShaderModels:
+9/15 17:50:56.753  prism: Info:   Dx40Level91
+9/15 17:50:56.753  prism: Info:   Dx40Level93
+9/15 17:50:56.753  prism: Info:   Dx40
+9/15 17:50:56.753  prism: Info:   Dx41
+9/15 17:50:56.753  prism: Info:   Dx50
+9/15 17:50:56.753  prism: Info: maxBufferSize: 4243587072
+9/15 17:50:56.753  prism: Info: max1dTextureSize: 16384
+9/15 17:50:56.753  prism: Info: max2dTextureSize: 16384
+9/15 17:50:56.753  prism: Info: maxCubeTextureSize: 16384
+9/15 17:50:56.753  prism: Info: max3dTextureSize: 2048
+9/15 17:50:56.753  prism: Info: maxArrayLayers: 2048
+9/15 17:50:56.753  prism: Info: maxCommandBufferPageSize: 0
+9/15 17:50:56.753  prism: Info: maxConstantBufferRange: 65536
+9/15 17:50:56.753  prism: Info: maxTypedBufferRange: 4243587072
+9/15 17:50:56.753  prism: Info: maxStructuredBufferRange: 4243587072
+9/15 17:50:56.753  prism: Info: drawIndirectArgsAlign: 4
+9/15 17:50:56.753  prism: Info: dispatchIndirectArgsAlign: 4
+9/15 17:50:56.753  prism: Info: constantBufferOffsetAlign: 256
+9/15 17:50:56.753  prism: Info: constantBufferViewSizeAlign: 256
+9/15 17:50:56.753  prism: Info: typedBufferOffsetAlign: 16
+9/15 17:50:56.753  prism: Info: structuredBufferOffsetAlign: 16
+9/15 17:50:56.753  prism: Info: bufferTextureCopyRowPitchAlign: 256
+9/15 17:50:56.753  prism: Info: bufferTextureCopyOffsetAlign: 1024
+9/15 17:50:56.753  prism: Info: rwBufferClearUintSupport: 7
+9/15 17:50:56.753  prism: Info: rwBufferClearFloatSupport: 4
+9/15 17:50:56.753  prism: Info: raytracingShaderIdentifierSize: 0
+9/15 17:50:56.753  prism: Info: raytracingShaderTableAlign: 64
+9/15 17:50:56.753  prism: Info: raytracingShaderRecordAlign: 32
+9/15 17:50:56.753  prism: Info: raytracingAccelerationStructureAlign: 256
+9/15 17:50:56.753  prism: Info: raytracingInstanceAlign: 256
+9/15 17:50:56.753  prism: Info: raytracingInstanceStride: 0
+9/15 17:50:56.753  prism: Info: raytracingGeometryTransformAlign: 16
+9/15 17:50:56.753  prism: Info: raytracingGeometryTransformStride: 0
+9/15 17:50:56.753  prism: Info: raytracingBoundingBoxAlign: 8
+9/15 17:50:56.753  prism: Info: raytracingTriangleFanAlign: 0
+9/15 17:50:56.753  prism: Info: maxAnisotropy: 16
+9/15 17:50:56.753  prism: Info: maxColorAttachments: 8
+9/15 17:50:56.753  prism: Info: maxVertexShaderAttributes: 32
+9/15 17:50:56.753  prism: Info: minWaveLaneCount: 0
+9/15 17:50:56.753  prism: Info: maxWaveLaneCount: 0
+9/15 17:50:56.753  prism: Info: maxTraceRecursionDepth: 0
+9/15 17:50:56.753  prism: Info: maxViewportExtent: 65535x65535
+9/15 17:50:56.753  prism: Info: minViewportBounds: -32768
+9/15 17:50:56.753  prism: Info: maxViewportBounds: 32767
+9/15 17:50:56.753  prism: Info: minLodBias: -16
+9/15 17:50:56.753  prism: Info: maxLodBias: 15.99
+9/15 17:50:56.753  prism: Info: maxLodSnap: 0
+9/15 17:50:56.753  prism: Info: shaderRWTier: 5
+9/15 17:50:56.753  prism: Info: resourceBindingTier: 0
+9/15 17:50:56.753  prism: Info: resourceHeapTier: 0
+9/15 17:50:56.753  prism: Info: raytracingTier: 0
+9/15 17:50:56.753  prism: Info: variableRateShadingTier: 0
+9/15 17:50:56.753  prism: Info: meshShaderTier: 0
+9/15 17:50:56.753  prism: Info: synchronizationTier: 0
+9/15 17:50:56.753  prism: Info: bundleCmdListTier: 0
+9/15 17:50:56.753  prism: Info: minMaxFilterOps: 1
+9/15 17:50:56.753  prism: Info: mirrorOnce: 1
+9/15 17:50:56.753  prism: Info: borderColor: 1
+9/15 17:50:56.753  prism: Info: minLod: 1
+9/15 17:50:56.753  prism: Info: maxLod: 1
+9/15 17:50:56.753  prism: Info: fractionalMinLod: 1
+9/15 17:50:56.753  prism: Info: lodBias: 1
+9/15 17:50:56.753  prism: Info: multiMipRWTextureView: 0
+9/15 17:50:56.753  prism: Info: dualSrcBlend: 1
+9/15 17:50:56.753  prism: Info: separateAlphaBlend: 1
+9/15 17:50:56.753  prism: Info: alphaToCoverage: 1
+9/15 17:50:56.753  prism: Info: independentBlend: 1
+9/15 17:50:56.753  prism: Info: wireframe: 1
+9/15 17:50:56.753  prism: Info: depthBiasClamp: 1
+9/15 17:50:56.753  prism: Info: depthClamp: 1
+9/15 17:50:56.753  prism: Info: depthBoundsTest: 1
+9/15 17:50:56.753  prism: Info: stencilTextureView: 1
+9/15 17:50:56.753  prism: Info: geometryShader: 0
+9/15 17:50:56.753  prism: Info: tessellationShader: 0
+9/15 17:50:56.753  prism: Info: computeShader: 1
+9/15 17:50:56.753  prism: Info: tileShader: 0
+9/15 17:50:56.753  prism: Info: explicitShaderEntryPoint: 0
+9/15 17:50:56.753  prism: Info: programmableSamplePositions: 0
+9/15 17:50:56.753  prism: Info: instancing: 1
+9/15 17:50:56.753  prism: Info: baseVertex: 1
+9/15 17:50:56.753  prism: Info: baseInstance: 1
+9/15 17:50:56.753  prism: Info: drawIndirect: 1
+9/15 17:50:56.753  prism: Info: drawIndirectBaseInstance: 1
+9/15 17:50:56.753  prism: Info: drawIndirectCountBuffer: 1
+9/15 17:50:56.753  prism: Info: deviceLocalConstantBufferOffsets: 1
+9/15 17:50:56.753  prism: Info: deviceLocalQueries: 0
+9/15 17:50:56.753  prism: Info: overlappingOcclusionQueries: 1
+9/15 17:50:56.753  prism: Info: precision16Bits: 1
+9/15 17:50:56.753  prism: Info: rasterOrderViews: 1
+9/15 17:50:56.753  prism: Info: exclusiveFullscreen: 1
+9/15 17:50:56.753  prism: Info: uma: 0
+9/15 17:50:56.753  prism: Info: streamOut: 1
+9/15 17:50:56.753  prism: Info: barycentrics: 0
+9/15 17:50:56.753  prism: Info: placedUploads: 0
+9/15 17:50:56.753  prism: Info: frameCaptureToTool: 0
+9/15 17:50:56.753  prism: Info: frameCaptureToFile: 0
+9/15 17:50:56.753  prism: Info: waveOps: 0
+9/15 17:50:56.753  prism: Info: clockCalibration: 0
+9/15 17:50:56.753  prism: Info: schedulableSwapChain: 0
+9/15 17:50:56.753  prism: Info: pipelineStageFlagsIgnored: 0
+9/15 17:50:56.753  prism: Info: swapChainVsyncThresholdTop: 0
+9/15 17:50:56.753  prism: Info: swapChainVsyncThresholdBottom: 0
+9/15 17:50:56.753  prism: Info: multiShaderStageBinding: 0
+9/15 17:50:56.753  prism: Info: commonStatePromotion: 0
+9/15 17:50:56.753  prism: Info: generateMips: 1
+9/15 17:50:56.753  prism: Info: offlineBvh: 0
+9/15 17:50:56.753  prism: Info: registerSpaces: 0
+9/15 17:50:56.753  prism: Info: unboundedRanges: 0
+9/15 17:50:56.753  prism: Info: conservativeRaster: 0
+9/15 17:50:56.753  prism: Info: supportedQueries:
+9/15 17:50:56.753  prism: Info:   BinaryOcclusion
+9/15 17:50:56.753  prism: Info:   CountingOcclusion
+9/15 17:50:56.753  prism: Info:   Timestamp
+9/15 17:50:56.753  prism: Info: supportedPresentStatistics:
+9/15 17:50:56.753  prism: Info:   VBlankInterval
+9/15 17:50:56.753  prism: Info:   VBlankTime
+9/15 17:50:58.995  SysMsg: Failed to load Environment Map for tileset L
+9/15 17:50:59.023  OpenMap rejected invalid path: 
+9/15 17:50:59.379  SysMsg:  
+9/15 17:51:03.080  SysMsg: Referencing unknown database field: 'netsafe' (UI/SkinMetaData.slk)
+9/15 17:51:03.217  Opening map - c:/Users/Valtteri/Documents/Warcraft III/Maps/EpicQuestsFolder40_test1/Epic Quests.w3x
+9/15 17:51:03.217  Opening mod - c:/Users/Valtteri/Documents/Warcraft III/Maps/EpicQuestsFolder40_test1/Epic Quests.w3x
+9/15 17:52:04.267  SysMsg: Referencing unknown database field: 'netsafe' (Doodads/DoodadMetaData.slk)
+9/15 17:52:04.488  model creation failed - Doodads\Northrend\Water\FloatingPlank\FloatingPlank0.mdl
+9/15 17:52:04.488  SysMsg: Could not load file: Doodads\Northrend\Water\FloatingPlank\FloatingPlank0.mdl
+9/15 17:52:04.488  model creation failed - Doodads\Northrend\Water\FloatingPlank\FloatingPlank0.mdl
+9/15 17:52:11.646  model creation failed - Doodads\Cityscape\Props\LanternPost\LanternPost0.mdl
+9/15 17:52:11.646  SysMsg: Could not load file: Doodads\Cityscape\Props\LanternPost\LanternPost0.mdl
+9/15 17:52:13.498  model creation failed - Doodads\Northrend\Water\FloatingPlank\FloatingPlank0.mdl
+9/15 17:52:13.514  model creation failed - Doodads\Northrend\Water\FloatingPlank\FloatingPlank0.mdl
+9/15 17:52:13.816  model creation failed - Doodads\Northrend\Water\FloatingPlank\FloatingPlank0.mdl
+9/15 17:52:13.816  model creation failed - Doodads\Northrend\Water\FloatingPlank\FloatingPlank0.mdl
+9/15 17:52:14.376  model creation failed - Doodads\Northrend\Water\FloatingPlank\FloatingPlank0.mdl
+9/15 17:52:14.662  model creation failed - Doodads\Cityscape\Props\LanternPost\LanternPost0.mdl
+9/15 17:52:15.006  model creation failed - Doodads\Northrend\Water\FloatingPlank\FloatingPlank0.mdl
+9/15 17:52:15.006  model creation failed - Doodads\Northrend\Water\FloatingPlank\FloatingPlank0.mdl
+9/15 17:52:15.006  model creation failed - Doodads\Northrend\Water\FloatingPlank\FloatingPlank0.mdl
+9/15 17:52:15.006  model creation failed - Doodads\Northrend\Water\FloatingPlank\FloatingPlank0.mdl
+9/15 17:52:15.141  model creation failed - war3campImported\AltarOfStorms.mdl
+9/15 17:52:15.141  SysMsg: Could not load file: war3campImported\AltarOfStorms.mdl
+9/15 17:52:15.426  model creation failed - Doodads\Northrend\Water\FloatingPlank\FloatingPlank0.mdl
+9/15 17:52:16.779  model creation failed - Doodads\Northrend\Water\FloatingPlank\FloatingPlank0.mdl
+9/15 17:52:16.897  model creation failed - war3campImported\AltarOfStorms.mdl
+9/15 17:52:16.897  model creation failed - war3campImported\AltarOfStorms.mdl
+9/15 17:52:17.637  model creation failed - war3campImported\AltarOfStorms.mdl
+9/15 17:52:18.417  model creation failed - Doodads\Cityscape\Props\LanternPost\LanternPost0.mdl
+9/15 17:52:18.417  model creation failed - Doodads\Cityscape\Props\LanternPost\LanternPost0.mdl
+9/15 17:52:18.440  model creation failed - Doodads\Cityscape\Props\LanternPost\LanternPost0.mdl
+9/15 17:52:18.678  model creation failed - Doodads\LordaeronSummer\Props\CauldronWithHeads\CauldronWithHeads0.mdl
+9/15 17:52:18.678  SysMsg: Could not load file: Doodads\LordaeronSummer\Props\CauldronWithHeads\CauldronWithHeads0.mdl
+9/15 17:52:19.764  Solid texture substituted - ReplaceableTextures\TeamColor\Black32.blp
+9/15 17:52:21.051  model creation failed - Doodads\Northrend\Water\FloatingPlank\FloatingPlank0.mdl
+9/15 17:52:21.592  model creation failed - .mdl.mdl
+9/15 17:52:21.592  SysMsg: Could not load file: .mdl.mdl
+9/15 17:52:23.924  model creation failed - https://www.hiveworkshop.com/members/sarsaparilla.295950/
+9/15 17:52:23.924  model creation failed - https://www.patreon.com/user?u=52986355
+9/15 17:52:26.257  model creation failed - BagIsInvisible.mdl
+9/15 17:52:26.257  SysMsg: Could not load file: BagIsInvisible.mdl
+9/15 17:52:26.848  model creation failed - https://www.hiveworkshop.com/members/sarsaparilla.295950/
+9/15 17:52:26.848  model creation failed - https://www.patreon.com/user?u=52986355
+9/15 17:54:32.953  SysMsg: Referencing unknown database field: 'netsafe' (Doodads/DoodadMetaData.slk)
+9/15 17:54:32.953  SysMsg: Could not load file: Doodads\Northrend\Water\FloatingPlank\FloatingPlank0.mdl
+9/15 17:54:32.953  SysMsg: Could not load file: Doodads\Cityscape\Props\LanternPost\LanternPost0.mdl
+9/15 17:54:32.953  SysMsg: Could not load file: war3campImported\AltarOfStorms.mdl
+9/15 17:54:32.953  SysMsg: Could not load file: Doodads\LordaeronSummer\Props\CauldronWithHeads\CauldronWithHeads0.mdl
+9/15 17:54:32.953  SysMsg: Could not load file: .mdl.mdl
+9/15 17:54:32.953  SysMsg: Could not load file: BagIsInvisible.mdl
+9/15 17:54:32.953  SysMsg: Failed to load Environment Map for tileset A
+9/15 17:56:11.458  SysMsg: Referencing unknown database field: 'occlusion' (Units/UnitUI.slk)
+9/15 17:56:11.458  SysMsg: Referencing unknown database field: 'showAirToGround' (Units/UnitUI.slk)
+9/15 17:56:11.458  SysMsg: Referencing unknown database field: 'equipment' (Units/ItemData.slk)
+9/15 17:56:11.458  SysMsg: Referencing unknown database field: 'tag' (Units/ItemData.slk)
+9/15 17:56:11.458  SysMsg: Referencing unknown database field: 'teamColor' (Units/ItemData.slk)
+9/15 17:56:11.458  SysMsg: Referencing unknown database field: 'customTeamColor' (Units/ItemData.slk)
+9/15 17:56:11.458  SysMsg: Referencing unknown database field: 'netsafe' (UI/SkinMetaData.slk)
+9/15 17:56:11.781  Opening map - c:/Users/Valtteri/Documents/Warcraft III/Maps/EpicQuestsFolder40_test1/Epic Quests.w3x
+9/15 17:56:11.781  Opening mod - c:/Users/Valtteri/Documents/Warcraft III/Maps/EpicQuestsFolder40_test1/Epic Quests.w3x
+9/15 19:05:49.529  NGDP Diagnostic Log:
+9/15 19:05:49.529  2026-09-15T17:50:56 {9e8} [INFO] - NGDP initialization - (archive: true, cache: false, Async: true)
+9/15 19:05:49.529  2026-09-15T17:50:56 {7c90} [INFO] - adding network address 137.221.64.7:80 for server http://eu.cdn.blizzard.com/
+9/15 19:05:49.529  2026-09-15T17:50:56 {7c90} [INFO] - adding network address 137.221.64.3:80 for server http://eu.cdn.blizzard.com/
+9/15 19:05:49.529  2026-09-15T17:50:56 {7c90} [INFO] - adding network address 137.221.64.2:80 for server http://eu.cdn.blizzard.com/
+9/15 19:05:49.529  2026-09-15T17:50:56 {7c90} [INFO] - adding network address 137.221.64.6:80 for server http://eu.cdn.blizzard.com/
+9/15 19:05:49.529  2026-09-15T17:50:56 {7c90} [INFO] - adding network address 137.221.64.1:80 for server http://eu.cdn.blizzard.com/
+9/15 19:05:49.529  2026-09-15T17:50:56 {7c90} [INFO] - adding network address 137.221.64.5:80 for server http://eu.cdn.blizzard.com/
+9/15 19:05:49.529  2026-09-15T17:50:56 {7c90} [INFO] - adding network address 137.221.64.4:80 for server http://eu.cdn.blizzard.com/
+9/15 19:05:49.529  2026-09-15T17:50:56 {7c90} [INFO] - adding network address 137.221.64.8:80 for server http://eu.cdn.blizzard.com/
+9/15 19:05:49.529  2026-09-15T17:50:56 {7c90} [INFO] - adding network address 95.175.121.25:443 for server https://level3.ssl.blizzard.com/
+9/15 19:05:49.529  2026-09-15T17:50:56 {7c90} [INFO] - adding network address 95.175.121.8:443 for server https://level3.ssl.blizzard.com/
+9/15 19:05:49.529  2026-09-15T17:50:56 {7c90} [INFO] - adding network address 137.221.64.7:443 for server https://eu.cdn.blizzard.com/
+9/15 19:05:49.529  2026-09-15T17:50:56 {7c90} [INFO] - adding network address 137.221.64.3:443 for server https://eu.cdn.blizzard.com/
+9/15 19:05:49.529  2026-09-15T17:50:56 {7c90} [INFO] - adding network address 137.221.64.2:443 for server https://eu.cdn.blizzard.com/
+9/15 19:05:49.529  2026-09-15T17:50:56 {7c90} [INFO] - adding network address 137.221.64.6:443 for server https://eu.cdn.blizzard.com/
+9/15 19:05:49.529  2026-09-15T17:50:56 {7c90} [INFO] - adding network address 137.221.64.1:443 for server https://eu.cdn.blizzard.com/
+9/15 19:05:49.529  2026-09-15T17:50:56 {7c90} [INFO] - adding network address 137.221.64.5:443 for server https://eu.cdn.blizzard.com/
+9/15 19:05:49.529  2026-09-15T17:50:56 {7c90} [INFO] - adding network address 137.221.64.4:443 for server https://eu.cdn.blizzard.com/
+9/15 19:05:49.529  2026-09-15T17:50:56 {7c90} [INFO] - adding network address 137.221.64.8:443 for server https://eu.cdn.blizzard.com/
+9/15 19:05:49.529  2026-09-15T17:50:56 {7c90} [INFO] - adding network address 95.175.121.8:80 for server http://level3.blizzard.com/
+9/15 19:05:49.529  2026-09-15T17:50:56 {7c90} [INFO] - adding network address 95.175.121.25:80 for server http://level3.blizzard.com/
+9/15 19:05:49.529  2026-09-15T17:50:56 {9e8} [INFO] - Initialization step - FETCHING_CDN_CONFIG
+9/15 19:05:49.529  2026-09-15T17:50:56 {9e8} [INFO] - Initialization step - FETCHING_BUILD_CONFIG
+9/15 19:05:49.529  2026-09-15T17:50:56 {9e8} [INFO] - no patch configuration
+9/15 19:05:49.529  2026-09-15T17:50:56 {9e8} [INFO] - Prepatch
