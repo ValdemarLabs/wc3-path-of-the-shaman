@@ -9,6 +9,7 @@
 - [Findings shared by the Crypt model family](#findings-shared-by-the-crypt-model-family)
   - [Oversized and copied collision boxes](#oversized-and-copied-collision-boxes)
   - [Zero-face geosets](#zero-face-geosets)
+  - [Community corroboration](#community-corroboration)
   - [Extents and rendering workload](#extents-and-rendering-workload)
   - [Textures, sequences, cameras, and attachment points](#textures-sequences-cameras-and-attachment-points)
 - [Complete Crypt-named doodad and model list](#complete-crypt-named-doodad-and-model-list)
@@ -24,7 +25,7 @@ This document tracks the second World Editor 3.0.0.24268 problem found after the
 
 On 15 September 2026, scrolling through other inspected areas did not reproduce the crash. Viewing the Crypt area containing the large Crypt-related doodads did. The same area could lag unpredictably in World Editor 2.x, sometimes apparently varying with Warcraft III's CPU-core scheduling. That older lag is important historical evidence: the Crypt assets had an existing culling, selection, collision, geometry, or rendering cost before 3.0, while 3.0 appears less tolerant of it.
 
-**Current status:** the area is reproducible enough to prioritize its assets, but no single Crypt model has yet been proven by removal/reintroduction to cause the viewport crash. The findings below identify two severe structural candidates and one severe collision-envelope candidate for controlled isolation.
+**Current status:** the area is reproducible enough to prioritize its assets, but no single Crypt model has yet been proven by removal/reintroduction to cause the viewport crash. The findings below identify two models with a community-corroborated Warcraft III 3.0 crash defect and one additional severe collision-envelope candidate for controlled isolation.
 
 ## Crash evidence
 
@@ -128,7 +129,15 @@ The local scan found zero-face geosets in 11 of the 18 unique Crypt-named files:
 | `world_wmo_dungeon_md_crypt_md_crypt_f_northrend4d.wmo.mdx` | 14 | **Yes: `D06W`, one copy** |
 | `world_wmo_dungeon_md_crypt_md_crypt_f_northrend4f.wmo.mdx` | 18, 19, 21, 22 | No |
 
-These files are MDX v1000 and do not contain a `GEOA` chunk, so the empty geosets are not referenced by geoset-animation records in the same way as the confirmed `AltarOfStorms.mdx` defect. Even so, a declared geoset with vertices or other mesh records but zero face indices is invalid or at least unsafe converter residue. `D05P` and `D06W` should be treated as the first two geometry-isolation candidates.
+A subsequent full-map scan covered all 479 v1000 and both v1100 MDX imports. It found 31 vertices-without-faces geosets in 11 files, and every result is one of the Crypt models in this table. There are no unrelated v1000/v1100 matches elsewhere in the map. Together with the single affected v800 file, `AltarOfStorms.mdx`, the complete PotS total is 12 affected MDX files and 32 affected geosets out of 2,431 MDX imports.
+
+These Crypt files are MDX v1000 and do not contain a `GEOA` chunk, so the empty geosets are not referenced by geoset-animation records in the same way as the confirmed `AltarOfStorms.mdx` defect. Even so, a declared geoset with vertices or other mesh records but zero face indices is now a community-reproduced Warcraft III 3.0 crash condition. `D05P` and `D06W` should be treated as the first two geometry-isolation candidates because they are the affected members actually placed in the crashing Crypt rectangle.
+
+### Community corroboration
+
+Hive Workshop user Achille reports that maps from multiple creators began crashing World Editor after Warcraft III 3.0 when models contained geosets with vertices but no faces/triangles. Deleting the matching geosets allowed the same models to render and stopped the startup crashes. See [Achille's report](https://www.hiveworkshop.com/threads/warcraft-iii-3-0-bugs-issues.374131/#post-3738985).
+
+This independently validates the zero-face structure as a post-3.0 crash trigger class. The full-map scan further shows that every remaining PotS example beyond `AltarOfStorms.mdx` belongs to this Crypt model family. It substantially raises the priority of placed `D05P` and `D06W`, but does not by itself prove which one controls the Crypt viewport crash. It also does not validate the separate collision-box hypothesis for `D06Y`.
 
 ### Extents and rendering workload
 
@@ -246,6 +255,6 @@ For every isolated or repaired candidate, record:
 
 ## Conclusions and limits
 
-The current strongest candidates are not merely “large custom imports.” Two placed models contain the same zero-face defect class implicated by the confirmed `AltarOfStorms.mdx` loading crash, and two placed WMO subsets carry a 21,700-unit collision envelope that becomes about 43,400 units after their scale-2 placements. Those are concrete structural defects consistent with the Crypt's old lag, far-away collision/selection reports, and its new 3.0 viewport instability.
+The current strongest candidates are not merely “large custom imports.” Two placed models contain the now independently corroborated post-3.0 crash defect of vertices without faces, and two placed WMO subsets carry a 21,700-unit collision envelope that becomes about 43,400 units after their scale-2 placements. Those are concrete structural defects consistent with the Crypt's old lag, far-away collision/selection reports, and its new 3.0 viewport instability.
 
 The evidence does **not** yet establish which single model causes the crash. The decisive next result must be a controlled Object Editor placeholder test where removing one rawcode/model family from the rendered area changes the outcome. Until that test is complete, the zero-face meshes, inherited collision boxes, large extents, transparent effects, and World Editor 3.0 renderer regression remain interacting candidates rather than a proven singleton cause.

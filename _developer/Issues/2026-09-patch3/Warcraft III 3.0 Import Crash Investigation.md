@@ -14,6 +14,8 @@
   - [Model resources](#model-resources)
   - [Defective geoset](#defective-geoset)
   - [Hive Model Checker result](#hive-model-checker-result)
+  - [Community corroboration of the Warcraft III 3.0 trigger](#community-corroboration-of-the-warcraft-iii-30-trigger)
+  - [Full-map zero-face geoset scan](#full-map-zero-face-geoset-scan)
   - [Causal assessment](#causal-assessment)
 - [Repairing or replacing AltarOfStorms.mdx](#repairing-or-replacing-altarofstormsmdx)
   - [Immediate containment](#immediate-containment)
@@ -50,7 +52,9 @@ This is a load-stage result, not a declaration that the map is fully stable in W
 
 The strongest structural defect inside `AltarOfStorms.mdx` is its tenth geoset (zero-based index 9). It declares 13 vertices and 13 normals but no face indices and no triangles. A geoset animation still references this empty mesh. Across all 1,950 MDX version 800 models in the map, this is the only geoset found with nonzero vertices and zero faces.
 
-The exact un-symbolized World Editor code path is not available, so the engine-level mechanism remains an inference. The working conclusion is that World Editor 3.0's model-loading or editor-rendering path does not safely handle this internally inconsistent geoset and dereferences a null mesh-related value.
+The exact un-symbolized World Editor code path is not available, so the engine-level mechanism remains an inference. However, Hive Workshop user Achille independently reports the same post-3.0 failure condition across maps from multiple creators: geosets containing vertices but no faces crash World Editor, and deleting those geosets restores model rendering without the startup crash. This materially corroborates the PotS diagnosis and identifies the empty-geoset condition as a Warcraft III 3.0 regression or newly fatal validation gap rather than an isolated peculiarity of one PotS model.
+
+A follow-up scan of all 2,431 PotS MDX imports found 12 affected files and 32 affected geosets in total: `AltarOfStorms.mdx` is the only affected v800 file, while the other 11 files are all v1000 Crypt models. Neither v1100 model contains this defect. This concentration strongly connects the remaining Crypt viewport crash to the same defect class without yet proving which placed Crypt model triggers a given crash.
 
 The immediate workaround is to keep the model absent or use a safe placeholder. The preferred permanent fix is to remove the empty geoset and its associated geoset animation in a structure-aware model editor, save a normalized MDX v800 copy, and validate it under a new import name before replacing the production import.
 
@@ -63,7 +67,7 @@ The immediate workaround is to keep the model absent or use a safe placeholder. 
 | PotS map version | `Epic Quests-2026-09-13-0239` |
 | Original folder map | `C:\Users\Valtteri\Documents\Warcraft III\Maps\EpicQuestsFolder40\Epic Quests.w3x` |
 | Isolation test map | `C:\Users\Valtteri\Documents\Warcraft III\Maps\EpicQuestsFolder40_test1\Epic Quests.w3x` |
-| Investigation dates | 13-15 September 2026 |
+| Investigation dates | 13-16 September 2026 |
 | Confirmed crashing import | `war3campImported\AltarOfStorms.mdx` |
 | Affected custom doodad | `D6NJ` (`altar _of_storms`) |
 
@@ -286,6 +290,40 @@ The model was independently checked with the [Hive Workshop Model Checker](https
 
 The checker result materially strengthens the structural diagnosis because it reaches the same geoset-9 conclusion independently. It does not prove that the three ordinary warnings contribute to the World Editor crash. For clean causal validation, repair the severe zero-face geoset first and test that change before making optional animation or attachment cleanup.
 
+### Community corroboration of the Warcraft III 3.0 trigger
+
+Hive Workshop user Achille reported the same issue in maps belonging to several other creators: after problematic models were isolated, the shared defect was geosets that contained vertices but no faces/triangles. Those models began rendering normally and stopped causing World Editor startup crashes after the empty-face geosets were deleted. See [Achille's Warcraft III 3.0 bug-thread post](https://www.hiveworkshop.com/threads/warcraft-iii-3-0-bugs-issues.374131/#post-3738985).
+
+This external reproduction changes the confidence assessment:
+
+| Conclusion | Confidence after corroboration |
+| --- | --- |
+| Vertices-without-faces geosets are a Warcraft III 3.0 World Editor crash trigger | **High.** Independently reproduced across multiple creators' maps, with removal of the malformed geosets controlling the result. |
+| `AltarOfStorms.mdx` causes the PotS map-loading crash | **Conclusive at the file level.** PotS removal/reintroduction already controlled the crash; the community result now independently supports its zero-face geoset as the mechanism. |
+| `D05P` and `D06W` cause the Crypt viewport crash | **Strong candidates, not yet proven.** Both contain the now-corroborated defect, but a Crypt-area placeholder or repaired-model test must still control the viewport result. |
+| Oversized inherited Crypt collision boxes contribute to lag or crashing | **Plausible separate issue.** The community report concerns zero-face meshes and does not validate the collision-envelope hypothesis. |
+
+This also explains why older maps are disproportionately affected: the malformed geometry may have been tolerated before 3.0, while locating every offending import is difficult in large, abandoned, or protected maps. A Blizzard-side guard remains desirable even though PotS can repair its accessible source assets.
+
+### Full-map zero-face geoset scan
+
+After Achille's report established vertices-without-faces geosets as a reproduced post-3.0 crash trigger, the structural scan was extended from the original 1,950 v800 files and Crypt subset to every MDX import in the map.
+
+| MDX version | Files scanned | Files with vertices but no face indices | Affected geosets |
+| ---: | ---: | ---: | ---: |
+| 800 | 1,950 | 1 | 1 |
+| 1000 | 479 | 11 | 31 |
+| 1100 | 2 | 0 | 0 |
+| **Total** | **2,431** | **12** | **32** |
+
+The sole v800 result is the confirmed `war3campImported\AltarOfStorms.mdx`. All 11 v1000 results are the Crypt-family files enumerated in [`Crypt Doodad Model Audit.md`](<Crypt Doodad Model Audit.md>); no unrelated v1000 import matched this condition. This makes the repair scope finite and unusually concentrated:
+
+- quarantine or repair `AltarOfStorms.mdx` for reliable map loading;
+- repair all 11 listed Crypt models before considering the family 3.0-safe, even though only `D05P` and `D06W` from that affected set are currently placed inside the crashing Crypt rectangle;
+- retain the collision-envelope and other malformed-import investigations as separate hypotheses because they are not measured by this scan.
+
+The scan detects a geoset only when it declares at least one vertex and zero face indices. It does not claim that every structurally empty geoset will necessarily be instantiated by the editor, nor does it replace Hive Model Checker and World Editor validation after repair.
+
 ### Causal assessment
 
 The evidence for `AltarOfStorms.mdx` as the crash trigger is conclusive at the file level:
@@ -298,7 +336,7 @@ The evidence for `AltarOfStorms.mdx` as the crash trigger is conclusive at the f
 - It contains a unique empty-but-allocated geoset anomaly.
 - The crash report is a null read, compatible with an unchecked empty mesh, index-buffer, or editor-selection structure.
 
-The last point is an inference. Without Blizzard symbols or a fixed build comparison, it is not possible to prove which internal pointer is null. The repair should target the unique geoset anomaly first and then be validated empirically.
+The exact null pointer remains an inference because Blizzard symbols and a fixed-build comparison are unavailable. The trigger class is now independently corroborated, so the repair should target the zero-face geoset first and then validate the repaired PotS model empirically.
 
 ## Repairing or replacing AltarOfStorms.mdx
 
@@ -526,7 +564,7 @@ The separate [`Crypt Doodad Model Audit.md`](<Crypt Doodad Model Audit.md>) reso
 - `D06W` (`...northrend4d.wmo.mdx`) has zero-face geoset 14 and is placed once at scale 2.00;
 - `D06Y` (`...northrend4e2.wmo.mdx`) has only a 5,281-unit visual span but inherits a 21,700-unit three-box collision envelope and is placed at scale 2.00;
 - both `D06W` and `D06Y` therefore expose a collision span of roughly 43,400 world units after placement scaling;
-- 11 of the 18 unique Crypt-named models contain at least one zero-face geoset;
+- 11 of the 18 unique Crypt-named models contain at least one zero-face geoset; a full-map scan found that these are all 11 of the map's affected v1000 files, with no zero-face match in any unrelated v1000/v1100 import;
 - every Crypt-named model carries a generated portrait camera and one of two repeated three-box collision templates, consistent with unspecialized converter output;
 - the five placed Crypt-shell models have all referenced textures present, so missing texture payloads are not the leading explanation for this area crash.
 
@@ -559,7 +597,7 @@ Until this work is complete, “map loads” should be understood to mean that W
 ## Recommendations
 
 1. Keep `AltarOfStorms.mdx` quarantined until a repaired or replacement model passes the checklist.
-2. Repair the empty geoset first; it is the unique structural anomaly most strongly correlated with the crash.
+2. Repair the empty geoset first; it is the structural anomaly most strongly correlated with the crash. Across the full map, remove the same defect from the 11 listed Crypt v1000 models as a bounded follow-up repair set.
 3. Test the repair under a new filename, then restore the canonical path only after a clean editor restart and save/reopen cycle.
 4. Verify all eight `D6NJ` doodad placements visually.
 5. Do not bulk-rename imports solely to solve this incident; multi-dot paths are a separate compatibility project.
@@ -605,6 +643,7 @@ External context:
 
 - [Official Warcraft III: Reforged Forsaken Kingdom patch notes](https://us.forums.blizzard.com/en/warcraft3/t/warcraft-iii-reforged-forsaken-kingdom-patch-notes/38400)
 - [Hive: Warcraft III 3.0 bugs and issues](https://www.hiveworkshop.com/threads/warcraft-iii-3-0-bugs-issues.374131/)
+- [Hive/Achille: vertices-without-faces geosets crash World Editor after 3.0](https://www.hiveworkshop.com/threads/warcraft-iii-3-0-bugs-issues.374131/#post-3738985)
 - [Hive: custom models visible in editor but not in game after 3.0](https://www.hiveworkshop.com/threads/custom-models-show-up-in-editor-but-not-in-game-after-updating-to-3-0.374120/#post-3737812)
 - [Hive: file-extension parsing logic changed in 3.0](https://www.hiveworkshop.com/threads/file-extension-parsing-logic-changed-in-version-3-0-%E2%80%94-causing-model-texture-recognition-errors.374128/)
 - [Hive: Import Fixer for Reforged 3.00's Multi-Dot Bug](https://www.hiveworkshop.com/threads/import-fixer-for-reforged-3-00s-multi-dot-bug.374159/)

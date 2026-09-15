@@ -16,6 +16,22 @@
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
 
+## [16.9.2026]
+
+### Technical Updates
+
+- Updated the Warcraft III 3.0 import-crash investigation and Crypt doodad audit with Achille's independent Hive Workshop reproduction across multiple creators' maps: models with geosets containing vertices but no faces crash World Editor after 3.0, while deleting those geosets restores rendering and prevents the startup crash.
+- Extended the structural scan across all 2,431 PotS MDX imports. It found 12 affected models and 32 affected geosets: the confirmed v800 `AltarOfStorms.mdx` defect plus 31 zero-face geosets across 11 v1000 Crypt-family models; neither v1100 model nor any unrelated v1000 model matched the condition.
+
+### Known Issues
+
+- The vertices-without-faces geoset structure is now a high-confidence Warcraft III 3.0 crash trigger rather than only a PotS inference. This strongly corroborates `AltarOfStorms.mdx` geoset 9 as the map-loading mechanism. All other PotS matches are concentrated in the Crypt family, elevating placed Crypt doodads `D05P` and `D06W`; the latter two still require a controlled area test before either is called the Crypt viewport-crash cause.
+
+### Actions Remaining
+
+- Repair or safely substitute `D05P` and `D06W`, then repeat the controlled Crypt camera approach. Remove the same defect from all 11 affected Crypt models before treating the imported family as 3.0-safe. Retain the collision-envelope test for `D06Y` as a separate hypothesis, and recheck after Blizzard patches the editor's handling of malformed legacy models.
+
+
 ## [15.9.2026]
 
 ### Technical Updates
