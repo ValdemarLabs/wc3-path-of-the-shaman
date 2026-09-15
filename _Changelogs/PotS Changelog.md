@@ -21,18 +21,19 @@
 ### Technical Updates
 
 - Added `_developer/Issues/2026-09-patch3/Warcraft III 3.0 Import Crash Investigation.md` with the complete World Editor 3.0.0.24268 crash-isolation record, crash-log evidence, import test matrix, binary analysis of `AltarOfStorms.mdx`, its independently matching Hive Model Checker results, and a Retera Model Studio repair and validation procedure.
+- Added `_developer/Issues/2026-09-patch3/Crypt Doodad Model Audit.md` with the 15 September viewport-crash evidence, a 486-placement Crypt-area inventory, all 19 Crypt-named doodad definitions and 18 unique MDX files, zero-face geoset findings, copied collision-box analysis, risk ranking, repair steps, and a controlled placeholder test order.
 - Expanded `_developer/Design Plans/Warcraft III 3.0 Systems Upgrade Plan.md` with a concrete local WoW-style mouse-drag camera design using the new held-button, screen-position, pixel/frame conversion, client-focus, and cursor natives while preserving `CameraControl`, middle-click reset, UI ownership, DynamicMinimap, and multiplayer safety.
 
 ### Known Issues
 
 - `war3campImported\AltarOfStorms.mdx` crashes World Editor 3.0.0.24268 while loading map version `Epic Quests-2026-09-13-0239`; the map loads with every other import restored when this model remains absent. Hive Model Checker independently reports the model's zero-face geoset 9 as its single severe warning, plus ordinary warnings for a missing Death sequence, duplicate geoset-6 animation references, and a missing Origin attachment point.
-- Loading the map does not establish full World Editor stability: the editor may still crash unexpectedly during viewport inspection, with the Crypt/Firelands-related area currently notable but not proven exclusive. A second lazy-load, rendering, selection, placed-asset, or editor-regression issue remains open, and World Editor 3.0 feels substantially heavier and laggier than the previous 2.x editor.
+- Loading the map does not establish full World Editor stability: scrolling elsewhere was stable in the latest pass, but viewing the large Crypt dungeon doodads reproduced the same null-read World Editor code-path signature. Placed `D05P` and `D06W` models contain zero-face geosets, while scale-2 `D06W` and `D06Y` inherit collision envelopes spanning roughly 43,400 world units; these are leading candidates, not yet proven singleton causes. World Editor 3.0 also feels substantially heavier and laggier than 2.x.
 - Five custom DNC models contain malformed `LITE` chunk sizes, 236 BLP icons declare a final mip level past EOF, and six imports are zero-byte files. They did not cause the investigated loading crash but remain asset-health and visual-validation risks.
 
 ### Actions Remaining
 
 - Remove the empty tenth geoset and its associated geoset animation from `AltarOfStorms.mdx`, re-export it as MDX v800, then verify all eight `D6NJ` doodad placements through World Editor load, save/reopen, and game-client tests.
-- Isolate the unexpected viewport inspection crash using reproducible camera approaches, per-crash logs, area-associated rawcode/model inventories, safe-placeholder bisection, and SD/HD comparison; also compare editor responsiveness against World Editor 2.x under equivalent map and graphics conditions.
+- Isolate the Crypt viewport crash by assigning safe placeholders to `D05P`, `D06W`, and `D06Y`, restoring them one at a time if the crash stops, then testing `D040`/`D043` and the area's transparent-effect models; repeat in SD/HD and compare responsiveness against World Editor 2.x under equivalent conditions.
 - Normalize and visually test the malformed DNC lighting models, re-encode the invalid BLP mip chains, and replace or remove zero-byte imported assets as separate cleanup work.
 
 

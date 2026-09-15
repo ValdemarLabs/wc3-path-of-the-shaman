@@ -31,6 +31,7 @@
   - [Unusual compact and ABANDON-family models](#unusual-compact-and-abandon-family-models)
 - [Final known-good test state](#final-known-good-test-state)
 - [Open follow-up: unexpected viewport inspection crash](#open-follow-up-unexpected-viewport-inspection-crash)
+  - [Crypt doodad audit findings](#crypt-doodad-audit-findings)
 - [Recommendations](#recommendations)
 - [Future import-crash triage procedure](#future-import-crash-triage-procedure)
 - [Evidence and related reports](#evidence-and-related-reports)
@@ -45,7 +46,7 @@ The investigation isolated the loading crash to one imported model:
 
 The complete map import set loads when this one file is absent. Reintroducing the file causes the crash. All other import folders and files load together, including several assets with independently detectable format defects.
 
-This is a load-stage result, not a declaration that the map is fully stable in World Editor 3.0. After the map opens, World Editor may still crash immediately while navigating or moving the viewport, especially around the Crypt/Firelands-related area. World Editor 3.0 also feels substantially heavier and laggier than the previous 2.x editor during ordinary map viewing. These observations have not yet been isolated or benchmarked. They leave open the possibility of additional area-specific model, texture, light, particle, terrain, or other import problems that are only loaded or rendered when that part of the map becomes visible.
+This is a load-stage result, not a declaration that the map is fully stable in World Editor 3.0. A later controlled viewing pass remained stable while scrolling elsewhere, then crashed when the viewport reached the large Crypt dungeon doodads. World Editor 3.0 also feels substantially heavier and laggier than the previous 2.x editor during ordinary map viewing. The Crypt had already produced intermittent lag and far-away collision/selection behavior under 2.x, so its imported WMO scenery is now the primary area-specific suspect rather than the previously broader Crypt/Firelands lead.
 
 The strongest structural defect inside `AltarOfStorms.mdx` is its tenth geoset (zero-based index 9). It declares 13 vertices and 13 normals but no face indices and no triangles. A geoset animation still references this empty mesh. Across all 1,950 MDX version 800 models in the map, this is the only geoset found with nonzero vertices and zero faces.
 
@@ -97,7 +98,7 @@ A similar dialog had appeared during a different PotS incident in summer 2025, w
 
 ## Crash-report evidence
 
-Four captured reports identify the same build and the same failure class:
+Five captured reports identify the same build and the same failure class:
 
 | Report | Build | Failure |
 | --- | --- | --- |
@@ -105,10 +106,11 @@ Four captured reports identify the same build and the same failure class:
 | [`2026-09-13 13.24.40 a5aec748`](<2026-09-13 13.24.40 a5aec748/Crash.txt>) | 24268 | Same null-address read signature |
 | [`2026-09-13 14.49.49 40679a7c`](<2026-09-13 14.49.49 40679a7c/Crash.txt>) | 24268 | Same null-address read signature |
 | [`2026-09-14 01.42.46 4b9a5dd4`](<2026-09-14 01.42.46 4b9a5dd4/Crash.txt>) | 24268 | Same null-address read signature after address relocation |
+| [`2026-09-15 19.05.49 2b228384`](<2026-09-15 19.05.49 2b228384/Crash.txt>) | 24268 | Same relocated instruction and call-chain offsets during the Crypt viewport crash |
 
-The absolute instruction address differs in the final report because the executable was loaded at a different virtual address. The matching failure class and address suffix are consistent with the same editor code path, but the reports do not contain symbols that name that function.
+The absolute instruction addresses differ when the executable is loaded at a different virtual address. After subtracting the World Editor module base, all five reports have the same faulting and first call-chain offsets: `0x55240B <- 0x4991C4 <- 0x4949F4`. This strongly supports the same internal editor code path being reached during both initial model loading and later Crypt viewport rendering, but the reports do not contain symbols that name that function.
 
-The accompanying [`War3EditorLog.txt`](<2026-09-14 01.42.46 4b9a5dd4/War3EditorLog.txt>) contains numerous asset and data-field warnings. Those warnings were useful leads, but the final successful full-import test proves that most were non-fatal to map loading.
+The accompanying editor logs contain numerous asset and data-field warnings. Those warnings were useful leads, but the final successful full-import test proves that most were non-fatal to map loading. The latest [`War3EditorLog.txt`](<2026-09-15 19.05.49 2b228384/War3EditorLog.txt>) records the `_test1` map opening twice and the deliberately absent `AltarOfStorms.mdl`, but it does not name a Crypt model immediately before the later crash.
 
 ## Investigation method
 
@@ -159,7 +161,7 @@ The procedure distinguished three different categories:
 
 The final all-assets test is important: it rules out the possibility that a second missing directory was merely hiding another immediate load crash.
 
-It does not rule out assets that fail only when instantiated, streamed, selected, animated, or rendered in a particular area. The later Crypt/Firelands viewing crash is evidence that at least one additional editor-stability problem may remain.
+It does not rule out assets that fail only when instantiated, streamed, selected, animated, or rendered in a particular area. The later reproducible Crypt viewing crash is evidence that at least one additional editor-stability problem remains.
 
 ## Confirmed offender: AltarOfStorms.mdx
 
@@ -490,15 +492,15 @@ Its confirmed loading state is:
 - all remaining directories restored together;
 - World Editor 3.0.0.24268 loads the map.
 
-Loading is the confirmed improvement and the boundary of this result. The editor may still crash immediately after loading when the viewport reaches the Crypt/Firelands-related area. The editor is also noticeably heavier and less responsive than World Editor 2.x, although no controlled performance measurements have been taken. These remaining symptoms could come from another area-local asset or placed object, from the 3.0 renderer/editor itself, or from an interaction between them.
+Loading is the confirmed improvement and the boundary of this result. In the 15 September pass, scrolling through other inspected parts of the map did not crash the editor, but viewing the Crypt area containing the large imported dungeon doodads did. The editor is also noticeably heavier and less responsive than World Editor 2.x, although no controlled performance measurements have been taken. These remaining symptoms could come from the structurally suspect Crypt imports, from the 3.0 renderer/editor itself, or from an interaction between them.
 
 The test copy also contains 87 extra root-level BLP files that are byte-identical duplicates of files under `war3campImported`. These were introduced during isolation and are tolerated, but they change import-path state. Do not use this test folder as the production repair without removing the duplicates or starting from a clean map backup.
 
 ## Open follow-up: unexpected viewport inspection crash
 
-**Status:** Open and not yet isolated.
+**Status:** Open; narrowed to the Crypt area and prioritized models, but not yet isolated to one rawcode.
 
-After the initial map-loading blocker is removed, World Editor can still crash unexpectedly while inspecting or moving around the loaded map. The Crypt/Firelands-related area is currently notable, but the trigger has not been proven to be exclusive to that area or reproduced down to one object.
+After the initial map-loading blocker is removed, World Editor can still crash unexpectedly while inspecting or moving around the loaded map. The 15 September recheck scrolled through other areas without a crash and then reproduced the failure when the viewport reached the large Crypt-related doodads. This makes the Crypt a strong area-level correlation, although the trigger has not been reproduced down to one object.
 
 A plausible working hypothesis is that World Editor 3.0 initially accepts the import table and map data, then fails later when a particular placed asset must be decoded, instantiated, rendered, animated, selected, or included in editor lighting. This would explain why the complete import set can pass map loading while viewport movement still exposes another problem. It remains only a hypothesis until a specific asset or editor operation controls the result.
 
@@ -514,6 +516,21 @@ Possible trigger classes include:
 - an interaction between a tolerated asset defect and the new editor renderer.
 
 The existing malformed DNC models, BLP mip tables, zero-byte assets, and Model Checker warnings are leads, not confirmed causes of this second crash.
+
+### Crypt doodad audit findings
+
+The separate [`Crypt Doodad Model Audit.md`](<Crypt Doodad Model Audit.md>) resolves the Crypt rectangle's 486 placed doodads/destructables, all 19 Crypt-named Object Editor definitions, and the 18 unique Crypt MDX files. Its most important findings are:
+
+- five Crypt-shell rawcodes place 12 large imported models inside `gg_rct_DungeonCrypt`;
+- `D05P` (`md_cryptsimpleent2.mdx`) has zero-face geoset 9 and is placed three times at scale 2.91;
+- `D06W` (`...northrend4d.wmo.mdx`) has zero-face geoset 14 and is placed once at scale 2.00;
+- `D06Y` (`...northrend4e2.wmo.mdx`) has only a 5,281-unit visual span but inherits a 21,700-unit three-box collision envelope and is placed at scale 2.00;
+- both `D06W` and `D06Y` therefore expose a collision span of roughly 43,400 world units after placement scaling;
+- 11 of the 18 unique Crypt-named models contain at least one zero-face geoset;
+- every Crypt-named model carries a generated portrait camera and one of two repeated three-box collision templates, consistent with unspecialized converter output;
+- the five placed Crypt-shell models have all referenced textures present, so missing texture payloads are not the leading explanation for this area crash.
+
+These are concrete model defects and strong isolation candidates. They are not yet a causal singleton result: the next decisive test is to replace `D05P`, `D06W`, and `D06Y` with a safe placeholder, then restore them one at a time.
 
 For every new occurrence, capture the following before changing imports:
 
@@ -535,7 +552,7 @@ Suggested isolation procedure:
 7. Bisect only the group whose replacement prevents the crash.
 8. Reintroduce the final suspect model alone and inspect it with Hive Model Checker and a binary structure scan.
 9. Repeat in SD and HD to separate general model parsing from renderer-specific behavior.
-10. Compare the new crash signature with the four original null-read reports. A different instruction stack should be tracked as a separate defect even if Windows displays the same 16-bit dialog.
+10. Compare each new crash signature with the five existing null-read reports. A different instruction stack should be tracked as a separate defect even if Windows displays the same 16-bit dialog.
 
 Until this work is complete, “map loads” should be understood to mean that World Editor reaches the editable map view. It does not yet mean that all areas can be viewed or edited reliably.
 
@@ -549,10 +566,10 @@ Until this work is complete, “map loads” should be understood to mean that W
 6. Audit and normalize the five malformed DNC light models before relying heavily on the 3.0 Lighting Editor.
 7. Re-encode the 236 malformed BLP icon pairs as a lower-priority asset-health task.
 8. Replace or remove the six zero-byte assets after resolving their references.
-9. Investigate the Crypt/Firelands viewing crash separately by recording the camera location and last visible objects, then testing area-associated models, lights, effects, textures, and doodads in bounded groups.
+9. Follow the Crypt audit's placeholder order: test `D05P`, `D06W`, and `D06Y` first, then `D040` and `D043`, before expanding to transparent effects and other converted props.
 10. Compare World Editor 3.0 and 2.x responsiveness using the same map, camera location, graphics mode, draw distance, and visible-object set before attributing all lag to the map imports.
 11. Recheck the map after Blizzard hotfixes because stricter or corrected asset parsing may change which tolerated defects become visible.
-12. Retain this report and the four crash bundles with the map version so later failures can be compared by build, stage, and singleton-file reproduction.
+12. Retain this report, the Crypt doodad audit, and all five crash bundles with the map version so later failures can be compared by build, stage, and singleton-file reproduction.
 
 ## Future import-crash triage procedure
 
@@ -581,6 +598,8 @@ Local evidence:
 - [`2026-09-13 13.24.40 a5aec748`](<2026-09-13 13.24.40 a5aec748/>)
 - [`2026-09-13 14.49.49 40679a7c`](<2026-09-13 14.49.49 40679a7c/>)
 - [`2026-09-14 01.42.46 4b9a5dd4`](<2026-09-14 01.42.46 4b9a5dd4/>)
+- [`2026-09-15 19.05.49 2b228384`](<2026-09-15 19.05.49 2b228384/>)
+- [`Crypt Doodad Model Audit.md`](<Crypt Doodad Model Audit.md>)
 
 External context:
 
