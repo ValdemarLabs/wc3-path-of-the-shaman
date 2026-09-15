@@ -13,6 +13,7 @@
   - [File identity and container structure](#file-identity-and-container-structure)
   - [Model resources](#model-resources)
   - [Defective geoset](#defective-geoset)
+  - [Hive Model Checker result](#hive-model-checker-result)
   - [Causal assessment](#causal-assessment)
 - [Repairing or replacing AltarOfStorms.mdx](#repairing-or-replacing-altarofstormsmdx)
   - [Immediate containment](#immediate-containment)
@@ -29,6 +30,7 @@
   - [Unknown 3.0 data fields and custom SLKs](#unknown-30-data-fields-and-custom-slks)
   - [Unusual compact and ABANDON-family models](#unusual-compact-and-abandon-family-models)
 - [Final known-good test state](#final-known-good-test-state)
+- [Open follow-up: unexpected viewport inspection crash](#open-follow-up-unexpected-viewport-inspection-crash)
 - [Recommendations](#recommendations)
 - [Future import-crash triage procedure](#future-import-crash-triage-procedure)
 - [Evidence and related reports](#evidence-and-related-reports)
@@ -269,6 +271,19 @@ The final geoset-animation record, zero-based `GEOA` index 10, references geoset
 
 A complete scan of the map's 1,950 MDX v800 models found exactly one geoset with vertices but no face indices: this one.
 
+### Hive Model Checker result
+
+The model was independently checked with the [Hive Workshop Model Checker](https://viewer.hiveworkshop.com/check/). It reported one severe warning and three ordinary warnings:
+
+| Severity | Checker result | Local interpretation |
+| --- | --- | --- |
+| Severe warning | `Geoset 9: Zero faces` | Independently confirms the exact empty geoset found by the binary scan. This remains the primary repair target and likely 3.0 crash trigger. |
+| Warning | `Missing "Death" sequence` | A static doodad can intentionally omit a death animation. This may affect removal/death presentation but is not established as a loading-crash cause. |
+| Warning | `Geoset 6: Referenced by 2 geoset animations: 0, 7` | Confirms that geoset 6 has two animation controllers. Inspect whether they intentionally combine different alpha/color states before merging or deleting either record. |
+| Warning | `Missing the Origin attachment point` | May limit attachment-based effects or tooling expectations. It is recommended cleanup, but an Origin attachment is not required to explain the zero-face crash. |
+
+The checker result materially strengthens the structural diagnosis because it reaches the same geoset-9 conclusion independently. It does not prove that the three ordinary warnings contribute to the World Editor crash. For clean causal validation, repair the severe zero-face geoset first and test that change before making optional animation or attachment cleanup.
+
 ### Causal assessment
 
 The evidence for `AltarOfStorms.mdx` as the crash trigger is conclusive at the file level:
@@ -312,7 +327,11 @@ Retera Model Studio UI labels differ between releases, but the required structur
 11. Recalculate model and geoset extents if Retera exposes that operation.
 12. Save as MDX version 800 under a new test filename such as `AltarOfStorms_fixed.mdx`.
 13. Close and reopen the saved file in Retera Model Studio. This catches serialization failures before World Editor is involved.
-14. Run a structure/model checker and confirm that no geoset has nonzero vertices with zero face indices.
+14. Run the Hive Model Checker again and confirm that `Geoset 9: Zero faces` is gone.
+15. Test this minimal repair in World Editor before addressing the three ordinary checker warnings. This preserves evidence that removing the empty geoset fixes the crash.
+16. After the crash fix is confirmed, inspect geoset 6's duplicate geoset animations 0 and 7. Keep both if their color/alpha behavior is intentional; otherwise merge or remove the redundant record.
+17. Add an Origin attachment point only if PotS effects or the desired model standard require one.
+18. Add a Death sequence only if the doodad needs an animated death/removal state; do not fabricate one solely to silence the checker.
 
 Using a new filename for the first test avoids confusing an editor or game asset cache with the old bytes.
 
@@ -351,6 +370,9 @@ No JASS, GUI-trigger, or custom-text reference to the model path was found. The 
 - [ ] Retera Model Studio opens the repaired model.
 - [ ] Retera Model Studio can save and reopen the repaired model.
 - [ ] A structure scan reports no nonempty-vertex/zero-face geoset.
+- [ ] Hive Model Checker no longer reports the severe `Geoset 9: Zero faces` result.
+- [ ] The duplicate geoset-6 animation warning has been reviewed and documented as intentional or corrected.
+- [ ] The missing Death sequence and Origin attachment warnings have been accepted for this static doodad or corrected deliberately.
 - [ ] World Editor 3.0.0.24268 opens the full map with the repaired model present.
 - [ ] World Editor can display and select all eight `D6NJ` placements.
 - [ ] The model renders correctly in SD/Classic and the PotS target HD mode.
@@ -471,6 +493,51 @@ Its confirmed loading state is:
 Loading is the confirmed improvement and the boundary of this result. The editor may still crash immediately after loading when the viewport reaches the Crypt/Firelands-related area. The editor is also noticeably heavier and less responsive than World Editor 2.x, although no controlled performance measurements have been taken. These remaining symptoms could come from another area-local asset or placed object, from the 3.0 renderer/editor itself, or from an interaction between them.
 
 The test copy also contains 87 extra root-level BLP files that are byte-identical duplicates of files under `war3campImported`. These were introduced during isolation and are tolerated, but they change import-path state. Do not use this test folder as the production repair without removing the duplicates or starting from a clean map backup.
+
+## Open follow-up: unexpected viewport inspection crash
+
+**Status:** Open and not yet isolated.
+
+After the initial map-loading blocker is removed, World Editor can still crash unexpectedly while inspecting or moving around the loaded map. The Crypt/Firelands-related area is currently notable, but the trigger has not been proven to be exclusive to that area or reproduced down to one object.
+
+A plausible working hypothesis is that World Editor 3.0 initially accepts the import table and map data, then fails later when a particular placed asset must be decoded, instantiated, rendered, animated, selected, or included in editor lighting. This would explain why the complete import set can pass map loading while viewport movement still exposes another problem. It remains only a hypothesis until a specific asset or editor operation controls the result.
+
+Possible trigger classes include:
+
+- another malformed MDX/MDL structure that the initial loader tolerates;
+- invalid or unusual geoset, material, texture, particle, ribbon, attachment, light, or animation data;
+- an extreme or invalid model extent that affects culling or selection;
+- a missing or malformed texture loaded only when its model becomes visible;
+- a placed doodad/destructible using a path that resolves differently under 3.0;
+- a custom DNC/light model interacting with the new 3.0 lighting pipeline;
+- editor memory, rendering, or performance regression independent of the map assets;
+- an interaction between a tolerated asset defect and the new editor renderer.
+
+The existing malformed DNC models, BLP mip tables, zero-byte assets, and Model Checker warnings are leads, not confirmed causes of this second crash.
+
+For every new occurrence, capture the following before changing imports:
+
+1. New Blizzard crash-report directory, including `Crash.txt`, `War3.dmp`, and `War3EditorLog.txt`.
+2. Approximate camera location, named area, and viewing direction.
+3. Whether the camera moved, zoomed, rotated, selected an object, changed tileset/light settings, or merely remained idle.
+4. Active graphics mode and editor options, especially HD/SD mode, shadows, fog, water, lighting preview, and draw distance.
+5. The last visible or selected doodad, destructible, unit, effect, or terrain feature.
+6. Whether the same camera approach reproduces the crash after restarting World Editor.
+
+Suggested isolation procedure:
+
+1. Start from the full known-good loading state with `AltarOfStorms.mdx` absent.
+2. Save a camera near—but not looking directly into—the suspected area.
+3. Approach the area repeatedly from controlled directions with identical editor graphics settings.
+4. Determine whether the crash depends on entering visibility range, selecting something, enabling lighting/shadows, or elapsed editor time.
+5. Inventory placed object rawcodes within the suspect camera bounds and resolve each rawcode to its model and texture paths.
+6. Replace suspect area models with a known-safe placeholder in groups, preserving placed objects and transforms.
+7. Bisect only the group whose replacement prevents the crash.
+8. Reintroduce the final suspect model alone and inspect it with Hive Model Checker and a binary structure scan.
+9. Repeat in SD and HD to separate general model parsing from renderer-specific behavior.
+10. Compare the new crash signature with the four original null-read reports. A different instruction stack should be tracked as a separate defect even if Windows displays the same 16-bit dialog.
+
+Until this work is complete, “map loads” should be understood to mean that World Editor reaches the editable map view. It does not yet mean that all areas can be viewed or edited reliably.
 
 ## Recommendations
 
