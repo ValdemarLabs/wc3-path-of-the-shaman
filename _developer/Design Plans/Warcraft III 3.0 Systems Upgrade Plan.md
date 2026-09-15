@@ -229,6 +229,70 @@ Implementation work:
 - [ ] Keep local input and camera results out of synchronized gameplay writes unless explicitly synchronized.
 - [ ] Replace `CameraControl`'s hidden item pathing probe with `BlzIsTerrainPathableEx` only if it matches the current collision behavior around items, cliffs, destructibles, water, and narrow passages.
 
+### WoW-style mouse-drag free camera
+
+The 3.0 input queries make a resolution-aware local mouse-drag camera practical without deriving movement from terrain mouse coordinates or synchronizing camera state between players.
+
+Verified declarations in the active 3.0.0.24268 `common.j`:
+
+| Native | Exact signature | Intended camera use |
+| --- | --- | --- |
+| `BlzIsMouseButtonPressed` | `takes mousebuttontype mouseButtonType returns boolean` | Poll whether the configured drag button remains held. |
+| `BlzGetMouseScreenPosX` | `takes nothing returns integer` | Read the local cursor's horizontal screen-pixel position. |
+| `BlzGetMouseScreenPosY` | `takes nothing returns integer` | Read the local cursor's vertical screen-pixel position. |
+| `BlzPixelToFrameX` | `takes integer pixelX returns real` | Convert horizontal cursor coordinates/deltas to frame space. |
+| `BlzPixelToFrameY` | `takes integer pixelY returns real` | Convert vertical cursor coordinates/deltas to frame space. |
+| `BlzGetLocalClientWidth/Height` | `takes nothing returns integer` | Detect client bounds, resolution changes, and edge proximity. |
+| `BlzIsLocalClientActive` | `takes nothing returns boolean` | Cancel or pause dragging when the local client loses focus. |
+| `BlzSetMousePos` | `takes integer x, integer y returns nothing` | Optional later cursor recentering for an unbounded drag. |
+| `BlzEnableCursor` | `takes boolean enable returns nothing` | Optional cursor hiding while captured; always restore it on exit. |
+
+Initial behavior decision:
+
+- [ ] Prototype an orbit camera around `CameraControl`'s current target: horizontal drag changes rotation and vertical drag changes angle of attack.
+- [ ] Use middle mouse as the initial drag button. `CameraControl` already uses middle click to reset stored camera state, so preserve a short click as reset and interpret movement beyond a configurable dead zone as a drag.
+- [ ] Keep right-drag as an optional experiment only. Warcraft III uses right-click for smart orders, so it must not become the default unless testing proves that dragging can avoid accidental unit orders and ground commands.
+- [ ] Compare this custom orbit behavior with valid `BlzCameraSetCameraType` values before deciding whether PotS should implement every free-camera field itself.
+- [ ] Prototype `CAMERA_FIELD_ROTATION`/`CAMERA_FIELD_ANGLE_OF_ATTACK` first, then compare `CAMERA_FIELD_LOCAL_YAW`/`CAMERA_FIELD_LOCAL_PITCH` only where the selected camera type gives useful free-look behavior.
+
+Local drag loop:
+
+1. On mouse-down, store the initial pixel X/Y, converted frame X/Y, current `CC_Rotation`, current `CC_Angle`, and accumulated drag distance.
+2. During the existing `CameraControl` update loop, poll `BlzIsMouseButtonPressed` and read the new screen position only for the local active client.
+3. Calculate resolution-aware deltas as the difference between successive `BlzPixelToFrameX/Y` results. Verify the Y-axis sign experimentally rather than assuming pixel and frame origins match.
+4. Apply sensitivity, dead-zone, and maximum-per-tick clamps so focus changes, cursor warps, or a stalled frame cannot cause a camera jump.
+5. Write through `CC_Rotation` and `CC_Angle` plus the existing camera-application path. Do not set camera fields behind `CameraControl`'s stored state, or its drift correction, resume logic, and DynamicMinimap safety rotation will fight the drag.
+6. Mark rotation input grace for DynamicMinimap in the same way as keyboard rotation.
+7. On release, focus loss, camera suspension, mode change, cinematic start, death camera, travel camera, or fullscreen UI takeover, clear the drag state and restore any cursor/input ownership changed by the prototype.
+8. If total movement remained below the dead zone, execute the existing middle-click camera reset; otherwise consume the gesture only as a camera drag.
+
+Local/multiplayer safety requirements:
+
+- [ ] Treat button state, cursor pixels, converted frame coordinates, drag anchors, accumulated deltas, and resulting camera fields as local presentation state.
+- [ ] Never use these values to move or order units, select gameplay targets, choose random results, modify synchronized camera-mode authority, or branch around synchronized handle creation/destruction.
+- [ ] Do not transmit ordinary drag samples. Add explicit synchronization only if a future spectator or replay feature genuinely needs another player's camera orientation.
+- [ ] Keep camera calls local to the player whose client supplied the cursor state. Two players must be able to drag to different angles without affecting each other or synchronized gameplay.
+- [ ] Suppress drag start while a modal PotS frame, dialogue, shop, inventory, equipment screen, or text-entry interaction owns mouse input.
+
+Cursor policy:
+
+- [ ] Begin with a bounded drag that leaves the cursor visible and does not call `BlzSetMousePos`; this has the lowest interaction risk.
+- [ ] Evaluate an optional captured mode that hides and recenters the cursor only after bounded dragging is stable.
+- [ ] If recentering is adopted, warp to the local client center before the cursor reaches an edge, ignore the synthetic post-warp delta, and restore the cursor on every exit path.
+- [ ] Cancel capture when `BlzIsLocalClientActive()` is false to prevent a stuck button or hidden cursor after Alt-Tab.
+
+Prototype and regression matrix:
+
+- [ ] Test 16:9, 16:10, 21:9, and 4:3 aspect ratios where available, plus windowed/fullscreen modes and Windows DPI scaling.
+- [ ] Verify frame-space sensitivity is comparable across resolutions and UI scales.
+- [ ] Test press without movement, small jitter, fast flicks, edge contact, focus loss, Alt-Tab, and release outside the client.
+- [ ] Confirm middle click still resets, middle drag does not reset, and an optional right-drag mode does not issue orders.
+- [ ] Test over terrain, units, minimap, command card, inventory, equipment, shops, dialogue, quest UI, and fullscreen custom frames.
+- [ ] Test Normal, Advanced, Developer, special-zone, dialog, death, travel, and fullscreen cinematic camera transitions.
+- [ ] Verify suspend/resume restores the pre-interruption orbit exactly and never leaves camera fields controlled by the wrong owner.
+- [ ] Run a two-player test with deliberately different simultaneous drags and confirm no desync or cross-player camera movement.
+- [ ] Reuse the existing camera update timer if profiling permits; avoid a second permanent high-frequency timer and avoid polling every inactive player when nobody is dragging.
+
 ### Dynamic minimap
 
 - [ ] Enable the new "generate dynamically within camera bounds" option in a copy of the map.
