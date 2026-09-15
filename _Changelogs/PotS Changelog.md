@@ -16,6 +16,25 @@
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
 
+## [15.9.2026]
+
+### Technical Updates
+
+- Added `_developer/Issues/2026-09-patch3/Warcraft III 3.0 Import Crash Investigation.md` with the complete World Editor 3.0.0.24268 crash-isolation record, crash-log evidence, import test matrix, binary analysis of `AltarOfStorms.mdx`, and a Retera Model Studio repair and validation procedure.
+
+### Known Issues
+
+- `war3campImported\AltarOfStorms.mdx` crashes World Editor 3.0.0.24268 while loading map version `Epic Quests-2026-09-13-0239`; the map loads with every other import restored when this model remains absent.
+- Loading the map does not establish full World Editor stability: the editor may still crash when viewing the Crypt/Firelands-related area, and World Editor 3.0 feels substantially heavier and laggier than the previous 2.x editor. An additional area-local asset, placed-object, renderer, or interaction issue may remain.
+- Five custom DNC models contain malformed `LITE` chunk sizes, 236 BLP icons declare a final mip level past EOF, and six imports are zero-byte files. They did not cause the investigated loading crash but remain asset-health and visual-validation risks.
+
+### Actions Remaining
+
+- Remove the empty tenth geoset and its associated geoset animation from `AltarOfStorms.mdx`, re-export it as MDX v800, then verify all eight `D6NJ` doodad placements through World Editor load, save/reopen, and game-client tests.
+- Isolate the Crypt/Firelands viewing crash using camera-location and area-associated asset tests, and compare editor responsiveness against World Editor 2.x under equivalent map and graphics conditions.
+- Normalize and visually test the malformed DNC lighting models, re-encode the invalid BLP mip chains, and replace or remove zero-byte imported assets as separate cleanup work.
+
+
 ## [13.9.2026]
 
 ### Player-Facing Updates
