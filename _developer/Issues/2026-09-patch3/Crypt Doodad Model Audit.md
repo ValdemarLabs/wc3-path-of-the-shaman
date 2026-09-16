@@ -21,11 +21,11 @@
 
 ## Purpose and status
 
-This document tracks the second World Editor 3.0.0.24268 problem found after the initial `AltarOfStorms.mdx` loading crash was isolated. The map now reaches the editable view when that model is absent, but moving the viewport into the large Crypt dungeon scenery can still crash World Editor.
+This document tracks the second World Editor 3.0.0.24268 problem found after the initial `AltarOfStorms.mdx` loading crash was isolated. Before repair, the map reached the editable view when that model was absent, but moving the viewport into the large Crypt dungeon scenery could still crash World Editor.
 
 On 15 September 2026, scrolling through other inspected areas did not reproduce the crash. Viewing the Crypt area containing the large Crypt-related doodads did. The same area could lag unpredictably in World Editor 2.x, sometimes apparently varying with Warcraft III's CPU-core scheduling. That older lag is important historical evidence: the Crypt assets had an existing culling, selection, collision, geometry, or rendering cost before 3.0, while 3.0 appears less tolerant of it.
 
-**Current status:** the area is reproducible enough to prioritize its assets, but no single Crypt model has yet been proven by removal/reintroduction to cause the viewport crash. The findings below identify two models with a community-corroborated Warcraft III 3.0 crash defect and one additional severe collision-envelope candidate for controlled isolation.
+**Current status (17 September 2026): Resolved.** With all 11 affected Crypt models replaced by their zero-face-geoset repairs, the map no longer crashes World Editor. This proves the malformed-geoset family as the controlling defect class, although repairing the family together does not attribute the old viewport failure to one individual model.
 
 ## Crash evidence
 
@@ -109,7 +109,7 @@ The Northrend/WMO family shares this much larger envelope:
 
 The repeated coordinates show that split/subset models retained collision geometry from a larger source model instead of receiving collision fitted to each exported piece. The most extreme placed mismatch is `D06Y`: its collision span is about 4.1 times its visual-model span before the Object Editor placement scale is applied.
 
-This is a strong explanation for the historical far-away selection/collision and lag. It is also a plausible contributor to the 3.0 viewport crash, but it is not yet proven as the null-read cause.
+This remains a strong explanation for the historical far-away selection/collision and lag. It is no longer the leading explanation for the resolved 3.0 null-read crash because the collision boxes were left unchanged while removal of the zero-face geosets stopped the crashes.
 
 ### Zero-face geosets
 
@@ -137,7 +137,7 @@ These Crypt files are MDX v1000 and do not contain a `GEOA` chunk, so the empty 
 
 Hive Workshop user Achille reports that maps from multiple creators began crashing World Editor after Warcraft III 3.0 when models contained geosets with vertices but no faces/triangles. Deleting the matching geosets allowed the same models to render and stopped the startup crashes. See [Achille's report](https://www.hiveworkshop.com/threads/warcraft-iii-3-0-bugs-issues.374131/#post-3738985).
 
-This independently validates the zero-face structure as a post-3.0 crash trigger class. The full-map scan further shows that every remaining PotS example beyond `AltarOfStorms.mdx` belongs to this Crypt model family. It substantially raises the priority of placed `D05P` and `D06W`, but does not by itself prove which one controls the Crypt viewport crash. It also does not validate the separate collision-box hypothesis for `D06Y`.
+This independently validates the zero-face structure as a post-3.0 crash trigger class. The full-map scan further shows that every remaining PotS example beyond `AltarOfStorms.mdx` belongs to this Crypt model family. The successful repaired-set test now confirms the family-wide defect as the cause class for PotS's viewport crash. It does not distinguish which affected model controlled the first failing render, and it does not validate the separate collision-box hypothesis for `D06Y`.
 
 ### Extents and rendering workload
 
@@ -221,6 +221,8 @@ Do not delete the import files during this viewport isolation. Removing a file c
 
 ## Repair procedure
 
+The guarded batch repair script [`Repair-ZeroFaceMdx.ps1`](<Repair-ZeroFaceMdx.ps1>) produced repaired copies of all 11 affected Crypt models in `C:\Users\Valtteri\Documents\Warcraft III\Maps\EpicQuestsModelFix\Fixed`. Its independent post-run audit found no remaining vertices-without-faces geosets and confirmed that all files remain MDX v1000. On 17 September, the repaired set passed the controlling World Editor test: the map no longer crashes. The remaining validation-matrix entries are visual, gameplay, performance, and regression QA rather than blockers for closing this crash.
+
 For each model that controls the crash or remains structurally suspect:
 
 1. Preserve the original file and import path in a backup.
@@ -255,6 +257,6 @@ For every isolated or repaired candidate, record:
 
 ## Conclusions and limits
 
-The current strongest candidates are not merely “large custom imports.” Two placed models contain the now independently corroborated post-3.0 crash defect of vertices without faces, and two placed WMO subsets carry a 21,700-unit collision envelope that becomes about 43,400 units after their scale-2 placements. Those are concrete structural defects consistent with the Crypt's old lag, far-away collision/selection reports, and its new 3.0 viewport instability.
+The repaired-model test closes the viewport crash: after all vertices-without-faces geosets were removed from the affected Crypt family, the map stopped crashing World Editor. The evidence therefore supports the zero-face defect class as causal rather than merely correlated.
 
-The evidence does **not** yet establish which single model causes the crash. The decisive next result must be a controlled Object Editor placeholder test where removing one rawcode/model family from the rendered area changes the outcome. Until that test is complete, the zero-face meshes, inherited collision boxes, large extents, transparent effects, and World Editor 3.0 renderer regression remain interacting candidates rather than a proven singleton cause.
+The evidence does not establish which single Crypt model triggered first because all 11 affected models were repaired together. That distinction is not required for the family-wide solution. The inherited collision boxes, large extents, and generated cameras remain legitimate cleanup and performance concerns, but they are no longer unresolved explanations for this crash.

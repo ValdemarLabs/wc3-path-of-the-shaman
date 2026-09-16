@@ -16,12 +16,30 @@
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
 
+## [17.9.2026]
+
+### Technical Updates
+
+- Validated the complete 12-model zero-face-geoset repair set in World Editor 3.0.0.24268. With the repaired models installed, the PotS map no longer crashes during loading or when viewing the Crypt area.
+- Closed `_developer/Issues/2026-09-patch3/Warcraft III 3.0 Import Crash Investigation.md` and `_developer/Issues/2026-09-patch3/Crypt Doodad Model Audit.md` as resolved. The test confirms vertices-without-faces geosets as the controlling crash defect class; the all-at-once Crypt repair does not identify one singleton model and does not need to for the implemented family-wide fix.
+
+### Resolved Issues
+
+- Resolved the World Editor `Unsupported 16-bit Application`/null-read crash associated with `AltarOfStorms.mdx` and the affected Crypt model family by removing 32 malformed zero-face geosets and `AltarOfStorms.mdx`'s associated geoset-animation record.
+
+### Actions Remaining
+
+- Keep the broken/fixed SHA-256 report and repair utility for regression checks. Any later collision-box, extent, or generated-camera cleanup is optional asset-health/performance work and is separate from the resolved World Editor crash.
+
+
 ## [16.9.2026]
 
 ### Technical Updates
 
 - Updated the Warcraft III 3.0 import-crash investigation and Crypt doodad audit with Achille's independent Hive Workshop reproduction across multiple creators' maps: models with geosets containing vertices but no faces crash World Editor after 3.0, while deleting those geosets restores rendering and prevents the startup crash.
 - Extended the structural scan across all 2,431 PotS MDX imports. It found 12 affected models and 32 affected geosets: the confirmed v800 `AltarOfStorms.mdx` defect plus 31 zero-face geosets across 11 v1000 Crypt-family models; neither v1100 model nor any unrelated v1000 model matched the condition.
+- Added `_developer/Issues/2026-09-patch3/Repair-ZeroFaceMdx.ps1`, a guarded binary repair utility that copies the 12 originals, removes only the 32 confirmed zero-face geosets, removes/remaps associated geoset-animation and bone references, preserves MDX versions and all unrelated chunks, validates each repaired output, and writes a SHA-256 repair report.
+- Created `EpicQuestsModelFix` outside the repository with 12 source-identical models in `BrokenModels`, 12 structurally repaired models in `Fixed`, and `RepairReport.csv`. Independent verification confirmed matching original hashes and versions, removal of all 32 zero-face geosets, removal of `AltarOfStorms.mdx` geoset-animation record 10, and no remaining vertices-without-faces geoset in the repaired set.
 
 ### Known Issues
 
@@ -29,7 +47,7 @@
 
 ### Actions Remaining
 
-- Repair or safely substitute `D05P` and `D06W`, then repeat the controlled Crypt camera approach. Remove the same defect from all 11 affected Crypt models before treating the imported family as 3.0-safe. Retain the collision-envelope test for `D06Y` as a separate hypothesis, and recheck after Blizzard patches the editor's handling of malformed legacy models.
+- Import the repaired `AltarOfStorms.mdx`, `D05P`, and `D06W` candidates into a disposable test copy, then repeat map load/save/reopen and the controlled Crypt camera approach before replacing production imports. Validate all 11 repaired Crypt models before treating the family as 3.0-safe. Retain the collision-envelope test for `D06Y` as a separate hypothesis, and recheck after Blizzard patches the editor's handling of malformed legacy models.
 
 
 ## [15.9.2026]

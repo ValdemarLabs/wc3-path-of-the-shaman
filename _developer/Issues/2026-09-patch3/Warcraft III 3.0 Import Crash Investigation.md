@@ -19,6 +19,7 @@
   - [Causal assessment](#causal-assessment)
 - [Repairing or replacing AltarOfStorms.mdx](#repairing-or-replacing-altarofstormsmdx)
   - [Immediate containment](#immediate-containment)
+  - [Automated repair bundle](#automated-repair-bundle)
   - [Preferred Retera Model Studio repair](#preferred-retera-model-studio-repair)
   - [Alternative geometry reconstruction](#alternative-geometry-reconstruction)
   - [Reimport and Object Editor follow-up](#reimport-and-object-editor-follow-up)
@@ -32,13 +33,15 @@
   - [Unknown 3.0 data fields and custom SLKs](#unknown-30-data-fields-and-custom-slks)
   - [Unusual compact and ABANDON-family models](#unusual-compact-and-abandon-family-models)
 - [Final known-good test state](#final-known-good-test-state)
-- [Open follow-up: unexpected viewport inspection crash](#open-follow-up-unexpected-viewport-inspection-crash)
+- [Resolved follow-up: Crypt viewport inspection crash](#resolved-follow-up-crypt-viewport-inspection-crash)
   - [Crypt doodad audit findings](#crypt-doodad-audit-findings)
 - [Recommendations](#recommendations)
 - [Future import-crash triage procedure](#future-import-crash-triage-procedure)
 - [Evidence and related reports](#evidence-and-related-reports)
 
 ## Executive summary
+
+**Resolution status (17 September 2026): Resolved.** After all 12 affected models were replaced with the repaired copies, the map no longer crashes World Editor. This closes both the initial map-loading failure and the later Crypt viewport failure. The successful repaired-set test confirms vertices-without-faces geosets as the controlling PotS crash defect under World Editor 3.0.0.24268.
 
 Warcraft III World Editor 3.0.0.24268 consistently crashed while opening the PotS folder map `Epic Quests-2026-09-13-0239`. Windows also displayed an `Unsupported 16-bit Application` dialog, but Blizzard's crash reports identify the actual editor failure as a 64-bit `World Editor.exe` null-address read access violation.
 
@@ -54,9 +57,9 @@ The strongest structural defect inside `AltarOfStorms.mdx` is its tenth geoset (
 
 The exact un-symbolized World Editor code path is not available, so the engine-level mechanism remains an inference. However, Hive Workshop user Achille independently reports the same post-3.0 failure condition across maps from multiple creators: geosets containing vertices but no faces crash World Editor, and deleting those geosets restores model rendering without the startup crash. This materially corroborates the PotS diagnosis and identifies the empty-geoset condition as a Warcraft III 3.0 regression or newly fatal validation gap rather than an isolated peculiarity of one PotS model.
 
-A follow-up scan of all 2,431 PotS MDX imports found 12 affected files and 32 affected geosets in total: `AltarOfStorms.mdx` is the only affected v800 file, while the other 11 files are all v1000 Crypt models. Neither v1100 model contains this defect. This concentration strongly connects the remaining Crypt viewport crash to the same defect class without yet proving which placed Crypt model triggers a given crash.
+A follow-up scan of all 2,431 PotS MDX imports found 12 affected files and 32 affected geosets in total: `AltarOfStorms.mdx` is the only affected v800 file, while the other 11 files are all v1000 Crypt models. Neither v1100 model contains this defect. Replacing this complete affected set with repaired models stopped the World Editor crashes. Because the Crypt models were repaired as a set, the result proves the defect class but does not distinguish which individual Crypt file first triggered viewport failure.
 
-The immediate workaround is to keep the model absent or use a safe placeholder. The preferred permanent fix is to remove the empty geoset and its associated geoset animation in a structure-aware model editor, save a normalized MDX v800 copy, and validate it under a new import name before replacing the production import.
+The implemented fix removes only the affected geosets, removes `AltarOfStorms.mdx`'s associated geoset-animation record, and preserves the original MDX versions. The unrepaired files remain archived in `BrokenModels`, while the validated repair set is retained in `Fixed` with SHA-256 records.
 
 ## Scope and identifiers
 
@@ -67,7 +70,7 @@ The immediate workaround is to keep the model absent or use a safe placeholder. 
 | PotS map version | `Epic Quests-2026-09-13-0239` |
 | Original folder map | `C:\Users\Valtteri\Documents\Warcraft III\Maps\EpicQuestsFolder40\Epic Quests.w3x` |
 | Isolation test map | `C:\Users\Valtteri\Documents\Warcraft III\Maps\EpicQuestsFolder40_test1\Epic Quests.w3x` |
-| Investigation dates | 13-16 September 2026 |
+| Investigation dates | 13-17 September 2026 |
 | Confirmed crashing import | `war3campImported\AltarOfStorms.mdx` |
 | Affected custom doodad | `D6NJ` (`altar _of_storms`) |
 
@@ -300,8 +303,8 @@ This external reproduction changes the confidence assessment:
 | --- | --- |
 | Vertices-without-faces geosets are a Warcraft III 3.0 World Editor crash trigger | **High.** Independently reproduced across multiple creators' maps, with removal of the malformed geosets controlling the result. |
 | `AltarOfStorms.mdx` causes the PotS map-loading crash | **Conclusive at the file level.** PotS removal/reintroduction already controlled the crash; the community result now independently supports its zero-face geoset as the mechanism. |
-| `D05P` and `D06W` cause the Crypt viewport crash | **Strong candidates, not yet proven.** Both contain the now-corroborated defect, but a Crypt-area placeholder or repaired-model test must still control the viewport result. |
-| Oversized inherited Crypt collision boxes contribute to lag or crashing | **Plausible separate issue.** The community report concerns zero-face meshes and does not validate the collision-envelope hypothesis. |
+| The affected Crypt model set causes the Crypt viewport crash | **Conclusive at the defect-class/set level.** World Editor stopped crashing after the 11 affected Crypt models were repaired. The all-at-once repair does not identify a single controlling file within that set. |
+| Oversized inherited Crypt collision boxes contribute to crashing | **Not supported as the resolved crash cause.** Those boxes were left unchanged while the zero-face repair stopped the crashes. They remain plausible contributors to historical lag, selection, or culling problems. |
 
 This also explains why older maps are disproportionately affected: the malformed geometry may have been tolerated before 3.0, while locating every offending import is difficult in large, abandoned, or protected maps. A Blizzard-side guard remains desirable even though PotS can repair its accessible source assets.
 
@@ -349,6 +352,26 @@ Until a repaired file passes validation:
 3. Do not delete doodad type `D6NJ` or its eight placements merely to make the editor load.
 4. If the area must be edited immediately, assign `D6NJ` a known-safe placeholder model in Object Editor.
 5. Work from a fresh backup of the production map rather than promoting the isolation folder directly.
+
+### Automated repair bundle
+
+On 16 September 2026, [`Repair-ZeroFaceMdx.ps1`](<Repair-ZeroFaceMdx.ps1>) was run against the production folder map as a read-only source. It created a standalone comparison and test bundle at:
+
+- originals: `C:\Users\Valtteri\Documents\Warcraft III\Maps\EpicQuestsModelFix\BrokenModels`;
+- repaired copies: `C:\Users\Valtteri\Documents\Warcraft III\Maps\EpicQuestsModelFix\Fixed`;
+- hashes and per-file changes: `C:\Users\Valtteri\Documents\Warcraft III\Maps\EpicQuestsModelFix\RepairReport.csv`.
+
+The repair removed exactly 32 vertices-without-faces geosets from the 12 known affected models. For `AltarOfStorms.mdx`, it also removed zero-based `GEOA` record 10 because that record referenced removed geoset 9. All Crypt bones use `-1` for both geoset and geoset-animation association, and the v1000 Crypt models have no `GEOA` chunk, so no live Crypt reference needed deletion or reassignment.
+
+The tool preserved each model's original version, copied all unrelated top-level MDX chunks byte-for-byte, recalculated the affected chunk lengths, reparsed every output, and rejected any remaining vertices-without-faces geoset. A separate post-run audit confirmed:
+
+- 12 source-identical files in `BrokenModels`;
+- 12 repaired files in `Fixed`;
+- SHA-256 agreement with the generated report;
+- MDX v800 retained for `AltarOfStorms.mdx` and v1000 retained for all Crypt models;
+- zero remaining nonempty-vertex/zero-face geosets in the repaired set.
+
+On 17 September 2026, the repaired models were tested in the map and World Editor no longer crashed. This supplies the previously missing engine validation for the map-load and Crypt viewport failures. Game-client visual, animation, pathing, and collision checks remain appropriate asset QA, but they no longer block closure of this World Editor crash investigation.
 
 ### Preferred Retera Model Studio repair
 
@@ -530,13 +553,13 @@ Its confirmed loading state is:
 - all remaining directories restored together;
 - World Editor 3.0.0.24268 loads the map.
 
-Loading is the confirmed improvement and the boundary of this result. In the 15 September pass, scrolling through other inspected parts of the map did not crash the editor, but viewing the Crypt area containing the large imported dungeon doodads did. The editor is also noticeably heavier and less responsive than World Editor 2.x, although no controlled performance measurements have been taken. These remaining symptoms could come from the structurally suspect Crypt imports, from the 3.0 renderer/editor itself, or from an interaction between them.
+This was the known-good loading state during isolation. It was superseded on 17 September by the repaired-model test: with the full fixed set present, the map loads and the previous Crypt inspection crash no longer occurs. World Editor 3.0 may still feel heavier than 2.x, but that performance observation is separate from the resolved null-read crash.
 
 The test copy also contains 87 extra root-level BLP files that are byte-identical duplicates of files under `war3campImported`. These were introduced during isolation and are tolerated, but they change import-path state. Do not use this test folder as the production repair without removing the duplicates or starting from a clean map backup.
 
-## Open follow-up: unexpected viewport inspection crash
+## Resolved follow-up: Crypt viewport inspection crash
 
-**Status:** Open; narrowed to the Crypt area and prioritized models, but not yet isolated to one rawcode.
+**Status:** Resolved on 17 September 2026 by installing the repaired model set. The map no longer crashes World Editor during the previously failing workflow.
 
 After the initial map-loading blocker is removed, World Editor can still crash unexpectedly while inspecting or moving around the loaded map. The 15 September recheck scrolled through other areas without a crash and then reproduced the failure when the viewport reached the large Crypt-related doodads. This makes the Crypt a strong area-level correlation, although the trigger has not been reproduced down to one object.
 
@@ -568,7 +591,7 @@ The separate [`Crypt Doodad Model Audit.md`](<Crypt Doodad Model Audit.md>) reso
 - every Crypt-named model carries a generated portrait camera and one of two repeated three-box collision templates, consistent with unspecialized converter output;
 - the five placed Crypt-shell models have all referenced textures present, so missing texture payloads are not the leading explanation for this area crash.
 
-These are concrete model defects and strong isolation candidates. They are not yet a causal singleton result: the next decisive test is to replace `D05P`, `D06W`, and `D06Y` with a safe placeholder, then restore them one at a time.
+The repaired-set result confirms the vertices-without-faces defect as the cause class for the Crypt viewport failure. It does not identify whether `D05P`, `D06W`, or another affected Crypt-family model was the first rendered trigger, because all 11 affected Crypt models were repaired together. Singleton attribution is unnecessary for the implemented family-wide fix.
 
 For every new occurrence, capture the following before changing imports:
 
@@ -579,7 +602,7 @@ For every new occurrence, capture the following before changing imports:
 5. The last visible or selected doodad, destructible, unit, effect, or terrain feature.
 6. Whether the same camera approach reproduces the crash after restarting World Editor.
 
-Suggested isolation procedure:
+Historical isolation procedure retained for a future regression:
 
 1. Start from the full known-good loading state with `AltarOfStorms.mdx` absent.
 2. Save a camera near—but not looking directly into—the suspected area.
@@ -592,19 +615,19 @@ Suggested isolation procedure:
 9. Repeat in SD and HD to separate general model parsing from renderer-specific behavior.
 10. Compare each new crash signature with the five existing null-read reports. A different instruction stack should be tracked as a separate defect even if Windows displays the same 16-bit dialog.
 
-Until this work is complete, “map loads” should be understood to mean that World Editor reaches the editable map view. It does not yet mean that all areas can be viewed or edited reliably.
+As of the 17 September repaired-model test, the map loads and no longer reproduces the World Editor crash. Any future recurrence should begin a new incident comparison against the preserved broken/fixed hashes rather than reopening this result without new evidence.
 
 ## Recommendations
 
-1. Keep `AltarOfStorms.mdx` quarantined until a repaired or replacement model passes the checklist.
-2. Repair the empty geoset first; it is the structural anomaly most strongly correlated with the crash. Across the full map, remove the same defect from the 11 listed Crypt v1000 models as a bounded follow-up repair set.
-3. Test the repair under a new filename, then restore the canonical path only after a clean editor restart and save/reopen cycle.
+1. Retain the repaired 12-model set and its SHA-256 report as the Warcraft III 3.0-compatible baseline.
+2. Preserve the original broken files separately for regression comparison; do not restore them to the active map.
+3. If any repaired file is edited again, rerun the zero-face scan and World Editor test before adopting it.
 4. Verify all eight `D6NJ` doodad placements visually.
 5. Do not bulk-rename imports solely to solve this incident; multi-dot paths are a separate compatibility project.
 6. Audit and normalize the five malformed DNC light models before relying heavily on the 3.0 Lighting Editor.
 7. Re-encode the 236 malformed BLP icon pairs as a lower-priority asset-health task.
 8. Replace or remove the six zero-byte assets after resolving their references.
-9. Follow the Crypt audit's placeholder order: test `D05P`, `D06W`, and `D06Y` first, then `D040` and `D043`, before expanding to transparent effects and other converted props.
+9. Treat the inherited Crypt collision boxes and extents as optional performance/selection cleanup, not as unresolved causes of this crash.
 10. Compare World Editor 3.0 and 2.x responsiveness using the same map, camera location, graphics mode, draw distance, and visible-object set before attributing all lag to the map imports.
 11. Recheck the map after Blizzard hotfixes because stricter or corrected asset parsing may change which tolerated defects become visible.
 12. Retain this report, the Crypt doodad audit, and all five crash bundles with the map version so later failures can be compared by build, stage, and singleton-file reproduction.
