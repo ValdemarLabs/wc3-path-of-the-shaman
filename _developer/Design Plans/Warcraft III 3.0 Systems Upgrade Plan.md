@@ -18,6 +18,10 @@ The separate 16-bit launcher and World Editor crash investigation is intentional
 - Do not replace the current inventory and equipment system wholesale. Blizzard exposes a 30-slot extended bag and 9 loadout slots, while PotS supports 12-80 stored-item slots and 20 equipment positions.
 - Introduce a bridge around native equipment instead of spreading direct native calls across gameplay systems.
 - Keep existing implementations as rollback paths until their replacements pass full-map and multiplayer testing.
+- Do not create or maintain separate PotS test maps for this work. The systems under review depend on the real map's rects, placed objects, Object Editor data, initialization order, imports, UI, heroes, and generated data; reproducing that environment would create redundant work and misleading results.
+- Run 3.0 probes in a disposable copy of the complete PotS map through a disabled-by-default developer harness. Small code-only tests remain useful for parsers, database migrations, and other logic that does not depend on map state.
+- PotS targets the SD/Classic presentation. HD water and other HD-only authoring features are outside this upgrade plan unless that presentation policy changes later.
+- PotS remains Orc-themed. Keep the existing Orc/default HUD identity and treat the new race-skin API only as a compatibility concern; do not pursue a Forsaken HUD or per-player race-skin selection.
 - Do not convert the project to Lua. Use the new GUI-to-Lua and Copy As Script tools only for investigation; converted PotS triggers should continue to target maintained JASS/vJASS libraries.
 - Treat Object Editor, terrain, placed-object, minimap-paint, lighting, water, fog, sound-variable, and post-processing edits as manual World Editor work.
 - Use the exact native spellings from the 3.0 scripts, including `UnitHasAnyItemEquiped` and the `envMapStrengthy` parameter typo where applicable.
@@ -28,33 +32,49 @@ The separate 16-bit launcher and World Editor crash investigation is intentional
 | --- | --- | --- | --- |
 | P0 | Equipment classification, equipment type, item tag, extended bag, equip events, native-colored bonus stats | `WC3ItemManager`, `DInventory`, `DEquipment`, `SharedDInvLib`, `ItemHook`, `UnitStats` | Very high |
 | P0 | Remaining/percentage ability cooldown control | `ShamanCommon`, talent-driven cooldowns | High |
-| P1 | Expanded fog and HD water | `FogSystem`, `Storm`, `WeatherSystemV4`, zones | High |
+| P1 | Expanded fog controls | `FogSystem`, `Storm`, `WeatherSystemV4`, zones | High |
 | P1 | Doodad enumeration, instance animation, rotation, and color | `DoodadManager`, `DoodadRender`, procedural destructibles | High |
 | P1 | Free-camera ownership and input queries | `CameraControl`, `DialogCamera`, `DynamicMinimap` | High |
 | P1 | Dynamic minimap generation within camera bounds | `DynamicMinimap` | Potentially very high |
 | P2 | Special-effect animation queue and blend control | `SpeciFX`, ability visuals | Medium |
-| P2 | Per-player HUD skin and Forsaken skin | `Interface`, `MasterUI`, custom frame systems | Medium |
 | P2 | Item, doodad, and destructible team color | Loot ownership and environment presentation | Medium |
 | P3 | Attack cooldown reset and global aura toggling | Selected combat/state transitions | Situational |
 | P3 | Lighting editor, omni lights, decals, shadow blockers, post processing | Environment authoring | Visual/optimization work |
 
-## Phase 0 - Native behavior test maps
+## Phase 0 - Full-map 3.0 validation harness
 
-Before production integration, create small focused harnesses beside the affected systems.
+PotS integration tests must run in the complete map. A reduced map would omit the rects, zones, placed objects, generated Object Editor data, initialization order, custom frames, imports, and cross-system state that are most likely to expose failures. Use a disposable development copy of the full map rather than maintaining a parallel test environment.
 
-- [ ] Create `ItemSystems/Warcraft300Inventory_testing.j` and an isolated test map.
-- [ ] Create `EnvironmentSystems/Warcraft300Environment_testing.j` and an isolated HD test map.
-- [ ] Create `Camera/Warcraft300Camera_testing.j` and test with custom UI loaded.
-- [ ] Record the exact editor and client build used for every result.
-- [ ] Test host, second player, reconnect-equivalent map reload, hero death/revival, morphing, item transfer, and item destruction.
-- [ ] Separate synchronized gameplay state from local visual and camera calls.
-- [ ] Verify behavior in HD and Classic graphics modes where applicable.
-- [ ] Do not merge a production migration based only on successful compilation.
+### Harness structure
+
+- [ ] Add a small coordinating `Debug/Warcraft300TestHarness.j` library and expose its entry points through the existing centralized `/debug` command dispatcher in `Debug/DebugCommands.j`.
+- [ ] Keep the harness disabled by default and prevent automatic probes during normal map initialization. Tests must begin only through an explicit developer command and must not ship enabled in a release build.
+- [ ] Divide probes into independently runnable suites such as equipment bonuses, native inventory, cooldowns, camera/input, minimap, environment, and doodads. Run one stateful suite at a time so failures are attributable.
+- [ ] Reuse the real PotS heroes, existing stat-specific TEST items, Object Editor data, UI, zones, and systems. Add temporary test objects only where existing data cannot express a required positive, negative, or boundary case.
+- [ ] Run position-dependent probes at the selected hero, current camera target, or a deliberately chosen existing development area. Do not add artificial rect duplicates merely to make a test self-contained.
+- [ ] Give every mutating probe an explicit cleanup/reset command. Snapshot values before a test, remove temporary handles and abilities afterward, and report when a full map restart is required instead of pretending state was restored.
+- [ ] Keep feature flags separate from the harness. A probe may enable one experimental implementation for the current test, but it must not silently change the production default or enable two competing stat/inventory paths together.
+- [ ] Print concise before/after values and PASS/FAIL invariants in game, then record the exact editor/client build, map build, SD graphics settings, suite, player, and feature-flag state in the associated developer notes.
+- [ ] Test host and second player, full map reload, hero death/revival, morphing, item transfer, and item destruction where relevant.
+- [ ] Separate synchronized gameplay state from local visual and camera calls. Camera/input probes must support two clients observing different local states without changing shared gameplay state.
+- [ ] Verify behavior in the supported SD/Classic presentation at representative low and high settings where applicable.
+- [ ] Do not merge a production migration based only on successful compilation or a single-player harness pass.
+
+### Full-map test workflow
+
+1. Make or restore a disposable copy of the current full map and confirm that its unmodified baseline loads, compiles, and starts normally.
+2. Import the current source changes and the disabled harness, compile through the normal World Editor/JassHelper workflow, and run a smoke session with no test suite activated.
+3. Enable exactly one experimental path and execute its `/debug` suite using controlled items/units. Save the output and compare it with the baseline.
+4. Restart the map between tests that alter initialization state, Object Editor-derived state, terrain/environment state, or undocumented native state.
+5. Repeat synchronization-sensitive suites with at least two players and different selected heroes/camera positions.
+6. Disable the experiment and confirm the legacy path still works before changing the production default.
+
+Separate executable or code-only tests remain appropriate for `WC3ItemManager`, SQL migrations, W3T import/export, binary assets, and other tooling whose correctness does not depend on the live map.
 
 ### Inventory probe matrix
 
 - [ ] Determine which Object Editor unit ability or field enables the native extended bag and equipment panel.
-- [ ] Reproduce the behavior of Garek's Backpack in an isolated map and document all required object data.
+- [ ] Reproduce the behavior of Garek's Backpack in the disposable full-map copy with a reviewed test item/unit and document all required object data.
 - [ ] Confirm that `UnitExtendedInventorySize` reports actual capacity and whether capacity can vary by unit.
 - [ ] Confirm bag slot indexing and bounds for `UnitItemInBagSlot`.
 - [ ] Confirm `UnitEquipItem`, `UnitUnequipItem`, and `UnitUnequipItemFromSlot` ownership and failure behavior.
@@ -66,6 +86,20 @@ Before production integration, create small focused harnesses beside the affecte
 - [ ] Record how the native unit panel colors positive and negative Strength, Agility, Intelligence, damage, and armor changes from native equipped items: positive equipment deltas should be green and negative deltas red while the permanent value remains white.
 - [ ] Compare actual native equipped-item abilities, hidden unit abilities, `SetHeroStr/Agi/Int`, `BlzSetUnitBaseDamage`, `BlzSetUnitArmor`, and the 3.0 `UNIT_IF_*`, `UNIT_IF_*_PERMANENT`, and `UNIT_IF_*_WITH_BONUS` fields. Determine which approaches change gameplay, which change the displayed base, and which produce a genuine colored bonus.
 - [ ] Test whether writing `UNIT_IF_*_WITH_BONUS` is supported and persistent in 3.0.0.24268; declaration and a successful boolean return are insufficient without level-up, morph, save/load, and UI-refresh tests.
+
+### Recommended first upgrade
+
+After the minimal harness command and reset support exists, implement the `DEquipment` native-style bonus presentation described in Phase 2 as the first runtime upgrade. It is the best starting point because it fixes an existing base-versus-bonus correctness problem, has immediate visible value, can reuse the present PotS inventory and equipment authority, and can be compared against the legacy mutation path without first migrating item storage.
+
+Suggested first vertical slice:
+
+1. Add signed green/red formatting and base/bonus/total diagnostics without changing gameplay values.
+2. Add a recomputation entry point for the aggregate equipment ledger and drift assertions for repeated equip/unequip cycles.
+3. Prototype aggregate Strength, Agility, Intelligence, damage, and armor carriers on one hero using existing positive and negative TEST items.
+4. Validate level-up, permanent rewards, morph, death/revival, load, set bonuses, and 100 equip/unequip cycles in the full-map harness.
+5. Keep the existing permanent/base mutation implementation behind a mutually exclusive rollback flag until multiplayer and full-map regression tests pass.
+
+Do not begin with the native extended bag/loadout bridge. That work changes item ownership, storage authority, events, UI, death/restoration, cleanup, quests, professions, AI, and shops simultaneously. Likewise, camera, minimap, lighting, and fog are valuable but are less suitable as the first upgrade because their validation is more subjective and more sensitive to local-player and graphics-setting behavior.
 
 ## Phase 1 - Extend WC3ItemManager and W3T round trips
 
@@ -140,6 +174,8 @@ PotS slots 13-16 are currently unused and must not be repurposed implicitly.
 
 ### Native-style equipment bonus presentation
 
+This is the recommended first runtime upgrade. It can be implemented and validated before the native inventory bridge because it operates on the existing PotS equipment ledger and does not require changing item storage authority.
+
 `DEquipment.j` defines the equipment-facing system, while the current runtime stat mutation is primarily implemented by `AddDEqStatsOfItemToUnit` and `RemoveDEqStatsOfItemFromUnit` in `SharedDInvLib.j`. The system already maintains equipment totals in `EQIDDB[eqid][5].real[statid]`, and `UpdateDEqCSheet` lists those totals separately. However, several native-visible stats are applied by rewriting the unit's existing value:
 
 - Strength, Agility, and Intelligence call `SetHeroStr/Agi/Int` with `permanent = true`;
@@ -176,7 +212,7 @@ Required lifecycle tests:
 - [ ] Test primary-stat-derived damage separately from flat equipment Damage so the native damage panel does not double-count attribute growth.
 - [ ] Test heroes with only weapon index 0, both weapon indices, disabled attacks, melee/ranged transformations, and dual-wield/two-handed transitions.
 - [ ] Verify synchronized gameplay values on at least two clients. Coloring is presentation, but the abilities/fields producing the bonus affect synchronized combat state and must not be changed only inside `GetLocalPlayer` branches.
-- [ ] Retain the current mutation path behind a temporary rollback flag until the aggregate bonus implementation passes focused and full-map tests; never enable both paths together.
+- [ ] Retain the current mutation path behind a temporary rollback flag until the aggregate bonus implementation passes its full-map harness suite and normal full-map regression tests; never enable both paths together.
 
 ### Direct consumable use
 
@@ -219,7 +255,7 @@ Inventory support is incomplete until systems stop assuming that all usable item
 
 - [ ] Prototype `SetItemColor` for ownership or faction communication, not rarity coloring; it accepts a `playercolor`, not arbitrary RGB.
 - [ ] Test ground, bag, equipment, native 3D display, transfer, and neutral ownership behavior.
-- [ ] Do not enable globally unless the visual language is understandable in both HD and Classic modes.
+- [ ] Do not enable globally unless the visual language is understandable in the supported SD/Classic presentation.
 
 ## Phase 4 - Ability cooldowns, aura state, and attack resets
 
@@ -344,7 +380,7 @@ Prototype and regression matrix:
 - [ ] Keep chunked/full-map modes until the native option passes long-session and multiplayer testing.
 - [ ] If native generation wins, remove imports and conversion tooling in a separate cleanup commit after rollback assets are archived.
 
-## Phase 6 - Fog, HD water, lighting, and weather
+## Phase 6 - Fog, lighting, and weather
 
 ### FogSystem state model
 
@@ -368,22 +404,17 @@ Tasks:
 - [ ] Test which fog setters are safe as local visual calls and document the multiplayer rule.
 - [ ] Author representative linear, height, exponential, dungeon, snow, rain, and storm presets in the World Editor with live preview.
 
-### HD water
+### Excluded HD water
 
-- [ ] Create a small `HDWater` controller only if runtime zone/weather changes are needed.
-- [ ] Wrap `SetHDWaterParamsEx` or individual `BlzSetHDWater*` calls behind named presets.
-- [ ] Test color override, displacement, opacity, reflectivity, emissivity, edge softness, wave strength, environment-map strength, and `SetWaterDeforms`.
-- [ ] Determine whether calls are global synchronized presentation or safely local before varying them per selected hero.
-- [ ] Integrate with zones, dungeons, day/night, rain, and storm only after transition behavior is stable.
-- [ ] Verify Classic-mode fallback and the effect on rain ripple water detection.
+Do not add an `HDWater` controller or adopt the `BlzSetHDWater*`/`SetHDWaterParamsEx` APIs. PotS is SD-only, so this would add code and testing burden for an unsupported presentation mode. Continue using the current terrain-water, weather, and rain-ripple behavior.
 
 ### Lighting and post processing
 
-- [ ] Use the lighting editor to establish baseline day, night, dungeon, storm, and Forsaken-area profiles.
+- [ ] Use SD-compatible lighting controls to establish baseline day, night, dungeon, storm, and special-area profiles.
 - [ ] Replace suitable decorative emissive effects with editable omni lights where this reduces model/effect overhead.
 - [ ] Test shadow-casting omni lights against `DoodadRender` and graphics quality settings.
 - [ ] Use `BlzSetMinShadowCastingPointLightCount` only through a graphics preset; benchmark GPU cost before raising it.
-- [ ] Create map-level post-processing presets conservatively and verify readability of PotS UI, fog, water, and cinematics.
+- [ ] Create map-level post-processing presets only if they affect the supported SD presentation, and verify readability of PotS UI, fog, terrain water, and cinematics.
 - [ ] Document all manual values so the World Editor remains the source of truth.
 
 ## Phase 7 - Doodads, destructibles, decals, and shadows
@@ -407,13 +438,9 @@ Target natives include `BlzGetNumDoodads`, doodad index getters, `BlzSetSingleDo
 - [ ] Confirm color and orientation survive death, revival, replacement, hiding, and save/load-equivalent recreation.
 - [ ] Verify pathing and selection remain aligned with rotated visuals.
 
-### HD authoring pass
+### Excluded HD-only authoring features
 
-- [ ] Add water doodads only where terrain water cannot produce the required shape.
-- [ ] Use HD decals for roads, damage, ritual markings, and environmental storytelling after testing draw order and fog behavior.
-- [ ] Place shadow blockers where hidden interiors or performance-sensitive spaces benefit.
-- [ ] Apply "disable HD shadow" to high-count decorations when the visual loss is acceptable.
-- [ ] Use the light-range visualization during the same pass to prevent unnecessary overlap.
+Do not schedule HD water doodads, HD decals, HD shadow blockers, or per-doodad HD-shadow work while PotS remains SD-only. The light-range visualization and editable lights may still be used only where they demonstrably affect and improve the supported SD presentation.
 
 ## Phase 8 - Special effects, HUD, sound, and editor workflow
 
@@ -425,12 +452,11 @@ Target natives include `BlzGetNumDoodads`, doodad index getters, `BlzSetSingleDo
 - [ ] Test queued animation cleanup, invalid animation names, time scale, looping models, and effect destruction.
 - [ ] Migrate only effects that currently require recreation or timers solely to sequence animations.
 
-### HUD skins and hero presentation
+### Orc HUD compatibility and hero presentation
 
-- [ ] Prototype `SetPlayerRaceSkin` with Human, Orc, and Forsaken HUDs for each player.
-- [ ] Apply the skin before custom UI frame discovery and record which origin-frame names, sizes, and anchors change.
-- [ ] Regression-test `Interface`, `MasterUI`, `FullscreenUI`, `UIChanges`, quest UI, stats UI, abilities UI, shops, and inventory/equipment.
-- [ ] Keep a default HUD option if the Forsaken skin reduces readability or breaks custom layouts.
+- [ ] Keep the current Orc/default HUD identity fixed; do not expose Human/Forsaken HUD selection or make HUD skin a per-player gameplay option.
+- [ ] Confirm Warcraft III 3.0 does not change the expected origin-frame names, sizes, or anchors used by `Interface`, `MasterUI`, `FullscreenUI`, `UIChanges`, quest UI, stats UI, abilities UI, shops, and inventory/equipment.
+- [ ] Use `SetPlayerRaceSkin` only if a narrowly scoped compatibility fix is required to preserve the Orc HUD, and validate the call before custom UI frame discovery.
 - [ ] Evaluate `UNIT_BF_FORCE_DISPLAY_HP` for invulnerable buildings that should retain visible health; make the actual object-data choice manually in World Editor.
 
 ### Sound variables
@@ -449,23 +475,24 @@ Target natives include `BlzGetNumDoodads`, doodad index getters, `BlzSetSingleDo
 
 ## Phase 9 - Rollout order
 
-1. Complete native probe maps and record semantics.
-2. Add ItemManager schema/UI/W3T support without changing production item behavior.
-3. Backfill a small reviewed equipment/tag test set.
-4. Implement the native inventory bridge and native-style aggregate equipment-bonus presentation behind disabled configuration flags.
-5. Integrate equip/unequip and direct bag-use events with item consumers.
-6. Convert cooldown helpers and extend SpeciFX.
-7. Prototype camera and dynamic-minimap replacements.
-8. Extend fog and water state, then author lighting/post-processing presets.
-9. Modernize doodad handling only after performance comparison.
-10. Enable features independently, with one changelog entry and rollback path per workstream.
+1. Add the disabled full-map 3.0 harness to the existing `/debug` workflow and record baseline semantics without changing production behavior.
+2. Implement the native-style aggregate `DEquipment` bonus layer behind a mutually exclusive rollback flag; make this the first runtime upgrade.
+3. Add ItemManager schema/UI/W3T support without changing production item behavior.
+4. Backfill a small reviewed equipment/tag test set.
+5. Implement the native inventory bridge behind a disabled configuration flag only after equipment-bonus semantics are stable.
+6. Integrate equip/unequip and direct bag-use events with item consumers.
+7. Convert cooldown helpers and extend SpeciFX.
+8. Prototype camera and dynamic-minimap replacements.
+9. Extend fog state, then evaluate only SD-compatible lighting/post-processing presets.
+10. Modernize doodad handling only after performance comparison.
+11. Enable features independently, with one changelog entry and rollback path per workstream.
 
 ## Validation gates
 
 ### Compilation
 
-- [ ] Focused test map compiles with the 3.0 `common.j`/`blizzard.j` snapshot.
-- [ ] Full map compiles through the normal World Editor/JassHelper workflow.
+- [ ] Full map compiles through the normal World Editor/JassHelper workflow with the harness present but disabled.
+- [ ] Full map compiles and starts with the selected experimental path enabled; activating its suite is not required for an ordinary smoke session.
 - [ ] No archived Blizzard script is accidentally used by JassHelper or editor tooling.
 
 ### Inventory and equipment
@@ -483,16 +510,16 @@ Target natives include `BlzGetNumDoodads`, doodad index getters, `BlzSetSingleDo
 
 ### Multiplayer and local presentation
 
-- [ ] Equip, unequip, item use, random selection, fog, water, camera, and UI tests run with at least two players.
+- [ ] Equip, unequip, item use, random selection, fog, camera, and UI tests run with at least two players.
 - [ ] Local camera/input/HUD calls do not create synchronized state divergence.
 - [ ] Selected heroes may occupy different zones without applying another player's fog or camera state.
 
 ### Performance and visual modes
 
-- [ ] Compare long-session FPS and memory before/after doodad, minimap, lighting, water, and post-processing changes.
-- [ ] Verify HD and Classic modes at low and high graphics settings.
-- [ ] Verify all new model, texture, sound, decal, water, and light assets resolve without editor-log warnings.
+- [ ] Compare long-session FPS and memory before/after doodad, minimap, SD-compatible lighting, and post-processing changes.
+- [ ] Verify the supported SD/Classic presentation at low and high graphics settings.
+- [ ] Verify all new SD-compatible model, texture, sound, and light assets resolve without editor-log warnings.
 
 ## Completion criteria
 
-This plan is complete when each adopted workstream has documented runtime semantics, focused and full-map compile results, multiplayer validation where relevant, an explicit rollback route, updated developer documentation, and a current-date changelog entry. Features that fail parity or safety testing should remain documented prototypes rather than production dependencies.
+This plan is complete when each adopted workstream has documented runtime semantics, full-map harness and normal full-map compile/runtime results, multiplayer validation where relevant, an explicit rollback route, updated developer documentation, and a current-date changelog entry. Features that fail parity or safety testing should remain documented prototypes rather than production dependencies.
