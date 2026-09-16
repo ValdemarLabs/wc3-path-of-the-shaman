@@ -22,6 +22,7 @@
 
 - Validated the complete 12-model zero-face-geoset repair set in World Editor 3.0.0.24268. With the repaired models installed, the PotS map no longer crashes during loading or when viewing the Crypt area.
 - Closed `_developer/Issues/2026-09-patch3/Warcraft III 3.0 Import Crash Investigation.md` and `_developer/Issues/2026-09-patch3/Crypt Doodad Model Audit.md` as resolved. The test confirms vertices-without-faces geosets as the controlling crash defect class; the all-at-once Crypt repair does not identify one singleton model and does not need to for the implemented family-wide fix.
+- Updated `_developer/Design Plans/Warcraft III 3.0 Systems Upgrade Plan.md` with a `DEquipment` native-style stat presentation design: equipment must remain a separately tracked bonus layer, show positive/negative native attributes, damage, and armor as green/red deltas, avoid permanent/base stat mutation and double application, and pass lifecycle tests covering progression, morphs, item mutations, set bonuses, revival, load, and repeated equip cycles.
 
 ### Resolved Issues
 

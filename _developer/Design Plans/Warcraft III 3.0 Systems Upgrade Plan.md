@@ -26,7 +26,7 @@ The separate 16-bit launcher and World Editor crash investigation is intentional
 
 | Priority | Capability | PotS targets | Expected value |
 | --- | --- | --- | --- |
-| P0 | Equipment classification, equipment type, item tag, extended bag, equip events | `WC3ItemManager`, `DInventory`, `DEquipment`, `ItemHook`, `UnitStats` | Very high |
+| P0 | Equipment classification, equipment type, item tag, extended bag, equip events, native-colored bonus stats | `WC3ItemManager`, `DInventory`, `DEquipment`, `SharedDInvLib`, `ItemHook`, `UnitStats` | Very high |
 | P0 | Remaining/percentage ability cooldown control | `ShamanCommon`, talent-driven cooldowns | High |
 | P1 | Expanded fog and HD water | `FogSystem`, `Storm`, `WeatherSystemV4`, zones | High |
 | P1 | Doodad enumeration, instance animation, rotation, and color | `DoodadManager`, `DoodadRender`, procedural destructibles | High |
@@ -63,6 +63,9 @@ Before production integration, create small focused harnesses beside the affecte
 - [ ] Confirm direct bag use fires `EVENT_PLAYER_UNIT_USE_ITEM`, consumes charges, observes cooldown groups, and destroys perishable zero-charge items normally.
 - [ ] Confirm behavior when an item is transferred, pawned, dropped on death, removed with `RemoveItem`, or destroyed while equipped.
 - [ ] Confirm the native 3D equipment character display works for both PotS heroes, alternate unit skins, morphs, hero glow settings, and local selection changes.
+- [ ] Record how the native unit panel colors positive and negative Strength, Agility, Intelligence, damage, and armor changes from native equipped items: positive equipment deltas should be green and negative deltas red while the permanent value remains white.
+- [ ] Compare actual native equipped-item abilities, hidden unit abilities, `SetHeroStr/Agi/Int`, `BlzSetUnitBaseDamage`, `BlzSetUnitArmor`, and the 3.0 `UNIT_IF_*`, `UNIT_IF_*_PERMANENT`, and `UNIT_IF_*_WITH_BONUS` fields. Determine which approaches change gameplay, which change the displayed base, and which produce a genuine colored bonus.
+- [ ] Test whether writing `UNIT_IF_*_WITH_BONUS` is supported and persistent in 3.0.0.24268; declaration and a successful boolean return are insufficient without level-up, morph, save/load, and UI-refresh tests.
 
 ## Phase 1 - Extend WC3ItemManager and W3T round trips
 
@@ -135,6 +138,46 @@ PotS slots 13-16 are currently unused and must not be repurposed implicitly.
 - [ ] Decide whether native slots are authoritative for the nine mapped positions or only a presentation layer. Do not support both modes concurrently in one release.
 - [ ] Keep the PotS UI for unsupported slots and capacities above the native 30-slot limit.
 
+### Native-style equipment bonus presentation
+
+`DEquipment.j` defines the equipment-facing system, while the current runtime stat mutation is primarily implemented by `AddDEqStatsOfItemToUnit` and `RemoveDEqStatsOfItemFromUnit` in `SharedDInvLib.j`. The system already maintains equipment totals in `EQIDDB[eqid][5].real[statid]`, and `UpdateDEqCSheet` lists those totals separately. However, several native-visible stats are applied by rewriting the unit's existing value:
+
+- Strength, Agility, and Intelligence call `SetHeroStr/Agi/Int` with `permanent = true`;
+- flat Damage calls `BlzSetUnitBaseDamage` for both weapon indices;
+- flat and percentage Armor recompute through `BlzSetUnitArmor`;
+- repeated add/remove operations therefore treat equipment as changes to the unit's current base instead of an engine-recognized bonus source.
+
+The target behavior is the same visual contract as native item bonuses:
+
+- permanent hero growth, Object Editor values, level gains, tomes, scripted permanent rewards, and morph-specific bases remain part of the white/base value;
+- the aggregate contribution of equipped items and active equipment sets appears as a green positive or red negative delta for native-displayable Strength, Agility, Intelligence, damage, and armor;
+- unequipping returns the colored delta toward zero without rewriting legitimate base progression;
+- PotS-only values such as critical statistics, spell power, profession skills, block, lifesteal, and custom damage modifiers remain in the custom character sheet, with consistent signed green/red formatting where Warcraft has no native display field.
+
+Implementation requirements:
+
+- [ ] Preserve `EQIDDB[eqid][5]` as the authoritative aggregate equipment ledger, but stop using permanent/base setters as the normal equipment application path for native-displayable stats.
+- [ ] Add a single refresh entry point that recomputes native-displayable equipment bonuses from the ledger after equip, unequip, swap, set activation/deactivation, rarity change, item-level change, named-item mutation, load, revive, and morph. Prefer recomputation over accumulating inverse deltas so repeated operations cannot drift.
+- [ ] Prototype one aggregate hidden bonus ability per semantic group/unit rather than one ability per equipped item. Native-equipped item abilities and the aggregate PotS carrier must never apply the same bonus simultaneously.
+- [ ] Test `Attribute Bonus` (`Aamk`) as the primary aggregate carrier for Strength, Agility, and Intelligence. The Ability Insight reference reports that it accepts negative bonuses and reacts to ability-level changes, but its behavior and native green/red presentation must be revalidated in Warcraft III 3.0.0.24268.
+- [ ] Test `Item Damage Bonus` (`AIt*`, field `ABILITY_ILF_ATTACK_BONUS`) and `Item Armor Bonus` (`AId*`, field `ABILITY_ILF_DEFENSE_BONUS_IDEF`) as aggregate carriers. Confirm dynamic field updates, refresh requirements, negative coloring, stacking with actual native items, minimum-damage clamping, and behavior for both weapon indices.
+- [ ] Do not choose `Item Hero Stat Bonus` (`AIs*`, `AIa*`, `AIi*`, `AIx*`) for a dynamic aggregate without a successful current-patch probe. The Ability Insight reference reports that changing its level or integer field does not apply the new value even when the field reads back correctly.
+- [ ] Compare the ability-carrier approach with `BlzSetUnitIntegerField` on `UNIT_IF_STRENGTH_WITH_BONUS`, `UNIT_IF_AGILITY_WITH_BONUS`, and `UNIT_IF_INTELLIGENCE_WITH_BONUS`. Adopt direct field writes only if they produce correct native coloring and survive every lifecycle test without modifying the permanent fields.
+- [ ] Treat `BlzSetUnitBaseDamage`, `BlzSetUnitArmor`, and `SetHeroStr/Agi/Int(..., true)` as base/permanent-authoring APIs, not equipment-bonus APIs, unless a narrowly scoped compatibility fallback is documented.
+- [ ] Add explicit signed formatting helpers to `UpdateDEqCSheet`: positive totals use green with `+`, negative totals use red with `-`, and zero totals are omitted. Do not emit strings such as `+-5`.
+- [ ] Keep percentage and flat values semantically separate. For example, do not collapse flat armor and armor percent into one displayed bonus unless the native panel's exact resulting delta can be reconciled with the custom sheet.
+- [ ] Define how item-set bonuses participate. Native-displayable set bonuses should use the same aggregate carrier and color rules; custom-only set bonuses remain in the PotS character sheet.
+
+Required lifecycle tests:
+
+- [ ] Capture base, bonus, and total values before equipment; after each equip/unequip/swap; and after 100 repeated cycles. The final base and total must exactly match the initial state.
+- [ ] Test positive, negative, fractional, and zero-crossing aggregates, including mixed items whose total changes from green to red.
+- [ ] Test hero level-up, tome/stat reward, respec, morph, skin change, death/revive, load, ownership transfer, and equipment restoration while bonuses are active.
+- [ ] Test primary-stat-derived damage separately from flat equipment Damage so the native damage panel does not double-count attribute growth.
+- [ ] Test heroes with only weapon index 0, both weapon indices, disabled attacks, melee/ranged transformations, and dual-wield/two-handed transitions.
+- [ ] Verify synchronized gameplay values on at least two clients. Coloring is presentation, but the abilities/fields producing the bonus affect synchronized combat state and must not be changed only inside `GetLocalPlayer` branches.
+- [ ] Retain the current mutation path behind a temporary rollback flag until the aggregate bonus implementation passes focused and full-map tests; never enable both paths together.
+
 ### Direct consumable use
 
 - [ ] If the probe succeeds, add one `DInventory` action that calls the appropriate `UnitUseItem*` native on the stored handle.
@@ -155,7 +198,7 @@ PotS slots 13-16 are currently unused and must not be repurposed implicitly.
 Inventory support is incomplete until systems stop assuming that all usable items live in six native slots or only in PotS tables.
 
 - [ ] `ItemSystems/ItemHook.j`: register equip/unequip responses and validate create/destroy tracking for bagged and equipped items.
-- [ ] `UnitSystems/UnitStats.j`: recalculate on native equip/unequip and prevent duplicate stat application when the bridge is active.
+- [ ] `UnitSystems/UnitStats.j`: recalculate on native equip/unequip, consume the separated base/equipment totals where appropriate, and prevent duplicate stat application when the bridge or aggregate bonus carriers are active.
 - [ ] `DestroyerInventoryAndEquipmentSystem/PoTs/HeroItemCheck.j`: search/remove across quick slots, native bag, native equipment, and PotS storage according to category policy.
 - [ ] `Death/Death.j` and `Death/Revival.j`: include native bag/equipment in difficulty-based loss and exact restoration.
 - [ ] `Professions/Professions.j` and `Professions/ProfessionsCooking.j`: locate ingredients/tools and process direct consumable-use events safely.
@@ -409,7 +452,7 @@ Target natives include `BlzGetNumDoodads`, doodad index getters, `BlzSetSingleDo
 1. Complete native probe maps and record semantics.
 2. Add ItemManager schema/UI/W3T support without changing production item behavior.
 3. Backfill a small reviewed equipment/tag test set.
-4. Implement the native inventory bridge behind a disabled configuration flag.
+4. Implement the native inventory bridge and native-style aggregate equipment-bonus presentation behind disabled configuration flags.
 5. Integrate equip/unequip and direct bag-use events with item consumers.
 6. Convert cooldown helpers and extend SpeciFX.
 7. Prototype camera and dynamic-minimap replacements.
@@ -429,6 +472,10 @@ Target natives include `BlzGetNumDoodads`, doodad index getters, `BlzSetSingleDo
 
 - [ ] No item duplication, disappearance, handle reuse, or zero-charge resurrection.
 - [ ] Stats and set bonuses apply exactly once and are removed exactly once.
+- [ ] Native Strength, Agility, Intelligence, damage, and armor show equipment increases in green and decreases in red without converting those changes into permanent/base values.
+- [ ] Level gains, tomes, scripted permanent rewards, morphs, and respecs modify only the base layer; equipment remains an independently removable bonus layer.
+- [ ] Repeated equip/unequip, item mutation, set activation, death/revive, and load cycles produce no base-stat drift or `+-value` character-sheet text.
+- [ ] Native-equipped item abilities and PotS aggregate bonus carriers never double-apply the same stat.
 - [ ] Two-handed/offhand and dual-wield restrictions remain correct.
 - [ ] Quest items, profession ingredients, shops, loot, death loss, revival restoration, and cleanup see the correct storage categories.
 - [ ] Directly used consumables support all target modes and share cooldowns correctly.
