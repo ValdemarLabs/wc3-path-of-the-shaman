@@ -30,7 +30,7 @@ The separate 16-bit launcher and World Editor crash investigation is intentional
 
 | Priority | Capability | PotS targets | Expected value |
 | --- | --- | --- | --- |
-| P0 | Equipment classification, equipment type, item tag, extended bag, equip events, native-colored bonus stats | `WC3ItemManager`, `DInventory`, `DEquipment`, `SharedDInvLib`, `ItemHook`, `UnitStats` | Very high |
+| P0 | Equipment classification, equipment type, item tag, extended bag, equip events, native-colored bonuses, and 3.0 RPG stats | `WC3ItemManager`, `DInventory`, `DEquipment`, `SharedDInvLib`, `ItemHook`, `UnitStats`, `StatsUI` | Very high |
 | P0 | Remaining/percentage ability cooldown control | `ShamanCommon`, talent-driven cooldowns | High |
 | P1 | Expanded fog controls | `FogSystem`, `Storm`, `WeatherSystemV4`, zones | High |
 | P1 | Doodad enumeration, instance animation, rotation, and color | `DoodadManager`, `DoodadRender`, procedural destructibles | High |
@@ -87,6 +87,38 @@ Separate executable or code-only tests remain appropriate for `WC3ItemManager`, 
 - [ ] Compare actual native equipped-item abilities, hidden unit abilities, `SetHeroStr/Agi/Int`, `BlzSetUnitBaseDamage`, `BlzSetUnitArmor`, and the 3.0 `UNIT_IF_*`, `UNIT_IF_*_PERMANENT`, and `UNIT_IF_*_WITH_BONUS` fields. Determine which approaches change gameplay, which change the displayed base, and which produce a genuine colored bonus.
 - [ ] Test whether writing `UNIT_IF_*_WITH_BONUS` is supported and persistent in 3.0.0.24268; declaration and a successful boolean return are insufficient without level-up, morph, save/load, and UI-refresh tests.
 
+### Warcraft III 3.0 stat and ability probe matrix
+
+The [HiveWorkshop 3.0 equipment, stat, and talent guide](https://www.hiveworkshop.com/threads/reforged-3-0-new-equipment-stats-and-talent-system.374193/#post-3739263) identifies `[ASde]` Stat Details (Hero), its configurable `Data - Supported stat modifiers` flags, `[ASpc]` as the shared native UI entry point, and `[AGsv]` Warcry Ability Vamp as a 20% spell-vamp example. This is valuable discovery evidence, but it is a community Object Editor investigation rather than a runtime contract. These object abilities are not declarations in `common.j`; verify their parent rawcodes, fields, and behavior in the current World Editor and in an exported 3.0 W3A before designing around them.
+
+Audit every modifier exposed by `[ASde]`, not only the three newly noticed labels:
+
+| Native Stat Details label | Closest current PotS concept | Initial policy |
+| --- | --- | --- |
+| Health Regeneration | Stat 5 flat and stat 6 percent regeneration | Verify which component or combined value the native panel reports. |
+| Mana Regeneration | Stat 8 flat and stat 9 percent regeneration | Verify behavior for Mana, Rage, Energy, and units without mana. |
+| Attack Speed | Stat 20 | Compare caps, sign convention, and displayed total with `DQAS`. |
+| Critical Chance % | Stat 10 and `udg_Stats_Crit` | Determine whether the native modifier affects attacks, abilities, or only native systems. |
+| Critical Damage % | Stat 11 | Determine the baseline multiplier and whether PotS damage code can share it safely. |
+| Spell Crit Chance % | No distinct PotS equipment stat | Keep separate from attack critical chance unless tests prove identical semantics. |
+| Spell Crit Damage % | No distinct PotS equipment stat | Define which triggered and native spells qualify before adoption. |
+| Ability Speed | No current direct equivalent | Determine units, scale, cooldown classes, and active-cooldown behavior. |
+| Ability Speed % | No current direct equivalent | Do not merge flat and percentage forms or assume both mean cooldown reduction. |
+| Ability Amp | Possible relationship to stat 38 Spell Power | Treat as a candidate relationship only; test damage, healing, triggered spells, and flat-versus-percent math. |
+| Ability Amp % | Possible relationship to stat 37 Spell Power % | Do not alias until its formula and affected abilities match PotS spell-power semantics. |
+| Lifesteal % | Stat 22 | Confirm attack/damage-type coverage and stacking with `DQLS`. |
+| Ability Vamp | New concept; `[AGsv]` is one known carrier | Keep distinct from Lifesteal and test native versus triggered ability damage and healing. |
+| Resolve | No current equivalent | Do not assign gameplay meaning until its exact formula and affected mechanics are measured. |
+| Resolve % | No current equivalent | Keep separate from flat Resolve and test caps, negative values, and stacking order. |
+| Magic Resistance % | Candidate presentation for inverse stat 28 Spell Damage Taken % | Reconcile formulas and caps; do not store both if they describe the same effective modifier. |
+
+- [ ] Export the relevant stock 3.0 abilities from World Editor and catalogue rawcode, parent ability, data fields, value scale, negative-value support, stacking rule, caps, UI refresh behavior, and whether the ability is safe to clone and modify dynamically.
+- [ ] Include the known framework abilities `[AIni]` Expanded Inventory, `[AEqu]` Equipment Slots, `[ASde]` Stat Details, `[ASpc]` shared UI entry point, `[ATua]` talent controller, `[ATap]` talent-point grant, and `[AGsv]` Ability Vamp in the catalogue, plus every additional 3.0 stat carrier discovered in the Object Editor or Forsaken campaign data.
+- [ ] Use `[ASde]` as a diagnostic reference for native values during probes. Do not add its panel to production beside `StatsUI` unless it offers a confirmed benefit that cannot be presented cleanly in the PotS UI.
+- [ ] For each combat stat, test base ability, cloned ability, direct item ability, aggregate hidden carrier, ability-level change, runtime field write, ability remove/re-add, death/revive, morph, dispel, save/load, and 100 equip/unequip cycles.
+- [ ] Test mixed native and triggered damage separately. Record attack damage, spell damage, periodic damage, reflected damage, summoned-unit damage, healing, overheal, immunities, zero damage, fatal damage, and attribution behavior where relevant.
+- [ ] Treat an unknown semantic result as a blocker for that individual stat, not as a reason to guess or to block unrelated proven stats.
+
 ### Recommended first upgrade
 
 After the minimal harness command and reset support exists, implement the `DEquipment` native-style bonus presentation described in Phase 2 as the first runtime upgrade. It is the best starting point because it fixes an existing base-versus-bonus correctness problem, has immediate visible value, can reuse the present PotS inventory and equipment authority, and can be compared against the legacy mutation path without first migrating item storage.
@@ -120,6 +152,17 @@ Do not begin with the native extended bag/loadout bridge. That work changes item
 - [ ] Update `WC3ItemManager/ConfigurationForm.cs` and the main item grid/filter configuration.
 - [ ] Show a warning when `deq_compatible` is enabled but native classification/type is inconsistent.
 - [ ] Add an explicit "native inventory compatible" preview rather than silently changing existing items.
+
+### Combat-stat schema and authoring
+
+- [ ] Preserve existing item-stat IDs 1-49 and their meanings. Add any genuinely new 3.0 stats after the current range; never insert or renumber IDs because generated JASS, saved database rows, exports, and runtime arrays depend on stable identifiers.
+- [ ] Add rows only for distinct PotS gameplay concepts confirmed by the probe matrix. Expected candidates include Spell Critical Chance, Spell Critical Damage, Ability Speed flat/percent, Ability Amp flat/percent, Ability Vamp, Resolve flat/percent, and Magic Resistance only if it is not simply a presentation transform of stat 28.
+- [ ] Store canonical name, short UI label, category, display order, flat/percent scale, sign convention, minimum/maximum, runtime provider, carrier rawcode/field, and whether the stat is valid as an item affix. Avoid scattering these decisions across `ItemEditForm.cs`, exporters, `DEquipment.j`, and `StatsUI.j`.
+- [ ] Update the stat picker, filters, batch editor, tooltip preview, random-stat generation, help text, DEquipment export, and test-item creation together. Group new stats under understandable Offense/Defense/Utility categories rather than adding an unstructured tail to every selector.
+- [ ] Audit `StatAbilityMapper.cs` and `ItemEditForm.cs` before enabling new mappings. `ItemEditForm.cs` currently aliases `Magic Resistance` and `Spell Resistance` to the `Spell` mapping, while that mapping represents Spell Power %. Remove this semantic collision; resistance must never generate spell-power abilities.
+- [ ] Generate one reviewed positive test item and, where supported, one negative test item for every adopted stat. Multi-stat test items must verify stacking and presentation but must not replace the single-stat diagnosis set.
+- [ ] Keep existing production items and generated ability lists unchanged by default. New fields and mappings require explicit opt-in; do not automatically convert Spell Power, Spell Damage Taken, Lifesteal, or critical stats based only on similar labels.
+- [ ] Add database/export golden comparisons proving that opening and saving an old item without selecting a 3.0 stat does not change its rows, tooltip, generated abilities, W3T data, or DEquipment JASS definition.
 
 ### W3T import/export
 
@@ -213,6 +256,37 @@ Required lifecycle tests:
 - [ ] Test heroes with only weapon index 0, both weapon indices, disabled attacks, melee/ranged transformations, and dual-wield/two-handed transitions.
 - [ ] Verify synchronized gameplay values on at least two clients. Coloring is presentation, but the abilities/fields producing the bonus affect synchronized combat state and must not be changed only inside `GetLocalPlayer` branches.
 - [ ] Retain the current mutation path behind a temporary rollback flag until the aggregate bonus implementation passes its full-map harness suite and normal full-map regression tests; never enable both paths together.
+
+### 3.0 combat-stat integration
+
+Adopt the new stats individually after the probe matrix establishes their semantics. Availability in the native Stat Details panel does not by itself make a stat appropriate for PotS items, and a visually updated value does not prove that PotS triggered combat uses it.
+
+- [ ] Keep Lifesteal and Ability Vamp separate. Lifesteal remains attack-oriented stat 22 unless current-patch testing proves broader behavior; Ability Vamp must have its own ledger entry and must define which ability-damage events can heal.
+- [ ] Do not repurpose a legacy lifesteal carrier as Ability Vamp without proof. The Ability Insight reference records `AUav` Vampiric Aura as melee-only, `SCva` Life Steal as healing from final attack damage while altering ranged projectile art, and `AIva` Item Life Steal as failing against buildings and behaving unusually with invulnerable targets. Revalidate the current PotS `DQLS` path separately from `[AGsv]`.
+- [ ] Probe `[AGsv]` as the first Ability Vamp carrier, then clone a PotS-owned hidden aggregate carrier only if dynamic values, negative values, stacking, removal, morphs, and synchronized combat all behave correctly.
+- [ ] Define Ability Vamp safeguards for self-damage, reflected damage, damage-over-time, summoned units, zero damage, invulnerable targets, overheal, fatal damage, recursion, and damage already credited to Lifesteal. A single damage event must never heal through both systems accidentally.
+- [ ] Define Resolve and Resolve % only after measuring their native effect. Document the exact affected control/debuff categories, duration formula, order of operations, caps, immunity interactions, dispels, and whether existing PotS timers or buffs bypass the native mechanic.
+- [ ] Reconcile Magic Resistance with stat 28. If native Magic Resistance is mathematically the inverse presentation of `Spell Damage Taken Pct`, retain one authoritative stored value and expose conversion helpers; do not apply both modifiers. Preserve deliberate vulnerabilities and the existing low cap.
+- [ ] Do not use Anti-Magic Shell as a resistance carrier based on its label. The Ability Insight reference reports that its legacy `Magic Reduction` field did nothing in tested versions; only a successful Warcraft III 3.0 probe may overturn that warning.
+- [ ] Reconcile Ability Amp/Ability Amp % with stats 38/37 and `UnitStats`. Adopt aliases only if native and PotS damage/healing coverage, flat/percentage ordering, critical interaction, and triggered-spell behavior are equivalent. Otherwise preserve them as distinct stats with distinct labels.
+- [ ] Define Ability Speed flat/percent against the Phase 4 cooldown APIs. Test currently cooling abilities, item abilities, charges, zero cooldown, channeling, morphs, ability replacement, and shared cooldown groups. Do not let UI report cooldown speed that PotS abilities do not actually observe.
+- [ ] Decide whether Spell Critical Chance/Damage belong in the shared damage system before exposing them as item affixes. They must not reuse `udg_Stats_Crit` if that would cause attack and spell criticals to double count or share unintended caps.
+- [ ] Route every adopted stat through the same aggregate recomputation entry point as existing equipment bonuses. Do not add a second incremental add/subtract path for 3.0 stats.
+- [ ] Add per-stat feature flags during development. A failed or uncertain carrier must be individually disableable without reverting unrelated equipment fixes.
+
+### DEquipment and StatsUI layout
+
+The UI has no spare implicit capacity. `StatsUI.j` currently defines 3 columns by 13 rows and therefore renders at most 39 detailed stats, exactly the current non-profession range. `UpdateDEqCSheet` builds one unbounded multiline string of nonzero equipment contributions. Appending stat IDs alone would either hide new values in `StatsUI` or risk overflowing the equipment panel.
+
+- [ ] Decouple stat display order from numeric stat ID. Add a presentation registry/list so stable append-only IDs can be grouped, reordered, hidden for inapplicable units, or placed on another page without changing database or runtime identity.
+- [ ] Prefer category pages or tabs within the existing StatsUI panel, such as Core, Offense, Defense, and Utility, while retaining the current 3-by-13 grid and readable 0.68 scale. Do not solve capacity by globally shrinking text unless SD screenshots prove that the result remains legible.
+- [ ] Keep labels and values aligned in every category. Define compact labels centrally (`Ability Speed`, `Ability Amp`, `Ability Vamp`, `Resolve`, `Magic Resist`, and spell-critical variants), reserve value width for signed percentages, and prevent clipping at 4:3, 16:9, 16:10, and 21:9.
+- [ ] Preserve the current default page and current stat order during the compatibility phase. Existing players should see the same information in the same places until the replacement layout is approved.
+- [ ] Replace or bound `UpdateDEqCSheet`'s multiline output before enabling more stats. Prefer a reusable row renderer, category page, or scrollable region that shows only nonzero equipment contributions and supports green positive, red negative, and neutral zero states without overlap.
+- [ ] Keep the DEquipment contribution view and StatsUI total view semantically distinct: DEquipment shows what equipped items/sets add, while StatsUI shows the unit's effective total and may include talents, buffs, permanent rewards, and class mechanics.
+- [ ] Add a tooltip or concise description for unfamiliar stats rather than making labels longer. Resolve and Ability Speed especially must not be exposed without an in-game explanation of their proven behavior.
+- [ ] Produce SD screenshots for empty, ordinary, and worst-case populated layouts before merging. Check long values, negatives, localization-length risk, disabled-resource units, dead heroes, pets, companions, and both main heroes.
+- [ ] Regression-test focus, clicking, scrolling/page selection, fullscreen ownership, cinematic hide/restore, and return paths between `StatsLiteUI`, `StatsUI`, DEquipment, Abilities, and Professions.
 
 ### Direct consumable use
 
@@ -476,7 +550,7 @@ Do not schedule HD water doodads, HD decals, HD shadow blockers, or per-doodad H
 ## Phase 9 - Rollout order
 
 1. Add the disabled full-map 3.0 harness to the existing `/debug` workflow and record baseline semantics without changing production behavior.
-2. Implement the native-style aggregate `DEquipment` bonus layer behind a mutually exclusive rollback flag; make this the first runtime upgrade.
+2. Implement the native-style aggregate `DEquipment` bonus layer and the append-only 3.0 stat registry behind mutually exclusive per-stat rollback flags; make this the first runtime upgrade.
 3. Add ItemManager schema/UI/W3T support without changing production item behavior.
 4. Backfill a small reviewed equipment/tag test set.
 5. Implement the native inventory bridge behind a disabled configuration flag only after equipment-bonus semantics are stable.
@@ -507,6 +581,10 @@ Do not schedule HD water doodads, HD decals, HD shadow blockers, or per-doodad H
 - [ ] Quest items, profession ingredients, shops, loot, death loss, revival restoration, and cleanup see the correct storage categories.
 - [ ] Directly used consumables support all target modes and share cooldowns correctly.
 - [ ] Native and PotS UI stay synchronized after every operation.
+- [ ] Existing stat IDs, item definitions, tooltips, generated abilities, and effective values remain unchanged unless an item is explicitly migrated to a reviewed 3.0 stat.
+- [ ] Ability Vamp cannot double-heal with Lifesteal; Magic Resistance cannot double-apply with Spell Damage Taken; Ability Amp cannot silently duplicate Spell Power.
+- [ ] Every adopted 3.0 stat has a verified runtime source, formula, scale, cap, stacking rule, lifecycle result, and synchronized two-client result.
+- [ ] `StatsUI` exposes every adopted combat stat through a readable category/page layout without truncating the current 39-stat view, while DEquipment remains bounded and readable with a worst-case set of nonzero bonuses.
 
 ### Multiplayer and local presentation
 
