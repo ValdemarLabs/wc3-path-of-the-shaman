@@ -2,9 +2,9 @@
     CameraControl
     
     Author: [Valdemar]
-    Version: 1.4.0
+    Version: 1.6.0
 
-    Description: Keeps each player's camera behavior consistent, including modes, target tracking, basic movement controls, and optional DynamicMinimap safety turns. Experimental camera-type and input-ownership APIs are local presentation probes and remain disabled by default.
+    Description: Keeps each player's camera behavior consistent, including modes, target tracking, local middle-drag mouse-look, basic movement controls, and optional DynamicMinimap safety turns. Experimental camera-type and input-ownership APIs remain disabled by default.
 
     Credits: Tasyen (TasQuestBox as inspiration), Rahko, Sabe
 
@@ -24,6 +24,12 @@
     call CameraControl_SetMouseOrbitEnabled(whichPlayer, enabled)
     call CameraControl_SetMouseOrbitBlocked(whichPlayer, blocked)
     call CameraControl_SetMouseOrbitBlockReason(whichPlayer, reason, blocked)
+    call CameraControl_IsMouseOrbitPressed(whichPlayer) returns boolean
+    call CameraControl_GetMouseOrbitEventCount(whichPlayer) returns integer
+    call CameraControl_GetMouseOrbitAcceptedCount(whichPlayer) returns integer
+    call CameraControl_GetMouseOrbitUpdateCount(whichPlayer) returns integer
+    call CameraControl_GetMouseOrbitSampleCount(whichPlayer) returns integer
+    call CameraControl_GetMouseOrbitHeldCancelCount(whichPlayer) returns integer
     call CameraControl_SetExperimentalCameraType(whichPlayer, cameraType) returns boolean
     call CameraControl_ResetExperimentalCameraType(whichPlayer)
     call CameraControl_SetExperimentalInputOwnership(whichPlayer, enabled)
@@ -81,6 +87,7 @@ globals
     private constant real CAMERA_MOUSE_ORBIT_VERTICAL_SENSITIVITY = 180.00
     private constant real CAMERA_MOUSE_ORBIT_DEAD_ZONE = 0.004
     private constant real CAMERA_MOUSE_ORBIT_MAX_FRAME_DELTA = 0.050
+    private constant boolean CAMERA_MOUSE_ORBIT_ENABLED_BY_DEFAULT = true
     private constant real CAMERA_DRIFT_CHECK_INTERVAL = 0.03
     private constant real CAMERA_MINIMAP_SAFE_ROTATION_SPEED = 24.00
     private constant real CAMERA_MINIMAP_SAFE_ROTATION_DURATION = 0.12
@@ -166,9 +173,16 @@ globals
     private integer array CC_MouseOrbitBlockCount
     private boolean array CC_MouseOrbitPressed
     private boolean array CC_MouseOrbitDragging
+    private boolean array CC_MouseOrbitButtonWasDown
+    private boolean array CC_MouseOrbitReleaseWasDrag
     private real array CC_MouseOrbitLastFrameX
     private real array CC_MouseOrbitLastFrameY
     private real array CC_MouseOrbitTravel
+    private integer array CC_MouseOrbitEventCount
+    private integer array CC_MouseOrbitAcceptedCount
+    private integer array CC_MouseOrbitUpdateCount
+    private integer array CC_MouseOrbitSampleCount
+    private integer array CC_MouseOrbitHeldCancelCount
     private boolean array CC_CameraTypeSnapshotValid
     private integer array CC_CameraTypeSnapshot
     private boolean array CC_InputOwnershipEnabled
@@ -600,20 +614,6 @@ private function CC_IsAnyKeyPressed takes nothing returns boolean
     return false
 endfunction
 
-private function CC_IsAnyMouseOrbitPressed takes nothing returns boolean
-    local integer i = 0
-
-    loop
-        exitwhen i >= bj_MAX_PLAYERS
-        if CC_MouseOrbitPressed[i] then
-            return true
-        endif
-        set i = i + 1
-    endloop
-
-    return false
-endfunction
-
 private function CC_InvalidateNormalTraceCache takes integer pid returns nothing
     set CC_NormalTraceTargetHandle[pid] = 0
     set CC_NormalTraceX[pid] = 0.00
@@ -939,6 +939,9 @@ private function CC_ApplyKeyboardFields takes player whichPlayer returns nothing
 endfunction
 
 private function CC_CancelMouseOrbit takes integer pid returns nothing
+    if CC_MouseOrbitDragging[pid] then
+        set CC_MouseOrbitReleaseWasDrag[pid] = true
+    endif
     set CC_MouseOrbitPressed[pid] = false
     set CC_MouseOrbitDragging[pid] = false
     set CC_MouseOrbitTravel[pid] = 0.00
@@ -948,8 +951,12 @@ private function CC_CanMouseOrbit takes integer pid returns boolean
     return CC_MouseOrbitEnabled[pid] and not CC_MouseOrbitBlocked[pid] and not CC_Suspended[pid] and not CC_ResumePending[pid] and CC_Mode[pid] == CAMERA_MODE_NORMAL and not CC_HasSpecialMode(pid) and BlzIsLocalClientActive()
 endfunction
 
-private function CC_UpdateMouseOrbit takes integer pid returns nothing
-    local player whichPlayer = Player(pid)
+// The shared camera tick executes on every client, but each client reads and
+// mutates only its own player index and applies only local camera fields.
+private function CC_UpdateMouseOrbit takes nothing returns nothing
+    local player whichPlayer = GetLocalPlayer()
+    local integer pid = CC_GetPlayerIndex(whichPlayer)
+    local boolean buttonDown = BlzIsMouseButtonPressed(MOUSE_BUTTON_TYPE_MIDDLE)
     local integer mouseX
     local integer mouseY
     local real frameX
@@ -957,19 +964,55 @@ private function CC_UpdateMouseOrbit takes integer pid returns nothing
     local real deltaX
     local real deltaY
 
-    if GetLocalPlayer() != whichPlayer or not CC_MouseOrbitPressed[pid] then
-        set whichPlayer = null
-        return
-    endif
-    if not CC_CanMouseOrbit(pid) or not BlzIsMouseButtonPressed(MOUSE_BUTTON_TYPE_MIDDLE) then
-        call CC_CancelMouseOrbit(pid)
+    if not buttonDown then
+        if CC_MouseOrbitButtonWasDown[pid] then
+            if CC_MouseOrbitPressed[pid] and not CC_MouseOrbitDragging[pid] and BlzIsLocalClientActive() then
+                // A click without a drag restores the stored Normal-mode fields.
+                call CC_UpdateAndApplyNormalFields(whichPlayer, 0.00)
+            endif
+            set CC_MouseOrbitButtonWasDown[pid] = false
+            call CC_CancelMouseOrbit(pid)
+        endif
         set whichPlayer = null
         return
     endif
 
+    if not CC_MouseOrbitButtonWasDown[pid] then
+        set CC_MouseOrbitButtonWasDown[pid] = true
+        set CC_MouseOrbitReleaseWasDrag[pid] = false
+        set CC_MouseOrbitEventCount[pid] = CC_MouseOrbitEventCount[pid] + 1
+        if CC_CanMouseOrbit(pid) then
+            set CC_MouseOrbitAcceptedCount[pid] = CC_MouseOrbitAcceptedCount[pid] + 1
+            set mouseX = BlzGetMouseScreenPosX()
+            set mouseY = BlzGetMouseScreenPosY()
+            set CC_MouseOrbitLastFrameX[pid] = BlzPixelToFrameX(mouseX)
+            set CC_MouseOrbitLastFrameY[pid] = BlzPixelToFrameY(mouseY)
+            set CC_MouseOrbitTravel[pid] = 0.00
+            set CC_MouseOrbitDragging[pid] = false
+            set CC_MouseOrbitPressed[pid] = true
+        endif
+        set whichPlayer = null
+        return
+    endif
+
+    if not CC_MouseOrbitPressed[pid] then
+        set whichPlayer = null
+        return
+    endif
+
+    set CC_MouseOrbitUpdateCount[pid] = CC_MouseOrbitUpdateCount[pid] + 1
+    if not CC_CanMouseOrbit(pid) then
+        set CC_MouseOrbitHeldCancelCount[pid] = CC_MouseOrbitHeldCancelCount[pid] + 1
+        call CC_CancelMouseOrbit(pid)
+        set whichPlayer = null
+        return
+    endif
+    set CC_MouseOrbitSampleCount[pid] = CC_MouseOrbitSampleCount[pid] + 1
+
     set mouseX = BlzGetMouseScreenPosX()
     set mouseY = BlzGetMouseScreenPosY()
     if mouseX < 0 or mouseY < 0 or mouseX > BlzGetLocalClientWidth() or mouseY > BlzGetLocalClientHeight() then
+        set CC_MouseOrbitHeldCancelCount[pid] = CC_MouseOrbitHeldCancelCount[pid] + 1
         call CC_CancelMouseOrbit(pid)
         set whichPlayer = null
         return
@@ -994,7 +1037,7 @@ private function CC_UpdateMouseOrbit takes integer pid returns nothing
     set CC_Angle[pid] = CC_Clamp(CC_Angle[pid] + deltaY*CAMERA_MOUSE_ORBIT_VERTICAL_SENSITIVITY, CAMERA_ANGLE_MIN, CAMERA_ANGLE_MAX)
     set CC_MinimapRotationInputGraceTicks = CAMERA_MINIMAP_INPUT_GRACE_TICKS
     call CC_InvalidateNormalTraceCache(pid)
-    call CC_ApplyKeyboardFields(whichPlayer)
+    call CC_UpdateAndApplyNormalFields(whichPlayer, 0.00)
 
     set whichPlayer = null
 endfunction
@@ -1190,11 +1233,10 @@ private function CC_UpdateCameraInput takes nothing returns nothing
 
             call CC_ApplyKeyboardFields(Player(i))
         endif
-        call CC_UpdateMouseOrbit(i)
         set i = i + 1
     endloop
 
-    if not CC_IsAnyKeyPressed() and not CC_IsAnyMouseOrbitPressed() then
+    if not CC_IsAnyKeyPressed() then
         set CC_UpdateLoopActive = false
         call PauseTimer(CC_UpdateTimer)
     endif
@@ -1218,7 +1260,7 @@ private function CC_UpdateLoopState takes nothing returns nothing
         return
     endif
 
-    if CC_IsAnyKeyPressed() or CC_IsAnyMouseOrbitPressed() then
+    if CC_IsAnyKeyPressed() then
         if not CC_UpdateLoopActive then
             set CC_UpdateLoopActive = true
             call TimerStart(CC_UpdateTimer, CAMERA_KEYBOARD_UPDATE_INTERVAL, true, function CC_UpdateCameraInput)
@@ -1426,6 +1468,7 @@ private function CC_CheckCameraDrift takes nothing returns nothing
     local integer i = 0
     local player whichPlayer
 
+    call CC_UpdateMouseOrbit()
     call CC_UpdateDynamicMinimapSafeRotation()
 
     loop
@@ -1843,6 +1886,13 @@ public function SetMouseOrbitEnabled takes player whichPlayer, boolean enabled r
     local integer pid = CC_GetPlayerIndex(whichPlayer)
 
     if GetLocalPlayer() == whichPlayer then
+        if enabled and not CC_MouseOrbitEnabled[pid] then
+            set CC_MouseOrbitEventCount[pid] = 0
+            set CC_MouseOrbitAcceptedCount[pid] = 0
+            set CC_MouseOrbitUpdateCount[pid] = 0
+            set CC_MouseOrbitSampleCount[pid] = 0
+            set CC_MouseOrbitHeldCancelCount[pid] = 0
+        endif
         set CC_MouseOrbitEnabled[pid] = enabled
         if not enabled then
             call CC_CancelMouseOrbit(pid)
@@ -1857,6 +1907,30 @@ endfunction
 
 public function IsMouseOrbitDragging takes player whichPlayer returns boolean
     return CC_MouseOrbitDragging[CC_GetPlayerIndex(whichPlayer)]
+endfunction
+
+public function IsMouseOrbitPressed takes player whichPlayer returns boolean
+    return CC_MouseOrbitPressed[CC_GetPlayerIndex(whichPlayer)]
+endfunction
+
+public function GetMouseOrbitEventCount takes player whichPlayer returns integer
+    return CC_MouseOrbitEventCount[CC_GetPlayerIndex(whichPlayer)]
+endfunction
+
+public function GetMouseOrbitAcceptedCount takes player whichPlayer returns integer
+    return CC_MouseOrbitAcceptedCount[CC_GetPlayerIndex(whichPlayer)]
+endfunction
+
+public function GetMouseOrbitUpdateCount takes player whichPlayer returns integer
+    return CC_MouseOrbitUpdateCount[CC_GetPlayerIndex(whichPlayer)]
+endfunction
+
+public function GetMouseOrbitSampleCount takes player whichPlayer returns integer
+    return CC_MouseOrbitSampleCount[CC_GetPlayerIndex(whichPlayer)]
+endfunction
+
+public function GetMouseOrbitHeldCancelCount takes player whichPlayer returns integer
+    return CC_MouseOrbitHeldCancelCount[CC_GetPlayerIndex(whichPlayer)]
 endfunction
 
 public function SetMouseOrbitBlockReason takes player whichPlayer, integer reason, boolean blocked returns nothing
@@ -2125,39 +2199,23 @@ endfunction
 private function CC_MouseButtonAction takes nothing returns nothing
     local player whichPlayer = GetTriggerPlayer()
     local integer pid = CC_GetPlayerIndex(whichPlayer)
-    local integer mouseX
-    local integer mouseY
+    local boolean wasDrag = CC_MouseOrbitReleaseWasDrag[pid] or CC_MouseOrbitDragging[pid]
 
     if BlzGetTriggerPlayerMouseButton() != MOUSE_BUTTON_TYPE_MIDDLE or GetLocalPlayer() != whichPlayer then
         set whichPlayer = null
         return
     endif
-    if not CC_MouseOrbitEnabled[pid] then
-        call CC_ResetStoredCameraState(whichPlayer)
-        set whichPlayer = null
-        return
-    endif
-
-    if GetTriggerEventId() == EVENT_PLAYER_MOUSE_DOWN then
-        if CC_CanMouseOrbit(pid) then
-            set mouseX = BlzGetMouseScreenPosX()
-            set mouseY = BlzGetMouseScreenPosY()
-            set CC_MouseOrbitLastFrameX[pid] = BlzPixelToFrameX(mouseX)
-            set CC_MouseOrbitLastFrameY[pid] = BlzPixelToFrameY(mouseY)
-            set CC_MouseOrbitTravel[pid] = 0.00
-            set CC_MouseOrbitDragging[pid] = false
-            set CC_MouseOrbitPressed[pid] = true
-        endif
-    elseif GetTriggerEventId() == EVENT_PLAYER_MOUSE_UP then
-        if CC_MouseOrbitPressed[pid] and not CC_MouseOrbitDragging[pid] then
-            call CC_ResetStoredCameraState(whichPlayer)
-        elseif not CC_MouseOrbitPressed[pid] and not CC_MouseOrbitBlocked[pid] then
-            // Preserve the old middle-click reset outside the orbit-capable mode.
+    if GetTriggerEventId() == EVENT_PLAYER_MOUSE_UP then
+        // Mouse-look starts and updates through direct polling. The mouse-up
+        // event only preserves the legacy click reset and provides an immediate
+        // release path; polling remains the fallback if this event is missed.
+        if not CC_MouseOrbitBlocked[pid] and not wasDrag and (not CC_MouseOrbitEnabled[pid] or not CC_MouseOrbitPressed[pid] or not CC_MouseOrbitDragging[pid]) then
             call CC_ResetStoredCameraState(whichPlayer)
         endif
+        set CC_MouseOrbitButtonWasDown[pid] = false
         call CC_CancelMouseOrbit(pid)
+        set CC_MouseOrbitReleaseWasDrag[pid] = false
     endif
-    call CC_UpdateLoopState()
 
     set whichPlayer = null
 endfunction
@@ -2197,9 +2255,11 @@ public function Init takes nothing returns nothing
         set CC_WoundedNextBeatTicks[i] = 0
         set CC_WoundedSecondBeatTicks[i] = 0
         set CC_WoundedPulse[i] = 0.00
-        set CC_MouseOrbitEnabled[i] = false
+        set CC_MouseOrbitEnabled[i] = CAMERA_MOUSE_ORBIT_ENABLED_BY_DEFAULT
         set CC_MouseOrbitBlocked[i] = false
         set CC_MouseOrbitBlockCount[i] = 0
+        set CC_MouseOrbitButtonWasDown[i] = false
+        set CC_MouseOrbitReleaseWasDrag[i] = false
         call CC_CancelMouseOrbit(i)
         set CC_CameraTypeSnapshotValid[i] = false
         set CC_InputOwnershipEnabled[i] = false
@@ -2245,7 +2305,6 @@ public function Init takes nothing returns nothing
         call BlzTriggerRegisterPlayerKeyEvent(CC_PageResetTrigger, Player(i), OSKEY_PAGEUP, 0, false)
         call BlzTriggerRegisterPlayerKeyEvent(CC_PageResetTrigger, Player(i), OSKEY_PAGEDOWN, 0, true)
         call BlzTriggerRegisterPlayerKeyEvent(CC_PageResetTrigger, Player(i), OSKEY_PAGEDOWN, 0, false)
-        call TriggerRegisterPlayerEvent(CC_MouseButtonResetTrigger, Player(i), EVENT_PLAYER_MOUSE_DOWN)
         call TriggerRegisterPlayerEvent(CC_MouseButtonResetTrigger, Player(i), EVENT_PLAYER_MOUSE_UP)
         call BlzTriggerRegisterPlayerKeyEvent(CC_ChatResetTrigger, Player(i), OSKEY_RETURN, 0, true)
         set i = i + 1
