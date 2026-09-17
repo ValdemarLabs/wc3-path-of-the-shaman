@@ -13,8 +13,8 @@
     - Tasyen, GetMainSelectedUnit and Warcraft III frame guidance
 
     How to install:
-    Import after DInventory, SharedDInvLib, Table, GetItemCost, and
-    AbilityShieldBlock.
+    Import after DInventory, SharedDInvLib, Table, GetItemCost,
+    AbilityShieldBlock, and CameraControl.
 
     API:
     - call DEqShowUnitForPlayer(viewer, unit, inspectMode)
@@ -28,7 +28,7 @@
 
 **/
 
-library DEquipment initializer Init requires DInventory, Table, SharedDInvLib, GetItemCost, AbilityShieldBlock, FallenHeroState
+library DEquipment initializer Init requires DInventory, Table, SharedDInvLib, GetItemCost, AbilityShieldBlock, FallenHeroState, CameraControl
 
 globals
 trigger trg_AutoAddNewHeroToDEq = CreateTrigger()
@@ -559,6 +559,7 @@ local integer uhndl = GetHandleId(u)
 
 if pid == lp then
 call BlzFrameSetVisible(EquipmentBackDropFrame[pid], TRUE)
+call CameraControl_SetMouseOrbitBlockReason(Player(pid), CameraControl_MOUSE_ORBIT_BLOCK_EQUIPMENT, true)
 call BlzFrameSetTexture(DEqHeroIcon[pid], BlzGetAbilityIcon(GetUnitTypeId(DInvCurrentUnit[pid])), 0, TRUE)
 call UpdateDEqCSheet(pid, u, uhndl, EQIDOfUHndl(uhndl))
     if IsHeroUnitId(GetUnitTypeId(DInvCurrentUnit[pid])) == TRUE then
