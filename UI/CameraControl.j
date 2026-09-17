@@ -2,7 +2,7 @@
     CameraControl
     
     Author: [Valdemar]
-    Version: 1.2.1
+    Version: 1.3.0
 
     Description: Keeps each player's camera behavior consistent, including modes, target tracking, basic movement controls, and optional DynamicMinimap safety turns.
 
@@ -21,6 +21,11 @@
     call CameraControl_PrepareScriptedCamera(whichPlayer)
     call CameraControl_ResumeQuick(whichPlayer)
     call CameraControl_IsSuspended(whichPlayer) returns boolean
+    call CameraControl_SetMouseOrbitEnabled(whichPlayer, enabled)
+    call CameraControl_SetMouseOrbitBlocked(whichPlayer, blocked)
+    call CameraControl_SetMouseOrbitBlockReason(whichPlayer, reason, blocked)
+    call CameraControl_SetExperimentalCameraType(whichPlayer, cameraType) returns boolean
+    call CameraControl_ResetExperimentalCameraType(whichPlayer)
 
 **/
 library CameraControl initializer AutoInit requires FixedCameraLock, AdvancedCameraSystem, ArrowKeyMovement, FallenHeroState, optional DynamicMinimap
@@ -35,6 +40,17 @@ globals
     // Keep them unique and then define their preset values in CC_InitSpecialModeConfigs().
     public constant integer CAMERA_SPECIAL_MODE_TEMPLATE01 = 101
     public constant integer CAMERA_SPECIAL_MODE_TEMPLATE02 = 102
+    public constant integer MOUSE_ORBIT_BLOCK_MANUAL = 0
+    public constant integer MOUSE_ORBIT_BLOCK_FULLSCREEN = 1
+    public constant integer MOUSE_ORBIT_BLOCK_INVENTORY = 2
+    public constant integer MOUSE_ORBIT_BLOCK_CRAFTING = 3
+    public constant integer MOUSE_ORBIT_BLOCK_SHOP = 4
+    public constant integer MOUSE_ORBIT_BLOCK_MASTER_UI = 5
+    public constant integer MOUSE_ORBIT_BLOCK_EQUIPMENT = 6
+    public constant integer MOUSE_ORBIT_BLOCK_QUEST_UI = 7
+    public constant integer MOUSE_ORBIT_BLOCK_TALENTS = 8
+    public constant integer MOUSE_ORBIT_BLOCK_ABILITIES = 9
+    public constant integer MOUSE_ORBIT_BLOCK_GAMBLE = 10
 
     public constant real CAMERA_DISTANCE_MIN = 500.00
     public constant real CAMERA_DISTANCE_MAX = 4000.00
@@ -57,6 +73,10 @@ globals
     private constant real CAMERA_KEYBOARD_FIELD_DURATION = 0.10
     private constant real CAMERA_KEYBOARD_HORIZONTAL_SPEED = 1.50
     private constant real CAMERA_KEYBOARD_VERTICAL_SPEED = 1.50
+    private constant real CAMERA_MOUSE_ORBIT_HORIZONTAL_SENSITIVITY = 360.00
+    private constant real CAMERA_MOUSE_ORBIT_VERTICAL_SENSITIVITY = 180.00
+    private constant real CAMERA_MOUSE_ORBIT_DEAD_ZONE = 0.004
+    private constant real CAMERA_MOUSE_ORBIT_MAX_FRAME_DELTA = 0.050
     private constant real CAMERA_DRIFT_CHECK_INTERVAL = 0.03
     private constant real CAMERA_MINIMAP_SAFE_ROTATION_SPEED = 24.00
     private constant real CAMERA_MINIMAP_SAFE_ROTATION_DURATION = 0.12
@@ -87,6 +107,7 @@ globals
     private constant string CAMERA_WOUNDED_FILTER_TEXTURE = "ReplaceableTextures\\CameraMasks\\DiagonalSlash_mask.blp"
     private constant string CAMERA_WOUNDED_HEARTBEAT_SOUND = "war3mapImported\\Heartbeat.mp3"
     private constant integer CC_MAX_SPECIAL_CAMERA_RECTS = 16
+    private constant integer CC_MOUSE_ORBIT_BLOCK_REASON_COUNT = 11
 
     private boolean CC_Initialized = false
     private boolean CC_UpdateLoopActive = false
@@ -135,6 +156,17 @@ globals
     private boolean array CC_ResumePending
     private boolean array CC_ScriptedCameraPrepared
     private boolean array CC_WoundedActive
+    private boolean array CC_MouseOrbitEnabled
+    private boolean array CC_MouseOrbitBlocked
+    private boolean array CC_MouseOrbitBlockReason
+    private integer array CC_MouseOrbitBlockCount
+    private boolean array CC_MouseOrbitPressed
+    private boolean array CC_MouseOrbitDragging
+    private real array CC_MouseOrbitLastFrameX
+    private real array CC_MouseOrbitLastFrameY
+    private real array CC_MouseOrbitTravel
+    private boolean array CC_CameraTypeSnapshotValid
+    private integer array CC_CameraTypeSnapshot
     private timer array CC_ResumeTimer
     private integer array CC_WoundedSeed
     private integer array CC_WoundedNextBeatTicks
@@ -557,6 +589,20 @@ private function CC_IsAnyKeyPressed takes nothing returns boolean
     return false
 endfunction
 
+private function CC_IsAnyMouseOrbitPressed takes nothing returns boolean
+    local integer i = 0
+
+    loop
+        exitwhen i >= bj_MAX_PLAYERS
+        if CC_MouseOrbitPressed[i] then
+            return true
+        endif
+        set i = i + 1
+    endloop
+
+    return false
+endfunction
+
 private function CC_InvalidateNormalTraceCache takes integer pid returns nothing
     set CC_NormalTraceTargetHandle[pid] = 0
     set CC_NormalTraceX[pid] = 0.00
@@ -844,6 +890,67 @@ private function CC_ApplyKeyboardFields takes player whichPlayer returns nothing
     endif
 endfunction
 
+private function CC_CancelMouseOrbit takes integer pid returns nothing
+    set CC_MouseOrbitPressed[pid] = false
+    set CC_MouseOrbitDragging[pid] = false
+    set CC_MouseOrbitTravel[pid] = 0.00
+endfunction
+
+private function CC_CanMouseOrbit takes integer pid returns boolean
+    return CC_MouseOrbitEnabled[pid] and not CC_MouseOrbitBlocked[pid] and not CC_Suspended[pid] and not CC_ResumePending[pid] and CC_Mode[pid] == CAMERA_MODE_NORMAL and not CC_HasSpecialMode(pid) and BlzIsLocalClientActive()
+endfunction
+
+private function CC_UpdateMouseOrbit takes integer pid returns nothing
+    local player whichPlayer = Player(pid)
+    local integer mouseX
+    local integer mouseY
+    local real frameX
+    local real frameY
+    local real deltaX
+    local real deltaY
+
+    if GetLocalPlayer() != whichPlayer or not CC_MouseOrbitPressed[pid] then
+        set whichPlayer = null
+        return
+    endif
+    if not CC_CanMouseOrbit(pid) or not BlzIsMouseButtonPressed(MOUSE_BUTTON_TYPE_MIDDLE) then
+        call CC_CancelMouseOrbit(pid)
+        set whichPlayer = null
+        return
+    endif
+
+    set mouseX = BlzGetMouseScreenPosX()
+    set mouseY = BlzGetMouseScreenPosY()
+    if mouseX < 0 or mouseY < 0 or mouseX > BlzGetLocalClientWidth() or mouseY > BlzGetLocalClientHeight() then
+        call CC_CancelMouseOrbit(pid)
+        set whichPlayer = null
+        return
+    endif
+
+    set frameX = BlzPixelToFrameX(mouseX)
+    set frameY = BlzPixelToFrameY(mouseY)
+    set deltaX = frameX - CC_MouseOrbitLastFrameX[pid]
+    set deltaY = frameY - CC_MouseOrbitLastFrameY[pid]
+    set CC_MouseOrbitLastFrameX[pid] = frameX
+    set CC_MouseOrbitLastFrameY[pid] = frameY
+    set CC_MouseOrbitTravel[pid] = CC_MouseOrbitTravel[pid] + CC_Abs(deltaX) + CC_Abs(deltaY)
+
+    if not CC_MouseOrbitDragging[pid] and CC_MouseOrbitTravel[pid] < CAMERA_MOUSE_ORBIT_DEAD_ZONE then
+        set whichPlayer = null
+        return
+    endif
+    set CC_MouseOrbitDragging[pid] = true
+    set deltaX = CC_Clamp(deltaX, -CAMERA_MOUSE_ORBIT_MAX_FRAME_DELTA, CAMERA_MOUSE_ORBIT_MAX_FRAME_DELTA)
+    set deltaY = CC_Clamp(deltaY, -CAMERA_MOUSE_ORBIT_MAX_FRAME_DELTA, CAMERA_MOUSE_ORBIT_MAX_FRAME_DELTA)
+    set CC_Rotation[pid] = CC_NormalizeAngle(CC_Rotation[pid] + deltaX*CAMERA_MOUSE_ORBIT_HORIZONTAL_SENSITIVITY)
+    set CC_Angle[pid] = CC_Clamp(CC_Angle[pid] + deltaY*CAMERA_MOUSE_ORBIT_VERTICAL_SENSITIVITY, CAMERA_ANGLE_MIN, CAMERA_ANGLE_MAX)
+    set CC_MinimapRotationInputGraceTicks = CAMERA_MINIMAP_INPUT_GRACE_TICKS
+    call CC_InvalidateNormalTraceCache(pid)
+    call CC_ApplyKeyboardFields(whichPlayer)
+
+    set whichPlayer = null
+endfunction
+
 private function CC_BindNormalMode takes player whichPlayer returns nothing
     local integer pid = CC_GetPlayerIndex(whichPlayer)
     set CC_TargetUnit[pid] = CC_GetFallbackTarget(whichPlayer)
@@ -946,7 +1053,7 @@ private function CC_StartSmoothResumeVisual takes player whichPlayer returns not
     call CC_StartSmoothResumeVisualWithDuration(whichPlayer, CAMERA_RESUME_DURATION)
 endfunction
 
-private function CC_UpdateKeyboardCamera takes nothing returns nothing
+private function CC_UpdateCameraInput takes nothing returns nothing
     local integer i = 0
     local integer specialMode
     local real specialAngleMax
@@ -1035,8 +1142,14 @@ private function CC_UpdateKeyboardCamera takes nothing returns nothing
 
             call CC_ApplyKeyboardFields(Player(i))
         endif
+        call CC_UpdateMouseOrbit(i)
         set i = i + 1
     endloop
+
+    if not CC_IsAnyKeyPressed() and not CC_IsAnyMouseOrbitPressed() then
+        set CC_UpdateLoopActive = false
+        call PauseTimer(CC_UpdateTimer)
+    endif
 endfunction
 
 private function CC_ReapplyStoredFields takes player whichPlayer returns nothing
@@ -1057,10 +1170,10 @@ private function CC_UpdateLoopState takes nothing returns nothing
         return
     endif
 
-    if CC_IsAnyKeyPressed() then
+    if CC_IsAnyKeyPressed() or CC_IsAnyMouseOrbitPressed() then
         if not CC_UpdateLoopActive then
             set CC_UpdateLoopActive = true
-            call TimerStart(CC_UpdateTimer, CAMERA_KEYBOARD_UPDATE_INTERVAL, true, function CC_UpdateKeyboardCamera)
+            call TimerStart(CC_UpdateTimer, CAMERA_KEYBOARD_UPDATE_INTERVAL, true, function CC_UpdateCameraInput)
         endif
     else
         set CC_UpdateLoopActive = false
@@ -1481,6 +1594,7 @@ public function SetSpecialMode takes player whichPlayer, integer specialMode ret
     if CC_SpecialMode[pid] == specialMode then
         return
     endif
+    call CC_CancelMouseOrbit(pid)
     set CC_SpecialMode[pid] = specialMode
     // Keyboard-adjustable special modes get their own live angle/rotation state here.
     // Fixed special modes ignore CC_SpecialAngle / CC_SpecialRotation and keep the preset values from CC_DefineSpecialMode().
@@ -1497,22 +1611,29 @@ public function ClearSpecialMode takes player whichPlayer returns nothing
 endfunction
 
 public function SetModeNormal takes player whichPlayer returns nothing
-    set CC_Mode[CC_GetPlayerIndex(whichPlayer)] = CAMERA_MODE_NORMAL
+    local integer pid = CC_GetPlayerIndex(whichPlayer)
+    call CC_CancelMouseOrbit(pid)
+    set CC_Mode[pid] = CAMERA_MODE_NORMAL
     call CC_ApplyMode(whichPlayer)
 endfunction
 
 public function SetModeAdvanced takes player whichPlayer returns nothing
-    set CC_Mode[CC_GetPlayerIndex(whichPlayer)] = CAMERA_MODE_ADVANCED
+    local integer pid = CC_GetPlayerIndex(whichPlayer)
+    call CC_CancelMouseOrbit(pid)
+    set CC_Mode[pid] = CAMERA_MODE_ADVANCED
     call CC_ApplyMode(whichPlayer)
 endfunction
 
 public function SetModeDeveloper takes player whichPlayer returns nothing
-    set CC_Mode[CC_GetPlayerIndex(whichPlayer)] = CAMERA_MODE_DEVELOPER
+    local integer pid = CC_GetPlayerIndex(whichPlayer)
+    call CC_CancelMouseOrbit(pid)
+    set CC_Mode[pid] = CAMERA_MODE_DEVELOPER
     call CC_ApplyMode(whichPlayer)
 endfunction
 
 public function Suspend takes player whichPlayer returns nothing
     local integer pid = CC_GetPlayerIndex(whichPlayer)
+    call CC_CancelMouseOrbit(pid)
     set CC_SuspendedKeyboardAdjustable[pid] = false
     if CC_Suspended[pid] then
         if CC_ResumePending[pid] then
@@ -1667,6 +1788,83 @@ endfunction
 
 public function IsSuspended takes player whichPlayer returns boolean
     return CC_IsSuspended(whichPlayer)
+endfunction
+
+public function SetMouseOrbitEnabled takes player whichPlayer, boolean enabled returns nothing
+    local integer pid = CC_GetPlayerIndex(whichPlayer)
+
+    if GetLocalPlayer() == whichPlayer then
+        set CC_MouseOrbitEnabled[pid] = enabled
+        if not enabled then
+            call CC_CancelMouseOrbit(pid)
+        endif
+        call CC_UpdateLoopState()
+    endif
+endfunction
+
+public function IsMouseOrbitEnabled takes player whichPlayer returns boolean
+    return CC_MouseOrbitEnabled[CC_GetPlayerIndex(whichPlayer)]
+endfunction
+
+public function IsMouseOrbitDragging takes player whichPlayer returns boolean
+    return CC_MouseOrbitDragging[CC_GetPlayerIndex(whichPlayer)]
+endfunction
+
+public function SetMouseOrbitBlockReason takes player whichPlayer, integer reason, boolean blocked returns nothing
+    local integer pid = CC_GetPlayerIndex(whichPlayer)
+    local integer reasonIndex
+
+    if GetLocalPlayer() == whichPlayer and reason >= 0 and reason < CC_MOUSE_ORBIT_BLOCK_REASON_COUNT then
+        set reasonIndex = pid * CC_MOUSE_ORBIT_BLOCK_REASON_COUNT + reason
+        if CC_MouseOrbitBlockReason[reasonIndex] != blocked then
+            set CC_MouseOrbitBlockReason[reasonIndex] = blocked
+            if blocked then
+                set CC_MouseOrbitBlockCount[pid] = CC_MouseOrbitBlockCount[pid] + 1
+            else
+                set CC_MouseOrbitBlockCount[pid] = CC_MouseOrbitBlockCount[pid] - 1
+            endif
+        endif
+        set CC_MouseOrbitBlocked[pid] = CC_MouseOrbitBlockCount[pid] > 0
+        if blocked then
+            call CC_CancelMouseOrbit(pid)
+        endif
+        call CC_UpdateLoopState()
+    endif
+endfunction
+
+public function SetMouseOrbitBlocked takes player whichPlayer, boolean blocked returns nothing
+    call SetMouseOrbitBlockReason(whichPlayer, MOUSE_ORBIT_BLOCK_MANUAL, blocked)
+endfunction
+
+public function IsMouseOrbitBlocked takes player whichPlayer returns boolean
+    return CC_MouseOrbitBlocked[CC_GetPlayerIndex(whichPlayer)]
+endfunction
+
+public function SetExperimentalCameraType takes player whichPlayer, integer cameraType returns boolean
+    local integer pid = CC_GetPlayerIndex(whichPlayer)
+
+    if GetLocalPlayer() != whichPlayer or cameraType < 0 or cameraType > 16 then
+        return false
+    endif
+    if not CC_CameraTypeSnapshotValid[pid] then
+        set CC_CameraTypeSnapshot[pid] = BlzCameraGetCameraType()
+        set CC_CameraTypeSnapshotValid[pid] = true
+    endif
+    call BlzCameraSetCameraType(cameraType)
+    return BlzCameraGetCameraType() == cameraType
+endfunction
+
+public function ResetExperimentalCameraType takes player whichPlayer returns nothing
+    local integer pid = CC_GetPlayerIndex(whichPlayer)
+
+    if GetLocalPlayer() == whichPlayer and CC_CameraTypeSnapshotValid[pid] then
+        call BlzCameraSetCameraType(CC_CameraTypeSnapshot[pid])
+        set CC_CameraTypeSnapshotValid[pid] = false
+    endif
+endfunction
+
+public function HasExperimentalCameraTypeSnapshot takes player whichPlayer returns boolean
+    return CC_CameraTypeSnapshotValid[CC_GetPlayerIndex(whichPlayer)]
 endfunction
 
 private function CC_OnLeftDown takes nothing returns nothing
@@ -1844,10 +2042,44 @@ private function CC_PageResetAction takes nothing returns nothing
     set whichPlayer = null
 endfunction
 
-private function CC_MouseButtonResetAction takes nothing returns nothing
-    if BlzGetTriggerPlayerMouseButton() == MOUSE_BUTTON_TYPE_MIDDLE then
-        call CC_PageResetAction()
+private function CC_MouseButtonAction takes nothing returns nothing
+    local player whichPlayer = GetTriggerPlayer()
+    local integer pid = CC_GetPlayerIndex(whichPlayer)
+    local integer mouseX
+    local integer mouseY
+
+    if BlzGetTriggerPlayerMouseButton() != MOUSE_BUTTON_TYPE_MIDDLE or GetLocalPlayer() != whichPlayer then
+        set whichPlayer = null
+        return
     endif
+    if not CC_MouseOrbitEnabled[pid] then
+        call CC_ResetStoredCameraState(whichPlayer)
+        set whichPlayer = null
+        return
+    endif
+
+    if GetTriggerEventId() == EVENT_PLAYER_MOUSE_DOWN then
+        if CC_CanMouseOrbit(pid) then
+            set mouseX = BlzGetMouseScreenPosX()
+            set mouseY = BlzGetMouseScreenPosY()
+            set CC_MouseOrbitLastFrameX[pid] = BlzPixelToFrameX(mouseX)
+            set CC_MouseOrbitLastFrameY[pid] = BlzPixelToFrameY(mouseY)
+            set CC_MouseOrbitTravel[pid] = 0.00
+            set CC_MouseOrbitDragging[pid] = false
+            set CC_MouseOrbitPressed[pid] = true
+        endif
+    elseif GetTriggerEventId() == EVENT_PLAYER_MOUSE_UP then
+        if CC_MouseOrbitPressed[pid] and not CC_MouseOrbitDragging[pid] then
+            call CC_ResetStoredCameraState(whichPlayer)
+        elseif not CC_MouseOrbitPressed[pid] and not CC_MouseOrbitBlocked[pid] then
+            // Preserve the old middle-click reset outside the orbit-capable mode.
+            call CC_ResetStoredCameraState(whichPlayer)
+        endif
+        call CC_CancelMouseOrbit(pid)
+    endif
+    call CC_UpdateLoopState()
+
+    set whichPlayer = null
 endfunction
 
 public function Init takes nothing returns nothing
@@ -1885,6 +2117,11 @@ public function Init takes nothing returns nothing
         set CC_WoundedNextBeatTicks[i] = 0
         set CC_WoundedSecondBeatTicks[i] = 0
         set CC_WoundedPulse[i] = 0.00
+        set CC_MouseOrbitEnabled[i] = false
+        set CC_MouseOrbitBlocked[i] = false
+        set CC_MouseOrbitBlockCount[i] = 0
+        call CC_CancelMouseOrbit(i)
+        set CC_CameraTypeSnapshotValid[i] = false
         set CC_ResumeTimer[i] = CreateTimer()
         set i = i + 1
     endloop
@@ -1941,7 +2178,7 @@ public function Init takes nothing returns nothing
     call TriggerAddAction(CC_DownDownTrigger, function CC_OnDownDown)
     call TriggerAddAction(CC_DownUpTrigger, function CC_OnDownUp)
     call TriggerAddAction(CC_PageResetTrigger, function CC_PageResetAction)
-    call TriggerAddAction(CC_MouseButtonResetTrigger, function CC_MouseButtonResetAction)
+    call TriggerAddAction(CC_MouseButtonResetTrigger, function CC_MouseButtonAction)
     call TriggerAddAction(CC_ChatResetTrigger, function CC_OnChatResetKey)
 
     set gameUI = BlzGetOriginFrame(ORIGIN_FRAME_GAME_UI, 0)
