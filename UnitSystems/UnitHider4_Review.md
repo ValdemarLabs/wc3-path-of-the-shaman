@@ -80,3 +80,24 @@ Treat those estimates as historical planning notes rather than measured results.
 7. Enable debug temporarily and compare complete-sweep counts and frame pacing
    during a long session. Tune `UnitHider4_UNITS_PER_TICK` only from measured
    full-map results.
+
+## World Editor trigger migration
+
+Keep the old `UnitHider ReferecedUnits Init` trigger disabled:
+
+- Nazgrek and an owned Zulkis are detected as player-controlled heroes.
+- Registered AI heroes are detected through the AI registry.
+- Shadowclaw and ordinary pets are detected when `Pet` registers them in the
+  pet groups and legacy reference array.
+- Current companions are detected through the companion group and legacy
+  reference array.
+- `RepDummy`, `CompDummy`, and `StatsDummy` should not reveal surrounding map
+  areas. If a functional dummy ever must remain shown, ignore that unit with
+  `UnitHider_SetUnitIgnored` instead of making it a reference.
+
+Do not call `UnitHider_SetSystemEnabled(false)` from Cinematic ON or
+`UnitHider_SetSystemEnabled(true)` from Cinematic OFF. UnitHider4 suspends all
+visibility mutation while `udg_InCinematic` is true and refreshes after it
+becomes false. Disabling the system would immediately show every unit it owns
+across the map, causing unnecessary visibility churn and potentially affecting
+the cinematic setup.
