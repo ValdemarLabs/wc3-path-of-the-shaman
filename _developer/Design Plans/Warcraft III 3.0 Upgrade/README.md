@@ -6,6 +6,7 @@ This folder is the documentation home for planned, implemented, and validated Pa
 
 - [Warcraft III 3.0 Systems Upgrade Plan](Warcraft%20III%203.0%20Systems%20Upgrade%20Plan.md) — authoritative workstream scope, task IDs, priorities, constraints, and validation gates.
 - [Warcraft III 3.0 P0/P1 Validation Log](Warcraft%20III%203.0%20P0-P1%20Validation%20Log.md) — executable full-map validation procedure and evidence record for the current camera, fog, doodad, and harness work.
+- [Warcraft III 3.0 P2 Validation Log](Warcraft%20III%203.0%20P2%20Validation%20Log.md) — executable full-map validation procedure for the P2 effect-animation slice and later accepted P2 work.
 
 ## Evidence hierarchy
 
