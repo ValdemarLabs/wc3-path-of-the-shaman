@@ -20,6 +20,10 @@
 
 ### Technical Updates
 
+- Updated `DoodadHider/DoodadRender.j` with an opt-in Warcraft III 3.0 indexed backend that lazily enumerates managed doodads into hashtable-backed type/cell lists and uses `BlzSetSingleDoodadAnimation` for entering/leaving instances. The existing rawcode/rectangle backend remains the production default and rollback.
+- Updated `Debug/Warcraft300TestHarness.j` with synchronized renderer backend selection, enable/disable, refresh, status, and resettable diagnostics for source/managed counts, index-build and rebuild time, native calls, transitions, worst transition time, and full refreshes.
+- Updated `DoodadHider/DoodadRenderManager_IMPLEMENTATION_PLAN.md` and the Warcraft III 3.0 systems plan/validation log to make disabled-versus-area-versus-indexed FPS, initialization, transition-stutter, correctness, and multiplayer comparison the purpose of the new doodad natives.
+- Verified transformed `DoodadRender` and Warcraft 3.0 harness sources with `pjass` against the active build-24268 Blizzard API; World Editor/JassHelper import and runtime performance remain manual.
 - Updated `DynamicMinimap/DynamicMinimap_lastWorking.j` with reversible imported/native terrain sources while preserving the existing safe camera-bounds transaction and full/chunked modes. Imported chunks remain the default rollback route; native mode relies on the map's enabled dynamic-within-camera-bounds option.
 - Updated `Debug/Warcraft300P2TestHarness.j`, `Debug/Warcraft300TestHarness.j`, and `Debug/DebugCommands.j` with local minimap source/view/refresh diagnostics while retaining the guarded single-doodad animation probe.
 - Updated the Warcraft III 3.0 systems plan and both validation logs with the native/imported minimap matrix, the runtime-switching uncertainty after `BlzChangeMinimapTerrainTex`, and the remaining P1 doodad authoring, persistence, pathing, and renderer-validation gates. `W3-HL-DOODADS` remains in progress rather than complete.
@@ -43,7 +47,7 @@
 - Added `_developer/Design Plans/Warcraft III 3.0 Upgrade/Warcraft III 3.0 P0-P1 Validation Log.md` with the exact full-map import, passive baseline, camera, two-client, fog, doodad, authoring, evidence, and rollback procedures for the current P0/P1 queue.
 - Updated `_developer/Design Plans/Warcraft III 3.0 Upgrade/Warcraft III 3.0 Systems Upgrade Plan.md` with per-row queue states and per-task implementation/runtime-test status. The active procedural destructible review found no justified pitch/roll migration: current sites are hidden blockers/platforms or level quest scenery.
 - Verified the existing disposable folder-map `war3map.j` baseline with `_JassHelper/pjass.exe` against the active Warcraft III 3.0 API. An in-memory replacement of its old `CameraControl` section with the current source also parses successfully, as do focused transformed-source checks for `FogSystem` and `Warcraft300TestHarness`; these static checks do not replace the required World Editor/JassHelper import test.
-- Updated `_developer/Design Plans/Warcraft III 3.0 Upgrade/Warcraft III 3.0 Systems Upgrade Plan.md` with 17 descriptive high-level workstream IDs and 292 immutable phase/validation task IDs, ownership and intermediate-status conventions, assignable Phase 9 rollout milestones, and cross-referenced P0/P1 and P2 focus queues.
+- Updated `_developer/Design Plans/Warcraft III 3.0 Upgrade/Warcraft III 3.0 Systems Upgrade Plan.md` with 17 descriptive high-level workstream IDs and 293 immutable phase/validation task IDs, ownership and intermediate-status conventions, assignable Phase 9 rollout milestones, and cross-referenced P0/P1 and P2 focus queues.
 - Added `Debug/Warcraft300TestHarness.j` as a passive Warcraft III 3.0 full-map baseline harness with `/debug wc3 status`, `camera`, `fog`, and `doodads` commands. The first suite is read-only and keeps local camera/input queries confined to the triggering client.
 - Updated `Debug/DebugCommands.j` to route the new Warcraft III 3.0 diagnostics through the existing centralized debug command interface.
 - Updated `EnvironmentSystems/FogSystem.j` with read-only target-fog, fade-state, and override-depth accessors so current and pending fog state can be compared without changing legacy fog behavior.
@@ -62,6 +66,7 @@
 
 ### Actions Remaining
 
+- Run the doodad renderer performance matrix on one repeatable doodad-dense camera route: renderer disabled, legacy area backend, then indexed 3.0 backend. Record index counts/build time, average and low FPS, transition stutter, native calls, visibility correctness, cinematics, and two-client behavior before considering any default change.
 - Run the P2 native/imported minimap matrix, especially imported-to-native restoration, full/chunked camera bounds, cinematics, long-session behavior, and independent two-client modes. Keep imported textures and conversion tooling until native mode passes.
 - Import the P2 effect source set into the disposable full map and execute `_developer/Design Plans/Warcraft III 3.0 Upgrade/Warcraft III 3.0 P2 Validation Log.md`, including invalid-name, 100-cycle cleanup, and two-client effect tests on Warcraft III 3.0.0.24268.
 - Run `/debug wc3 selftest` and the reversible camera-ownership matrix in World Editor/game build 3.0.0.24268. Manual compilation, SD visual checks, and two-client behavior remain the P0/P1 acceptance gate while the new P2 work stays an isolated non-production probe.
