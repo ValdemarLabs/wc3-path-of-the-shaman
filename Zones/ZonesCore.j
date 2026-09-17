@@ -20,6 +20,7 @@
     - ZoneData.addLeaveRegion(rect)
     - ZoneData.addDungeonEnterRegion(sourceRect, destinationRect, facing)
     - ZoneData.addDungeonExitRegion(sourceRect, destinationRect, facing)
+    - ZoneData.blocksWeatherEffects
     - ZonesCore_GetZoneData(zoneId) returns ZoneData
     - ZonesCore_GetEffectiveZoneIconPath(zoneId) returns string
     - ZonesCore_GetZoneIdAtPoint(x, y) returns integer
@@ -94,8 +95,10 @@ struct ZoneData
     string notableCharacters
     string iconPath
 
-    // Weather allowed for this zone (default TRUE)
+    // Weather may be generated for this zone (default TRUE).
     boolean weatherAllowed
+    // Suppress overlapping outdoor rain, snow, and wind presentation while active.
+    boolean blocksWeatherEffects
     // For subzones: inherit weather from the parent/main zone (default TRUE)
     boolean weatherInheritFromParent
     // Weather types for this zone (array of strings)
@@ -449,6 +452,7 @@ struct ZoneData
         set this.nodeWaterIgnoreRectCount = 0
         set this.fishRectCount = 0
         set this.weatherAllowed = true          // Default allowed
+        set this.blocksWeatherEffects = false   // Outdoor zones show active weather effects
         set this.weatherInheritFromParent = true // Default inherit from parent for subzones
         set this.weatherTypeCount = 0
         set this.weatherEnableThunder = true    // Default enabled
@@ -1681,6 +1685,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.dncName = "Underground"
     set z.environmentType = "Underground"
     set z.weatherAllowed = false  
+    set z.blocksWeatherEffects = true
     set z.isDungeon = true
     set z.fogDay[0] = 500.0
     set z.fogDay[1] = 5000.0
@@ -1712,6 +1717,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.dncName = "DarkerPlace"
     set z.environmentType = "Underground"
     set z.weatherAllowed = false  
+    set z.blocksWeatherEffects = true
     set z.isDungeon = true
     set z.setSkyClear = true
     set z.fogDay[0] = 1000.0
@@ -1749,6 +1755,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.dncName = "Underground"
     set z.environmentType = "Underground"
     set z.weatherAllowed = false  
+    set z.blocksWeatherEffects = true
     set z.fogDay[0] = 500.0
     set z.fogDay[1] = 5000.0
     set z.fogDay[2] = 30.0
@@ -1778,6 +1785,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.dncName = "Underground"
     set z.environmentType = "Underground"
     set z.weatherAllowed = false  
+    set z.blocksWeatherEffects = true
     set z.hasSpecialCamera = true
     set z.fogDay[0] = 500.0
     set z.fogDay[1] = 2000.0
@@ -1810,6 +1818,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.dncName = "Firelands"
     set z.environmentType = "Elemental Place"
     set z.weatherAllowed = false 
+    set z.blocksWeatherEffects = true
     set z.hasLeaveHandler = true  // Cleanup VolcanoLoop sound on leave
     set z.fogDay[0] = 500.0
     set z.fogDay[1] = 5000.0
@@ -1841,6 +1850,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.dncName = "Underground"
     set z.environmentType = "Underground"
     set z.weatherAllowed = false 
+    set z.blocksWeatherEffects = true
     set z.fogDay[0] = 500.0
     set z.fogDay[1] = 5000.0
     set z.fogDay[2] = 10.0
@@ -1877,6 +1887,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.dncName = "Underground"
     set z.environmentType = "Interior"
     set z.weatherAllowed = false 
+    set z.blocksWeatherEffects = true
     set z.fogDay[0] = 500.0
     set z.fogDay[1] = 5000.0
     set z.fogDay[2] = 50.0
@@ -1912,6 +1923,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.dncName = "Underground"
     set z.environmentType = "Interior"
     set z.weatherAllowed = false 
+    set z.blocksWeatherEffects = true
     set z.fogDay[0] = 500.0
     set z.fogDay[1] = 5000.0
     set z.fogDay[2] = 50.0
@@ -1946,6 +1958,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.dncName = "Underground"
     set z.environmentType = "Interior"
     set z.weatherAllowed = false 
+    set z.blocksWeatherEffects = true
     set z.fogDay[0] = 500.0
     set z.fogDay[1] = 5000.0
     set z.fogDay[2] = 50.0
@@ -1981,6 +1994,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.dncName = "Underground"
     set z.environmentType = "Interior"
     set z.weatherAllowed = false 
+    set z.blocksWeatherEffects = true
     set z.fogDay[0] = 500.0
     set z.fogDay[1] = 5000.0
     set z.fogDay[2] = 50.0
@@ -2008,6 +2022,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.dncName = "Underground"
     set z.environmentType = "Interior"
     set z.weatherAllowed = false 
+    set z.blocksWeatherEffects = true
     set z.fogDay[0] = 500.0
     set z.fogDay[1] = 5000.0
     set z.fogDay[2] = 50.0
@@ -2043,6 +2058,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.dncName = "Underground"
     set z.environmentType = "Interior"
     set z.weatherAllowed = false 
+    set z.blocksWeatherEffects = true
     set z.fogDay[0] = 500.0
     set z.fogDay[1] = 5000.0
     set z.fogDay[2] = 50.0
@@ -2071,6 +2087,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.dncName = "Underground"
     set z.environmentType = "Underground"
     set z.weatherAllowed = false 
+    set z.blocksWeatherEffects = true
     set z.fogDay[0] = 500.0
     set z.fogDay[1] = 2000.0
     set z.fogDay[2] = 10.0
@@ -2104,6 +2121,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.dncName = "Underground"
     set z.environmentType = "Underground"
     set z.weatherAllowed = false 
+    set z.blocksWeatherEffects = true
     set z.fogDay[0] = 500.0
     set z.fogDay[1] = 2000.0
     set z.fogDay[2] = 10.0
@@ -2137,6 +2155,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.dncName = "Underground"
     set z.environmentType = "Underground"
     set z.weatherAllowed = false 
+    set z.blocksWeatherEffects = true
     set z.fogDay[0] = 500.0
     set z.fogDay[1] = 2000.0
     set z.fogDay[2] = 10.0
@@ -2170,6 +2189,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.dncName = "Underground"
     set z.environmentType = "Underground"
     set z.weatherAllowed = false 
+    set z.blocksWeatherEffects = true
     set z.fogDay[0] = 500.0
     set z.fogDay[1] = 2000.0
     set z.fogDay[2] = 10.0
@@ -2203,6 +2223,7 @@ private function ConfigureZones takes nothing returns nothing
     set z.dncName = "Underground"
     set z.environmentType = "Underground"
     set z.weatherAllowed = false 
+    set z.blocksWeatherEffects = true
     set z.fogDay[0] = 500.0
     set z.fogDay[1] = 2000.0
     set z.fogDay[2] = 10.0
@@ -2503,6 +2524,11 @@ public function DebugPrintZone1Data takes nothing returns nothing
         call BJDebugMsg("weatherAllowed: true")
     else
         call BJDebugMsg("weatherAllowed: false")
+    endif
+    if z.blocksWeatherEffects then
+        call BJDebugMsg("blocksWeatherEffects: true")
+    else
+        call BJDebugMsg("blocksWeatherEffects: false")
     endif
     call BJDebugMsg("weatherTypeCount: " + I2S(z.weatherTypeCount))
     set i = 0
