@@ -14,7 +14,7 @@
 
     How to install:
     Import after Abilities, AbilitiesPlayer, AbilityTrainerLines, MasterUI,
-    Table, and Interface.
+    Table, Interface, and CameraControl.
     AbilityTrainerDialogs opens this UI from the trainer dialog Learn button.
 
     API:
@@ -23,7 +23,7 @@
     - call AbilitiesUI_Refresh()
 
 **/
-library AbilitiesUI initializer AutoInit requires Table, MasterUI, Abilities, AbilitiesPlayer, AbilityTrainerLines, AbilityPoints, Interface
+library AbilitiesUI initializer AutoInit requires Table, MasterUI, Abilities, AbilitiesPlayer, AbilityTrainerLines, AbilityPoints, Interface, CameraControl
     globals
         private constant integer ABUI_VISIBLE_ROWS = 8
         private constant real ABUI_ROW_HEIGHT = 0.030
@@ -382,6 +382,7 @@ library AbilitiesUI initializer AutoInit requires Table, MasterUI, Abilities, Ab
             call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_OPEN, whichPlayer)
         endif
         call MasterUI_Hide()
+        call CameraControl_SetMouseOrbitBlockReason(whichPlayer, CameraControl_MOUSE_ORBIT_BLOCK_ABILITIES, true)
         call BlzFrameSetVisible(ABUI_Parent, true)
         call ABUI_Update()
     endfunction
@@ -393,6 +394,7 @@ library AbilitiesUI initializer AutoInit requires Table, MasterUI, Abilities, Ab
             endif
             call BlzFrameSetVisible(ABUI_Parent, false)
         endif
+        call CameraControl_SetMouseOrbitBlockReason(GetLocalPlayer(), CameraControl_MOUSE_ORBIT_BLOCK_ABILITIES, false)
         set ABUI_ReturnToTrainerDialog = false
     endfunction
 
