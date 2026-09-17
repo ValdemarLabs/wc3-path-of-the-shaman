@@ -12,8 +12,8 @@
     Credits:
 
     How to install:
-    Import after Shop and Interface. Quest-giver libraries that use the panel
-    should require GambleUI.
+    Import after Shop, Interface, and CameraControl. Quest-giver libraries that
+    use the panel should require GambleUI.
 
     API:
     - call GambleUI_ClearRewards()
@@ -27,7 +27,7 @@
     - set itemTypeId = GambleUI_GetLastRewardItemType()
 
 **/
-library GambleUI initializer AutoInit requires Shop, Interface
+library GambleUI initializer AutoInit requires Shop, Interface, CameraControl
     globals
         // Reward-pool configuration.
         private constant integer GUI_MAX_REWARDS = 32
@@ -139,6 +139,7 @@ library GambleUI initializer AutoInit requires Shop, Interface
             endif
             call BlzFrameSetVisible(GUI_Parent, false)
         endif
+        call CameraControl_SetMouseOrbitBlockReason(p, CameraControl_MOUSE_ORBIT_BLOCK_GAMBLE, false)
         call GUI_ResetSession()
 
         set p = null
@@ -152,6 +153,7 @@ library GambleUI initializer AutoInit requires Shop, Interface
             call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_CLOSE, GetTriggerPlayer())
             call BlzFrameSetVisible(GUI_Parent, false)
         endif
+        call CameraControl_SetMouseOrbitBlockReason(GetTriggerPlayer(), CameraControl_MOUSE_ORBIT_BLOCK_GAMBLE, false)
         if GUI_ReturnHandler != null then
             call TriggerExecute(GUI_ReturnHandler)
         endif
@@ -396,6 +398,7 @@ library GambleUI initializer AutoInit requires Shop, Interface
         call BlzFrameSetText(GUI_Status, "Choose Buy to take the gamble.")
         call BlzFrameSetText(GUI_BuyButton, "Buy")
         call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_OPEN, p)
+        call CameraControl_SetMouseOrbitBlockReason(p, CameraControl_MOUSE_ORBIT_BLOCK_GAMBLE, true)
         call BlzFrameSetVisible(GUI_Parent, true)
 
         set p = null
