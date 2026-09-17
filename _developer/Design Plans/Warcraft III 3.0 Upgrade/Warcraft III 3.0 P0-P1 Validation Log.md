@@ -13,6 +13,7 @@ Documentation home: [Warcraft III 3.0 Upgrade](README.md)
 - [Camera validation](#camera-validation)
 - [Fog validation](#fog-validation)
 - [Doodad validation](#doodad-validation)
+- [Doodad renderer performance matrix](#doodad-renderer-performance-matrix)
 - [Doodad authoring and creation-site review](#doodad-authoring-and-creation-site-review)
 - [Result recording](#result-recording)
 - [Rollback](#rollback)
@@ -53,6 +54,8 @@ Repository-side baseline recorded on 17 September 2026:
   focused transformed-source `pjass` checks; the harness check used typed stubs
   for its PotS dependencies. These checks validate JASS/native structure but do
   not reproduce JassHelper dependency ordering or in-client behavior.
+- The transformed dual-backend `DoodadRender` and renderer diagnostic commands
+  pass focused `pjass` checks against the active build-24268 Blizzard API.
 - The repository does not contain a current generated `war3map.j` or an automated
   full-map import/build command. Import and compilation must therefore use the
   normal World Editor/JassHelper workflow.
@@ -64,7 +67,7 @@ Repository-side baseline recorded on 17 September 2026:
 | Harness | Explicit read-only self-test plus camera, fog, and doodad suites; reset commands; no startup mutation | Full-map compile/start and command output |
 | Camera | Disabled bounded middle-drag orbit, reversible input-ownership and camera-type probes, cancellation paths, source-specific modal blockers | Camera-type meanings, ownership semantics, UI matrix, two-client safety |
 | Fog | Complete legacy/extended current and target state, numeric interpolation, complete storm override restoration | Visual parity, zone/weather transitions, two-client locality |
-| Doodads | Batched read-only scan, fingerprints, inspection, and one guarded hide/show instance probe | Index base/stability, scan cost, reviewed instance reset, authoring/persistence/pathing checks |
+| Doodads | Batched read-only scan, fingerprints, inspection, one guarded hide/show probe, and legacy-area versus indexed-instance renderer backends | Index base/stability, index-build cost, steady FPS, transition stutter, renderer correctness, multiplayer locality, authoring/persistence/pathing checks |
 
 ## Import and compilation gate
 
@@ -76,7 +79,8 @@ Task IDs: `W3-PH0-017`, `W3-PH0-045`, `W3-VAL-001`, `W3-VAL-004`.
    `CameraControl` must precede `MasterUI`, `SharedDInvLib`, `DInventory`,
    `DEquipment`, `CraftingUI`, `ShopUI`, `QuestUI`, `TalentsUI`, `AbilitiesUI`,
    `GambleUI`, and `FullscreenUI`; `FogSystem` must precede `Storm`; and
-   `Warcraft300TestHarness` must precede `DebugCommands`. The current
+   `DoodadManager` plus `DoodadRender` must precede `Warcraft300TestHarness`,
+   which must precede `DebugCommands`. The current
    `DebugCommands` also requires `Warcraft300P2TestHarness`, which must follow
    both `SpeciFX` and `DynamicMinimap`; importing it does not create a P2 effect
    probe or change the imported minimap default at startup.
@@ -309,6 +313,75 @@ must hide, `show` must restore it, nearby same-type doodads must remain visible,
 and pathing/selection must remain unchanged. Reload the disposable map if its
 model does not implement a reversible `hide`/`show` pair.
 
+## Doodad renderer performance matrix
+
+Task IDs: `W3-PH7-004` through `W3-PH7-009`, `W3-PH7-015`, and `W3-VAL-007`.
+
+The production default remains the existing `area` backend. It applies
+`SetDoodadAnimationRect` by rawcode and camera-grid strip. The opt-in `indexed`
+backend lazily enumerates all map doodads once, stores only `DoodadManager`
+rawcodes in type/cell linked lists, and uses `BlzSetSingleDoodadAnimation` for
+instances entering or leaving the same configured view distances.
+
+Start in a doodad-dense location and capture a renderer-disabled baseline:
+
+```text
+/debug wc3 doodads renderer status
+/debug wc3 doodads renderer off
+```
+
+Record average FPS, lowest FPS while panning/rotating, and visible doodad count.
+Then enable and test the legacy backend:
+
+```text
+/debug wc3 doodads renderer area
+/debug wc3 doodads renderer on
+/debug wc3 doodads renderer reset
+```
+
+Follow one repeatable camera path crossing at least 20 grid-cell boundaries,
+including a fast camera jump and a cinematic suspension/resume. Record the same
+FPS values, visible correctness, cell-transition stutter, and final renderer
+status/counters.
+
+Switch to the 3.0 indexed backend:
+
+```text
+/debug wc3 doodads renderer indexed
+/debug wc3 doodads renderer status
+/debug wc3 doodads renderer reset
+```
+
+The first switch performs the lazy full-map index build and may cause a one-time
+stall. Record `source`, `managed`, and `build` exactly. The source count must
+match `BlzGetNumDoodads()` and the managed count should be reconciled with the
+current `DoodadManager`/`war3map.doo` reference before trusting the backend.
+Repeat the identical camera path and measurements.
+
+Interpret results separately:
+
+- Higher steady FPS would show that the indexed route enables more effective
+  culling under the same visibility policy.
+- Lower transition spikes with similar steady FPS would show only an update-cost
+  improvement over rawcode/rectangle scans.
+- No material difference means the single-instance native does not change the
+  engine's persistent rendering cost; retain the area backend or disable the
+  system rather than adopting added indexing complexity.
+- Worse initialization or transition behavior rejects the indexed backend even
+  if its native-call count is lower.
+
+Repeat with two clients moving cameras independently. Backend selection commands
+are synchronized, while camera cells and visual animation results are local.
+Reject the backend on any visibility disagreement, permanent hidden instance,
+cross-client gameplay effect, disconnect, or desync.
+
+Rollback after every indexed test:
+
+```text
+/debug wc3 doodads renderer area
+/debug wc3 doodads renderer refresh
+```
+
 ## Doodad authoring and creation-site review
 
 World Editor owns placed-doodad pitch, roll, local-axis scale, and pathing
@@ -347,6 +420,7 @@ needed.
 |  | Camera task IDs |  |  |  | PENDING |  |
 |  | Fog task IDs |  |  |  | PENDING |  |
 |  | Doodad task IDs |  |  |  | PENDING |  |
+|  | `W3-PH7-004` through `W3-PH7-009`, `W3-PH7-015` |  | Doodad-dense repeatable route | Disabled/area/indexed performance matrix | PENDING | Record build time, counts, average/low FPS, transition stutter, native calls, and correctness |
 
 ## Rollback
 
@@ -356,6 +430,9 @@ needed.
 - Fog: `/debug wc3 fog reset`; reload the map if an interruption prevented reset.
 - Doodads: `/debug wc3 doodads probe reset`; reload if the chosen model lacks a
   reversible `show` sequence.
+- Doodad renderer: `/debug wc3 doodads renderer area`, then
+  `/debug wc3 doodads renderer refresh`; use `off` if the comparison shows no
+  benefit and full visibility is preferred.
 - Full rollback: restore the previous versions of the changed libraries and
   reimport them into the disposable map. The map's Object Editor and placed
   doodads remain unchanged by repository source edits.
