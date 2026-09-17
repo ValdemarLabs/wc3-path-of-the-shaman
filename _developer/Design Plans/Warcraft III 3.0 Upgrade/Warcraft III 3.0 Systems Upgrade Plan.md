@@ -39,11 +39,11 @@ The separate 16-bit launcher and World Editor crash investigation is intentional
 | Foundation | `W3-HL-API` | Active 3.0 API, Object Editor carrier, and data-version compatibility audit | `_Blizzard`, full-map object data, upgrade documentation | Prevents native/data-version assumptions before implementation |
 | P0 | `W3-HL-CAMERA` | Free-camera ownership and input queries | `CameraControl`, `DialogCamera` | High and independently reversible |
 | P0 | `W3-HL-FOG` | Expanded fog controls with legacy-default parity | `FogSystem`, `Storm`, `WeatherSystemV4`, zones | High and visually testable |
-| P1 | `W3-HL-DOODADS` | Doodad rotation/local axes, read-only enumeration, instance animation, and color probes | `DoodadManager`, `DoodadRender`, procedural destructibles | High when introduced narrowly |
+| P1 | `W3-HL-DOODADS` | Doodad rotation/local axes, read-only enumeration, and instance animation probes | `DoodadManager`, `DoodadRender`, procedural destructibles | High when introduced narrowly |
 | P2 | `W3-HL-MINIMAP` | Dynamic minimap generation within camera bounds | `DynamicMinimap` | Potentially very high but camera-bound sensitive |
 | P2 | `W3-HL-COMBAT` | Remaining/percentage ability cooldown control | `ShamanCommon`, talent-driven cooldowns | High but combat-sensitive |
 | P2 | `W3-HL-EFFECTS` | Special-effect animation queue and blend control | `SpeciFX`, ability visuals | Medium |
-| P2 | `W3-HL-DOODADS` | Doodad and destructible team color | Environment presentation | Medium |
+| Excluded | `W3-HL-DOODADS` | Doodad and destructible team color | None | Not relevant to PotS; do not implement |
 | P3 | `W3-HL-COMBAT` | Attack cooldown reset and global aura toggling | Selected combat/state transitions | Situational |
 | P3 | `W3-HL-LIGHTING` | Lighting editor, omni lights, decals, shadow blockers, post processing | Environment authoring | Visual/optimization work |
 | P4 / LAST | `W3-HL-ITEMDATA`, `W3-HL-EQUIPMENT`, `W3-HL-ITEMECO` | Game-data migration, equipment classification/type/tag, extended bag, equip events, native-colored bonuses, 3.0 RPG stats, and item team color | `WC3ItemManager`, `DInventory`, `DEquipment`, `SharedDInvLib`, `ItemHook`, `UnitStats`, `StatsUI` | Highest-risk cross-system migration; do last or not at all |
@@ -92,7 +92,7 @@ Example assignment:
 | `W3-HL-MINIMAP` | Dynamic minimap generation | P2 | IMPLEMENTED — MANUAL VALIDATION PENDING | `W3-PH0-047`, `W3-PH5-035` through `W3-PH5-039` |
 | `W3-HL-FOG` | Fog state, presets, parity, and restoration | P0 | IMPLEMENTED — MANUAL VALIDATION PENDING | `W3-PH6-001` through `W3-PH6-008` |
 | `W3-HL-LIGHTING` | SD lighting, omni lights, shadows, and post processing | P3 | NOT STARTED | `W3-PH6-009` through `W3-PH6-014` |
-| `W3-HL-DOODADS` | Doodad enumeration, instances, rotation, axes, and color | P1 | IN PROGRESS — COLOR PROBE IMPLEMENTED; MANUAL/CONDITIONAL TASKS OPEN | `W3-PH0-048`, `W3-PH7-*` |
+| `W3-HL-DOODADS` | Doodad enumeration, instances, rotation, and axes | P1 | IN PROGRESS — MANUAL/CONDITIONAL TASKS OPEN | `W3-PH7-*` |
 | `W3-HL-EFFECTS` | Special-effect animation and blending | P2 | IMPLEMENTED — MANUAL VALIDATION PENDING | `W3-PH8-001` through `W3-PH8-005` |
 | `W3-HL-HUD` | Orc HUD and hero-presentation compatibility | P2 | NOT STARTED | `W3-PH8-006` through `W3-PH8-009` |
 | `W3-HL-SOUND` | Editable sound-variable paths and exports | P3 | NOT STARTED | `W3-PH8-010` through `W3-PH8-012` |
@@ -109,7 +109,7 @@ Example assignment:
 | 3 | P0 | `W3-HL-CAMERA` | `W3-PH5-003`, `W3-PH5-004`, `W3-PH5-012`, `W3-PH5-013`, `W3-PH5-022` | Implement disabled, reversible camera-type, input-ownership, and bounded middle-mouse orbit probes. | IMPLEMENTED; RUNTIME TEST PENDING |
 | 4 | P0 | `W3-HL-CAMERA` | `W3-PH5-017` through `W3-PH5-021`, `W3-PH5-025`, `W3-PH5-029` through `W3-PH5-034` | Validate camera ownership, cancellation, UI suppression, suspension, performance, and multiplayer behavior. | IMPLEMENTED; READY FOR MATRIX TEST |
 | 5 | P0 | `W3-HL-FOG` | `W3-PH6-001`, `W3-PH6-003` through `W3-PH6-007`, `W3-VAL-006` | Capture legacy fog parity, introduce the complete preset state, and validate restoration/locality. | READY FOR CAPTURE AND TEST |
-| 6 | P1 | `W3-HL-DOODADS` | `W3-PH0-048`, `W3-PH7-001`, `W3-PH7-003`, `W3-PH7-004`, `W3-PH7-010` through `W3-PH7-014`, `W3-VAL-007` | Add guarded doodad enumeration and reviewed pitch/roll, local-axis, color, and resettable-instance probes. | COLOR PROBE IMPLEMENTED; MANUAL/CONDITIONAL TASKS OPEN |
+| 6 | P1 | `W3-HL-DOODADS` | `W3-PH7-001`, `W3-PH7-003`, `W3-PH7-004`, `W3-PH7-010`, `W3-PH7-011`, `W3-PH7-013`, `W3-PH7-014`, `W3-VAL-007` | Add guarded doodad enumeration and reviewed pitch/roll, local-axis, and resettable-instance animation probes. | MANUAL/CONDITIONAL TASKS OPEN |
 
 The planned repository probes for every row are now present. Runtime-only evidence and exact commands are tracked in [`Warcraft III 3.0 P0-P1 Validation Log.md`](Warcraft%20III%203.0%20P0-P1%20Validation%20Log.md); `W3-HL-DOODADS` remains in progress because its authoring, persistence, pathing, and conditional optimization tasks are intentionally manual or evidence-gated.
 
@@ -130,9 +130,8 @@ The Foundation API baseline is complete for current work. Tasks `W3-PH0-041` thr
 | 1 | P2 | `W3-HL-EFFECTS` | `W3-PH0-046`, `W3-PH8-001` through `W3-PH8-004` | Add backward-compatible named animation, queue, and blend APIs with a resettable full-map probe. | IMPLEMENTED; READY FOR WORLD EDITOR TEST |
 | 2 | P2 | `W3-HL-MINIMAP` | `W3-PH0-047`, `W3-PH5-035` through `W3-PH5-038` | Compare native camera-bounds terrain generation with imported chunks while retaining the existing full/chunked bounds modes. | IMPLEMENTED; READY FOR MATRIX TEST |
 | 3 | P2 | `W3-HL-COMBAT` | `W3-PH4-001` through `W3-PH4-006` | Establish cooldown-adjustment semantics, then migrate only proven Shaman use cases. | NOT STARTED — COMBAT SEMANTICS GATE |
-| 4 | P1 continuation | `W3-HL-DOODADS` | `W3-PH0-048`, `W3-PH7-012`, `W3-PH7-013` | Validate narrowly authored faction/state colors with an explicit original-color reset value. | PROBE IMPLEMENTED; MANUAL AUTHORING AND TEST REQUIRED |
 
-`W3-HL-EFFECTS` starts P2 because it can be added without changing existing effect call sites. The map's native camera-bounds minimap option is enabled; repository code can now select native or imported terrain without removing either full/chunked bounds mode. Doodad color remains a continued P1 authoring/validation task, while cooldown migration remains blocked on combat-semantics evidence. Exact effect and minimap commands and acceptance criteria are recorded in [`Warcraft III 3.0 P2 Validation Log.md`](Warcraft%20III%203.0%20P2%20Validation%20Log.md).
+`W3-HL-EFFECTS` starts P2 because it can be added without changing existing effect call sites. The map's native camera-bounds minimap option is enabled; repository code can now select native or imported terrain without removing either full/chunked bounds mode. Doodad/destructible team coloring is excluded from the PotS upgrade, while cooldown migration remains blocked on combat-semantics evidence. Exact effect and minimap commands and acceptance criteria are recorded in [`Warcraft III 3.0 P2 Validation Log.md`](Warcraft%20III%203.0%20P2%20Validation%20Log.md).
 
 ## W3-HL-HARNESS — Phase 0 - Full-map 3.0 validation harness
 
@@ -158,13 +157,13 @@ PotS integration tests must run in the complete map. A reduced map would omit th
 - [x] **W3-PH0-013** — Added `/debug wc3 status`, `/debug wc3 camera`, `/debug wc3 fog`, and `/debug wc3 doodads` as the first read-only full-map baseline suite.
 - [x] **W3-PH0-014** — Camera diagnostics report the existing `CameraControl` mode and stored fields plus 3.0 camera type, local-client state, resolution, mouse pixels/frame coordinates, and middle-button state. All local input/camera queries are guarded for the triggering local player.
 - [x] **W3-PH0-015** — Fog diagnostics report the effective current values, transition targets, fade state, and override depth without changing the existing linear fog path.
-- [x] **W3-PH0-016** — Passive doodad diagnostics call only `BlzGetNumDoodads`. Index enumeration and the single-instance animation probe require explicit commands; color changes and global renderer ownership remain disabled.
+- [x] **W3-PH0-016** — Passive doodad diagnostics call only `BlzGetNumDoodads`. Index enumeration and the single-instance animation probe require explicit commands; global renderer ownership remains disabled and coloring is excluded.
 - [ ] **W3-PH0-017** — Compile the imported harness in World Editor/JassHelper 3.0.0.24268 and capture the first full-map baseline. Repository-side inspection cannot establish runtime/native behavior. _(Status: READY FOR TEST; Owner: Valdemar; Updated: 2026-09-17)_
 - [ ] **W3-PH0-018** — Repeat the camera diagnostic with two clients at different camera positions before enabling the orbit prototype. _(Status: READY FOR TEST; Owner: Valdemar; Updated: 2026-09-17; Depends on: `W3-PH0-017`)_
 - [x] **W3-PH0-045** — Added `/debug wc3 selftest`, a read-only local baseline that reports PASS/FAIL for client dimensions, camera type range, fog state invariants, full-map doodad visibility, and optional camera-ownership persistence without changing state.
 - [x] **W3-PH0-046** — Added `Debug/Warcraft300P2TestHarness.j` with an explicit, synchronized, resettable `wc3 effects` suite. It owns at most one probe effect per triggering player and performs no startup mutation.
 - [x] **W3-PH0-047** — Extended the P2 harness with local-only native/imported terrain-source selection, full/chunked view selection, force refresh, and status commands for `DynamicMinimap`; imported terrain remains the rollback default.
-- [x] **W3-PH0-048** — Extended the P0/P1 harness with a guarded single-doodad color probe. It rejects `DoodadRender`-managed types and requires the caller to supply the reviewed placement's original color ID because the active API has no doodad-color getter.
+- [x] **W3-PH0-048** — A temporary single-doodad color probe was added, then removed after doodad/destructible team coloring was excluded from PotS. No color command or color-native call remains. _(Status: RETIRED; Updated: 2026-09-17)_
 
 ### Full-map test workflow
 
@@ -239,7 +238,7 @@ The production policy is therefore **defer, do not migrate now**. DEquipment, WC
 | Cooldown remaining/percent adjustment, attack reset, and aura enablement | Planned under `W3-HL-COMBAT`; gameplay-sensitive and not implied by the new stat carriers. |
 | Camera type/input ownership, held input, mouse screen coordinates, and pixel/frame conversion | Implemented behind disabled/local probes under `W3-HL-CAMERA`; runtime and two-client gates remain open. |
 | Extended fog controls | Implemented with legacy-default parity under `W3-HL-FOG`; visual/locality gates remain open. |
-| Doodad enumeration/animation/color and destructable pitch/roll/color creation | Enumeration, animation, and a resettable per-instance color probe are implemented under `W3-HL-DOODADS`; authoring, persistence, pathing, and broad migration remain open until their manual gates pass. |
+| Doodad enumeration/animation and destructable pitch/roll creation | Enumeration and a resettable per-instance animation probe are implemented under `W3-HL-DOODADS`; authoring, persistence, pathing, and broad renderer migration remain open until their manual gates pass. Doodad/destructible coloring is excluded. |
 | Special-effect named animation, queue, and blend time | Implemented behind explicit P2 probes under `W3-HL-EFFECTS`; production migration remains evidence-gated. |
 | HD water | Not adopted because PotS targets SD/Classic presentation. |
 | Race skin, hero glow, model cinematics, shadow-casting light count, pathability, text-area autoscroll, trigger state/interrupt, thematic-music focus, and animation-duration helpers | Keep in the API backlog. Adopt only for a concrete PotS use case with an exact local signature check and a focused runtime test. |
@@ -261,7 +260,7 @@ Recommended order:
 1. Add the minimum full-map harness commands and baseline capture needed for camera, fog, and doodad probes.
 2. Upgrade camera ownership and input handling first. Begin with diagnostics and a disabled bounded middle-mouse orbit prototype that writes only through the existing `CameraControl` state.
 3. Extend fog storage and restoration while reproducing the current visuals exactly. Enable one new fog mode in one reviewed area only after legacy linear fog, storms, dungeons, and split-party presentation remain unchanged.
-4. Apply safe World Editor doodad authoring improvements to a small reviewed set, then test read-only doodad enumeration and one resettable single-instance animation/color probe. Do not replace global doodad rendering in this first pass.
+4. Apply safe World Editor doodad authoring improvements to a small reviewed set, then test read-only doodad enumeration and one resettable single-instance animation probe. Do not replace global doodad rendering in this first pass.
 5. Compare performance, multiplayer behavior, and rollback results before expanding any of the three workstreams.
 
 The first pass explicitly excludes native inventory/equipment adoption, DEquipment stat migration, cooldown changes, dynamic minimap replacement, global doodad-index ownership, and broad lighting/post-processing changes. DEquipment/WC3Manager/native-equipment/stat work is now P4 and must remain the final migration workstream because it requires evaluating a `The Frozen Throne` to `Forsaken Kingdom` Game Data Version change. The other deferred systems can follow after the visual-first work establishes a stable 3.0 development and validation routine.
@@ -634,7 +633,7 @@ Do not add an `HDWater` controller or adopt the `BlzSetHDWater*`/`SetHDWaterPara
 
 ### DoodadRender modernization
 
-Target natives include `BlzGetNumDoodads`, doodad index getters, `BlzSetSingleDoodadAnimation`, and single/area color setters.
+Target natives include `BlzGetNumDoodads`, doodad index getters, and `BlzSetSingleDoodadAnimation`.
 
 - [ ] **W3-PH7-001** — Keep the first doodad pass observational and resettable: count/enumerate without taking ownership, record initialization cost, and modify only one known test instance through the full-map debug harness. Batched scan and guarded hide/show probe are implemented. _(Status: READY FOR TEST; Owner: Valdemar; Updated: 2026-09-17)_
 - [x] **W3-PH7-002** — Add the first observational step: `/debug wc3 doodads` reports `BlzGetNumDoodads()` without enumerating or mutating instances.
@@ -646,12 +645,12 @@ Target natives include `BlzGetNumDoodads`, doodad index getters, `BlzSetSingleDo
 - [x] **W3-PH7-008** — The guarded test mutation uses `BlzSetSingleDoodadAnimation` for one reviewed index, so nearby same-type doodads are not intentionally included; runtime confirmation remains in `W3-VAL-007`.
 - [ ] **W3-PH7-009** — Retain the generated `war3map.doo` reference workflow if runtime enumeration is slower or index behavior is unstable. _(Status: CURRENT WORKFLOW RETAINED; replacement is conditional on `W3-PH7-004` through `W3-PH7-006`; not required before P2; Updated: 2026-09-17)_
 
-### Rotation, local axes, and colors
+### Rotation and local axes
 
 - [ ] **W3-PH7-010** — Use World Editor pitch/roll and local-axis scaling for environmental art that currently needs pre-rotated models. Candidate recording and checks are defined in the validation log. _(Status: READY FOR AUTHORING; Owner: Valdemar; Updated: 2026-09-17)_
 - [x] **W3-PH7-011** — Reviewed active procedural destructible creation. The five sites are hidden blockers/platforms or currently level quest scenery; no safe non-zero pitch/roll migration is justified in this pass, and no active trap creation site was found.
-- [ ] **W3-PH7-012** — Use `SetDoodadColor`, `BlzSetSingleDoodadColor`, `SetDestructableColor`, and `SetDestructableVertexColor` only for clear faction/state communication. A resettable single-index doodad probe is implemented for color IDs `0` through `24`; because the native lacks a color getter/None reset, the command requires the reviewed placement's documented original color and rejects `DoodadRender`-managed types. _(Status: READY FOR TEST; Owner: Valdemar; Updated: 2026-09-17; Harness: `W3-PH0-048`)_
-- [ ] **W3-PH7-013** — Confirm color and orientation survive death, revival, replacement, hiding, and save/load-equivalent recreation. _(Status: READY FOR TEST; Owner: Valdemar; Updated: 2026-09-17; Depends on: `W3-PH7-010`, `W3-PH7-012`)_
+- [x] **W3-PH7-012** — Excluded doodad and destructible team-color APIs from the PotS 3.0 upgrade. No color probe, authored-color migration, or runtime color ownership will be added. _(Status: EXCLUDED BY DESIGN; Updated: 2026-09-17)_
+- [ ] **W3-PH7-013** — Confirm orientation survives death, revival, replacement, hiding, and save/load-equivalent recreation. _(Status: READY FOR TEST; Owner: Valdemar; Updated: 2026-09-17; Depends on: `W3-PH7-010`)_
 - [ ] **W3-PH7-014** — Verify pathing and selection remain aligned with rotated visuals. _(Status: READY FOR TEST; Owner: Valdemar; Updated: 2026-09-17; Depends on: `W3-PH7-010`)_
 
 ### Excluded HD-only authoring features
@@ -696,7 +695,7 @@ These IDs are rollout milestones. Close a milestone only when its underlying imp
 - [ ] **W3-PH9-001** — Add the disabled full-map 3.0 harness to the existing `/debug` workflow and record baseline semantics without changing production behavior.
 - [ ] **W3-PH9-002** — Add camera ownership diagnostics, then prototype bounded local middle-mouse orbit behind a disabled flag while preserving every existing camera mode and reset path.
 - [ ] **W3-PH9-003** — Extend the fog state model with exact legacy-default parity, then enable one reviewed 3.0 fog preset at a time.
-- [ ] **W3-PH9-004** — Apply small World Editor pitch/roll and local-axis improvements, run read-only doodad enumeration, and test one resettable instance-level animation/color probe.
+- [ ] **W3-PH9-004** — Apply small World Editor pitch/roll and local-axis improvements, run read-only doodad enumeration, and test one resettable instance-level animation probe.
 - [ ] **W3-PH9-005** — Benchmark the visual-first changes in long sessions and two-player tests before changing their production defaults.
 - [ ] **W3-PH9-006** — Evaluate dynamic minimap generation only after camera ownership is stable; keep the current minimap implementation as the default and rollback path.
 - [ ] **W3-PH9-007** — Modernize global doodad handling only if read-only enumeration and approximately 50,000-placement benchmarks beat the current implementation.
