@@ -2,8 +2,10 @@
 
 Status: In progress — Phase 0 baseline implemented; P0/P1 runtime validation pending
 Target baseline: Warcraft III 3.0.0, build 24268  
-Primary API references: [`_Blizzard/common.j`](../../_Blizzard/common.j) and [`_Blizzard/blizzard.j`](../../_Blizzard/blizzard.j)  
+Primary API references: [`_Blizzard/common.j`](../../../_Blizzard/common.j) and [`_Blizzard/blizzard.j`](../../../_Blizzard/blizzard.j)  
 Patch reference: [Warcraft III: Reforged - Forsaken Kingdom Patch Notes](https://us.forums.blizzard.com/en/warcraft3/t/warcraft-iii-reforged-forsaken-kingdom-patch-notes/38400)
+Native-diff reference: [lep/jassdoc pull request 236](https://github.com/lep/jassdoc/pull/236/files#diff-972de25e121d897d9b087487ceba8b77a107067083654ca45e39ae119324e1f6)  
+Stat-carrier discussion: [PurgeandFire on the new 3.0 Object Editor abilities](https://www.hiveworkshop.com/threads/what-new-world-editor-natives-did-we-actually-get-from-the-update.374314/#post-3739349)
 
 ## Purpose
 
@@ -22,6 +24,10 @@ The separate 16-bit launcher and World Editor crash investigation is intentional
 - Run 3.0 probes in a disposable copy of the complete PotS map through a disabled-by-default developer harness. Small code-only tests remain useful for parsers, database migrations, and other logic that does not depend on map state.
 - PotS targets the SD/Classic presentation. HD water and other HD-only authoring features are outside this upgrade plan unless that presentation policy changes later.
 - PotS remains Orc-themed. Keep the existing Orc/default HUD identity and treat the new race-skin API only as a compatibility concern; do not pursue a Forsaken HUD or per-player race-skin selection.
+- The current PotS Game Data Version is `The Frozen Throne`. A manual World Editor check on 17 September 2026 found that at least the newly added abilities are not available there and become visible only after changing Game Data Version to `Forsaken Kingdom`.
+- Do not change the production map to `Forsaken Kingdom` merely to gain access to a 3.0 stat carrier. This is a map-wide inherited-data migration for an old, heavily customized map, not a local DEquipment feature toggle, and it may change stock abilities, units, items, upgrades, metadata, defaults, and serialization behavior.
+- Treat Ability Vamp, Resolve, Magic Resistance, Ability Amp, Ability Speed, and the related native Stat Details presentation as Object Editor ability/data features unless an exact build-24268 declaration proves otherwise. The active API and the linked jassdoc 3.0 diff contain no dedicated stat getter or setter for them.
+- Do not assume that copying a Forsaken carrier into PotS bypasses the Game Data Version requirement. Its parent ability, hardcoded backend, metadata, fields, or assets may still depend on the Forsaken data version. A PotS-owned custom copy is acceptable only after it works under the intended production data version and its dependencies are proven.
 - Do not convert the project to Lua. Use the new GUI-to-Lua and Copy As Script tools only for investigation; converted PotS triggers should continue to target maintained JASS/vJASS libraries.
 - Treat Object Editor, terrain, placed-object, minimap-paint, lighting, water, fog, sound-variable, and post-processing edits as manual World Editor work.
 - Use the exact native spellings from the 3.0 scripts, including `UnitHasAnyItemEquiped` and the `envMapStrengthy` parameter typo where applicable.
@@ -30,16 +36,17 @@ The separate 16-bit launcher and World Editor crash investigation is intentional
 
 | Priority | High-level ID | Capability | PotS targets | Expected value |
 | --- | --- | --- | --- | --- |
+| Foundation | `W3-HL-API` | Active 3.0 API, Object Editor carrier, and data-version compatibility audit | `_Blizzard`, full-map object data, upgrade documentation | Prevents native/data-version assumptions before implementation |
 | P0 | `W3-HL-CAMERA` | Free-camera ownership and input queries | `CameraControl`, `DialogCamera` | High and independently reversible |
 | P0 | `W3-HL-FOG` | Expanded fog controls with legacy-default parity | `FogSystem`, `Storm`, `WeatherSystemV4`, zones | High and visually testable |
 | P1 | `W3-HL-DOODADS` | Doodad rotation/local axes, read-only enumeration, instance animation, and color probes | `DoodadManager`, `DoodadRender`, procedural destructibles | High when introduced narrowly |
 | P2 | `W3-HL-MINIMAP` | Dynamic minimap generation within camera bounds | `DynamicMinimap` | Potentially very high but camera-bound sensitive |
-| P2 | `W3-HL-ITEMDATA`, `W3-HL-EQUIPMENT`, `W3-HL-ITEMECO` | Equipment classification, equipment type, item tag, extended bag, equip events, native-colored bonuses, and 3.0 RPG stats | `WC3ItemManager`, `DInventory`, `DEquipment`, `SharedDInvLib`, `ItemHook`, `UnitStats`, `StatsUI` | Very high but broad and regression-sensitive |
 | P2 | `W3-HL-COMBAT` | Remaining/percentage ability cooldown control | `ShamanCommon`, talent-driven cooldowns | High but combat-sensitive |
 | P2 | `W3-HL-EFFECTS` | Special-effect animation queue and blend control | `SpeciFX`, ability visuals | Medium |
-| P2 | `W3-HL-DOODADS`, `W3-HL-ITEMECO` | Item, doodad, and destructible team color | Loot ownership and environment presentation | Medium |
+| P2 | `W3-HL-DOODADS` | Doodad and destructible team color | Environment presentation | Medium |
 | P3 | `W3-HL-COMBAT` | Attack cooldown reset and global aura toggling | Selected combat/state transitions | Situational |
 | P3 | `W3-HL-LIGHTING` | Lighting editor, omni lights, decals, shadow blockers, post processing | Environment authoring | Visual/optimization work |
+| P4 / LAST | `W3-HL-ITEMDATA`, `W3-HL-EQUIPMENT`, `W3-HL-ITEMECO` | Game-data migration, equipment classification/type/tag, extended bag, equip events, native-colored bonuses, 3.0 RPG stats, and item team color | `WC3ItemManager`, `DInventory`, `DEquipment`, `SharedDInvLib`, `ItemHook`, `UnitStats`, `StatsUI` | Highest-risk cross-system migration; do last or not at all |
 
 ## Task IDs, ownership, and status
 
@@ -76,9 +83,10 @@ Example assignment:
 | High-level ID | Scope | Priority | Status | Child task IDs |
 | --- | --- | --- | --- | --- |
 | `W3-HL-HARNESS` | Full-map 3.0 harness and semantic probes | Foundation | IN PROGRESS | `W3-PH0-*` |
-| `W3-HL-ITEMDATA` | WC3ItemManager schema, UI, W3T, and backfill | P2 | NOT STARTED | `W3-PH1-*` |
-| `W3-HL-EQUIPMENT` | Native inventory bridge, equipment bonuses, stats, and UI | P2 | NOT STARTED | `W3-PH2-*` |
-| `W3-HL-ITEMECO` | Item consumers, loot, quests, random items, and item color | P2 | NOT STARTED | `W3-PH3-*` |
+| `W3-HL-API` | Active native diff, Object Editor stat carriers, and Game Data Version compatibility | Foundation | IN PROGRESS | `W3-PH0-038` through `W3-PH0-044` |
+| `W3-HL-ITEMDATA` | WC3ItemManager schema, UI, W3T, and backfill | P4 / LAST | DEFERRED — DATA-VERSION MIGRATION RISK | `W3-PH1-*` |
+| `W3-HL-EQUIPMENT` | Native inventory bridge, equipment bonuses, stats, and UI | P4 / LAST | DEFERRED — DATA-VERSION MIGRATION RISK | `W3-PH2-*` |
+| `W3-HL-ITEMECO` | Item consumers, loot, quests, random items, and item color | P4 / LAST | DEFERRED — DATA-VERSION MIGRATION RISK | `W3-PH3-*` |
 | `W3-HL-COMBAT` | Cooldown, aura, and attack-reset APIs | P2/P3 | NOT STARTED | `W3-PH4-*` |
 | `W3-HL-CAMERA` | Camera ownership, local input, and bounded orbit | P0 | IN PROGRESS | `W3-PH5-001` through `W3-PH5-034` |
 | `W3-HL-MINIMAP` | Dynamic minimap generation | P2 | NOT STARTED | `W3-PH5-035` through `W3-PH5-039` |
@@ -103,7 +111,7 @@ Example assignment:
 | 5 | P0 | `W3-HL-FOG` | `W3-PH6-001`, `W3-PH6-003` through `W3-PH6-007`, `W3-VAL-006` | Capture legacy fog parity, introduce the complete preset state, and validate restoration/locality. | READY FOR CAPTURE AND TEST |
 | 6 | P1 | `W3-HL-DOODADS` | `W3-PH7-001`, `W3-PH7-003`, `W3-PH7-004`, `W3-PH7-010` through `W3-PH7-014`, `W3-VAL-007` | Add guarded doodad enumeration and reviewed pitch/roll, local-axis, color, and resettable-instance probes. | READY FOR AUTHORING AND TEST |
 
-The repository implementation for every row is now present. Runtime-only evidence and exact commands are tracked in [`Warcraft III 3.0 P0-P1 Validation Log.md`](../Issues/2026-09-patch3/Warcraft%20III%203.0%20P0-P1%20Validation%20Log.md); rows remain open until their World Editor or two-client pass is recorded there.
+The repository implementation for every row is now present. Runtime-only evidence and exact commands are tracked in [`Warcraft III 3.0 P0-P1 Validation Log.md`](Warcraft%20III%203.0%20P0-P1%20Validation%20Log.md); rows remain open until their World Editor or two-client pass is recorded there.
 
 ## W3-HL-HARNESS — Phase 0 - Full-map 3.0 validation harness
 
@@ -162,7 +170,7 @@ Separate executable or code-only tests remain appropriate for `WC3ItemManager`, 
 
 ### Warcraft III 3.0 stat and ability probe matrix
 
-The [HiveWorkshop 3.0 equipment, stat, and talent guide](https://www.hiveworkshop.com/threads/reforged-3-0-new-equipment-stats-and-talent-system.374193/#post-3739263) identifies `[ASde]` Stat Details (Hero), its configurable `Data - Supported stat modifiers` flags, `[ASpc]` as the shared native UI entry point, and `[AGsv]` Warcry Ability Vamp as a 20% spell-vamp example. This is valuable discovery evidence, but it is a community Object Editor investigation rather than a runtime contract. These object abilities are not declarations in `common.j`; verify their parent rawcodes, fields, and behavior in the current World Editor and in an exported 3.0 W3A before designing around them.
+The [HiveWorkshop 3.0 equipment, stat, and talent guide](https://www.hiveworkshop.com/threads/reforged-3-0-new-equipment-stats-and-talent-system.374193/#post-3739263) identifies `[ASde]` Stat Details (Hero), its configurable `Data - Supported stat modifiers` flags, `[ASpc]` as the shared native UI entry point, and `[AGsv]` Warcry Ability Vamp as a 20% spell-vamp example. [PurgeandFire's follow-up](https://www.hiveworkshop.com/threads/what-new-world-editor-natives-did-we-actually-get-from-the-update.374314/#post-3739349) makes the key distinction: the new statistics appear to be implemented through abilities under Object Editor > Abilities > Special rather than dedicated stat natives. This is valuable discovery evidence, but it is a community Object Editor investigation rather than a runtime contract. These object abilities are not declarations in `common.j`; verify their parent rawcodes, fields, Game Data Version visibility, and behavior in the current World Editor and in an exported 3.0 W3A before designing around them.
 
 Audit every modifier exposed by `[ASde]`, not only the three newly noticed labels:
 
@@ -186,11 +194,38 @@ Audit every modifier exposed by `[ASde]`, not only the three newly noticed label
 | Magic Resistance % | Candidate presentation for inverse stat 28 Spell Damage Taken % | Reconcile formulas and caps; do not store both if they describe the same effective modifier. |
 
 - [ ] **W3-PH0-032** — Export the relevant stock 3.0 abilities from World Editor and catalogue rawcode, parent ability, data fields, value scale, negative-value support, stacking rule, caps, UI refresh behavior, and whether the ability is safe to clone and modify dynamically.
-- [ ] **W3-PH0-033** — Include the known framework abilities `[AIni]` Expanded Inventory, `[AEqu]` Equipment Slots, `[ASde]` Stat Details, `[ASpc]` shared UI entry point, `[ATua]` talent controller, `[ATap]` talent-point grant, and `[AGsv]` Ability Vamp in the catalogue, plus every additional 3.0 stat carrier discovered in the Object Editor or Forsaken campaign data.
+- [ ] **W3-PH0-033** — Include the known framework abilities `[AIni]` Expanded Inventory, `[AEqu]` Equipment Slots, `[ASde]` Stat Details, `[ASpc]` shared UI entry point, `[ATua]` talent controller, `[ATap]` talent-point grant, and `[AGsv]` Ability Vamp in the catalogue, plus every additional 3.0 stat carrier discovered in the installed Object Editor data. Treat Forsaken campaign examples as discovery material, not an automatic production dependency.
 - [ ] **W3-PH0-034** — Use `[ASde]` as a diagnostic reference for native values during probes. Do not add its panel to production beside `StatsUI` unless it offers a confirmed benefit that cannot be presented cleanly in the PotS UI.
 - [ ] **W3-PH0-035** — For each combat stat, test base ability, cloned ability, direct item ability, aggregate hidden carrier, ability-level change, runtime field write, ability remove/re-add, death/revive, morph, dispel, save/load, and 100 equip/unequip cycles.
 - [ ] **W3-PH0-036** — Test mixed native and triggered damage separately. Record attack damage, spell damage, periodic damage, reflected damage, summoned-unit damage, healing, overheal, immunities, zero damage, fatal damage, and attribution behavior where relevant.
 - [ ] **W3-PH0-037** — Treat an unknown semantic result as a blocker for that individual stat, not as a reason to guess or to block unrelated proven stats.
+
+## W3-HL-API — Phase 0 - 3.0 API and Object Editor data baseline
+
+The linked jassdoc pull request is a useful categorized discovery index, but `_Blizzard/common.j` and `_Blizzard/blizzard.j` remain the PotS signature authority. A 17 September 2026 comparison found 130 unique native declarations added by the pull-request diff and zero missing from the active PotS `common.j`. The diff contains no dedicated Ability Vamp, Resolve, Magic Resistance, Stat Details, `[AGsv]`, or `[ASde]` API. Consequently, DEquipment and WC3Manager must model the new statistics as verified ability-backed providers unless later scripts expose an exact native.
+
+**Observed Game Data Version boundary:** Valdemar's 17 September 2026 World Editor check supersedes the earlier working inference. With Game Data Version set to `The Frozen Throne`, the newly added abilities could not be found; changing it to `Forsaken Kingdom` exposed them. Patch 3.0 installs the editor/runtime support, but an old map's selected data version still controls whether at least these stock ability definitions are available. It remains unproven whether a copied custom carrier can function after reverting to `The Frozen Throne`, and it must not be assumed that a custom object contains the carrier's hardcoded backend or complete metadata.
+
+The production policy is therefore **defer, do not migrate now**. DEquipment, WC3Manager, native equipment, and new-stat adoption are the final P4 workstream and begin only after the lower-risk 3.0 upgrades are complete, the feature value still justifies the risk, and a disposable full-map migration proves that switching to `Forsaken Kingdom` does not alter existing gameplay or data unexpectedly. Remaining on `The Frozen Throne` with the current PotS systems is the approved rollback and may become the permanent decision.
+
+| jassdoc 3.0 area | PotS disposition |
+| --- | --- |
+| Extended inventory, equipment slots/events, classification, type, tag, and filtered random items | Planned under `W3-HL-ITEMDATA`, `W3-HL-EQUIPMENT`, and `W3-HL-ITEMECO`; remains behind semantic probes. |
+| Cooldown remaining/percent adjustment, attack reset, and aura enablement | Planned under `W3-HL-COMBAT`; gameplay-sensitive and not implied by the new stat carriers. |
+| Camera type/input ownership, held input, mouse screen coordinates, and pixel/frame conversion | Implemented behind disabled/local probes under `W3-HL-CAMERA`; runtime and two-client gates remain open. |
+| Extended fog controls | Implemented with legacy-default parity under `W3-HL-FOG`; visual/locality gates remain open. |
+| Doodad enumeration/animation/color and destructable pitch/roll/color creation | Planned or probed under `W3-HL-DOODADS`; no broad migration until pathing and performance pass. |
+| Special-effect named animation, queue, and blend time | Deferred to `W3-HL-EFFECTS`. |
+| HD water | Not adopted because PotS targets SD/Classic presentation. |
+| Race skin, hero glow, model cinematics, shadow-casting light count, pathability, text-area autoscroll, trigger state/interrupt, thematic-music focus, and animation-duration helpers | Keep in the API backlog. Adopt only for a concrete PotS use case with an exact local signature check and a focused runtime test. |
+
+- [x] **W3-PH0-038** — Compare every native added by the linked jassdoc pull-request diff with active `_Blizzard/common.j`. Result: 130 unique diff natives, all 130 present in build-24268 `common.j`; no stat-specific native was found.
+- [x] **W3-PH0-039** — Classify the diff by existing PotS workstream and explicitly retain low-priority or unsupported areas in the API backlog instead of treating every new declaration as an adoption requirement.
+- [x] **W3-PH0-040** — Record the current PotS Game Data Version and check new-ability visibility. Result reported from World Editor on 17 September 2026: `The Frozen Throne` does not expose at least the newly added abilities; `Forsaken Kingdom` does. This establishes a real data-version dependency for the stock definitions.
+- [ ] **W3-PH0-041** — If P4 is eventually authorized, catalogue every candidate carrier as Forsaken-version data: parent rawcode, custom rawcode, fields, hardcoded behavior, icon/model/sound paths, SD availability, and behavior after returning a disposable copy to `The Frozen Throne`. _(Status: DEFERRED; Reason: final-priority migration research; Updated: 2026-09-17)_
+- [ ] **W3-PH0-042** — If P4 is eventually authorized, clone only one reviewed carrier in a disposable copy of the complete PotS map, export `war3map.w3a`, test both data versions, and prove through before/after object-data comparison that no unrelated stock or custom object changed. _(Status: DEFERRED; Depends on: `W3-PH0-041`; Updated: 2026-09-17)_
+- [ ] **W3-PH0-043** — Before any production data-version change, switch only a disposable full-map copy to `Forsaken Kingdom`, save/reopen/export it, and produce a complete inherited/custom object and map-file diff with an independent rollback. Treat any unexplained change as a migration blocker. _(Status: DEFERRED; Reason: final-priority migration gate; Updated: 2026-09-17)_
+- [ ] **W3-PH0-044** — Validate any adopted carrier in SD/Classic on every supported ownership/installation profile available for PotS distribution. Do not depend on a Forsaken-specific asset or campaign entitlement unless that requirement is intentionally added and documented.
 
 ### Recommended first upgrade sequence
 
@@ -204,9 +239,11 @@ Recommended order:
 4. Apply safe World Editor doodad authoring improvements to a small reviewed set, then test read-only doodad enumeration and one resettable single-instance animation/color probe. Do not replace global doodad rendering in this first pass.
 5. Compare performance, multiplayer behavior, and rollback results before expanding any of the three workstreams.
 
-The first pass explicitly excludes native inventory/equipment adoption, DEquipment stat migration, cooldown changes, dynamic minimap replacement, global doodad-index ownership, and broad lighting/post-processing changes. Those can follow after the visual-first work establishes a stable 3.0 development and validation routine.
+The first pass explicitly excludes native inventory/equipment adoption, DEquipment stat migration, cooldown changes, dynamic minimap replacement, global doodad-index ownership, and broad lighting/post-processing changes. DEquipment/WC3Manager/native-equipment/stat work is now P4 and must remain the final migration workstream because it requires evaluating a `The Frozen Throne` to `Forsaken Kingdom` Game Data Version change. The other deferred systems can follow after the visual-first work establishes a stable 3.0 development and validation routine.
 
 ## W3-HL-ITEMDATA — Phase 1 - Extend WC3ItemManager and W3T round trips
+
+This phase is P4 / LAST and remains deferred with the equipment/stat migration. Do not add Forsaken-only stat mappings or change production item data while PotS remains on Game Data Version `The Frozen Throne`. Tool-only parsing research may proceed later against copies, but it must not imply approval to migrate the map or production database.
 
 ### Data model
 
@@ -259,7 +296,7 @@ Use an audit report before changing production rows. A Warcraft item can have on
 
 ## W3-HL-EQUIPMENT — Phase 2 - Native inventory and DEquipment bridge
 
-Create a small bridge library, tentatively `DestroyerInventoryAndEquipmentSystem/PoTs/DNativeInventoryBridge.j`, only after the probe matrix is complete.
+This entire phase is P4 / LAST and remains deferred until a Forsaken Game Data Version migration is explicitly authorized and passes its independent full-map diff. If that gate ever passes, create a small bridge library, tentatively `DestroyerInventoryAndEquipmentSystem/PoTs/DNativeInventoryBridge.j`, only after the probe matrix is complete. The native inventory/equipment API does not imply native setters for Ability Vamp, Resolve, Magic Resistance, Ability Amp, or Ability Speed; those remain independently validated ability-backed providers.
 
 ### Slot mapping
 
@@ -378,7 +415,7 @@ The UI has no spare implicit capacity. `StatsUI.j` currently defines 3 columns b
 
 ## W3-HL-ITEMECO — Phase 3 - Update every item consumer
 
-Inventory support is incomplete until systems stop assuming that all usable items live in six native slots or only in PotS tables.
+This phase is P4 / LAST and remains deferred with the native equipment bridge. Inventory support is incomplete until systems stop assuming that all usable items live in six native slots or only in PotS tables, but those consumers must not be changed speculatively before the Game Data Version and storage-authority decisions pass.
 
 - [ ] **W3-PH3-001** — `ItemSystems/ItemHook.j`: register equip/unequip responses and validate create/destroy tracking for bagged and equipped items.
 - [ ] **W3-PH3-002** — `UnitSystems/UnitStats.j`: recalculate on native equip/unequip, consume the separated base/equipment totals where appropriate, and prevent duplicate stat application when the bridge or aggregate bonus carriers are active.
@@ -639,9 +676,9 @@ These IDs are rollout milestones. Close a milestone only when its underlying imp
 - [ ] **W3-PH9-006** — Evaluate dynamic minimap generation only after camera ownership is stable; keep the current minimap implementation as the default and rollback path.
 - [ ] **W3-PH9-007** — Modernize global doodad handling only if read-only enumeration and approximately 50,000-placement benchmarks beat the current implementation.
 - [ ] **W3-PH9-008** — Extend SpeciFX and cooldown helpers as separate workstreams.
-- [ ] **W3-PH9-009** — Implement the native-style aggregate `DEquipment` bonus layer and append-only 3.0 stat registry behind mutually exclusive per-stat rollback flags.
-- [ ] **W3-PH9-010** — Add ItemManager schema/UI/W3T support and backfill only a small reviewed equipment/tag test set.
-- [ ] **W3-PH9-011** — Implement the native inventory bridge and item-consumer integration only after equipment-bonus semantics and database round trips are stable.
+- [ ] **W3-PH9-009** — As the final P4 migration only, implement the native-style aggregate `DEquipment` bonus layer and append-only 3.0 stat registry behind mutually exclusive per-stat rollback flags. _(Status: DEFERRED; Depends on: approved `W3-PH0-043` migration gate and completion of lower-priority adopted workstreams; Updated: 2026-09-17)_
+- [ ] **W3-PH9-010** — As the final P4 migration only, add ItemManager schema/UI/W3T support and backfill only a small reviewed equipment/tag test set. _(Status: DEFERRED; Depends on: `W3-PH9-009`; Updated: 2026-09-17)_
+- [ ] **W3-PH9-011** — As the final P4 migration only, implement the native inventory bridge and item-consumer integration after equipment-bonus semantics, database round trips, and the Forsaken data-version regression pass are stable. _(Status: DEFERRED; Depends on: `W3-PH9-010`; Updated: 2026-09-17)_
 - [ ] **W3-PH9-012** — Enable every feature independently, with one changelog entry and rollback path per workstream.
 
 ## W3-HL-VALIDATION — Validation gates
@@ -688,6 +725,12 @@ These IDs are rollout milestones. Close a milestone only when its underlying imp
 - [ ] **W3-VAL-026** — Compare long-session FPS and memory before/after doodad, minimap, SD-compatible lighting, and post-processing changes.
 - [ ] **W3-VAL-027** — Verify the supported SD/Classic presentation at low and high graphics settings.
 - [ ] **W3-VAL-028** — Verify all new SD-compatible model, texture, sound, and light assets resolve without editor-log warnings.
+
+### API, Object Editor, and Game Data Version compatibility
+
+- [ ] **W3-VAL-029** — The production PotS Game Data Version remains `The Frozen Throne` unless a separately reviewed disposable-copy migration, complete object/map-data diff, save/reopen cycle, full-map regression, and explicit approval accept the switch to `Forsaken Kingdom`.
+- [ ] **W3-VAL-030** — Every adopted 3.0 stat carrier is a PotS-owned custom object with a recorded parent, rawcode, fields, source Game Data Version, runtime formula, stacking behavior, and removal behavior; no implementation assumes a nonexistent stat native.
+- [ ] **W3-VAL-031** — A map containing each adopted carrier opens, saves, reloads, compiles, and runs in SD/Classic without unknown-field warnings, missing assets, changed unrelated objects, or a Forsaken campaign-map dependency.
 
 ## Completion criteria
 
