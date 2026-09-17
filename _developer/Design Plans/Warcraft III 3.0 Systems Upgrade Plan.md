@@ -30,12 +30,12 @@ The separate 16-bit launcher and World Editor crash investigation is intentional
 
 | Priority | Capability | PotS targets | Expected value |
 | --- | --- | --- | --- |
-| P0 | Equipment classification, equipment type, item tag, extended bag, equip events, native-colored bonuses, and 3.0 RPG stats | `WC3ItemManager`, `DInventory`, `DEquipment`, `SharedDInvLib`, `ItemHook`, `UnitStats`, `StatsUI` | Very high |
-| P0 | Remaining/percentage ability cooldown control | `ShamanCommon`, talent-driven cooldowns | High |
-| P1 | Expanded fog controls | `FogSystem`, `Storm`, `WeatherSystemV4`, zones | High |
-| P1 | Doodad enumeration, instance animation, rotation, and color | `DoodadManager`, `DoodadRender`, procedural destructibles | High |
-| P1 | Free-camera ownership and input queries | `CameraControl`, `DialogCamera`, `DynamicMinimap` | High |
-| P1 | Dynamic minimap generation within camera bounds | `DynamicMinimap` | Potentially very high |
+| P0 | Free-camera ownership and input queries | `CameraControl`, `DialogCamera` | High and independently reversible |
+| P0 | Expanded fog controls with legacy-default parity | `FogSystem`, `Storm`, `WeatherSystemV4`, zones | High and visually testable |
+| P1 | Doodad rotation/local axes, read-only enumeration, instance animation, and color probes | `DoodadManager`, `DoodadRender`, procedural destructibles | High when introduced narrowly |
+| P2 | Dynamic minimap generation within camera bounds | `DynamicMinimap` | Potentially very high but camera-bound sensitive |
+| P2 | Equipment classification, equipment type, item tag, extended bag, equip events, native-colored bonuses, and 3.0 RPG stats | `WC3ItemManager`, `DInventory`, `DEquipment`, `SharedDInvLib`, `ItemHook`, `UnitStats`, `StatsUI` | Very high but broad and regression-sensitive |
+| P2 | Remaining/percentage ability cooldown control | `ShamanCommon`, talent-driven cooldowns | High but combat-sensitive |
 | P2 | Special-effect animation queue and blend control | `SpeciFX`, ability visuals | Medium |
 | P2 | Item, doodad, and destructible team color | Loot ownership and environment presentation | Medium |
 | P3 | Attack cooldown reset and global aura toggling | Selected combat/state transitions | Situational |
@@ -119,19 +119,19 @@ Audit every modifier exposed by `[ASde]`, not only the three newly noticed label
 - [ ] Test mixed native and triggered damage separately. Record attack damage, spell damage, periodic damage, reflected damage, summoned-unit damage, healing, overheal, immunities, zero damage, fatal damage, and attribution behavior where relevant.
 - [ ] Treat an unknown semantic result as a blocker for that individual stat, not as a reason to guess or to block unrelated proven stats.
 
-### Recommended first upgrade
+### Recommended first upgrade sequence
 
-After the minimal harness command and reset support exists, implement the `DEquipment` native-style bonus presentation described in Phase 2 as the first runtime upgrade. It is the best starting point because it fixes an existing base-versus-bonus correctness problem, has immediate visible value, can reuse the present PotS inventory and equipment authority, and can be compared against the legacy mutation path without first migrating item storage.
+Begin with camera, fog, and narrowly scoped doodad work. These systems can be introduced as opt-in presentation changes, compared directly against the current behavior, and disabled without migrating items, combat math, database rows, save-sensitive equipment state, or quest ownership rules. This visual-first decision supersedes the earlier recommendation to begin with `DEquipment`; the equipment/stat work remains planned but is deliberately postponed.
 
-Suggested first vertical slice:
+Recommended order:
 
-1. Add signed green/red formatting and base/bonus/total diagnostics without changing gameplay values.
-2. Add a recomputation entry point for the aggregate equipment ledger and drift assertions for repeated equip/unequip cycles.
-3. Prototype aggregate Strength, Agility, Intelligence, damage, and armor carriers on one hero using existing positive and negative TEST items.
-4. Validate level-up, permanent rewards, morph, death/revival, load, set bonuses, and 100 equip/unequip cycles in the full-map harness.
-5. Keep the existing permanent/base mutation implementation behind a mutually exclusive rollback flag until multiplayer and full-map regression tests pass.
+1. Add the minimum full-map harness commands and baseline capture needed for camera, fog, and doodad probes.
+2. Upgrade camera ownership and input handling first. Begin with diagnostics and a disabled bounded middle-mouse orbit prototype that writes only through the existing `CameraControl` state.
+3. Extend fog storage and restoration while reproducing the current visuals exactly. Enable one new fog mode in one reviewed area only after legacy linear fog, storms, dungeons, and split-party presentation remain unchanged.
+4. Apply safe World Editor doodad authoring improvements to a small reviewed set, then test read-only doodad enumeration and one resettable single-instance animation/color probe. Do not replace global doodad rendering in this first pass.
+5. Compare performance, multiplayer behavior, and rollback results before expanding any of the three workstreams.
 
-Do not begin with the native extended bag/loadout bridge. That work changes item ownership, storage authority, events, UI, death/restoration, cleanup, quests, professions, AI, and shops simultaneously. Likewise, camera, minimap, lighting, and fog are valuable but are less suitable as the first upgrade because their validation is more subjective and more sensitive to local-player and graphics-setting behavior.
+The first pass explicitly excludes native inventory/equipment adoption, DEquipment stat migration, cooldown changes, dynamic minimap replacement, global doodad-index ownership, and broad lighting/post-processing changes. Those can follow after the visual-first work establishes a stable 3.0 development and validation routine.
 
 ## Phase 1 - Extend WC3ItemManager and W3T round trips
 
@@ -369,6 +369,7 @@ Implementation work:
 
 ### CameraControl
 
+- [ ] Make camera ownership/diagnostics the first production-facing 3.0 workstream, behind a disabled developer flag. The no-flag path must execute the existing camera behavior unchanged.
 - [ ] Prototype `BlzCameraSetCameraType`/`BlzCameraGetCameraType` and document valid integer camera types.
 - [ ] Use `SetCameraFieldControlledByInput` to give the engine or PotS exclusive ownership of each camera field during Normal, Advanced, Developer, dialog, death, travel, and fullscreen cinematic modes.
 - [ ] Evaluate `CAMERA_FIELD_ZABSOLUTE`, depth-of-field distance, and depth-of-field scale for cinematic presets only.
@@ -471,6 +472,7 @@ Extend `EnvironmentSystems/FogSystem.j` and zone data from the current start/end
 
 Tasks:
 
+- [ ] Make fog-state parity the second visual-first workstream. Capture the effective legacy values for representative outdoor, dungeon, storm, death/cinematic, and split-party states before adding fields.
 - [ ] Add a `FogPreset`-style data structure or equivalent explicit arrays with copy/apply/interpolate operations.
 - [ ] Update `Zones/ZonesCore.j` and zone configuration without changing current visuals by default.
 - [ ] Update `Stormv2.j` so lightning flashes save, modify, and restore every fog field rather than only legacy fields.
@@ -497,6 +499,8 @@ Do not add an `HDWater` controller or adopt the `BlzSetHDWater*`/`SetHDWaterPara
 
 Target natives include `BlzGetNumDoodads`, doodad index getters, `BlzSetSingleDoodadAnimation`, and single/area color setters.
 
+- [ ] Keep the first doodad pass observational and resettable: count/enumerate without taking ownership, record initialization cost, and modify only one known test instance through the full-map debug harness.
+- [ ] Do not replace the current `DoodadRender` path during the initial camera/fog/doodad milestone. Runtime enumeration across approximately 50,000 placements requires its own later opt-in benchmark and rollback decision.
 - [ ] Test whether doodad indices are stable across clients, map saves, variations, and editor rebuilds.
 - [ ] Build a runtime spatial index from doodad X/Y/rawcode only if initialization time and memory beat the current rect-by-rawcode approach.
 - [ ] Compare single-instance hide/show against `SetDoodadAnimationRect` for call count, correctness, and FPS on the current approximately 50,000 placements.
@@ -550,16 +554,17 @@ Do not schedule HD water doodads, HD decals, HD shadow blockers, or per-doodad H
 ## Phase 9 - Rollout order
 
 1. Add the disabled full-map 3.0 harness to the existing `/debug` workflow and record baseline semantics without changing production behavior.
-2. Implement the native-style aggregate `DEquipment` bonus layer and the append-only 3.0 stat registry behind mutually exclusive per-stat rollback flags; make this the first runtime upgrade.
-3. Add ItemManager schema/UI/W3T support without changing production item behavior.
-4. Backfill a small reviewed equipment/tag test set.
-5. Implement the native inventory bridge behind a disabled configuration flag only after equipment-bonus semantics are stable.
-6. Integrate equip/unequip and direct bag-use events with item consumers.
-7. Convert cooldown helpers and extend SpeciFX.
-8. Prototype camera and dynamic-minimap replacements.
-9. Extend fog state, then evaluate only SD-compatible lighting/post-processing presets.
-10. Modernize doodad handling only after performance comparison.
-11. Enable features independently, with one changelog entry and rollback path per workstream.
+2. Add camera ownership diagnostics, then prototype bounded local middle-mouse orbit behind a disabled flag while preserving every existing camera mode and reset path.
+3. Extend the fog state model with exact legacy-default parity, then enable one reviewed 3.0 fog preset at a time.
+4. Apply small World Editor pitch/roll and local-axis improvements, run read-only doodad enumeration, and test one resettable instance-level animation/color probe.
+5. Benchmark the visual-first changes in long sessions and two-player tests before changing their production defaults.
+6. Evaluate dynamic minimap generation only after camera ownership is stable; keep the current minimap implementation as the default and rollback path.
+7. Modernize global doodad handling only if read-only enumeration and approximately 50,000-placement benchmarks beat the current implementation.
+8. Extend SpeciFX and cooldown helpers as separate workstreams.
+9. Implement the native-style aggregate `DEquipment` bonus layer and append-only 3.0 stat registry behind mutually exclusive per-stat rollback flags.
+10. Add ItemManager schema/UI/W3T support and backfill only a small reviewed equipment/tag test set.
+11. Implement the native inventory bridge and item-consumer integration only after equipment-bonus semantics and database round trips are stable.
+12. Enable every feature independently, with one changelog entry and rollback path per workstream.
 
 ## Validation gates
 
@@ -568,6 +573,14 @@ Do not schedule HD water doodads, HD decals, HD shadow blockers, or per-doodad H
 - [ ] Full map compiles through the normal World Editor/JassHelper workflow with the harness present but disabled.
 - [ ] Full map compiles and starts with the selected experimental path enabled; activating its suite is not required for an ordinary smoke session.
 - [ ] No archived Blizzard script is accidentally used by JassHelper or editor tooling.
+
+### Visual-first upgrades
+
+- [ ] With all new flags disabled, camera, fog, doodad behavior, initialization time, and normal gameplay match the pre-upgrade baseline.
+- [ ] Camera input remains local presentation state, middle-click reset still works, every cinematic/dialog/death/travel suspension restores correctly, and simultaneous two-player camera use produces no desync or cross-player movement.
+- [ ] Fog defaults remain visually identical until a reviewed preset is explicitly assigned; storm flashes and every override restore all old and new fields exactly.
+- [ ] Initial doodad enumeration is read-only, the test-instance mutation has a reliable reset, pathing and selection remain unchanged, and no global `DoodadRender` replacement occurs without a favorable full-map performance comparison.
+- [ ] Camera, fog, and doodad changes can be disabled independently so troubleshooting one workstream never requires reverting the other two.
 
 ### Inventory and equipment
 
