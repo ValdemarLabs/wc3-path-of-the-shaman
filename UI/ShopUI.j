@@ -14,8 +14,9 @@
       https://www.hiveworkshop.com/threads/custom-rpg-shop-system.372995/
 
     How to install:
-    Import after Shop, VendorLines, DialogCamera, MasterUI, Interface, and Table. Vendor dialogs can open
-    the panel with ShopUI_ShowForVendor(vendor, hero).
+    Import after Shop, VendorLines, DialogCamera, MasterUI, Interface, Table,
+    and CameraControl. Vendor dialogs can open the panel with
+    ShopUI_ShowForVendor(vendor, hero).
 
     API:
     - call ShopUI_ShowForVendor(vendor, buyer)
@@ -34,7 +35,7 @@
       participant attacks, is attacked, dies, or enters combat.
 
 **/
-library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCamera, MasterUI, Interface, DialogInteraction, DialogSystem
+library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCamera, MasterUI, Interface, DialogInteraction, DialogSystem, CameraControl
     globals
         private constant integer SUI_MAX_ROWS = 10
         private constant integer SUI_VISIBLE_ROWS = 7
@@ -732,7 +733,9 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
 
     private function SUI_HideInternal takes boolean playSound, boolean playOutcome, boolean restoreGameplay returns nothing
         local boolean returnToDialog = SUI_ReturnToDialog and playOutcome
+        local player activePlayer = SUI_GetActivePlayer()
 
+        call CameraControl_SetMouseOrbitBlockReason(activePlayer, CameraControl_MOUSE_ORBIT_BLOCK_SHOP, false)
         set SUI_ScrollUpdateQueued = false
         if SUI_ScrollUpdateTimer != null then
             call PauseTimer(SUI_ScrollUpdateTimer)
@@ -753,6 +756,7 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
         set SUI_SelectedCategory = Shop_GetAllCategoryName()
         set SUI_RandomVendorLineRemaining = 0.00
         call SUI_ClearExternalInterruptHandler()
+        set activePlayer = null
     endfunction
 
     public function Hide takes nothing returns nothing
@@ -1248,6 +1252,7 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
         call Shop_BeginTradeSessionForUnits(SUI_VendorId, vendor, buyer)
         set SUI_RandomVendorLineRemaining = VendorLines_GetRandomLineInterval(SUI_VendorId)
         set p = GetOwningPlayer(buyer)
+        call CameraControl_SetMouseOrbitBlockReason(p, CameraControl_MOUSE_ORBIT_BLOCK_SHOP, true)
         if returnToDialog then
             call BlzFrameSetText(SUI_CloseButton, "Back")
         else
