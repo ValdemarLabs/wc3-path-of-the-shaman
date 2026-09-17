@@ -1,5 +1,44 @@
 # DoodadRenderManager — Implementation Plan
 
+## Warcraft III 3.0 indexed-backend update
+
+The original plan below predates Warcraft III 3.0 and its doodad enumeration
+and single-instance animation natives. Its statement that JASS cannot enumerate
+doodads is historical and applies only to the original area-based design.
+
+`DoodadRender` 1.4.0 now retains that design as the production-default `area`
+backend and adds an opt-in `indexed` comparison backend:
+
+```text
+area
+    rawcode + SetDoodadAnimationRect
+
+indexed
+    BlzGetNumDoodads + indexed X/Y/rawcode getters
+    runtime type/cell linked lists
+    BlzSetSingleDoodadAnimation on entering/leaving instances
+```
+
+The indexed database is built lazily so normal startup retains the legacy cost.
+Both backends use the same `DoodadManager` rawcodes, distances, camera grid,
+cinematic suspension, and full-show restoration. The indexed backend is a
+benchmark candidate, not a production replacement.
+
+The comparison must distinguish three different outcomes:
+
+1. steady-state FPS improvement;
+2. only reduced camera-cell transition stutter/native lookup cost;
+3. no useful improvement because individual `hide` animation still does not
+   remove meaningful persistent engine rendering work.
+
+Keep the area backend, or disable the renderer entirely, unless the full-map
+disabled/area/indexed matrix shows a material benefit without unacceptable
+index-build cost, visibility errors, multiplayer issues, or transition spikes.
+
+---
+
+## Original area-backend design
+
 ## 1. Objective
 
 Implement a pure in-game JASS/vJASS `DoodadRenderManager` that reduces rendering load from selected preplaced doodad types by hiding doodads outside a configurable camera-centered render area.
