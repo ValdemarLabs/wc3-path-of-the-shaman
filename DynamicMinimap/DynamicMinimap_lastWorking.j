@@ -2,11 +2,12 @@
     DynamicMinimap
 
     Author: Valdemar
-    Version: 1.5
+    Version: 1.6.0
 
     Description:
-        Swaps 256-coordinate minimap chunks and updates matching camera bounds.
-        Full/chunked map modes and normal/enlarged frame layouts can be toggled.
+        Supports imported 256-coordinate minimap chunks or Warcraft III 3.0
+        terrain generation within the current camera bounds. Full/chunked map
+        modes and normal/enlarged frame layouts can be toggled.
         Approaching chunk borders can request a gentle safe-angle correction
         from CameraControl. Cinematic suspension cancels all pending chunk work
         and restores the full-map presentation.
@@ -17,13 +18,15 @@
         https://www.hiveworkshop.com/threads/setcamerabounds-camera-rotation-bug.319374/
 
     How to install:
-        Import the pre-rendered 256x256 BLP chunks and full-map texture under
-        war3mapImported\, import this library after Interface, and configure the
-        map, camera, and minimap-art bounds below. Import CameraControl after
-        this library to service smooth safe-rotation requests.
+        Enable "generate dynamically within camera bounds" in World Editor for
+        native terrain mode. Imported mode additionally requires the pre-rendered
+        256x256 BLP chunks and full-map texture under war3mapImported\. Import
+        this library after Interface and configure the map, camera, and minimap-
+        art bounds below. Import CameraControl after this library to service
+        smooth safe-rotation requests.
 
     Uses:
-    - BlzChangeMinimapTerrainTex to swap minimap texture chunks
+    - Optional BlzChangeMinimapTerrainTex swaps for imported texture chunks
     - SetCameraBoundsToRect to constrain camera to the visible chunk area
     - Optional CameraControl integration for non-cinematic safety turns
     - Frame manipulation to enlarge/shrink minimap on demand
@@ -67,12 +70,22 @@
         DynamicMinimap_SetModeToggleKey(oskeytype)
         DynamicMinimap_GetMinimapEnlarged()
         DynamicMinimap_SetFullMapMode(enable)
+        DynamicMinimap_GetFullMapMode()
+        DYNAMIC_MINIMAP_SOURCE_IMPORTED
+        DYNAMIC_MINIMAP_SOURCE_NATIVE
+        DynamicMinimap_SetRenderSource(source) -> boolean
+        DynamicMinimap_GetRenderSource()
+        DynamicMinimap_GetRenderSourceName()
+        DynamicMinimap_IsEnabled()
         DynamicMinimap_SetVisible(visible)
         DynamicMinimap_GetVisible()
 **/
 library DynamicMinimap initializer Init requires Interface
 
 globals
+    constant integer DYNAMIC_MINIMAP_SOURCE_IMPORTED = 0
+    constant integer DYNAMIC_MINIMAP_SOURCE_NATIVE = 1
+
     // ================= CONFIGURATION //===========================================================================
     private constant boolean DEBUG = false
     private constant real UPDATE_INTERVAL = 0.1  // How often to check for updates (default; 0.1)
@@ -113,6 +126,8 @@ globals
     private constant string TEXTURE_PREFIX = "war3mapImported\\minimap_"
     private constant string TEXTURE_SUFFIX = ".blp"
     private constant string FULL_MAP_TEXTURE = "war3mapImported\\minimap_full.blp"
+    // Imported remains the default until the 3.0 map-option path passes the full-map matrix.
+    private constant integer DEFAULT_RENDER_SOURCE = DYNAMIC_MINIMAP_SOURCE_IMPORTED
 
     // Minimap size toggle configuration (enlarges/shrinks minimap)
     private constant boolean ENABLE_SIZE_TOGGLE = true  // Enable minimap size toggle
@@ -135,6 +150,7 @@ globals
     private integer currentGridStep = DEFAULT_GRID_STEP
     private boolean enabled = true
     private boolean fullMapMode = false
+    private integer renderSource = DEFAULT_RENDER_SOURCE
     private integer lastTileX = -1
     private integer lastTileY = -1
     private rect currentBoundsRect = null
@@ -215,6 +231,10 @@ private function IsCameraRotationSafe takes nothing returns boolean
     return rotation < ILLEGAL_ROTATION_MIN or rotation > ILLEGAL_ROTATION_MAX
 endfunction
 
+private function IsValidRenderSource takes integer source returns boolean
+    return source == DYNAMIC_MINIMAP_SOURCE_IMPORTED or source == DYNAMIC_MINIMAP_SOURCE_NATIVE
+endfunction
+
 function DynamicMinimap_HasSafeRotationRequest takes nothing returns boolean
     return safeRotationRequested and scriptedCameraSuspendDepth == 0
 endfunction
@@ -276,7 +296,7 @@ private function TryApplyPendingMapUpdate takes nothing returns boolean
         return false
     endif
 
-    if pendingTextureChange then
+    if pendingTextureChange and renderSource == DYNAMIC_MINIMAP_SOURCE_IMPORTED then
         call BlzChangeMinimapTerrainTex(pendingTexturePath)
     endif
 
@@ -322,7 +342,7 @@ private function RestoreOriginalCameraBounds takes nothing returns nothing
 endfunction
 
 private function RequestFullMapUpdate takes nothing returns nothing
-    call QueueMapUpdate(FULL_MAP_TEXTURE, true, false, -1, -1, CAMERA_WORLD_MIN_X, CAMERA_WORLD_MIN_Y, CAMERA_WORLD_MAX_X, CAMERA_WORLD_MAX_Y)
+    call QueueMapUpdate(FULL_MAP_TEXTURE, renderSource == DYNAMIC_MINIMAP_SOURCE_IMPORTED, false, -1, -1, CAMERA_WORLD_MIN_X, CAMERA_WORLD_MIN_Y, CAMERA_WORLD_MAX_X, CAMERA_WORLD_MAX_Y)
 endfunction
 
 private function UpdateMinimapAndBounds takes integer chunkCoordX, integer chunkCoordY returns nothing
@@ -358,7 +378,9 @@ private function UpdateMinimapAndBounds takes integer chunkCoordX, integer chunk
     set maxX = centerX + boundsHalfWidth
     set maxY = centerY + boundsHalfHeight
 
-    call QueueMapUpdate(texturePath, true, true, chunkCoordX, chunkCoordY, minX, minY, maxX, maxY)
+    // The 3.0 map option derives terrain from camera bounds. Imported mode
+    // retains the existing explicit texture swap with identical bounds.
+    call QueueMapUpdate(texturePath, renderSource == DYNAMIC_MINIMAP_SOURCE_IMPORTED, true, chunkCoordX, chunkCoordY, minX, minY, maxX, maxY)
     
     if DEBUG then
         call BJDebugMsg("Minimap chunk: " + texturePath)
@@ -480,6 +502,46 @@ function DynamicMinimap_ForceUpdate takes nothing returns nothing
     call PeriodicUpdate()
 endfunction
 
+function DynamicMinimap_SetRenderSource takes integer source returns boolean
+    if not IsValidRenderSource(source) then
+        return false
+    endif
+    if renderSource == source then
+        return true
+    endif
+
+    set renderSource = source
+    set lastTileX = -1
+    set lastTileY = -1
+    set cameraTargetSampled = false
+    call CancelSafeRotationRequest()
+    call CancelPendingMapUpdate()
+
+    if scriptedCameraSuspendDepth == 0 then
+        if fullMapMode then
+            call RequestFullMapUpdate()
+        else
+            call DynamicMinimap_ForceUpdate()
+        endif
+    endif
+    return true
+endfunction
+
+function DynamicMinimap_GetRenderSource takes nothing returns integer
+    return renderSource
+endfunction
+
+function DynamicMinimap_GetRenderSourceName takes nothing returns string
+    if renderSource == DYNAMIC_MINIMAP_SOURCE_NATIVE then
+        return "native"
+    endif
+    return "imported"
+endfunction
+
+function DynamicMinimap_IsEnabled takes nothing returns boolean
+    return enabled
+endfunction
+
 function DynamicMinimap_SetChunkSize takes integer tiles returns nothing
     set currentChunkSize = tiles
     set lastTileX = -1 // Force update
@@ -547,7 +609,9 @@ function DynamicMinimap_SuspendForScriptedCamera takes nothing returns nothing
         // The texture swap itself is safe and ensures cinematics always display
         // the full map. Full bounds are restored only when the entry rotation is
         // safe; no bounds operation may remain queued after camera ownership moves.
-        call BlzChangeMinimapTerrainTex(FULL_MAP_TEXTURE)
+        if renderSource == DYNAMIC_MINIMAP_SOURCE_IMPORTED then
+            call BlzChangeMinimapTerrainTex(FULL_MAP_TEXTURE)
+        endif
         if IsCameraRotationSafe() then
             call RestoreOriginalCameraBounds()
         elseif DEBUG then
@@ -616,6 +680,10 @@ function DynamicMinimap_SetFullMapMode takes boolean enable returns nothing
             call BJDebugMsg("|cff00ff00DynamicMinimap: Chunked mode enabled|r")
         endif
     endif
+endfunction
+
+function DynamicMinimap_GetFullMapMode takes nothing returns boolean
+    return fullMapMode
 endfunction
 
 //===========================================================================
@@ -981,6 +1049,7 @@ private function Init takes nothing returns nothing
         call BJDebugMsg("|cff00ff00DynamicMinimap: Initialized|r")
         call BJDebugMsg("|cffAAAAFFChunk size: " + I2S(currentChunkSize) + "x" + I2S(currentChunkSize) + " tiles|r")
         call BJDebugMsg("|cffAAAAFFGrid step: " + I2S(currentGridStep) + " tiles|r")
+        call BJDebugMsg("|cffAAAAFFRender source: " + DynamicMinimap_GetRenderSourceName() + "|r")
     endif
     set gameUI = null
     set parentFrame = null
