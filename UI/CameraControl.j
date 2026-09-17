@@ -2,9 +2,9 @@
     CameraControl
     
     Author: [Valdemar]
-    Version: 1.3.0
+    Version: 1.4.0
 
-    Description: Keeps each player's camera behavior consistent, including modes, target tracking, basic movement controls, and optional DynamicMinimap safety turns.
+    Description: Keeps each player's camera behavior consistent, including modes, target tracking, basic movement controls, and optional DynamicMinimap safety turns. Experimental camera-type and input-ownership APIs are local presentation probes and remain disabled by default.
 
     Credits: Tasyen (TasQuestBox as inspiration), Rahko, Sabe
 
@@ -26,6 +26,10 @@
     call CameraControl_SetMouseOrbitBlockReason(whichPlayer, reason, blocked)
     call CameraControl_SetExperimentalCameraType(whichPlayer, cameraType) returns boolean
     call CameraControl_ResetExperimentalCameraType(whichPlayer)
+    call CameraControl_SetExperimentalInputOwnership(whichPlayer, enabled)
+    call CameraControl_ResetExperimentalInputOwnership(whichPlayer)
+    call CameraControl_IsExperimentalInputOwnershipEnabled(whichPlayer) returns boolean
+    call CameraControl_IsExperimentalInputOwnershipApplied(whichPlayer) returns boolean
 
 **/
 library CameraControl initializer AutoInit requires FixedCameraLock, AdvancedCameraSystem, ArrowKeyMovement, FallenHeroState, optional DynamicMinimap
@@ -167,6 +171,13 @@ globals
     private real array CC_MouseOrbitTravel
     private boolean array CC_CameraTypeSnapshotValid
     private integer array CC_CameraTypeSnapshot
+    private boolean array CC_InputOwnershipEnabled
+    private boolean array CC_InputOwnershipSnapshotValid
+    private boolean array CC_InputOwnershipDistanceSnapshot
+    private boolean array CC_InputOwnershipFarZSnapshot
+    private boolean array CC_InputOwnershipAngleSnapshot
+    private boolean array CC_InputOwnershipFovSnapshot
+    private boolean array CC_InputOwnershipRotationSnapshot
     private timer array CC_ResumeTimer
     private integer array CC_WoundedSeed
     private integer array CC_WoundedNextBeatTicks
@@ -692,6 +703,43 @@ private function CC_GetAdvancedResumeRotation takes player whichPlayer returns r
     return CC_Rotation[CC_GetPlayerIndex(whichPlayer)]
 endfunction
 
+// The ownership probe is local, disabled by default, and restores every field it changes.
+private function CC_ApplyExperimentalInputOwnership takes player whichPlayer returns nothing
+    local integer pid = CC_GetPlayerIndex(whichPlayer)
+
+    if GetLocalPlayer() == whichPlayer and CC_InputOwnershipEnabled[pid] then
+        call SetCameraFieldControlledByInput(CAMERA_FIELD_TARGET_DISTANCE, false)
+        call SetCameraFieldControlledByInput(CAMERA_FIELD_FARZ, false)
+        call SetCameraFieldControlledByInput(CAMERA_FIELD_ANGLE_OF_ATTACK, false)
+        call SetCameraFieldControlledByInput(CAMERA_FIELD_FIELD_OF_VIEW, false)
+        call SetCameraFieldControlledByInput(CAMERA_FIELD_ROTATION, false)
+    endif
+endfunction
+
+private function CC_CaptureInputOwnership takes integer pid returns nothing
+    if CC_InputOwnershipSnapshotValid[pid] then
+        return
+    endif
+    set CC_InputOwnershipDistanceSnapshot[pid] = GetCameraFieldControlledByInput(CAMERA_FIELD_TARGET_DISTANCE)
+    set CC_InputOwnershipFarZSnapshot[pid] = GetCameraFieldControlledByInput(CAMERA_FIELD_FARZ)
+    set CC_InputOwnershipAngleSnapshot[pid] = GetCameraFieldControlledByInput(CAMERA_FIELD_ANGLE_OF_ATTACK)
+    set CC_InputOwnershipFovSnapshot[pid] = GetCameraFieldControlledByInput(CAMERA_FIELD_FIELD_OF_VIEW)
+    set CC_InputOwnershipRotationSnapshot[pid] = GetCameraFieldControlledByInput(CAMERA_FIELD_ROTATION)
+    set CC_InputOwnershipSnapshotValid[pid] = true
+endfunction
+
+private function CC_RestoreInputOwnership takes integer pid returns nothing
+    if CC_InputOwnershipSnapshotValid[pid] then
+        call SetCameraFieldControlledByInput(CAMERA_FIELD_TARGET_DISTANCE, CC_InputOwnershipDistanceSnapshot[pid])
+        call SetCameraFieldControlledByInput(CAMERA_FIELD_FARZ, CC_InputOwnershipFarZSnapshot[pid])
+        call SetCameraFieldControlledByInput(CAMERA_FIELD_ANGLE_OF_ATTACK, CC_InputOwnershipAngleSnapshot[pid])
+        call SetCameraFieldControlledByInput(CAMERA_FIELD_FIELD_OF_VIEW, CC_InputOwnershipFovSnapshot[pid])
+        call SetCameraFieldControlledByInput(CAMERA_FIELD_ROTATION, CC_InputOwnershipRotationSnapshot[pid])
+    endif
+    set CC_InputOwnershipEnabled[pid] = false
+    set CC_InputOwnershipSnapshotValid[pid] = false
+endfunction
+
 private function CC_UpdateNormalEffectiveDistance takes player whichPlayer returns nothing
     local integer pid = CC_GetPlayerIndex(whichPlayer)
     local unit target = CC_GetFallbackTarget(whichPlayer)
@@ -1185,6 +1233,7 @@ private function CC_ApplyMode takes player whichPlayer returns nothing
     local integer pid = CC_GetPlayerIndex(whichPlayer)
     local integer mode = CC_Mode[pid]
 
+    call CC_ApplyExperimentalInputOwnership(whichPlayer)
     if CC_IsSuspended(whichPlayer) then
         return
     endif
@@ -1851,6 +1900,7 @@ public function SetExperimentalCameraType takes player whichPlayer, integer came
         set CC_CameraTypeSnapshotValid[pid] = true
     endif
     call BlzCameraSetCameraType(cameraType)
+    call CC_ApplyExperimentalInputOwnership(whichPlayer)
     return BlzCameraGetCameraType() == cameraType
 endfunction
 
@@ -1860,11 +1910,41 @@ public function ResetExperimentalCameraType takes player whichPlayer returns not
     if GetLocalPlayer() == whichPlayer and CC_CameraTypeSnapshotValid[pid] then
         call BlzCameraSetCameraType(CC_CameraTypeSnapshot[pid])
         set CC_CameraTypeSnapshotValid[pid] = false
+        call CC_ApplyExperimentalInputOwnership(whichPlayer)
     endif
 endfunction
 
 public function HasExperimentalCameraTypeSnapshot takes player whichPlayer returns boolean
     return CC_CameraTypeSnapshotValid[CC_GetPlayerIndex(whichPlayer)]
+endfunction
+
+public function SetExperimentalInputOwnership takes player whichPlayer, boolean enabled returns nothing
+    local integer pid = CC_GetPlayerIndex(whichPlayer)
+
+    if GetLocalPlayer() != whichPlayer then
+        return
+    endif
+    if enabled then
+        call CC_CaptureInputOwnership(pid)
+        set CC_InputOwnershipEnabled[pid] = true
+        call CC_ApplyExperimentalInputOwnership(whichPlayer)
+    else
+        call CC_RestoreInputOwnership(pid)
+    endif
+endfunction
+
+public function ResetExperimentalInputOwnership takes player whichPlayer returns nothing
+    call SetExperimentalInputOwnership(whichPlayer, false)
+endfunction
+
+public function IsExperimentalInputOwnershipEnabled takes player whichPlayer returns boolean
+    return CC_InputOwnershipEnabled[CC_GetPlayerIndex(whichPlayer)]
+endfunction
+
+public function IsExperimentalInputOwnershipApplied takes player whichPlayer returns boolean
+    local integer pid = CC_GetPlayerIndex(whichPlayer)
+
+    return CC_InputOwnershipEnabled[pid] and not GetCameraFieldControlledByInput(CAMERA_FIELD_TARGET_DISTANCE) and not GetCameraFieldControlledByInput(CAMERA_FIELD_FARZ) and not GetCameraFieldControlledByInput(CAMERA_FIELD_ANGLE_OF_ATTACK) and not GetCameraFieldControlledByInput(CAMERA_FIELD_FIELD_OF_VIEW) and not GetCameraFieldControlledByInput(CAMERA_FIELD_ROTATION)
 endfunction
 
 private function CC_OnLeftDown takes nothing returns nothing
@@ -2122,6 +2202,8 @@ public function Init takes nothing returns nothing
         set CC_MouseOrbitBlockCount[i] = 0
         call CC_CancelMouseOrbit(i)
         set CC_CameraTypeSnapshotValid[i] = false
+        set CC_InputOwnershipEnabled[i] = false
+        set CC_InputOwnershipSnapshotValid[i] = false
         set CC_ResumeTimer[i] = CreateTimer()
         set i = i + 1
     endloop
