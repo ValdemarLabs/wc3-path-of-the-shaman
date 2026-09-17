@@ -12,7 +12,8 @@
     - emperor_d3st, original Destroyer inventory and equipment system
 
     How to install:
-    Import after DConfigurationArea and before DInventory and DEquipment.
+    Import after DConfigurationArea, ItemLootSystem, ExSound, FallenHeroState,
+    and CameraControl, and before DInventory and DEquipment.
 
     API:
     - set capacity = MaxDInvCapacityOfUnit(unit)
@@ -27,7 +28,7 @@
     - call DInvDropStoredItemsForUnit(unit, x, y)
 
 **/
-library SharedDInvLib initializer Init requires DConfigurationArea, ItemLootSystem, ExSound, FallenHeroState
+library SharedDInvLib initializer Init requires DConfigurationArea, ItemLootSystem, ExSound, FallenHeroState, CameraControl
 
 globals
 // Core
@@ -396,6 +397,7 @@ set DEqCurrentSlotIdActive[pid] = 0
 set DEqCurrentUnit[pid] = null
 set CurrentEQId[pid] = -1
 call BlzFrameSetVisible(EquipmentBackDropFrame[pid], FALSE)
+call CameraControl_SetMouseOrbitBlockReason(Player(pid), CameraControl_MOUSE_ORBIT_BLOCK_EQUIPMENT, false)
 endfunction
 
 
