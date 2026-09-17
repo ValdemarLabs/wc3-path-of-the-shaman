@@ -25,12 +25,14 @@ generation. Cooldown adjustment remains a separate combat-semantics workstream.
 The effect probe is disabled at startup. It creates one synchronized test effect
 per triggering player only after `/debug wc3 effects create`, and it has an
 explicit destroy/reset command. DynamicMinimap still initializes normally, but
-its default terrain source remains the established imported route until the
-native matrix passes.
+its production terrain source remains the established imported route. The first
+full-map visual comparison rejected native generation because terrain and
+destructibles alone were materially less detailed than the authored chunk art.
+Native mode remains available only as a diagnostic comparison.
 
 ## Build and import gate
 
-Task IDs: `W3-PH0-046`, `W3-PH0-047`, `W3-PH5-035` through `W3-PH5-038`,
+Task IDs: `W3-PH0-046`, `W3-PH0-047`, `W3-PH5-035` through `W3-PH5-042`,
 and `W3-PH8-001` through `W3-PH8-004`.
 
 Required environment:
@@ -140,7 +142,7 @@ both. Do not migrate a production effect merely to satisfy this test.
 
 ## Dynamic minimap validation
 
-Task IDs: `W3-PH0-047`, `W3-PH5-035` through `W3-PH5-038`.
+Task IDs: `W3-PH0-047`, `W3-PH5-035` through `W3-PH5-042`.
 
 World Editor's "generate dynamically within camera bounds" option is already
 enabled in the map. `DynamicMinimap` now applies the same safe camera-bounds
@@ -152,8 +154,9 @@ transaction in both terrain modes:
   option to derive terrain from the current camera bounds.
 
 There is no build-24268 native that explicitly says "regenerate native minimap
-now." Therefore switching from an already applied custom texture back to native
-terrain is a required runtime experiment, not an assumed guarantee.
+now." The first visual comparison already rejected native terrain as the PotS
+production presentation. Switching from an applied custom texture back to native
+terrain is therefore optional diagnostic evidence, not a remaining release gate.
 
 ### Baseline and source matrix
 
@@ -188,7 +191,7 @@ this is why the camera-bounds transaction remains part of the implementation.
 Full view must restore the full PotS world bounds. Repeat the same terrain,
 icons, pings, markers, fog, transition, layout, and performance observations.
 
-### Runtime source switching
+### Optional diagnostic source switching
 
 Repeat this sequence at least ten times without reloading:
 
@@ -200,14 +203,13 @@ Repeat this sequence at least ten times without reloading:
 ```
 
 If native terrain does not return after an imported texture was applied, record
-that engine limitation. In that case native mode must be selected as the
-library's initial configuration before the first imported swap, and switching
-back to native at runtime must be disabled or documented as reload-only. Do not
-remove imported assets on the strength of a native-first startup test alone.
+that engine limitation and reset/reload to the imported source. This does not
+block production because imported chunks remain the accepted default and no
+imported assets will be removed.
 
 ### Ownership, suspension, and endurance
 
-For both sources and both full/chunked views:
+For the imported production source in both full/chunked views:
 
 1. Cross chunk boundaries at safe and unsafe camera rotations and confirm the
    existing deferred safe-rotation path remains crash-free.
@@ -217,14 +219,28 @@ For both sources and both full/chunked views:
    selected terrain source or world bounds.
 4. Run at least 30 minutes with repeated transitions and watch for lag growth,
    stale terrain, stuck bounds, missing icons, or camera/minimap disagreement.
-5. In two clients, select different sources and views. Each client must retain
-   its local minimap and camera bounds without changing synchronized gameplay or
-   the other client's presentation.
+5. In two clients, select different full/chunked views while keeping the imported
+   source. Each client must retain its local minimap and camera bounds without
+   changing synchronized gameplay or the other client's presentation.
 
-Acceptance for replacing imported chunks requires native mode to meet or exceed
-the imported route for legibility and stability, survive runtime switching or
-have an accepted startup-only constraint, and pass the long-session/two-client
-gate. Imported chunks and conversion tooling remain rollback assets until then.
+The same procedure may be repeated with native mode as a diagnostic, but native
+results no longer gate the imported production route.
+
+Native generation failed the production-quality gate in the first full-map
+comparison: it showed terrain/destructibles but looked materially less detailed
+than the custom chunks. Imported chunks and conversion tooling therefore remain
+required production assets. Remaining minimap work is calibration rather than
+source replacement: verify map-world/camera-world bounds directly from World
+Editor, capture `View Entire Map` at the exact full extent, preserve the
+uncropped source, regenerate chunks, and tune only documented art offsets.
+
+Repository follow-up completed on 17 September 2026: the generated full-map
+script confirms terrain bounds X `-29184..32256`, Y `-32256..29184`, matching
+the previous library values. `DynamicMinimap` 1.7.0 now derives the terrain
+bounds from `bj_mapInitialPlayableArea` and the authored full-camera limits from
+the engine camera margins during initialization, so future World Editor size or
+margin changes are not duplicated in source constants. Reimport/compile and
+edge/corner runtime confirmation remain required.
 
 ## Two-client gate
 
@@ -233,31 +249,32 @@ gate. Imported chunks and conversion tooling remain rollback assets until then.
 3. Confirm both clients see the same two effects and animation requests.
 4. Destroy player 1's probe; player 2's probe must remain.
 5. Destroy player 2's probe and continue synchronized gameplay for five minutes.
-6. Run the minimap ownership/endurance procedure with deliberately different
-   source and full/chunked choices on the two clients.
+6. Run the minimap ownership/endurance procedure with the imported source and
+   deliberately different full/chunked choices on the two clients.
 
 Pass criteria: identical synchronized effects, no cross-player cleanup, no
 disconnect/desync, and no camera or gameplay state derived from an unsynchronized
 local coordinate. Only the camera target is local; `DebugCommands` synchronizes
-that coordinate before effect creation. Each client's minimap source, view mode,
-and camera bounds must remain independent and must not affect synchronized state.
+that coordinate before effect creation. Each client's minimap view mode and camera
+bounds must remain independent and must not affect synchronized state.
 
 ## Result recording
 
 | Date/time | Task ID(s) | Client/player | Command/action | Result | Evidence/notes |
 | --- | --- | --- | --- | --- | --- |
-|  | `W3-PH0-046`, `W3-PH8-001` through `W3-PH8-004` |  | World Editor/JassHelper compile | PENDING |  |
+| 2026-09-17 | `W3-PH0-046`, `W3-PH0-047`, `W3-PH8-001` through `W3-PH8-004` | Player 1 | Initial P2 World Editor/JassHelper compile and startup | PASS | Runtime SpeciFX and minimap commands were available; later CameraControl 1.6.0, harness 0.7.0, and minimap 1.7.0 revisions still need the incremental source gate |
 | 2026-09-17 | `W3-PH0-046`, `W3-PH8-001` through `W3-PH8-003` | Repository | Focused transformed-source `pjass` | PASS | Active build-24268 API; not a full JassHelper/import test |
 | 2026-09-17 | `W3-PH0-047`, `W3-PH5-036` through `W3-PH5-038` | Repository | Focused transformed-source `pjass` | PASS | DynamicMinimap and P2 harness structure; runtime terrain regeneration remains unproven |
-|  | `W3-PH8-001` |  | Named animation and queue | PENDING |  |
-|  | `W3-PH8-002` |  | Blend-time matrix | PENDING |  |
-|  | `W3-PH8-003` |  | Legacy animtype comparison | PENDING |  |
+| 2026-09-17 | `W3-PH8-001` | Player 1 | Named animation and queue | PASS (BASIC) | User reported the SpeciFX probes worked; model-variety and endurance checks remain |
+| 2026-09-17 | `W3-PH8-002` | Player 1 | Blend-time probe | PASS (BASIC) | User reported the SpeciFX probes worked; full value/model matrix remains |
+| 2026-09-17 | `W3-PH8-003` | Player 1 | Legacy animtype comparison | PASS (BASIC) | Existing compatibility path remained usable in the reported probe |
 |  | `W3-PH8-004` |  | Invalid name and 100-cycle cleanup | PENDING |  |
 |  | `W3-PH8-004` | Two clients | Independent probes and cleanup | PENDING |  |
-|  | `W3-PH5-035` | World Editor | Dynamic-within-camera-bounds option enabled | PASS | Enabled by Valdemar; runtime behavior not yet validated |
-|  | `W3-PH0-047`, `W3-PH5-036` |  | Imported/native source and visual matrix | PENDING |  |
-|  | `W3-PH5-037` |  | Native return after imported override; bounds requirement | PENDING |  |
-|  | `W3-PH5-038` | Two clients | Full/chunked ownership and endurance | PENDING |  |
+|  | `W3-PH5-035` | World Editor | Dynamic-within-camera-bounds option enabled | PASS | Enabled by Valdemar; native rendering was later tested and rejected for production visual quality |
+| 2026-09-17 | `W3-PH0-047`, `W3-PH5-036` | Player 1 | Imported/native visual comparison | NATIVE REJECTED | Native terrain/destructibles lacked the detail of custom chunk textures |
+| 2026-09-17 | `W3-PH5-037` | Player 1 | Production source decision | PASS — IMPORTED | Imported chunks remain required; source-image and bounds calibration are the remaining work |
+| 2026-09-17 | `W3-PH5-040` | Repository/generated full-map script | Bounds source audit and runtime derivation | PASS (SOURCE) | Exact map bounds confirmed; library now reads initialized map bounds and camera margins; runtime reimport pending |
+|  | `W3-PH5-038` | Two clients | Imported full/chunked ownership and endurance | PENDING | Native mode is optional diagnostic evidence only |
 
 ## Rollback
 
