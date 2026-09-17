@@ -2,24 +2,26 @@
     Warcraft300P2TestHarness
 
     Author: Valdemar
-    Version: 0.1.0
+    Version: 0.2.0
 
     Description:
     Provides explicit, resettable Warcraft III 3.0 P2 probes inside the full
-    PotS map. No effect is created and no probe runs at startup.
+    PotS map. No effect is created at startup; DynamicMinimap keeps its configured
+    default source until an explicit minimap command changes it locally.
 
     Credits:
 
     How to install:
-    Import SpeciFX before this library, then import this library before
-    DebugCommands.
+    Import SpeciFX and DynamicMinimap before this library, then import this
+    library before DebugCommands.
 
     API:
     - Warcraft300P2TestHarness_Execute(player, command, x, y, hasPoint) -> boolean
     - /debug wc3 effects help
+    - /debug wc3 minimap help
 
 **/
-library Warcraft300P2TestHarness requires SpeciFX
+library Warcraft300P2TestHarness requires SpeciFX, DynamicMinimap
     globals
         private constant string W3P_PREFIX = "|cffffcc80[WC3 3.0 P2]|r "
         private constant string W3P_EFFECT_MODEL = "units\\orc\\grunt\\grunt.mdl"
@@ -36,6 +38,13 @@ library Warcraft300P2TestHarness requires SpeciFX
         return StringLength(source) >= prefixLength and SubString(source, 0, prefixLength) == prefix
     endfunction
 
+    private function W3P_BooleanText takes boolean value returns string
+        if value then
+            return "true"
+        endif
+        return "false"
+    endfunction
+
     private function W3P_Message takes player whichPlayer, string message returns nothing
         call DisplayTextToPlayer(whichPlayer, 0.00, 0.00, W3P_PREFIX + message)
     endfunction
@@ -47,6 +56,7 @@ library Warcraft300P2TestHarness requires SpeciFX
     private function W3P_ShowHelp takes player whichPlayer returns nothing
         call W3P_Message(whichPlayer, "Effects: effects create | status | animation <name> | queue <name>")
         call W3P_Message(whichPlayer, "Effects: effects blend <seconds> | legacy | destroy")
+        call W3P_Message(whichPlayer, "Minimap: minimap status | source imported|native | view chunked|full | force")
     endfunction
 
     private function W3P_DestroyEffect takes player whichPlayer returns nothing
@@ -155,6 +165,35 @@ library Warcraft300P2TestHarness requires SpeciFX
         call W3P_Message(whichPlayer, "Requested the legacy animtype attack path.")
     endfunction
 
+    private function W3P_ShowMinimapStatus takes player whichPlayer returns nothing
+        if GetLocalPlayer() == whichPlayer then
+            call W3P_Message(whichPlayer, "Minimap source=" + DynamicMinimap_GetRenderSourceName() + ", fullMap=" + W3P_BooleanText(DynamicMinimap_GetFullMapMode()) + ", enabled=" + W3P_BooleanText(DynamicMinimap_IsEnabled()) + ".")
+        endif
+    endfunction
+
+    private function W3P_SetMinimapSource takes player whichPlayer, integer source returns nothing
+        local boolean accepted
+
+        if GetLocalPlayer() == whichPlayer then
+            set accepted = DynamicMinimap_SetRenderSource(source)
+            call W3P_Message(whichPlayer, "Minimap source request accepted=" + W3P_BooleanText(accepted) + ", active=" + DynamicMinimap_GetRenderSourceName() + ".")
+        endif
+    endfunction
+
+    private function W3P_SetMinimapView takes player whichPlayer, boolean fullMap returns nothing
+        if GetLocalPlayer() == whichPlayer then
+            call DynamicMinimap_SetFullMapMode(fullMap)
+            call W3P_Message(whichPlayer, "Minimap view fullMap=" + W3P_BooleanText(DynamicMinimap_GetFullMapMode()) + ".")
+        endif
+    endfunction
+
+    private function W3P_ForceMinimapUpdate takes player whichPlayer returns nothing
+        if GetLocalPlayer() == whichPlayer then
+            call DynamicMinimap_ForceUpdate()
+            call W3P_Message(whichPlayer, "Forced a local minimap refresh using " + DynamicMinimap_GetRenderSourceName() + " terrain.")
+        endif
+    endfunction
+
     public function Execute takes player whichPlayer, string command, real x, real y, boolean hasPoint returns boolean
         local string lowerCommand = StringCase(command, false)
         local string argument
@@ -178,6 +217,20 @@ library Warcraft300P2TestHarness requires SpeciFX
             call W3P_PlayLegacyAnimation(whichPlayer)
         elseif lowerCommand == "wc3 effects destroy" or lowerCommand == "wc3 effects reset" then
             call W3P_DestroyEffect(whichPlayer)
+        elseif lowerCommand == "wc3 minimap" or lowerCommand == "wc3 minimap help" then
+            call W3P_ShowHelp(whichPlayer)
+        elseif lowerCommand == "wc3 minimap status" then
+            call W3P_ShowMinimapStatus(whichPlayer)
+        elseif lowerCommand == "wc3 minimap source imported" then
+            call W3P_SetMinimapSource(whichPlayer, DYNAMIC_MINIMAP_SOURCE_IMPORTED)
+        elseif lowerCommand == "wc3 minimap source native" then
+            call W3P_SetMinimapSource(whichPlayer, DYNAMIC_MINIMAP_SOURCE_NATIVE)
+        elseif lowerCommand == "wc3 minimap view chunked" or lowerCommand == "wc3 minimap chunked" then
+            call W3P_SetMinimapView(whichPlayer, false)
+        elseif lowerCommand == "wc3 minimap view full" or lowerCommand == "wc3 minimap full" then
+            call W3P_SetMinimapView(whichPlayer, true)
+        elseif lowerCommand == "wc3 minimap force" then
+            call W3P_ForceMinimapUpdate(whichPlayer)
         else
             return false
         endif
