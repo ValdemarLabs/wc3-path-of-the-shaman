@@ -22,6 +22,13 @@
 
 ### Technical Updates
 
+- Updated `Zones/ZonesCore.j` and `EnvironmentSystems/WeatherSystemV4.j` with per-zone outdoor-weather suppression for Firelands, dungeons, caves, and inns, hiding overlapping rain/snow/wind emitters, rain-impact visuals, and weather audio while those zones are active.
+- Recorded the first imported full-map Warcraft III 3.0 harness run: the map compiled and started, and `/debug wc3 selftest` reported `7/7`.
+- Updated `UI/CameraControl.j` 1.6.0 with default-enabled local middle-drag mouse-look. It now polls `BlzIsMouseButtonPressed` directly from the existing 0.03-second camera-maintenance tick, establishes drag anchors with `BlzGetMouseScreenPosX/Y` and `BlzPixelToFrameX/Y`, and no longer depends on a mouse-down event to start an input timer. Existing UI blockers, camera suspension, dead-zone/clamp behavior, stored camera state, DynamicMinimap grace, and the runtime disable API remain. Updated `Debug/Warcraft300TestHarness.j` 0.7.0 so diagnostics describe the adopted input but are not required to use it.
+- Retained imported `DynamicMinimap` chunk textures as the production presentation after native camera-bounds generation showed only terrain/destructibles and lacked the authored detail of the custom map art. Updated `DynamicMinimap/DynamicMinimap_lastWorking.j` 1.7.0 to derive terrain bounds from `bj_mapInitialPlayableArea` and full-camera limits from engine margins instead of duplicated constants; the generated map confirms terrain bounds X `-29184..32256`, Y `-32256..29184`. Exact `View Entire Map` capture, regenerated chunks, and documented art offsets remain.
+- Recorded the first fog results: height fog looked good and remains an authoring candidate, while the `NEW_EXP` density-`0.0015` probe visually removed fog and is rejected at those parameters. The harness now refuses to reapply that known-bad preset and directs future exponential authoring to World Editor live preview first.
+- Recorded successful basic single-client `SpeciFX` named-animation, queued-animation, blend, legacy, and cleanup probes; endurance, invalid-name/model-variety, and two-client validation remain.
+- Retained the original area-based `DoodadRender` backend after the initial runtime comparison showed no meaningful reason to adopt the indexed backend. The indexed route remains diagnostic only; static Object Editor `dvis` testing is optional if a measured rendering problem reopens optimization work.
 - Archived changelog entries from 31.5.2026 through the earliest June 2025 entries into `_Changelogs/Archive/PotS Changelog 2026-05-2025-06.md`; the active changelog now retains entries from 1.6.2026 onward.
 - Updated `DoodadHider/DoodadRender.j` with an opt-in Warcraft III 3.0 indexed backend that lazily enumerates managed doodads into hashtable-backed type/cell lists and uses `BlzSetSingleDoodadAnimation` for entering/leaving instances. The existing rawcode/rectangle backend remains the production default and rollback.
 - Updated `Debug/Warcraft300TestHarness.j` with synchronized renderer backend selection, enable/disable, refresh, status, and resettable diagnostics for source/managed counts, index-build and rebuild time, native calls, transitions, worst transition time, and full refreshes.
@@ -67,14 +74,19 @@
 
 - Resolved the World Editor `Unsupported 16-bit Application`/null-read crash associated with `AltarOfStorms.mdx` and the affected Crypt model family by removing 32 malformed zero-face geosets and `AltarOfStorms.mdx`'s associated geoset-animation record.
 
+### Known Issues
+
+- The replacement direct-polling middle-drag mouse-look still needs its first World Editor compile and in-game sensitivity/direction/UI-suspension test. It intentionally uses middle mouse because right mouse remains Warcraft's smart-order button.
+- The current imported minimap art still needs exact alignment against the authored map bounds. The World Editor `View Entire Map` capture must cover the true full map extent before resizing and chunk generation.
+
 ### Actions Remaining
 
-- Run the doodad renderer performance matrix on one repeatable doodad-dense camera route: renderer disabled, legacy area backend, then indexed 3.0 backend. Record index counts/build time, average and low FPS, transition stutter, native calls, visibility correctness, cinematics, and two-client behavior before considering any default change.
-- Run the P2 native/imported minimap matrix, especially imported-to-native restoration, full/chunked camera bounds, cinematics, long-session behavior, and independent two-client modes. Keep imported textures and conversion tooling until native mode passes.
-- Import the P2 effect source set into the disposable full map and execute `_developer/Design Plans/Warcraft III 3.0 Upgrade/Warcraft III 3.0 P2 Validation Log.md`, including invalid-name, 100-cycle cleanup, and two-client effect tests on Warcraft III 3.0.0.24268.
-- Run `/debug wc3 selftest` and the reversible camera-ownership matrix in World Editor/game build 3.0.0.24268. Manual compilation, SD visual checks, and two-client behavior remain the P0/P1 acceptance gate while the new P2 work stays an isolated non-production probe.
-- Import the current P0/P1 source set into the disposable complete map and execute `_developer/Design Plans/Warcraft III 3.0 Upgrade/Warcraft III 3.0 P0-P1 Validation Log.md`. World Editor/JassHelper compilation, visual parity, authored pitch/roll checks, and simultaneous two-client behavior cannot be established by repository-only static checks.
-- Import and compile the new Warcraft III 3.0 harness through World Editor/JassHelper 3.0.0.24268, run its commands in the disposable full-map copy, and capture the initial single-player and two-client baseline before enabling any camera, fog, or doodad mutation.
+- Keep the legacy area-based doodad renderer. Reopen the detailed indexed-backend matrix or static Object Editor `dvis` A/B tests only if a repeatable measured doodad-rendering problem justifies more optimization work.
+- Reimport `DynamicMinimap/DynamicMinimap_lastWorking.j` 1.7.0, then capture the exact full-map image without crop/extent error, regenerate the imported full/chunk textures, and validate seams, corners, runtime-derived bounds, icons, and pings.
+- Complete the remaining P2 effect validation in `_developer/Design Plans/Warcraft III 3.0 Upgrade/Warcraft III 3.0 P2 Validation Log.md`, especially invalid-name/model-variety, 100-cycle cleanup, and two-client effect tests on Warcraft III 3.0.0.24268.
+- Reimport `UI/CameraControl.j` 1.6.0 and `Debug/Warcraft300TestHarness.j` 0.7.0, then play normally and hold middle mouse to rotate/pitch the camera; no debug command is required. Check drag direction, sensitivity, cursor-edge behavior, UI blockers, cinematics, and two-client locality.
+- Recompile after importing the direct-polling camera/harness and runtime-bounds minimap revisions. Repeat `/debug wc3 selftest`; the prior source set already passed `7/7`, while these incremental revisions still require their own compile/start smoke check.
+- Continue the reversible camera-ownership, representative-zone fog/restoration, SD visual, and two-client checks in World Editor/game build 3.0.0.24268. The initial single-client full-map gate is complete; these broader behavior gates remain.
 - Leave the production map on Game Data Version `The Frozen Throne`. Revisit the `Forsaken Kingdom` migration and DEquipment/WC3Manager stat carriers only as the final P4 workstream after lower-risk accepted upgrades are complete.
 - Keep the broken/fixed SHA-256 report and repair utility for regression checks. Any later collision-box, extent, or generated-camera cleanup is optional asset-health/performance work and is separate from the resolved World Editor crash.
 
