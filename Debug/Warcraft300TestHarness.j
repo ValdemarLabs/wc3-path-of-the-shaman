@@ -2,7 +2,7 @@
     Warcraft300TestHarness
 
     Author: Valdemar
-    Version: 0.5.0
+    Version: 0.7.0
 
     Description:
     Provides explicit Warcraft III 3.0 diagnostics and resettable camera, fog,
@@ -107,7 +107,7 @@ library Warcraft300TestHarness requires CameraControl, FogSystem, DoodadRender, 
         call W3T_Message(whichPlayer, "Baseline: status | selftest | camera | fog | doodads")
         call W3T_Message(whichPlayer, "Camera: camera orbit on|off | camera ownership on|off")
         call W3T_Message(whichPlayer, "Camera type: camera type | camera type set <0-16> | camera type reset")
-        call W3T_Message(whichPlayer, "Fog: fog test parity|height|exp | fog reset")
+        call W3T_Message(whichPlayer, "Fog: fog test parity|height | fog reset (exp preset disabled)")
         call W3T_Message(whichPlayer, "Doodads: doodads scan|cancel | doodads inspect <index> | doodads probe hide <index>|reset")
         call W3T_Message(whichPlayer, "Doodad renderer: doodads renderer status|area|indexed|on|off|refresh|reset")
         call W3T_Message(whichPlayer, "P2: effects help | minimap help")
@@ -122,7 +122,8 @@ library Warcraft300TestHarness requires CameraControl, FogSystem, DoodadRender, 
             set mouseX = BlzGetMouseScreenPosX()
             set mouseY = BlzGetMouseScreenPosY()
             call W3T_Message(whichPlayer, "Camera: mode=" + CameraControl_GetModeName(whichPlayer) + ", type=" + I2S(BlzCameraGetCameraType()) + ", suspended=" + W3T_BooleanText(CameraControl_IsSuspended(whichPlayer)))
-            call W3T_Message(whichPlayer, "Orbit: enabled=" + W3T_BooleanText(CameraControl_IsMouseOrbitEnabled(whichPlayer)) + ", blocked=" + W3T_BooleanText(CameraControl_IsMouseOrbitBlocked(whichPlayer)) + ", dragging=" + W3T_BooleanText(CameraControl_IsMouseOrbitDragging(whichPlayer)))
+            call W3T_Message(whichPlayer, "Mouse-look: enabled=" + W3T_BooleanText(CameraControl_IsMouseOrbitEnabled(whichPlayer)) + ", blocked=" + W3T_BooleanText(CameraControl_IsMouseOrbitBlocked(whichPlayer)) + ", pressed=" + W3T_BooleanText(CameraControl_IsMouseOrbitPressed(whichPlayer)) + ", dragging=" + W3T_BooleanText(CameraControl_IsMouseOrbitDragging(whichPlayer)))
+            call W3T_Message(whichPlayer, "Mouse-look trace: presses=" + I2S(CameraControl_GetMouseOrbitEventCount(whichPlayer)) + ", accepted=" + I2S(CameraControl_GetMouseOrbitAcceptedCount(whichPlayer)) + ", updates=" + I2S(CameraControl_GetMouseOrbitUpdateCount(whichPlayer)) + ", samples=" + I2S(CameraControl_GetMouseOrbitSampleCount(whichPlayer)) + ", cancels=" + I2S(CameraControl_GetMouseOrbitHeldCancelCount(whichPlayer)))
             call W3T_Message(whichPlayer, "Stored: distance=" + R2S(CameraControl_GetDistance(whichPlayer)) + ", angle=" + R2S(CameraControl_GetAngle(whichPlayer)) + ", rotation=" + R2S(CameraControl_GetRotation(whichPlayer)))
             call W3T_Message(whichPlayer, "Stored: farZ=" + R2S(CameraControl_GetFarZ(whichPlayer)) + ", fov=" + R2S(CameraControl_GetFov(whichPlayer)) + ", target=" + CameraControl_GetTargetName(whichPlayer))
             call W3T_Message(whichPlayer, "Client: active=" + W3T_BooleanText(BlzIsLocalClientActive()) + ", size=" + I2S(BlzGetLocalClientWidth()) + "x" + I2S(BlzGetLocalClientHeight()))
@@ -135,7 +136,7 @@ library Warcraft300TestHarness requires CameraControl, FogSystem, DoodadRender, 
     private function W3T_SetCameraOrbit takes player whichPlayer, boolean enabled returns nothing
         if GetLocalPlayer() == whichPlayer then
             call CameraControl_SetMouseOrbitEnabled(whichPlayer, enabled)
-            call W3T_Message(whichPlayer, "Bounded middle-mouse orbit enabled=" + W3T_BooleanText(enabled) + ".")
+            call W3T_Message(whichPlayer, "Local middle-drag mouse-look enabled=" + W3T_BooleanText(enabled) + ". It is enabled by default; this command is only an override.")
         endif
     endfunction
 
@@ -199,15 +200,17 @@ library Warcraft300TestHarness requires CameraControl, FogSystem, DoodadRender, 
     endfunction
 
     private function W3T_ApplyFogTest takes player whichPlayer, string testName returns nothing
+        if testName == "exp" then
+            call W3T_Message(whichPlayer, "NEW_EXP test disabled: density 0.0015 made fog disappear. Author and review a visible preset in World Editor first.")
+            return
+        endif
         call W3T_CaptureFogSnapshot(whichPlayer)
         if testName == "parity" then
             call FogSystem_SetPresetForPlayer(0, FogSystem_GetTargetStart(whichPlayer), FogSystem_GetTargetEnd(whichPlayer), 0.00, 0.00, 0.00, FogSystem_GetTargetStart(whichPlayer), FogSystem_GetTargetEnd(whichPlayer), 1.00, false, FogSystem_GetTargetRed(whichPlayer), FogSystem_GetTargetGreen(whichPlayer), FogSystem_GetTargetBlue(whichPlayer), whichPlayer)
         elseif testName == "height" then
             call FogSystem_SetPresetForPlayer(3, FogSystem_GetTargetStart(whichPlayer), FogSystem_GetTargetEnd(whichPlayer), 0.00, 0.00, 1000.00, FogSystem_GetTargetStart(whichPlayer), FogSystem_GetTargetEnd(whichPlayer), 0.85, false, FogSystem_GetTargetRed(whichPlayer), FogSystem_GetTargetGreen(whichPlayer), FogSystem_GetTargetBlue(whichPlayer), whichPlayer)
-        elseif testName == "exp" then
-            call FogSystem_SetPresetForPlayer(4, FogSystem_GetTargetStart(whichPlayer), FogSystem_GetTargetEnd(whichPlayer), 0.0015, 0.00, 0.00, FogSystem_GetTargetStart(whichPlayer), FogSystem_GetTargetEnd(whichPlayer), 1.00, false, FogSystem_GetTargetRed(whichPlayer), FogSystem_GetTargetGreen(whichPlayer), FogSystem_GetTargetBlue(whichPlayer), whichPlayer)
         else
-            call W3T_Message(whichPlayer, "Unknown fog test. Use parity, height, or exp.")
+            call W3T_Message(whichPlayer, "Unknown fog test. Use parity or height.")
             return
         endif
         call W3T_Message(whichPlayer, "Applied fog test '" + testName + "'. Use /debug wc3 fog reset before changing zones.")
@@ -390,7 +393,7 @@ library Warcraft300TestHarness requires CameraControl, FogSystem, DoodadRender, 
     endfunction
 
     private function W3T_ShowStatus takes player whichPlayer returns nothing
-        call W3T_Message(whichPlayer, "Harness 0.5.0 for game build " + W3T_GAME_BUILD + "; every mutation requires an explicit command.")
+        call W3T_Message(whichPlayer, "Harness 0.7.0 for game build " + W3T_GAME_BUILD + "; camera mouse-look is production input, while test mutations still require explicit commands.")
         call W3T_ShowCamera(whichPlayer)
         call W3T_ShowFog(whichPlayer)
         call W3T_ShowDoodads(whichPlayer)
