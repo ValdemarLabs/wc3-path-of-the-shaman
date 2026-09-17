@@ -2,7 +2,7 @@
     Warcraft300TestHarness
 
     Author: Valdemar
-    Version: 0.3.1
+    Version: 0.4.0
 
     Description:
     Provides explicit Warcraft III 3.0 diagnostics and resettable camera, fog,
@@ -57,6 +57,8 @@ library Warcraft300TestHarness requires CameraControl, FogSystem, DoodadManager,
         private integer W3T_DoodadScanIdChecksum = 0
         private integer W3T_DoodadScanPositionChecksum = 0
         private integer W3T_DoodadProbeIndex = -1
+        private integer W3T_DoodadColorProbeIndex = -1
+        private integer W3T_DoodadColorResetId = -1
     endglobals
 
     private function W3T_BooleanText takes boolean value returns string
@@ -92,6 +94,19 @@ library Warcraft300TestHarness requires CameraControl, FogSystem, DoodadManager,
         return true
     endfunction
 
+    private function W3T_FindSpace takes string value, integer startIndex returns integer
+        local integer length = StringLength(value)
+
+        loop
+            exitwhen startIndex >= length
+            if SubString(value, startIndex, startIndex + 1) == " " then
+                return startIndex
+            endif
+            set startIndex = startIndex + 1
+        endloop
+        return -1
+    endfunction
+
     private function W3T_Message takes player whichPlayer, string message returns nothing
         call DisplayTextToPlayer(whichPlayer, 0.00, 0.00, W3T_PREFIX + message)
     endfunction
@@ -109,7 +124,8 @@ library Warcraft300TestHarness requires CameraControl, FogSystem, DoodadManager,
         call W3T_Message(whichPlayer, "Camera type: camera type | camera type set <0-16> | camera type reset")
         call W3T_Message(whichPlayer, "Fog: fog test parity|height|exp | fog reset")
         call W3T_Message(whichPlayer, "Doodads: doodads scan|cancel | doodads inspect <index> | doodads probe hide <index>|reset")
-        call W3T_Message(whichPlayer, "P2: effects help")
+        call W3T_Message(whichPlayer, "Doodad color: doodads probe color <index> <test 0-24> <original 0-24>")
+        call W3T_Message(whichPlayer, "P2: effects help | minimap help")
     endfunction
 
     private function W3T_ShowCamera takes player whichPlayer returns nothing
@@ -242,7 +258,7 @@ library Warcraft300TestHarness requires CameraControl, FogSystem, DoodadManager,
     endfunction
 
     private function W3T_ShowDoodads takes player whichPlayer returns nothing
-        call W3T_Message(whichPlayer, "Doodads: native count=" + I2S(BlzGetNumDoodads()) + ", scanActive=" + W3T_BooleanText(W3T_DoodadScanActive) + ", activeProbe=" + I2S(W3T_DoodadProbeIndex) + ".")
+        call W3T_Message(whichPlayer, "Doodads: native count=" + I2S(BlzGetNumDoodads()) + ", scanActive=" + W3T_BooleanText(W3T_DoodadScanActive) + ", animationProbe=" + I2S(W3T_DoodadProbeIndex) + ", colorProbe=" + I2S(W3T_DoodadColorProbeIndex) + ".")
     endfunction
 
     private function W3T_FinishDoodadScan takes nothing returns nothing
@@ -343,14 +359,32 @@ library Warcraft300TestHarness requires CameraControl, FogSystem, DoodadManager,
         call W3T_Message(whichPlayer, "Yaw/pitch/roll=" + R2S(BlzGetDoodadYaw(index)) + "," + R2S(BlzGetDoodadPitch(index)) + "," + R2S(BlzGetDoodadRoll(index)) + "; modelAxes=" + W3T_BooleanText(BlzGetDoodadIsUsingModelAxes(index)) + ".")
     endfunction
 
-    private function W3T_ResetDoodadProbe takes player whichPlayer returns nothing
-        if W3T_DoodadProbeIndex < 0 then
-            call W3T_Message(whichPlayer, "No doodad animation probe is active.")
+    private function W3T_ResetDoodadColorProbe takes player whichPlayer returns nothing
+        if W3T_DoodadColorProbeIndex < 0 then
             return
         endif
-        call BlzSetSingleDoodadAnimation(W3T_DoodadProbeIndex, "show", false)
-        call W3T_Message(whichPlayer, "Reset doodad probe index " + I2S(W3T_DoodadProbeIndex) + " with the show animation.")
-        set W3T_DoodadProbeIndex = -1
+        call BlzSetSingleDoodadColor(W3T_DoodadColorProbeIndex, ConvertPlayerColor(W3T_DoodadColorResetId))
+        call W3T_Message(whichPlayer, "Restored doodad color probe index " + I2S(W3T_DoodadColorProbeIndex) + " to color " + I2S(W3T_DoodadColorResetId) + ".")
+        set W3T_DoodadColorProbeIndex = -1
+        set W3T_DoodadColorResetId = -1
+    endfunction
+
+    private function W3T_ResetDoodadProbe takes player whichPlayer returns nothing
+        local boolean resetAnything = false
+
+        if W3T_DoodadProbeIndex >= 0 then
+            call BlzSetSingleDoodadAnimation(W3T_DoodadProbeIndex, "show", false)
+            call W3T_Message(whichPlayer, "Reset doodad probe index " + I2S(W3T_DoodadProbeIndex) + " with the show animation.")
+            set W3T_DoodadProbeIndex = -1
+            set resetAnything = true
+        endif
+        if W3T_DoodadColorProbeIndex >= 0 then
+            call W3T_ResetDoodadColorProbe(whichPlayer)
+            set resetAnything = true
+        endif
+        if not resetAnything then
+            call W3T_Message(whichPlayer, "No doodad animation or color probe is active.")
+        endif
     endfunction
 
     private function W3T_HideDoodadProbe takes player whichPlayer, integer index returns nothing
@@ -374,8 +408,58 @@ library Warcraft300TestHarness requires CameraControl, FogSystem, DoodadManager,
         call W3T_Message(whichPlayer, "Hidden doodad index " + I2S(index) + ". Use /debug wc3 doodads probe reset.")
     endfunction
 
+    private function W3T_ApplyDoodadColorProbe takes player whichPlayer, integer index, integer testColorId, integer resetColorId returns nothing
+        local integer count = BlzGetNumDoodads()
+        local integer doodadId
+
+        if index < 0 or index >= count then
+            call W3T_Message(whichPlayer, "Doodad index must be between 0 and " + I2S(count - 1) + ".")
+            return
+        endif
+        if testColorId < 0 or testColorId > 24 or resetColorId < 0 or resetColorId > 24 then
+            call W3T_Message(whichPlayer, "Test and original colors must use player-color IDs 0 through 24.")
+            return
+        endif
+        set doodadId = BlzGetDoodadId(index)
+        if W3T_IsManagedDoodad(doodadId) then
+            call W3T_Message(whichPlayer, "Color probe rejected: " + W3T_RawCodeText(doodadId) + " is owned by DoodadRender.")
+            return
+        endif
+        call W3T_ResetDoodadColorProbe(whichPlayer)
+        set W3T_DoodadColorProbeIndex = index
+        set W3T_DoodadColorResetId = resetColorId
+        call BlzSetSingleDoodadColor(index, ConvertPlayerColor(testColorId))
+        call W3T_Message(whichPlayer, "Colored doodad index " + I2S(index) + " with color " + I2S(testColorId) + "; reset color=" + I2S(resetColorId) + ".")
+    endfunction
+
+    private function W3T_ParseDoodadColorProbe takes player whichPlayer, string argument returns nothing
+        local integer firstSpace = W3T_FindSpace(argument, 0)
+        local integer secondSpace
+        local string indexText
+        local string testColorText
+        local string resetColorText
+
+        if firstSpace < 0 then
+            call W3T_Message(whichPlayer, "Use: doodads probe color <index> <test 0-24> <original 0-24>.")
+            return
+        endif
+        set secondSpace = W3T_FindSpace(argument, firstSpace + 1)
+        if secondSpace < 0 then
+            call W3T_Message(whichPlayer, "Use: doodads probe color <index> <test 0-24> <original 0-24>.")
+            return
+        endif
+        set indexText = SubString(argument, 0, firstSpace)
+        set testColorText = SubString(argument, firstSpace + 1, secondSpace)
+        set resetColorText = SubString(argument, secondSpace + 1, StringLength(argument))
+        if not W3T_IsUnsignedInteger(indexText) or not W3T_IsUnsignedInteger(testColorText) or not W3T_IsUnsignedInteger(resetColorText) then
+            call W3T_Message(whichPlayer, "Doodad index and both colors must be non-negative integers.")
+            return
+        endif
+        call W3T_ApplyDoodadColorProbe(whichPlayer, S2I(indexText), S2I(testColorText), S2I(resetColorText))
+    endfunction
+
     private function W3T_ShowStatus takes player whichPlayer returns nothing
-        call W3T_Message(whichPlayer, "Harness 0.3.1 for game build " + W3T_GAME_BUILD + "; every mutation requires an explicit command.")
+        call W3T_Message(whichPlayer, "Harness 0.4.0 for game build " + W3T_GAME_BUILD + "; every mutation requires an explicit command.")
         call W3T_ShowCamera(whichPlayer)
         call W3T_ShowFog(whichPlayer)
         call W3T_ShowDoodads(whichPlayer)
@@ -478,6 +562,9 @@ library Warcraft300TestHarness requires CameraControl, FogSystem, DoodadManager,
             else
                 call W3T_Message(whichPlayer, "Doodad index must be a non-negative integer.")
             endif
+        elseif W3T_StartsWith(lowerCommand, "wc3 doodads probe color ") then
+            set argument = SubString(lowerCommand, StringLength("wc3 doodads probe color "), StringLength(lowerCommand))
+            call W3T_ParseDoodadColorProbe(whichPlayer, argument)
         elseif lowerCommand == "wc3 doodads probe reset" then
             call W3T_ResetDoodadProbe(whichPlayer)
         else
