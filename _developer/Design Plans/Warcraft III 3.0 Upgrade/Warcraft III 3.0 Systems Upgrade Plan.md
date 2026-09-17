@@ -82,18 +82,18 @@ Example assignment:
 
 | High-level ID | Scope | Priority | Status | Child task IDs |
 | --- | --- | --- | --- | --- |
-| `W3-HL-HARNESS` | Full-map 3.0 harness and semantic probes | Foundation | IMPLEMENTED — MANUAL VALIDATION PENDING | `W3-PH0-*` |
+| `W3-HL-HARNESS` | Full-map 3.0 harness and semantic probes | Foundation | INITIAL FULL-MAP GATE PASSED — EXTENDED VALIDATION PENDING | `W3-PH0-*` |
 | `W3-HL-API` | Active native diff, Object Editor stat carriers, and Game Data Version compatibility | Foundation | BASELINE COMPLETE — P4 CARRIER RESEARCH DEFERRED | `W3-PH0-038` through `W3-PH0-044` |
 | `W3-HL-ITEMDATA` | WC3ItemManager schema, UI, W3T, and backfill | P4 / LAST | DEFERRED — DATA-VERSION MIGRATION RISK | `W3-PH1-*` |
 | `W3-HL-EQUIPMENT` | Native inventory bridge, equipment bonuses, stats, and UI | P4 / LAST | DEFERRED — DATA-VERSION MIGRATION RISK | `W3-PH2-*` |
 | `W3-HL-ITEMECO` | Item consumers, loot, quests, random items, and item color | P4 / LAST | DEFERRED — DATA-VERSION MIGRATION RISK | `W3-PH3-*` |
 | `W3-HL-COMBAT` | Cooldown, aura, and attack-reset APIs | P2/P3 | NOT STARTED | `W3-PH4-*` |
-| `W3-HL-CAMERA` | Camera ownership, local input, and bounded orbit | P0 | IMPLEMENTED — MANUAL VALIDATION PENDING | `W3-PH5-001` through `W3-PH5-034` |
-| `W3-HL-MINIMAP` | Dynamic minimap generation | P2 | IMPLEMENTED — MANUAL VALIDATION PENDING | `W3-PH0-047`, `W3-PH5-035` through `W3-PH5-039` |
-| `W3-HL-FOG` | Fog state, presets, parity, and restoration | P0 | IMPLEMENTED — MANUAL VALIDATION PENDING | `W3-PH6-001` through `W3-PH6-008` |
+| `W3-HL-CAMERA` | Camera ownership, local input, and bounded mouse-look | P0 | DIRECT LOCAL POLLING IMPLEMENTED — MANUAL VALIDATION PENDING | `W3-PH5-001` through `W3-PH5-034` |
+| `W3-HL-MINIMAP` | Dynamic minimap generation | P2 | IMPORTED CHUNKS RETAINED — CALIBRATION PENDING | `W3-PH0-047`, `W3-PH5-035` through `W3-PH5-042` |
+| `W3-HL-FOG` | Fog state, presets, parity, and restoration | P0 | HEIGHT CANDIDATE CONFIRMED — PARITY/MULTIPLAYER VALIDATION PENDING | `W3-PH6-001` through `W3-PH6-008` |
 | `W3-HL-LIGHTING` | SD lighting, omni lights, shadows, and post processing | P3 | NOT STARTED | `W3-PH6-009` through `W3-PH6-014` |
-| `W3-HL-DOODADS` | Doodad renderer performance, enumeration, instances, rotation, and axes | P1 | INDEXED BACKEND IMPLEMENTED — MANUAL BENCHMARK PENDING | `W3-PH7-*` |
-| `W3-HL-EFFECTS` | Special-effect animation and blending | P2 | IMPLEMENTED — MANUAL VALIDATION PENDING | `W3-PH8-001` through `W3-PH8-005` |
+| `W3-HL-DOODADS` | Doodad renderer performance, enumeration, instances, rotation, and axes | P1 | LEGACY RENDERER RETAINED — OPTIONAL TESTS DEFERRED | `W3-PH7-*` |
+| `W3-HL-EFFECTS` | Special-effect animation and blending | P2 | BASIC SINGLE-CLIENT PROBE PASSED — EXTENDED VALIDATION PENDING | `W3-PH8-001` through `W3-PH8-005` |
 | `W3-HL-HUD` | Orc HUD and hero-presentation compatibility | P2 | NOT STARTED | `W3-PH8-006` through `W3-PH8-009` |
 | `W3-HL-SOUND` | Editable sound-variable paths and exports | P3 | NOT STARTED | `W3-PH8-010` through `W3-PH8-012` |
 | `W3-HL-WORKFLOW` | Trigger authoring and World Editor workflow | P3 | NOT STARTED | `W3-PH8-013` through `W3-PH8-017` |
@@ -104,12 +104,12 @@ Example assignment:
 
 | Order | Priority | High-level ID | Task IDs | Deliverable | State |
 | ---: | --- | --- | --- | --- | --- |
-| 1 | P0 | `W3-HL-HARNESS` | `W3-PH0-017`, `W3-PH0-045`, `W3-VAL-001`, `W3-VAL-004` | Compile the passive harness, run its read-only self-test, and record an unchanged full-map baseline. | IMPLEMENTED; READY FOR WORLD EDITOR TEST |
+| 1 | P0 | `W3-HL-HARNESS` | `W3-PH0-017`, `W3-PH0-045`, `W3-VAL-001`, `W3-VAL-004` | Compile the passive harness, run its read-only self-test, and record an unchanged full-map baseline. | FULL-MAP COMPILE/START AND 7/7 SELF-TEST PASSED; BROADER BASELINE PENDING |
 | 2 | P0 | `W3-HL-CAMERA` | `W3-PH0-018`, `W3-PH5-008` through `W3-PH5-010`, `W3-VAL-024` | Establish the two-client local-input safety baseline. | READY FOR TWO-CLIENT TEST |
-| 3 | P0 | `W3-HL-CAMERA` | `W3-PH5-003`, `W3-PH5-004`, `W3-PH5-012`, `W3-PH5-013`, `W3-PH5-022` | Implement disabled, reversible camera-type, input-ownership, and bounded middle-mouse orbit probes. | IMPLEMENTED; RUNTIME TEST PENDING |
+| 3 | P0 | `W3-HL-CAMERA` | `W3-PH5-003`, `W3-PH5-004`, `W3-PH5-012`, `W3-PH5-013`, `W3-PH5-022` | Implement reversible camera-type/input-ownership probes and production middle-drag mouse-look. | DIRECT POLLING IMPLEMENTED; READY FOR PLAY TEST |
 | 4 | P0 | `W3-HL-CAMERA` | `W3-PH5-017` through `W3-PH5-021`, `W3-PH5-025`, `W3-PH5-029` through `W3-PH5-034` | Validate camera ownership, cancellation, UI suppression, suspension, performance, and multiplayer behavior. | IMPLEMENTED; READY FOR MATRIX TEST |
 | 5 | P0 | `W3-HL-FOG` | `W3-PH6-001`, `W3-PH6-003` through `W3-PH6-007`, `W3-VAL-006` | Capture legacy fog parity, introduce the complete preset state, and validate restoration/locality. | READY FOR CAPTURE AND TEST |
-| 6 | P1 | `W3-HL-DOODADS` | `W3-PH7-001`, `W3-PH7-004` through `W3-PH7-009`, `W3-PH7-015`, `W3-VAL-007` | Compare the legacy rawcode/rect renderer against an opt-in 3.0 instance-indexed backend using identical types and distances. | IMPLEMENTED; READY FOR PERFORMANCE MATRIX |
+| 6 | P1 | `W3-HL-DOODADS` | `W3-PH7-001`, `W3-PH7-004` through `W3-PH7-009`, `W3-PH7-015`, `W3-PH7-016`, `W3-VAL-007` | Retain the legacy rawcode/rect renderer; reopen indexed or static `dvis` experiments only for a measured performance need. | LEGACY AREA BACKEND ACCEPTED; OPTIONAL TESTS DEFERRED |
 
 The planned repository probes for every row are now present. Runtime-only evidence and exact commands are tracked in [`Warcraft III 3.0 P0-P1 Validation Log.md`](Warcraft%20III%203.0%20P0-P1%20Validation%20Log.md); `W3-HL-DOODADS` remains in progress because its authoring, persistence, pathing, and conditional optimization tasks are intentionally manual or evidence-gated.
 
@@ -127,11 +127,11 @@ The Foundation API baseline is complete for current work. Tasks `W3-PH0-041` thr
 
 | Order | Priority | High-level ID | Task IDs | Deliverable | State |
 | ---: | --- | --- | --- | --- | --- |
-| 1 | P2 | `W3-HL-EFFECTS` | `W3-PH0-046`, `W3-PH8-001` through `W3-PH8-004` | Add backward-compatible named animation, queue, and blend APIs with a resettable full-map probe. | IMPLEMENTED; READY FOR WORLD EDITOR TEST |
-| 2 | P2 | `W3-HL-MINIMAP` | `W3-PH0-047`, `W3-PH5-035` through `W3-PH5-038` | Compare native camera-bounds terrain generation with imported chunks while retaining the existing full/chunked bounds modes. | IMPLEMENTED; READY FOR MATRIX TEST |
+| 1 | P2 | `W3-HL-EFFECTS` | `W3-PH0-046`, `W3-PH8-001` through `W3-PH8-004` | Add backward-compatible named animation, queue, and blend APIs with a resettable full-map probe. | BASIC SINGLE-CLIENT PROBE PASSED; ENDURANCE/TWO-CLIENT TESTS PENDING |
+| 2 | P2 | `W3-HL-MINIMAP` | `W3-PH0-047`, `W3-PH5-035` through `W3-PH5-042` | Retain imported chunks and calibrate their world/camera bounds plus full-map source image against the authored map. | NATIVE VISUAL ROUTE REJECTED; IMPORTED CALIBRATION PENDING |
 | 3 | P2 | `W3-HL-COMBAT` | `W3-PH4-001` through `W3-PH4-006` | Establish cooldown-adjustment semantics, then migrate only proven Shaman use cases. | NOT STARTED — COMBAT SEMANTICS GATE |
 
-`W3-HL-EFFECTS` starts P2 because it can be added without changing existing effect call sites. The map's native camera-bounds minimap option is enabled; repository code can now select native or imported terrain without removing either full/chunked bounds mode. Doodad/destructible team coloring is excluded from the PotS upgrade, while cooldown migration remains blocked on combat-semantics evidence. Exact effect and minimap commands and acceptance criteria are recorded in [`Warcraft III 3.0 P2 Validation Log.md`](Warcraft%20III%203.0%20P2%20Validation%20Log.md).
+`W3-HL-EFFECTS` starts P2 because it can be added without changing existing effect call sites. The map's native camera-bounds minimap option remains available for diagnostics, but the full-map visual comparison selected imported chunks as the production source. Doodad/destructible team coloring is excluded from the PotS upgrade, while cooldown migration remains blocked on combat-semantics evidence. Exact effect and minimap commands and acceptance criteria are recorded in [`Warcraft III 3.0 P2 Validation Log.md`](Warcraft%20III%203.0%20P2%20Validation%20Log.md).
 
 ## W3-HL-HARNESS — Phase 0 - Full-map 3.0 validation harness
 
@@ -145,7 +145,7 @@ PotS integration tests must run in the complete map. A reduced map would omit th
 - [ ] **W3-PH0-004** — Reuse the real PotS heroes, existing stat-specific TEST items, Object Editor data, UI, zones, and systems. Add temporary test objects only where existing data cannot express a required positive, negative, or boundary case.
 - [ ] **W3-PH0-005** — Run position-dependent probes at the selected hero, current camera target, or a deliberately chosen existing development area. Do not add artificial rect duplicates merely to make a test self-contained.
 - [x] **W3-PH0-006** — Every current mutating probe has an explicit off/reset command; the doodad ledger also requires a map reload when a reviewed model lacks a reversible `hide`/`show` pair.
-- [x] **W3-PH0-007** — Feature flags remain separate from the harness: orbit starts disabled, extended fog requires an explicit test command, and doodad mutation is never part of startup.
+- [x] **W3-PH0-007** — Feature flags remain separate from the harness: production middle-drag mouse-look starts enabled but remains idle until local input, camera-type/input-ownership experiments remain disabled, extended fog requires an explicit test command, and doodad mutation is never part of startup.
 - [ ] **W3-PH0-008** — Print concise before/after values and PASS/FAIL invariants in game, then record the exact editor/client build, map build, SD graphics settings, suite, player, and feature-flag state in the associated developer notes. The read-only PASS/FAIL command is implemented; environment/evidence recording remains manual. _(Status: READY FOR TEST; Owner: Valdemar; Updated: 2026-09-17)_
 - [ ] **W3-PH0-009** — Test host and second player, full map reload, hero death/revival, morphing, item transfer, and item destruction where relevant.
 - [x] **W3-PH0-010** — Camera/input and fog presentation calls are locally guarded; the harness does not write local query results into synchronized gameplay state.
@@ -158,8 +158,8 @@ PotS integration tests must run in the complete map. A reduced map would omit th
 - [x] **W3-PH0-014** — Camera diagnostics report the existing `CameraControl` mode and stored fields plus 3.0 camera type, local-client state, resolution, mouse pixels/frame coordinates, and middle-button state. All local input/camera queries are guarded for the triggering local player.
 - [x] **W3-PH0-015** — Fog diagnostics report the effective current values, transition targets, fade state, and override depth without changing the existing linear fog path.
 - [x] **W3-PH0-016** — Passive doodad diagnostics call only `BlzGetNumDoodads`. Index enumeration and the single-instance animation probe require explicit commands; global renderer ownership remains disabled and coloring is excluded.
-- [ ] **W3-PH0-017** — Compile the imported harness in World Editor/JassHelper 3.0.0.24268 and capture the first full-map baseline. Repository-side inspection cannot establish runtime/native behavior. _(Status: READY FOR TEST; Owner: Valdemar; Updated: 2026-09-17)_
-- [ ] **W3-PH0-018** — Repeat the camera diagnostic with two clients at different camera positions before enabling the orbit prototype. _(Status: READY FOR TEST; Owner: Valdemar; Updated: 2026-09-17; Depends on: `W3-PH0-017`)_
+- [x] **W3-PH0-017** — Compile the imported harness in World Editor/JassHelper 3.0.0.24268 and capture the first full-map baseline. The map started and `/debug wc3 selftest` reported `7/7`; the wider representative-zone and two-client baseline remains under the applicable validation tasks. _(Status: PASSED INITIAL FULL-MAP GATE; Reported by: Valdemar; Updated: 2026-09-17)_
+- [ ] **W3-PH0-018** — Repeat the camera check with two clients at different camera positions and use the enabled middle-drag mouse-look independently. _(Status: READY FOR TEST; Owner: Valdemar; Updated: 2026-09-17; Depends on: `W3-PH0-017`)_
 - [x] **W3-PH0-045** — Added `/debug wc3 selftest`, a read-only local baseline that reports PASS/FAIL for client dimensions, camera type range, fog state invariants, full-map doodad visibility, and optional camera-ownership persistence without changing state.
 - [x] **W3-PH0-046** — Added `Debug/Warcraft300P2TestHarness.j` with an explicit, synchronized, resettable `wc3 effects` suite. It owns at most one probe effect per triggering player and performs no startup mutation.
 - [x] **W3-PH0-047** — Extended the P2 harness with local-only native/imported terrain-source selection, full/chunked view selection, force refresh, and status commands for `DynamicMinimap`; imported terrain remains the rollback default.
@@ -236,7 +236,7 @@ The production policy is therefore **defer, do not migrate now**. DEquipment, WC
 | --- | --- |
 | Extended inventory, equipment slots/events, classification, type, tag, and filtered random items | Planned under `W3-HL-ITEMDATA`, `W3-HL-EQUIPMENT`, and `W3-HL-ITEMECO`; remains behind semantic probes. |
 | Cooldown remaining/percent adjustment, attack reset, and aura enablement | Planned under `W3-HL-COMBAT`; gameplay-sensitive and not implied by the new stat carriers. |
-| Camera type/input ownership, held input, mouse screen coordinates, and pixel/frame conversion | Implemented behind disabled/local probes under `W3-HL-CAMERA`; runtime and two-client gates remain open. |
+| Camera type/input ownership, held input, mouse screen coordinates, and pixel/frame conversion | Camera type/ownership remain disabled probes; direct local middle-drag polling is implemented as production input under `W3-HL-CAMERA`; runtime and two-client gates remain open. |
 | Extended fog controls | Implemented with legacy-default parity under `W3-HL-FOG`; visual/locality gates remain open. |
 | Doodad enumeration/animation and destructable pitch/roll creation | Enumeration, a resettable per-instance animation probe, and an opt-in indexed `DoodadRender` backend are implemented under `W3-HL-DOODADS`; production migration remains open until initialization, transition-stutter, steady-FPS, correctness, and multiplayer gates pass. Doodad/destructible coloring is excluded. |
 | Special-effect named animation, queue, and blend time | Implemented behind explicit P2 probes under `W3-HL-EFFECTS`; production migration remains evidence-gated. |
@@ -253,12 +253,12 @@ The production policy is therefore **defer, do not migrate now**. DEquipment, WC
 
 ### Recommended first upgrade sequence
 
-Begin with camera, fog, and narrowly scoped doodad work. These systems can be introduced as opt-in presentation changes, compared directly against the current behavior, and disabled without migrating items, combat math, database rows, save-sensitive equipment state, or quest ownership rules. This visual-first decision supersedes the earlier recommendation to begin with `DEquipment`; the equipment/stat work remains planned but is deliberately postponed.
+Begin with camera, fog, and narrowly scoped doodad work. These systems are reversible presentation changes that can be compared directly against the current behavior and disabled without migrating items, combat math, database rows, save-sensitive equipment state, or quest ownership rules. This visual-first decision supersedes the earlier recommendation to begin with `DEquipment`; the equipment/stat work remains planned but is deliberately postponed.
 
 Recommended order:
 
 1. Add the minimum full-map harness commands and baseline capture needed for camera, fog, and doodad probes.
-2. Upgrade camera ownership and input handling first. Begin with diagnostics and a disabled bounded middle-mouse orbit prototype that writes only through the existing `CameraControl` state.
+2. Upgrade camera ownership and input handling first. Use direct local middle-button polling for bounded mouse-look and write only through the existing `CameraControl` state; keep camera-type and field-ownership experiments disabled.
 3. Extend fog storage and restoration while reproducing the current visuals exactly. Enable one new fog mode in one reviewed area only after legacy linear fog, storms, dungeons, and split-party presentation remain unchanged.
 4. Apply safe World Editor doodad authoring improvements to a small reviewed set, then test read-only doodad enumeration and one resettable single-instance animation probe. Do not replace global doodad rendering in this first pass.
 5. Compare performance, multiplayer behavior, and rollback results before expanding any of the three workstreams.
@@ -503,8 +503,8 @@ Implementation work:
 
 ### CameraControl
 
-- [x] **W3-PH5-001** — Camera ownership diagnostics and bounded orbit are implemented behind a developer command; orbit is disabled by default and the no-flag path retains existing behavior.
-- [x] **W3-PH5-002** — Add the non-mutating camera/input baseline command used before any ownership or orbit experiment.
+- [x] **W3-PH5-001** — Camera ownership diagnostics remain behind developer commands. Bounded middle-drag mouse-look is production input enabled by default, remains idle without local input, and can still be disabled through the existing API/debug override.
+- [x] **W3-PH5-002** — Add the non-mutating camera/input baseline command used for supporting evidence and ownership experiments; it is not required to activate production mouse-look.
 - [ ] **W3-PH5-003** — Prototype `BlzCameraSetCameraType`/`BlzCameraGetCameraType` and document valid integer camera types. The guarded `0`–`16` probe and reset are implemented; visual meanings require client testing. _(Status: READY FOR TEST; Owner: Valdemar; Updated: 2026-09-17)_
 - [x] **W3-PH5-004** — Added a disabled local `SetCameraFieldControlledByInput` ownership probe for distance, far Z, angle, field of view, and rotation. It snapshots every engine flag, gives PotS exclusive ownership while enabled, reapplies after mode/type changes, and restores the exact snapshot on reset; mode-matrix behavior remains a manual test.
 - [ ] **W3-PH5-005** — Evaluate `CAMERA_FIELD_ZABSOLUTE`, depth-of-field distance, and depth-of-field scale for cinematic presets only. _(Status: DEFERRED OPTIONAL EXPERIMENT; not required before P2; Updated: 2026-09-17)_
@@ -513,8 +513,8 @@ Implementation work:
 
 ### Input and coordinate APIs
 
-- [ ] **W3-PH5-008** — Evaluate `BlzIsKeyPressed`, `BlzIsMetaKeyPressed`, and `BlzIsMouseButtonPressed` for robust modifier and held-input state. Middle-button polling is implemented; held-state and focus behavior require client testing. _(Status: READY FOR TEST; Owner: Valdemar; Updated: 2026-09-17)_
-- [ ] **W3-PH5-009** — Evaluate `BlzGetMouseScreenPosX/Y` plus pixel/frame conversion for UI hit testing and drag interactions. Resolution-aware frame deltas are implemented; sensitivity requires client testing. _(Status: READY FOR TEST; Owner: Valdemar; Updated: 2026-09-17)_
+- [x] **W3-PH5-008** — `BlzIsMouseButtonPressed` now drives mouse-look directly from the existing always-running local camera tick. The implementation no longer depends on a mouse-down event to start a second timer. `BlzIsKeyPressed` and `BlzIsMetaKeyPressed` remain optional because the adopted gesture requires no modifier. _(Status: IMPLEMENTED FOR ADOPTED INPUT; Updated: 2026-09-17)_
+- [x] **W3-PH5-009** — `BlzGetMouseScreenPosX/Y` plus `BlzPixelToFrameX/Y` now establish the local press anchor and resolution-aware held-drag deltas. Cursor bounds, dead zone, and per-tick clamps remain in the production path. _(Status: IMPLEMENTED; Updated: 2026-09-17)_
 - [x] **W3-PH5-010** — Local input and camera results remain local presentation state and are not written into synchronized gameplay state.
 - [ ] **W3-PH5-011** — Replace `CameraControl`'s hidden item pathing probe with `BlzIsTerrainPathableEx` only if it matches the current collision behavior around items, cliffs, destructibles, water, and narrow passages. _(Status: CONDITIONAL EQUIVALENCE TEST; legacy path retained; not required before P2; Updated: 2026-09-17)_
 
@@ -538,21 +538,21 @@ Verified declarations in the active 3.0.0.24268 `common.j`:
 
 Initial behavior decision:
 
-- [x] **W3-PH5-012** — Implemented disabled bounded orbit around `CameraControl`'s current target: horizontal drag updates rotation and vertical drag updates angle through the existing stored-state application path.
-- [x] **W3-PH5-013** — Middle mouse is the prototype button; movement beyond the dead zone orbits, while a short click preserves the existing reset behavior.
-- [ ] **W3-PH5-014** — Keep right-drag as an optional experiment only. Warcraft III uses right-click for smart orders, so it must not become the default unless testing proves that dragging can avoid accidental unit orders and ground commands. _(Status: DEFERRED; bounded middle-drag is the accepted prototype; not required before P2; Updated: 2026-09-17)_
+- [x] **W3-PH5-012** — Implemented production bounded mouse-look around `CameraControl`'s current target: horizontal drag updates rotation and vertical drag updates angle through the existing stored-state application path.
+- [x] **W3-PH5-013** — Middle mouse is the production-safe drag button because it does not conflict with Warcraft smart orders. Movement beyond the dead zone rotates the camera, while a short click preserves the existing reset behavior.
+- [ ] **W3-PH5-014** — Keep right-drag as an optional experiment only. Warcraft III uses right-click for smart orders, so it must not become the default unless testing proves that dragging can avoid accidental unit orders and ground commands. _(Status: DEFERRED; bounded middle-drag is the adopted production-safe input; not required before P2; Updated: 2026-09-17)_
 - [ ] **W3-PH5-015** — Compare this custom orbit behavior with valid `BlzCameraSetCameraType` values before deciding whether PotS should implement every free-camera field itself. _(Status: READY FOR MANUAL TEST; no further repository implementation required; Updated: 2026-09-17)_
 - [ ] **W3-PH5-016** — Prototype `CAMERA_FIELD_ROTATION`/`CAMERA_FIELD_ANGLE_OF_ATTACK` first, then compare `CAMERA_FIELD_LOCAL_YAW`/`CAMERA_FIELD_LOCAL_PITCH` only where the selected camera type gives useful free-look behavior. _(Status: ROTATION/ANGLE IMPLEMENTED; LOCAL YAW/PITCH DEFERRED; not required before P2; Updated: 2026-09-17)_
 
 Local drag loop:
 
-1. On mouse-down, store the initial pixel X/Y, converted frame X/Y, current `CC_Rotation`, current `CC_Angle`, and accumulated drag distance.
-2. During the existing `CameraControl` update loop, poll `BlzIsMouseButtonPressed` and read the new screen position only for the local active client.
+1. During the existing 0.03-second camera tick, detect the local middle-button transition from released to held through `BlzIsMouseButtonPressed`, then store the converted frame X/Y anchor and clear accumulated drag distance.
+2. While held, read the new screen position only for the local active client; no mouse event is required to start sampling.
 3. Calculate resolution-aware deltas as the difference between successive `BlzPixelToFrameX/Y` results. Verify the Y-axis sign experimentally rather than assuming pixel and frame origins match.
 4. Apply sensitivity, dead-zone, and maximum-per-tick clamps so focus changes, cursor warps, or a stalled frame cannot cause a camera jump.
 5. Write through `CC_Rotation` and `CC_Angle` plus the existing camera-application path. Do not set camera fields behind `CameraControl`'s stored state, or its drift correction, resume logic, and DynamicMinimap safety rotation will fight the drag.
 6. Mark rotation input grace for DynamicMinimap in the same way as keyboard rotation.
-7. On release, focus loss, camera suspension, mode change, cinematic start, death camera, travel camera, or fullscreen UI takeover, clear the drag state and restore any cursor/input ownership changed by the prototype.
+7. On release, focus loss, camera suspension, mode change, cinematic start, death camera, travel camera, or fullscreen UI takeover, clear the drag state.
 8. If total movement remained below the dead zone, execute the existing middle-click camera reset; otherwise consume the gesture only as a camera drag.
 
 Local/multiplayer safety requirements:
@@ -565,30 +565,33 @@ Local/multiplayer safety requirements:
 
 Cursor policy:
 
-- [x] **W3-PH5-022** — The prototype is bounded, leaves the cursor visible, and never calls `BlzSetMousePos` or `BlzEnableCursor`.
+- [x] **W3-PH5-022** — The adopted mouse-look is bounded, leaves the cursor visible, and never calls `BlzSetMousePos` or `BlzEnableCursor`.
 - [ ] **W3-PH5-023** — Evaluate an optional captured mode that hides and recenters the cursor only after bounded dragging is stable. _(Status: DEFERRED; bounded visible-cursor policy retained; not required before P2; Updated: 2026-09-17)_
 - [ ] **W3-PH5-024** — If recentering is adopted, warp to the local client center before the cursor reaches an edge, ignore the synthetic post-warp delta, and restore the cursor on every exit path. _(Status: DEFERRED WITH `W3-PH5-023`; not required before P2; Updated: 2026-09-17)_
-- [x] **W3-PH5-025** — Drag state cancels when `BlzIsLocalClientActive()` is false; the bounded prototype never hides the cursor.
+- [x] **W3-PH5-025** — Drag state cancels when `BlzIsLocalClientActive()` is false; bounded mouse-look never hides the cursor.
 
 Prototype and regression matrix:
 
 - [ ] **W3-PH5-026** — Test 16:9, 16:10, 21:9, and 4:3 aspect ratios where available, plus windowed/fullscreen modes and Windows DPI scaling.
 - [ ] **W3-PH5-027** — Verify frame-space sensitivity is comparable across resolutions and UI scales.
 - [ ] **W3-PH5-028** — Test press without movement, small jitter, fast flicks, edge contact, focus loss, Alt-Tab, and release outside the client.
-- [ ] **W3-PH5-029** — Confirm middle click still resets and middle drag does not reset; no right-drag mode is implemented. _(Status: READY FOR TEST; Owner: Valdemar; Updated: 2026-09-17)_
+- [ ] **W3-PH5-029** — Confirm middle click still restores stored camera fields and middle drag changes rotation/angle without resetting; no right-drag mode is implemented because it would conflict with smart orders. CameraControl 1.6.0 removes the failed event-start dependency and enables direct polling by default. _(Status: READY FOR PLAY TEST; Owner: Valdemar; Updated: 2026-09-17)_
 - [ ] **W3-PH5-030** — Test over terrain, units, minimap, command card, inventory, equipment, shops, dialogue, quest UI, and fullscreen custom frames. _(Status: READY FOR TEST; Owner: Valdemar; Updated: 2026-09-17)_
 - [ ] **W3-PH5-031** — Test Normal, Advanced, Developer, special-zone, dialog, death, travel, and fullscreen cinematic camera transitions. _(Status: READY FOR TEST; Owner: Valdemar; Updated: 2026-09-17)_
-- [ ] **W3-PH5-032** — Verify suspend/resume restores the pre-interruption orbit exactly and never leaves camera fields controlled by the wrong owner. _(Status: READY FOR TEST; Owner: Valdemar; Updated: 2026-09-17)_
+- [ ] **W3-PH5-032** — Verify suspend/resume restores the pre-interruption camera state exactly and never leaves camera fields controlled by the wrong owner. _(Status: READY FOR TEST; Owner: Valdemar; Updated: 2026-09-17)_
 - [ ] **W3-PH5-033** — Run a two-player test with deliberately different simultaneous drags and confirm no desync or cross-player camera movement. _(Status: READY FOR TEST; Owner: Valdemar; Updated: 2026-09-17)_
-- [x] **W3-PH5-034** — Orbit reuses the existing camera input timer; the loop is paused when no keyboard input or enabled orbit requires polling and skips inactive players.
+- [x] **W3-PH5-034** — Mouse-look reuses the existing always-running 0.03-second drift/camera-maintenance timer, performs one local button query per client tick, and does not keep the separate keyboard-input timer active. This removes the mouse-event/timer-start dead path without adding another timer.
 
 ### W3-HL-MINIMAP — Dynamic minimap
 
 - [x] **W3-PH5-035** — Enabled World Editor's "generate dynamically within camera bounds" option in the PotS map. The option is the native terrain-generation mechanism; build 24268 exposes no separate script call that regenerates it on demand. _(Completed by: Valdemar; Updated: 2026-09-17)_
-- [ ] **W3-PH5-036** — Compare native generation against `DynamicMinimap/DynamicMinimap_lastWorking.j` imported chunks for resolution, painted colors, fog-of-war behavior, pings, quest icons, camera-bound transitions, source switching, and performance. Source selection and the command matrix are implemented. _(Status: READY FOR MATRIX TEST; Owner: Valdemar; Updated: 2026-09-17; Harness: `W3-PH0-047`)_
-- [ ] **W3-PH5-037** — Determine whether native generation can eliminate imported chunk textures. Retain the existing safe `SetCameraBounds` transaction during the test because the minimized/chunked minimap still needs its bounded world view; only remove it if runtime evidence proves an equivalent chunked view without it. Also verify whether switching from an already applied custom texture back to native terrain regenerates correctly. _(Status: READY FOR MATRIX TEST; Owner: Valdemar; Updated: 2026-09-17)_
-- [x] **W3-PH5-038** — Retained imported/native terrain sources and chunked/full-map modes behind reversible APIs and local debug commands. Imported terrain remains the default until native generation passes long-session and multiplayer testing.
-- [ ] **W3-PH5-039** — If native generation wins, remove imports and conversion tooling in a separate cleanup commit after rollback assets are archived.
+- [x] **W3-PH5-036** — Compared native generation against the imported chunks in the full map. Native generation showed terrain/destructibles but lacked the authored detail of the custom minimap art, so it is rejected as the PotS production presentation. _(Result: IMPORTED CHUNKS WIN ON VISUAL QUALITY; Reported by: Valdemar; Updated: 2026-09-17)_
+- [x] **W3-PH5-037** — Determined that native generation cannot eliminate the imported chunk textures without a visible quality loss. The minimized/chunked minimap continues using the existing safe camera-bounds transaction. _(Status: CLOSED — KEEP IMPORTED CHUNKS; Updated: 2026-09-17)_
+- [x] **W3-PH5-038** — Retained imported/native terrain sources and chunked/full-map modes behind reversible APIs and local debug commands. Imported terrain is the accepted production source; native mode remains diagnostic only.
+- [x] **W3-PH5-039** — Retired the conditional native-wins cleanup. Imported textures and their conversion workflow remain required PotS assets. _(Status: NOT APPLICABLE — NATIVE ROUTE REJECTED; Updated: 2026-09-17)_
+- [x] **W3-PH5-040** — Replaced duplicated minimap map-world and camera-world constants with runtime values from `bj_mapInitialPlayableArea` and `GetCameraMargin`. The generated full-map script independently confirms terrain bounds X `-29184..32256`, Y `-32256..29184`; authored camera limits remain those bounds reduced by the engine margins. _(Status: IMPLEMENTED; runtime reimport check pending; Updated: 2026-09-17)_
+- [ ] **W3-PH5-041** — Recapture the World Editor `View Entire Map` source at the exact full map extent, with no extra border and no missing terrain, before resizing or chunking. Archive the uncropped source and document every crop/resize dimension. _(Status: MANUAL WORLD EDITOR/ART STEP; Owner: Valdemar; Updated: 2026-09-17)_
+- [ ] **W3-PH5-042** — Regenerate the imported full-map and chunk textures from the verified source, then calibrate `MINIMAP_ART_OFFSET_X/Y` and test edge/corner alignment, adjacent chunk seams, camera limits, icons, and pings in minimized and enlarged layouts. _(Status: DEPENDS ON `W3-PH5-040` AND `W3-PH5-041`; Updated: 2026-09-17)_
 
 ## W3-HL-FOG — Phase 6 - Fog, lighting, and weather
 
@@ -614,7 +617,7 @@ Tasks:
 - [x] **W3-PH6-005** — `Stormv2.j` lightning flashes now preserve and restore legacy/extended mode, style, height, linear range, maximum density, draw-over-sky, Z range, density, and RGB.
 - [ ] **W3-PH6-006** — Reconcile `WeatherSystemV4`, `DNC`, fullscreen UI fog overrides, dungeon transitions, and per-selected-hero zone presentation. Active source audit found zone fog routed through `FogSystem` and no competing active 3.0 setter, but transitions require full-map testing. _(Status: READY FOR TEST; Owner: Valdemar; Updated: 2026-09-17)_
 - [ ] **W3-PH6-007** — Test which fog setters are safe as local visual calls and document the multiplayer rule. All setters are locally guarded in code; two-client behavior remains to be established. _(Status: READY FOR TEST; Owner: Valdemar; Updated: 2026-09-17)_
-- [ ] **W3-PH6-008** — Author representative linear, height, exponential, dungeon, snow, rain, and storm presets in the World Editor with live preview.
+- [ ] **W3-PH6-008** — Author representative linear, height, dungeon, snow, rain, and storm presets in the World Editor with live preview. The first height-fog probe looked good and remains a candidate. The `NEW_EXP` probe at density `0.0015` visually removed the fog and is rejected; the harness refuses to reapply it until a separately reviewed visible preset is authored in World Editor. _(Status: HEIGHT CANDIDATE; CURRENT NEW_EXP PRESET DISABLED; Updated: 2026-09-17)_
 
 ### Excluded HD water
 
@@ -640,11 +643,12 @@ Target natives include `BlzGetNumDoodads`, doodad index getters, and `BlzSetSing
 - [x] **W3-PH7-003** — The first pass does not replace `DoodadRender`; the probe rejects its managed rawcodes and the batched scan remains explicit and read-only.
 - [ ] **W3-PH7-004** — Test whether doodad indices are stable across clients, map saves, variations, and editor rebuilds. Count plus rawcode/position fingerprints are implemented for comparison. _(Status: READY FOR TEST; Owner: Valdemar; Updated: 2026-09-17)_
 - [x] **W3-PH7-005** — Added a lazy runtime spatial index from the 3.0 doodad index, X/Y, and rawcode natives. Hashtable-backed type/cell lists avoid JASS array-capacity dependence; build time, source count, and managed-instance count are exposed for the full-map benchmark.
-- [ ] **W3-PH7-006** — Compare the indexed `BlzSetSingleDoodadAnimation` backend against legacy `SetDoodadAnimationRect` for initialization cost, native-call count, transition stutter, correctness, and steady FPS on the current approximately 50,000 placements. Both backends and resettable diagnostics are implemented. _(Status: READY FOR PERFORMANCE MATRIX; Owner: Valdemar; Updated: 2026-09-17)_
+- [ ] **W3-PH7-006** — Compare the indexed `BlzSetSingleDoodadAnimation` backend against legacy `SetDoodadAnimationRect` for initialization cost, native-call count, transition stutter, correctness, and steady FPS on the current approximately 50,000 placements. An initial full-map check found no meaningful reason to replace the original renderer; run the detailed matrix only if a concrete doodad-performance problem justifies reopening it. _(Status: DEFERRED — NO OBSERVED BENEFIT; Updated: 2026-09-17)_
 - [x] **W3-PH7-007** — Both renderer backends reuse `DoodadManager` per-type distances and preserve enable/disable, refresh, cinematic suspension depth, and full-show restoration contracts. The legacy area backend remains the default.
 - [x] **W3-PH7-008** — The guarded test mutation uses `BlzSetSingleDoodadAnimation` for one reviewed index, so nearby same-type doodads are not intentionally included; runtime confirmation remains in `W3-VAL-007`.
-- [ ] **W3-PH7-009** — Retain the generated `war3map.doo` reference workflow and legacy area backend if runtime enumeration is slower, index behavior is unstable, or the indexed route does not materially improve transition cost or FPS. _(Status: LEGACY DEFAULT RETAINED; decision pending `W3-PH7-004` and `W3-PH7-006`; Updated: 2026-09-17)_
+- [x] **W3-PH7-009** — Retain the generated `war3map.doo` reference workflow and legacy area backend. The initial runtime check did not show a meaningful reason to replace it; the indexed implementation remains an optional diagnostic prototype. _(Status: LEGACY AREA BACKEND ACCEPTED; Updated: 2026-09-17)_
 - [x] **W3-PH7-015** — Added synchronized debug controls for area/indexed backend selection, enable/disable, refresh, status, and diagnostic reset. No indexed enumeration runs while the legacy default remains selected.
+- [ ] **W3-PH7-016** — If doodad rendering performance becomes a measured problem, A/B test static Object Editor `dvis`/Art - Visibility Radius values on high-count small decorative rawcodes. Build 24268 exposes no runtime doodad-field API, so this is a per-type map-data experiment rather than a dynamic JASS feature; preserve landmarks and reject visible pop-in. _(Status: OPTIONAL STATIC AUTHORING TEST; Updated: 2026-09-17)_
 
 ### Rotation and local axes
 
@@ -665,7 +669,7 @@ Do not schedule HD water doodads, HD decals, HD shadow blockers, or per-doodad H
 - [x] **W3-PH8-001** — Added direct-effect and managed-tag named-animation APIs using `BlzSetSpecialEffectAnimation` and `BlzQueueSpecialEffectAnimation`; blank names and null effects are ignored safely.
 - [x] **W3-PH8-002** — Added direct-effect and managed-tag blend-time APIs using `BlzSetSpecialEffectAnimationBlendTime`; negative input is normalized to zero.
 - [x] **W3-PH8-003** — Existing `animtype` support through `BlzPlaySpecialEffect` remains unchanged in `SpeciFX_ConfigureEffect`; the P2 harness includes a legacy attack-animation comparison.
-- [ ] **W3-PH8-004** — Test queued animation cleanup, invalid animation names, time scale, looping models, and effect destruction. The synchronized create/animation/queue/blend/legacy/destroy suite is implemented. _(Status: READY FOR TEST; Owner: Valdemar; Updated: 2026-09-17)_
+- [ ] **W3-PH8-004** — Test queued animation cleanup, invalid animation names, time scale, looping models, and effect destruction. The basic single-client named-animation, queue, blend, legacy, and cleanup probes worked; invalid-name, 100-cycle endurance, model-variety, and two-client checks remain. _(Status: BASIC PROBE PASSED; EXTENDED MATRIX PENDING; Owner: Valdemar; Updated: 2026-09-17)_
 - [ ] **W3-PH8-005** — Migrate only effects that currently require recreation or timers solely to sequence animations. _(Status: CONDITIONAL; no production effect call site is migrated in the first P2 slice; Updated: 2026-09-17)_
 
 ### W3-HL-HUD — Orc HUD compatibility and hero presentation
@@ -694,7 +698,7 @@ Do not schedule HD water doodads, HD decals, HD shadow blockers, or per-doodad H
 These IDs are rollout milestones. Close a milestone only when its underlying implementation tasks and applicable `W3-VAL-*` gates are complete.
 
 - [ ] **W3-PH9-001** — Add the disabled full-map 3.0 harness to the existing `/debug` workflow and record baseline semantics without changing production behavior.
-- [ ] **W3-PH9-002** — Add camera ownership diagnostics, then prototype bounded local middle-mouse orbit behind a disabled flag while preserving every existing camera mode and reset path.
+- [ ] **W3-PH9-002** — Validate the adopted direct-polling middle-drag mouse-look across every camera mode, UI blocker, suspension path, resolution, and two-client session; retain its runtime disable API as rollback.
 - [ ] **W3-PH9-003** — Extend the fog state model with exact legacy-default parity, then enable one reviewed 3.0 fog preset at a time.
 - [ ] **W3-PH9-004** — Apply small World Editor pitch/roll and local-axis improvements, run read-only doodad enumeration, and test one resettable instance-level animation probe.
 - [ ] **W3-PH9-005** — Benchmark the visual-first changes in long sessions and two-player tests before changing their production defaults.
@@ -710,13 +714,13 @@ These IDs are rollout milestones. Close a milestone only when its underlying imp
 
 ### Compilation
 
-- [ ] **W3-VAL-001** — Full map compiles through the normal World Editor/JassHelper workflow with the harness present but disabled. _(Status: READY FOR TEST; Owner: Valdemar; Updated: 2026-09-17)_
+- [x] **W3-VAL-001** — Full map compiles through the normal World Editor/JassHelper workflow with the harness present but disabled. The imported runtime build started and the read-only self-test reported `7/7`. CameraControl 1.6.0, harness 0.7.0, and DynamicMinimap 1.7.0 were added afterward and still require an incremental compile/start smoke check. _(Status: INITIAL SINGLE-CLIENT FULL-MAP GATE PASSED; Reported by: Valdemar; Updated: 2026-09-17)_
 - [ ] **W3-VAL-002** — Full map compiles and starts with the selected experimental path enabled; activating its suite is not required for an ordinary smoke session.
 - [ ] **W3-VAL-003** — No archived Blizzard script is accidentally used by JassHelper or editor tooling.
 
 ### Visual-first upgrades
 
-- [ ] **W3-VAL-004** — With all new flags disabled, camera, fog, doodad behavior, initialization time, and normal gameplay match the pre-upgrade baseline. _(Status: READY FOR TEST; Owner: Valdemar; Updated: 2026-09-17; Depends on: `W3-VAL-001`)_
+- [ ] **W3-VAL-004** — With experimental probes disabled and mouse-look idle, camera, fog, doodad behavior, initialization time, and normal gameplay match the pre-upgrade baseline. Then exercise the enabled middle drag separately. _(Status: READY FOR TEST; Owner: Valdemar; Updated: 2026-09-17; Depends on: `W3-VAL-001`)_
 - [ ] **W3-VAL-005** — Camera input remains local presentation state, middle-click reset still works, every cinematic/dialog/death/travel suspension restores correctly, and simultaneous two-player camera use produces no desync or cross-player movement.
 - [ ] **W3-VAL-006** — Fog defaults remain visually identical until a reviewed preset is explicitly assigned; storm flashes and every override restore all old and new fields exactly. _(Status: READY FOR TEST; Owner: Valdemar; Updated: 2026-09-17)_
 - [ ] **W3-VAL-007** — Initial doodad enumeration is read-only, the test-instance mutation has a reliable reset, pathing and selection remain unchanged, and no global `DoodadRender` replacement occurs without a favorable full-map performance comparison. _(Status: READY FOR TEST; Owner: Valdemar; Updated: 2026-09-17)_
