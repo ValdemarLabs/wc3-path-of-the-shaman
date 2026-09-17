@@ -13,6 +13,8 @@
 >
 > Use ###`Known Issues` for current confirmed problems, validation gaps, or incomplete/problematic behavior that still needs checking.
 >
+> Use ###`Resolved Issues` for the bigger issues that are fixed
+>
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
 
