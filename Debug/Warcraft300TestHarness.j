@@ -2,7 +2,7 @@
     Warcraft300TestHarness
 
     Author: Valdemar
-    Version: 0.2.0
+    Version: 0.3.1
 
     Description:
     Provides explicit Warcraft III 3.0 diagnostics and resettable camera, fog,
@@ -104,10 +104,12 @@ library Warcraft300TestHarness requires CameraControl, FogSystem, DoodadManager,
     endfunction
 
     private function W3T_ShowHelp takes player whichPlayer returns nothing
-        call W3T_Message(whichPlayer, "Baseline: status | camera | fog | doodads")
-        call W3T_Message(whichPlayer, "Camera: camera orbit on|off | camera type | camera type set <0-16> | camera type reset")
+        call W3T_Message(whichPlayer, "Baseline: status | selftest | camera | fog | doodads")
+        call W3T_Message(whichPlayer, "Camera: camera orbit on|off | camera ownership on|off")
+        call W3T_Message(whichPlayer, "Camera type: camera type | camera type set <0-16> | camera type reset")
         call W3T_Message(whichPlayer, "Fog: fog test parity|height|exp | fog reset")
         call W3T_Message(whichPlayer, "Doodads: doodads scan|cancel | doodads inspect <index> | doodads probe hide <index>|reset")
+        call W3T_Message(whichPlayer, "P2: effects help")
     endfunction
 
     private function W3T_ShowCamera takes player whichPlayer returns nothing
@@ -124,6 +126,8 @@ library Warcraft300TestHarness requires CameraControl, FogSystem, DoodadManager,
             call W3T_Message(whichPlayer, "Stored: farZ=" + R2S(CameraControl_GetFarZ(whichPlayer)) + ", fov=" + R2S(CameraControl_GetFov(whichPlayer)) + ", target=" + CameraControl_GetTargetName(whichPlayer))
             call W3T_Message(whichPlayer, "Client: active=" + W3T_BooleanText(BlzIsLocalClientActive()) + ", size=" + I2S(BlzGetLocalClientWidth()) + "x" + I2S(BlzGetLocalClientHeight()))
             call W3T_Message(whichPlayer, "Mouse: pixels=" + I2S(mouseX) + "," + I2S(mouseY) + ", frame=" + R2S(BlzPixelToFrameX(mouseX)) + "," + R2S(BlzPixelToFrameY(mouseY)) + ", middle=" + W3T_BooleanText(BlzIsMouseButtonPressed(MOUSE_BUTTON_TYPE_MIDDLE)))
+            call W3T_Message(whichPlayer, "Input ownership: enabled=" + W3T_BooleanText(CameraControl_IsExperimentalInputOwnershipEnabled(whichPlayer)) + ", applied=" + W3T_BooleanText(CameraControl_IsExperimentalInputOwnershipApplied(whichPlayer)))
+            call W3T_Message(whichPlayer, "Engine input: distance=" + W3T_BooleanText(GetCameraFieldControlledByInput(CAMERA_FIELD_TARGET_DISTANCE)) + ", farZ=" + W3T_BooleanText(GetCameraFieldControlledByInput(CAMERA_FIELD_FARZ)) + ", angle=" + W3T_BooleanText(GetCameraFieldControlledByInput(CAMERA_FIELD_ANGLE_OF_ATTACK)) + ", fov=" + W3T_BooleanText(GetCameraFieldControlledByInput(CAMERA_FIELD_FIELD_OF_VIEW)) + ", rotation=" + W3T_BooleanText(GetCameraFieldControlledByInput(CAMERA_FIELD_ROTATION)))
         endif
     endfunction
 
@@ -131,6 +135,17 @@ library Warcraft300TestHarness requires CameraControl, FogSystem, DoodadManager,
         if GetLocalPlayer() == whichPlayer then
             call CameraControl_SetMouseOrbitEnabled(whichPlayer, enabled)
             call W3T_Message(whichPlayer, "Bounded middle-mouse orbit enabled=" + W3T_BooleanText(enabled) + ".")
+        endif
+    endfunction
+
+    private function W3T_SetCameraInputOwnership takes player whichPlayer, boolean enabled returns nothing
+        if GetLocalPlayer() == whichPlayer then
+            call CameraControl_SetExperimentalInputOwnership(whichPlayer, enabled)
+            if enabled then
+                call W3T_Message(whichPlayer, "Camera input ownership applied=" + W3T_BooleanText(CameraControl_IsExperimentalInputOwnershipApplied(whichPlayer)) + ".")
+            else
+                call W3T_Message(whichPlayer, "Camera input ownership snapshot restored.")
+            endif
         endif
     endfunction
 
@@ -360,10 +375,49 @@ library Warcraft300TestHarness requires CameraControl, FogSystem, DoodadManager,
     endfunction
 
     private function W3T_ShowStatus takes player whichPlayer returns nothing
-        call W3T_Message(whichPlayer, "Harness 0.2.0 for game build " + W3T_GAME_BUILD + "; every mutation requires an explicit command.")
+        call W3T_Message(whichPlayer, "Harness 0.3.1 for game build " + W3T_GAME_BUILD + "; every mutation requires an explicit command.")
         call W3T_ShowCamera(whichPlayer)
         call W3T_ShowFog(whichPlayer)
         call W3T_ShowDoodads(whichPlayer)
+    endfunction
+
+    private function W3T_ReportCheck takes player whichPlayer, string label, boolean passed returns integer
+        if passed then
+            call W3T_Message(whichPlayer, "PASS: " + label)
+            return 1
+        endif
+        call W3T_Message(whichPlayer, "FAIL: " + label)
+        return 0
+    endfunction
+
+    private function W3T_IsNormalizedColor takes real value returns boolean
+        return value >= 0.00 and value <= 1.00
+    endfunction
+
+    private function W3T_RunSelfTest takes player whichPlayer returns nothing
+        local integer passed = 0
+        local integer total = 0
+        local integer cameraType
+
+        // All queried camera and client values are local presentation state.
+        if GetLocalPlayer() == whichPlayer then
+            set cameraType = BlzCameraGetCameraType()
+            set total = total + 1
+            set passed = passed + W3T_ReportCheck(whichPlayer, "local client dimensions are available", BlzGetLocalClientWidth() > 0 and BlzGetLocalClientHeight() > 0)
+            set total = total + 1
+            set passed = passed + W3T_ReportCheck(whichPlayer, "camera type is in the probed 0-16 range", cameraType >= 0 and cameraType <= 16)
+            set total = total + 1
+            set passed = passed + W3T_ReportCheck(whichPlayer, "fog override depth is non-negative", FogSystem_GetOverrideDepth() >= 0)
+            set total = total + 1
+            set passed = passed + W3T_ReportCheck(whichPlayer, "current fog color is normalized", W3T_IsNormalizedColor(FogSystem_GetCurrentRed(whichPlayer)) and W3T_IsNormalizedColor(FogSystem_GetCurrentGreen(whichPlayer)) and W3T_IsNormalizedColor(FogSystem_GetCurrentBlue(whichPlayer)))
+            set total = total + 1
+            set passed = passed + W3T_ReportCheck(whichPlayer, "target fog color is normalized", W3T_IsNormalizedColor(FogSystem_GetTargetRed(whichPlayer)) and W3T_IsNormalizedColor(FogSystem_GetTargetGreen(whichPlayer)) and W3T_IsNormalizedColor(FogSystem_GetTargetBlue(whichPlayer)))
+            set total = total + 1
+            set passed = passed + W3T_ReportCheck(whichPlayer, "full PotS map exposes doodad instances", BlzGetNumDoodads() > 0)
+            set total = total + 1
+            set passed = passed + W3T_ReportCheck(whichPlayer, "enabled camera ownership remains applied", not CameraControl_IsExperimentalInputOwnershipEnabled(whichPlayer) or CameraControl_IsExperimentalInputOwnershipApplied(whichPlayer))
+            call W3T_Message(whichPlayer, "Self-test result: " + I2S(passed) + "/" + I2S(total) + " checks passed; no state was changed.")
+        endif
     endfunction
 
     public function Execute takes player whichPlayer, string command returns boolean
@@ -374,12 +428,18 @@ library Warcraft300TestHarness requires CameraControl, FogSystem, DoodadManager,
             call W3T_ShowHelp(whichPlayer)
         elseif lowerCommand == "wc3 status" then
             call W3T_ShowStatus(whichPlayer)
+        elseif lowerCommand == "wc3 selftest" then
+            call W3T_RunSelfTest(whichPlayer)
         elseif lowerCommand == "wc3 camera" or lowerCommand == "wc3 camera status" then
             call W3T_ShowCamera(whichPlayer)
         elseif lowerCommand == "wc3 camera orbit on" then
             call W3T_SetCameraOrbit(whichPlayer, true)
         elseif lowerCommand == "wc3 camera orbit off" then
             call W3T_SetCameraOrbit(whichPlayer, false)
+        elseif lowerCommand == "wc3 camera ownership on" then
+            call W3T_SetCameraInputOwnership(whichPlayer, true)
+        elseif lowerCommand == "wc3 camera ownership off" or lowerCommand == "wc3 camera ownership reset" then
+            call W3T_SetCameraInputOwnership(whichPlayer, false)
         elseif lowerCommand == "wc3 camera type" then
             call W3T_ShowCamera(whichPlayer)
         elseif W3T_StartsWith(lowerCommand, "wc3 camera type set ") then
