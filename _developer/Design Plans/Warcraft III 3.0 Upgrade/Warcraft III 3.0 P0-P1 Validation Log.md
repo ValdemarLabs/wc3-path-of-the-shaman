@@ -26,9 +26,11 @@ repository-complete implementation from tests that can only be established in
 World Editor or the game client. A task is not recorded as passed merely because
 the native exists or the source passes static inspection.
 
-The harness is passive at startup. Camera orbit is disabled by default. Extended
-fog is used only by an explicit debug command. Doodad enumeration and mutation
-begin only through explicit debug commands.
+The harness is passive at startup. Production middle-drag mouse-look is enabled
+by default in `CameraControl` but remains idle without local input; camera-type
+and input-ownership experiments remain disabled. Extended fog is used only by an
+explicit debug command. Doodad enumeration and mutation begin only through
+explicit debug commands.
 
 ## Build and test environment
 
@@ -47,7 +49,10 @@ Repository-side baseline recorded on 17 September 2026:
   parses successfully with `_JassHelper/pjass.exe` against the active 3.0
   `common.j` and `blizzard.j`.
 - That generated script predates the changes listed below. It proves the
-  disposable map snapshot baseline only; it does not close `W3-VAL-001`.
+  disposable map snapshot baseline only. The later user-reported World Editor
+  compile/start and `7/7` self-test close the initial `W3-VAL-001` gate, while
+  CameraControl 1.6.0, harness 0.7.0, and DynamicMinimap 1.7.0 still require an
+  incremental reimport/compile smoke check.
 - A non-writing parser substitution replaced the generated map's old
   `CameraControl` globals/functions with the current source and passed `pjass`
   against the active 3.0 Blizzard API. `FogSystem` and the new harness also pass
@@ -64,10 +69,18 @@ Repository-side baseline recorded on 17 September 2026:
 
 | Workstream | Implemented and ready to import | Runtime-only evidence still required |
 | --- | --- | --- |
-| Harness | Explicit read-only self-test plus camera, fog, and doodad suites; reset commands; no startup mutation | Full-map compile/start and command output |
-| Camera | Disabled bounded middle-drag orbit, reversible input-ownership and camera-type probes, cancellation paths, source-specific modal blockers | Camera-type meanings, ownership semantics, UI matrix, two-client safety |
+| Harness | Explicit read-only self-test plus camera, fog, and doodad suites; reset commands; no startup mutation; initial full-map `7/7` result | Recompile harness 0.7.0; diagnostics are optional rather than required to use mouse-look |
+| Camera | Enabled direct-polling middle-drag mouse-look, reversible input-ownership and camera-type probes, cancellation paths, source-specific modal blockers | Recompile CameraControl 1.6.0; play-test drag direction/sensitivity, UI matrix, suspension, and two-client safety |
 | Fog | Complete legacy/extended current and target state, numeric interpolation, complete storm override restoration | Visual parity, zone/weather transitions, two-client locality |
-| Doodads | Batched read-only scan, fingerprints, inspection, one guarded hide/show probe, and legacy-area versus indexed-instance renderer backends | Index base/stability, index-build cost, steady FPS, transition stutter, renderer correctness, multiplayer locality, authoring/persistence/pathing checks |
+| Doodads | Batched read-only scan, fingerprints, inspection, one guarded hide/show probe, and legacy-area versus indexed-instance renderer backends; initial runtime comparison retained the legacy area route | Optional detailed index/performance matrix only if a measured problem reopens it; authoring/persistence/pathing checks remain |
+
+### Reported full-map findings — 17 September 2026
+
+- The imported map compiled, started, and `/debug wc3 selftest` reported `7/7`.
+- The first event-started middle-drag prototype did not provide usable control. CameraControl 1.6.0 replaces that path with direct local `BlzIsMouseButtonPressed` polling on the existing camera tick and enables it by default; this replacement still requires reimport and a play test.
+- The height-fog probe looked good and remains a candidate for authored zone presets.
+- The `NEW_EXP` probe at density `0.0015` visually removed the fog. Those parameters are rejected and must not be assigned to production zones.
+- The new doodad-renderer route showed no meaningful reason to replace the original renderer. The legacy `area` backend remains accepted; the indexed backend stays diagnostic only.
 
 ## Import and compilation gate
 
@@ -86,7 +99,8 @@ Task IDs: `W3-PH0-017`, `W3-PH0-045`, `W3-VAL-001`, `W3-VAL-004`.
    probe or change the imported minimap default at startup.
 3. Compile and save through World Editor/JassHelper 3.0.0.24268.
 4. Start the map without entering a debug command.
-5. Confirm no camera, fog, or doodad experiment activates automatically.
+5. Confirm mouse-look remains idle until middle-button input and no camera-type,
+   ownership, fog, or doodad experiment activates automatically.
 6. Record compile result, warnings, load time, initial FPS, and any changed
    initialization behavior under [Result recording](#result-recording).
 
@@ -94,7 +108,7 @@ Pass criteria:
 
 - No JassHelper compile error or missing requirement.
 - Map reaches normal gameplay.
-- Orbit remains disabled.
+- Mouse-look reports enabled but does not change the camera without a middle drag.
 - Legacy zone fog and storm behavior remain active.
 - No doodad scan timer or mutation runs at startup.
 - No P2 special-effect probe exists until `/debug wc3 effects create` is used.
@@ -167,16 +181,17 @@ Run this independently on both clients. Enabling or restoring one client must
 not change the other client's camera or synchronized gameplay state. Never use
 the local readback values for synchronized branching.
 
-### Bounded middle-drag orbit
+### Bounded middle-drag mouse-look
 
 Task IDs: `W3-PH5-008` through `W3-PH5-010`, `W3-PH5-012`, `W3-PH5-013`,
 `W3-PH5-017` through `W3-PH5-022`, `W3-PH5-025`, and `W3-PH5-029` through
 `W3-PH5-034`.
 
-```text
-/debug wc3 camera orbit on
-/debug wc3 camera
-```
+Mouse-look is enabled by default and needs no debug command. In Normal mode,
+hold the middle mouse button and move the cursor horizontally and vertically.
+CameraControl polls `BlzIsMouseButtonPressed`, reads `BlzGetMouseScreenPosX/Y`,
+and converts the cursor with `BlzPixelToFrameX/Y` directly on the existing local
+camera tick. `/debug wc3 camera` remains optional supporting evidence.
 
 Test all of the following:
 
@@ -185,8 +200,8 @@ Test all of the following:
   reset; fast movement remains clamped.
 - Cursor remains visible and is never recentered.
 - Releasing the button, leaving the client, Alt-Tab, focus loss, mode change,
-  suspension, and orbit disable clear dragging.
-- Normal mode permits orbit; Advanced, Developer, special-zone, dialog, death,
+  suspension, and mouse-look disable clear dragging.
+- Normal mode permits mouse-look; Advanced, Developer, special-zone, dialog, death,
   travel, and fullscreen cinematic ownership suppresses it.
 - The Game menu and its child panels, inventory, equipment, crafting, shop,
   quest journal, talents, ability trainers, gamble offers, and fullscreen UI
@@ -195,13 +210,14 @@ Test all of the following:
 - Terrain, units, minimap, command card, and the listed custom panels do not
   receive unintended orders or leave stuck input.
 - DynamicMinimap does not fight rotation immediately after a drag.
-- The existing shared camera input timer remains inactive when orbit and all
-  keyboard input are inactive.
+- The separate keyboard-input timer remains inactive when no keyboard input is
+  held; mouse-look is sampled by the already-running camera-maintenance timer.
 
-Disable after the test:
+The debug override is available only for rollback comparison:
 
 ```text
 /debug wc3 camera orbit off
+/debug wc3 camera orbit on
 /debug wc3 camera type reset
 ```
 
@@ -211,8 +227,8 @@ Task IDs: `W3-PH0-018`, `W3-PH5-020`, `W3-PH5-033`, and `W3-VAL-024`.
 
 1. Put both clients at visibly different camera angles and positions.
 2. Run `/debug wc3 camera` on both clients and save both outputs.
-3. Enable orbit for both clients.
-4. Drag simultaneously in opposite directions for at least 30 seconds.
+3. Confirm mouse-look is enabled for both clients without a debug command.
+4. Middle-drag simultaneously in opposite directions for at least 30 seconds.
 5. Open inventory on one client and the Game menu on the other; confirm each
    client is blocked independently.
 6. Continue normal synchronized gameplay for at least five minutes.
@@ -254,15 +270,18 @@ Run separately, resetting before changing zones or starting another test:
 ```text
 /debug wc3 fog test height
 /debug wc3 fog reset
-/debug wc3 fog test exp
-/debug wc3 fog reset
 ```
+
+`/debug wc3 fog test exp` is retained as a recognized command but no longer
+mutates fog. It reports that the density-`0.0015` `NEW_EXP` preset was rejected
+after making fog disappear. Author any replacement exponential preset with World
+Editor live preview before adding it to this matrix.
 
 During each test, trigger a storm flash where possible. Confirm the override
 restores style, height range, linear range, maximum density, draw-over-sky, RGB,
 Z range, and density—not only the legacy fields.
 
-Run the height or exponential preset on only one client in a two-client session.
+Run the height preset on only one client in a two-client session.
 The other client's presentation and both clients' synchronized gameplay must
 remain unchanged.
 
@@ -415,12 +434,14 @@ needed.
 | 2026-09-17 | Baseline only | Repository | Folder-map generated script | `pjass` with active 3.0 Blizzard API | PASS | Existing map snapshot parsed; new sources not imported |
 | 2026-09-17 | Camera static structure | Repository | In-memory folder-map substitution | `pjass` with current `CameraControl` | PASS | No map file was changed |
 | 2026-09-17 | Fog/harness static structure | Repository | Focused transformed sources | `pjass` with active 3.0 API and typed PotS stubs | PASS | Does not replace full-map import |
-|  | `W3-PH0-017`, `W3-VAL-001` |  |  | World Editor/JassHelper compile | PENDING |  |
+| 2026-09-17 | `W3-PH0-017`, `W3-PH0-045`, `W3-VAL-001` | Player 1 | Full PotS map | World Editor/JassHelper compile, startup, `/debug wc3 selftest` | PASS | User reported `7/7`; broader zone/two-client parity remains open |
+|  | Incremental source gate | Player 1 | Disposable full PotS map | Reimport CameraControl 1.6.0, harness 0.7.0, and DynamicMinimap 1.7.0; compile/start; rerun self-test | PENDING | The prior `7/7` result predates the direct-polling mouse-look and runtime-bounds revisions |
 |  | `W3-VAL-004` |  |  | Passive smoke | PENDING |  |
-|  | Camera task IDs |  |  |  | PENDING |  |
-|  | Fog task IDs |  |  |  | PENDING |  |
-|  | Doodad task IDs |  |  |  | PENDING |  |
-|  | `W3-PH7-004` through `W3-PH7-009`, `W3-PH7-015` |  | Doodad-dense repeatable route | Disabled/area/indexed performance matrix | PENDING | Record build time, counts, average/low FPS, transition stutter, native calls, and correctness |
+| 2026-09-17 | `W3-PH5-008`, `W3-PH5-009`, `W3-PH5-029` | Player 1 | Full PotS map | Event-started bounded mouse-look attempt | FAIL / SUPERSEDED | No usable drag; CameraControl 1.6.0 removes the event-start dependency and polls directly |
+|  | `W3-PH5-008`, `W3-PH5-009`, `W3-PH5-029` | Player 1 | Full PotS map | Default-enabled direct-polling middle drag | PENDING | Play directly after reimport; no debug command is required |
+| 2026-09-17 | `W3-PH6-008` | Player 1 | Full PotS map | `/debug wc3 fog test height` | PASS CANDIDATE | Height fog looked good; zone-specific values and restoration tests remain |
+| 2026-09-17 | `W3-PH6-008` | Player 1 | Full PotS map | `/debug wc3 fog test exp` | FAIL | `NEW_EXP` density `0.0015` visually removed fog; reject this preset |
+| 2026-09-17 | `W3-PH7-006`, `W3-PH7-009` | Player 1 | Full PotS map | Initial renderer comparison | LEGACY RETAINED | No meaningful benefit observed; detailed matrix deferred unless a measured performance need reopens it |
 
 ## Rollback
 
