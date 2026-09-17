@@ -2,7 +2,7 @@
     DebugCommands
 
     Author: Valdemar
-    Version: 1.3.0
+    Version: 1.5.0
 
     Description:
     Chat-driven debug commands for Path of the Shaman testing. Commands are
@@ -12,8 +12,9 @@
     Credits:
 
     How to install:
-    Import DebugObjectRegistry before this library. The registry is generated
-    from the latest checked-in item, unit, and ability object exports.
+    Import DebugObjectRegistry and Warcraft300TestHarness before this library.
+    The registry is generated from the latest checked-in item, unit, and
+    ability object exports.
 
     API:
     - /debug help
@@ -27,9 +28,10 @@
     - /debug drunk
     - /debug unstuck
     - /debug creeprespawn dungeon respawn [zoneId]
+    - /debug wc3 help
 
 **/
-library DebugCommands initializer Init requires DebugObjectRegistry, Ascii, GatherNodeUnits, GatherNodeSkills, ZonesCore, Dungeon, Drunk, PlayerHome
+library DebugCommands initializer Init requires DebugObjectRegistry, Ascii, GatherNodeUnits, GatherNodeSkills, ZonesCore, Dungeon, Drunk, PlayerHome, Warcraft300TestHarness
     globals
         private constant string DBG_ROOT = "/debug"
         private constant string DBG_PREFIX = "/debug "
@@ -700,6 +702,7 @@ library DebugCommands initializer Init requires DebugObjectRegistry, Ascii, Gath
         call DBG_Message(whichPlayer, "/debug drunk")
         call DBG_Message(whichPlayer, "/debug unstuck (bypasses the 5-minute cooldown)")
         call DBG_Message(whichPlayer, "/debug creeprespawn dungeon respawn [zoneId]")
+        call DBG_Message(whichPlayer, "/debug wc3 help (camera, fog, and doodad 3.0 probes)")
     endfunction
 
     private function DBG_ExecuteCommand takes player whichPlayer, string command, real cameraX, real cameraY, boolean hasCamera returns nothing
@@ -709,6 +712,8 @@ library DebugCommands initializer Init requires DebugObjectRegistry, Ascii, Gath
 
         if trimmed == "" or lowerCommand == "help" then
             call DBG_ShowHelp(whichPlayer)
+        elseif Warcraft300TestHarness_Execute(whichPlayer, lowerCommand) then
+            return
         elseif DBG_StartsWith(lowerCommand, "item create ") then
             set argument = SubString(trimmed, StringLength("item create "), StringLength(trimmed))
             call DBG_CreateItemForPlayer(whichPlayer, argument, cameraX, cameraY, hasCamera)
