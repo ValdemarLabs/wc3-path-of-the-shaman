@@ -2,7 +2,7 @@
     FullscreenUI
 
     Author: Valdemar
-    Version:
+    Version: 1.1.0
 
     Description:
     Enables a clean fullscreen cinematic interface while preserving native
@@ -17,8 +17,9 @@
     Credits:
 
     How to install:
-    Import optional DynamicMinimap and DoodadRender integrations before this
-    library, then call the public API when fullscreen presentation begins or ends.
+    Import optional DynamicMinimap, DoodadRender, and CameraControl integrations
+    before this library, then call the public API when fullscreen presentation
+    begins or ends.
 
     API:
         FullscreenUI_Enable()
@@ -54,7 +55,7 @@
         call CinematicModeBJ(true, bj_FORCE_ALL_PLAYERS)
         call CinematicModeBJ(false, bj_FORCE_ALL_PLAYERS)
 */
-library FullscreenUI initializer DelayedInit requires optional DynamicMinimap, optional DoodadRender
+library FullscreenUI initializer DelayedInit requires optional DynamicMinimap, optional DoodadRender, optional CameraControl
 
 globals
     /*
@@ -83,6 +84,18 @@ globals
     private trigger FullscreenUI_EscapeTrigger = CreateTrigger()
     private timer FullscreenUI_EscapeTimer = CreateTimer()
 endglobals
+
+private function SetMouseOrbitBlocked takes boolean blocked returns nothing
+    local integer playerIndex = 0
+
+    static if LIBRARY_CameraControl then
+        loop
+            exitwhen playerIndex >= bj_MAX_PLAYERS
+            call CameraControl_SetMouseOrbitBlockReason(Player(playerIndex), CameraControl_MOUSE_ORBIT_BLOCK_FULLSCREEN, blocked)
+            set playerIndex = playerIndex + 1
+        endloop
+    endif
+endfunction
 
 private function RegisterUIFrame takes string frameName returns nothing
     local framehandle frame = BlzGetFrameByName(frameName, 0)
@@ -217,6 +230,7 @@ public function Enable takes nothing returns nothing
     static if LIBRARY_DoodadRender then
         call DoodadRender_SuspendForCinematic()
     endif
+    call SetMouseOrbitBlocked(true)
     set FullscreenUI_Enabled = true
 
     /*
@@ -314,6 +328,7 @@ public function Disable takes nothing returns nothing
     static if LIBRARY_DoodadRender then
         call DoodadRender_ResumeAfterCinematic()
     endif
+    call SetMouseOrbitBlocked(false)
 endfunction
 
 /*
