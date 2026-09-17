@@ -53,6 +53,8 @@ Repository-side baseline recorded on 17 September 2026:
   focused transformed-source `pjass` checks; the harness check used typed stubs
   for its PotS dependencies. These checks validate JASS/native structure but do
   not reproduce JassHelper dependency ordering or in-client behavior.
+- The added doodad color parser, mutation, and reset functions pass a focused
+  transformed-source `pjass` check against the active build-24268 natives.
 - The repository does not contain a current generated `war3map.j` or an automated
   full-map import/build command. Import and compilation must therefore use the
   normal World Editor/JassHelper workflow.
@@ -64,7 +66,7 @@ Repository-side baseline recorded on 17 September 2026:
 | Harness | Explicit read-only self-test plus camera, fog, and doodad suites; reset commands; no startup mutation | Full-map compile/start and command output |
 | Camera | Disabled bounded middle-drag orbit, reversible input-ownership and camera-type probes, cancellation paths, source-specific modal blockers | Camera-type meanings, ownership semantics, UI matrix, two-client safety |
 | Fog | Complete legacy/extended current and target state, numeric interpolation, complete storm override restoration | Visual parity, zone/weather transitions, two-client locality |
-| Doodads | Batched read-only scan, fingerprints, inspection, one guarded hide/show instance probe | Index base/stability, scan cost, reviewed instance reset, authoring/pathing checks |
+| Doodads | Batched read-only scan, fingerprints, inspection, one guarded hide/show instance probe, and one guarded color probe with an explicit original-color reset | Index base/stability, scan cost, reviewed instance reset, authoring/persistence/pathing checks |
 
 ## Import and compilation gate
 
@@ -78,7 +80,8 @@ Task IDs: `W3-PH0-017`, `W3-PH0-045`, `W3-VAL-001`, `W3-VAL-004`.
    `GambleUI`, and `FullscreenUI`; `FogSystem` must precede `Storm`; and
    `Warcraft300TestHarness` must precede `DebugCommands`. The current
    `DebugCommands` also requires `Warcraft300P2TestHarness`, which must follow
-   `SpeciFX`; importing it does not run a P2 probe at startup.
+   both `SpeciFX` and `DynamicMinimap`; importing it does not create a P2 effect
+   probe or change the imported minimap default at startup.
 3. Compile and save through World Editor/JassHelper 3.0.0.24268.
 4. Start the map without entering a debug command.
 5. Confirm no camera, fog, or doodad experiment activates automatically.
@@ -308,10 +311,32 @@ must hide, `show` must restore it, nearby same-type doodads must remain visible,
 and pathing/selection must remain unchanged. Reload the disposable map if its
 model does not implement a reversible `hide`/`show` pair.
 
-No runtime single-doodad color reset exists in the active API. Do not run a
-color mutation on an existing PotS placement until a disposable test placement
-has a documented original team-color value and reset procedure. Color remains a
-World Editor authoring check, not part of the automatic probe.
+### Reviewed single-instance color probe
+
+Task IDs: `W3-PH0-048`, `W3-PH7-012`, and `W3-PH7-013`.
+
+The active API has no single-doodad color getter or engine-default/None reset.
+Before testing, choose a disposable, ordinary static placement outside any
+`DoodadManager` type and record its original World Editor team-color ID. Valid
+player-color IDs for this probe are `0` through `24`.
+
+```text
+/debug wc3 doodads inspect <index>
+/debug wc3 doodads probe color <index> <testColor> <originalColor>
+/debug wc3 doodads
+/debug wc3 doodads probe reset
+```
+
+The command rejects `DoodadRender`-managed rawcodes. Confirm only the selected
+instance changes, nearby same-type doodads remain unchanged, and selection and
+pathing remain aligned. Reset must restore the explicitly supplied original
+color. If the original value is uncertain, do not guess; reload the disposable
+map instead. Repeat after hide/show, relevant death/revival or replacement
+behavior, save/reopen, and save/load-equivalent recreation where applicable.
+
+This is an explicit manual probe, not an automatic startup mutation and not a
+general color migration. Keep `W3-PH7-012` and `W3-PH7-013` open until the
+authoring, restoration, and persistence evidence is recorded.
 
 ## Doodad authoring and creation-site review
 
@@ -346,11 +371,13 @@ needed.
 | 2026-09-17 | Baseline only | Repository | Folder-map generated script | `pjass` with active 3.0 Blizzard API | PASS | Existing map snapshot parsed; new sources not imported |
 | 2026-09-17 | Camera static structure | Repository | In-memory folder-map substitution | `pjass` with current `CameraControl` | PASS | No map file was changed |
 | 2026-09-17 | Fog/harness static structure | Repository | Focused transformed sources | `pjass` with active 3.0 API and typed PotS stubs | PASS | Does not replace full-map import |
+| 2026-09-17 | `W3-PH0-048` | Repository | Doodad color parser/mutation/reset | Focused transformed-source `pjass` | PASS | No runtime color/reset semantics established |
 |  | `W3-PH0-017`, `W3-VAL-001` |  |  | World Editor/JassHelper compile | PENDING |  |
 |  | `W3-VAL-004` |  |  | Passive smoke | PENDING |  |
 |  | Camera task IDs |  |  |  | PENDING |  |
 |  | Fog task IDs |  |  |  | PENDING |  |
 |  | Doodad task IDs |  |  |  | PENDING |  |
+|  | `W3-PH0-048`, `W3-PH7-012` |  | Reviewed disposable doodad | Single-instance color and explicit reset | PENDING | Record index, rawcode, test/original color IDs, and screenshots |
 
 ## Rollback
 
@@ -358,8 +385,9 @@ needed.
 - Camera ownership: `/debug wc3 camera ownership off` restores the five captured
   engine-input flags; use it before ending every ownership test.
 - Fog: `/debug wc3 fog reset`; reload the map if an interruption prevented reset.
-- Doodads: `/debug wc3 doodads probe reset`; reload if the chosen model lacks a
-  reversible `show` sequence.
+- Doodads: `/debug wc3 doodads probe reset` restores active animation and color
+  probes; color restoration uses the original ID supplied to the command. Reload
+  if that value was wrong or the chosen model lacks a reversible `show` sequence.
 - Full rollback: restore the previous versions of the changed libraries and
   reimport them into the disposable map. The map's Object Editor and placed
   doodads remain unchanged by repository source edits.
