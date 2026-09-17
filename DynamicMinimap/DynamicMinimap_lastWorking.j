@@ -2,12 +2,15 @@
     DynamicMinimap
 
     Author: Valdemar
-    Version: 1.6.0
+    Version: 1.7.0
 
     Description:
         Supports imported 256-coordinate minimap chunks or Warcraft III 3.0
         terrain generation within the current camera bounds. Full/chunked map
         modes and normal/enlarged frame layouts can be toggled.
+        World and authored full-camera bounds are read from the initialized map
+        and engine camera margins so World Editor size changes are not duplicated
+        in library constants.
         Approaching chunk borders can request a gentle safe-angle correction
         from CameraControl. Cinematic suspension cancels all pending chunk work
         and restores the full-map presentation.
@@ -21,8 +24,9 @@
         Enable "generate dynamically within camera bounds" in World Editor for
         native terrain mode. Imported mode additionally requires the pre-rendered
         256x256 BLP chunks and full-map texture under war3mapImported\. Import
-        this library after Interface and configure the map, camera, and minimap-
-        art bounds below. Import CameraControl after this library to service
+        this library after Interface and configure only the minimap-art calibration
+        below when a verified source image requires it. Map and camera bounds are
+        read at initialization. Import CameraControl after this library to service
         smooth safe-rotation requests.
 
     Uses:
@@ -94,17 +98,16 @@ globals
     private constant real BOUNDS_PADDING_MULTIPLIER = 1.0  // Camera bounds = chunk size * this (MUST be 1.0 for accurate alignment)
     private constant integer CHUNK_COORDINATE_SYSTEM = 256  // Chunk files use 256-tile coordinate system
     
-    // Map Properties -> Size. These bounds drive texture/chunk coordinate math.
-    private constant real MAP_WORLD_MIN_X = -29184.0
-    private constant real MAP_WORLD_MAX_X = 32256.0
-    private constant real MAP_WORLD_MIN_Y = -32256.0
-    private constant real MAP_WORLD_MAX_Y = 29184.0
-
-    // Map Properties -> Camera Bounds. These restore the authored full-map camera limits.
-    private constant real CAMERA_WORLD_MIN_X = -28672.0
-    private constant real CAMERA_WORLD_MAX_X = 31744.0
-    private constant real CAMERA_WORLD_MIN_Y = -32000.0
-    private constant real CAMERA_WORLD_MAX_Y = 28928.0
+    // Runtime map and authored full-camera bounds are captured from World
+    // Editor data during initialization instead of duplicated as constants.
+    private real mapWorldMinX = 0.0
+    private real mapWorldMaxX = 0.0
+    private real mapWorldMinY = 0.0
+    private real mapWorldMaxY = 0.0
+    private real cameraWorldMinX = 0.0
+    private real cameraWorldMaxX = 0.0
+    private real cameraWorldMinY = 0.0
+    private real cameraWorldMaxY = 0.0
 
     // Minimap-art calibration in world units. Positive values move the art's represented
     // world area east/north. Keep both at 0 until an accurately cropped source is available.
@@ -338,11 +341,11 @@ endfunction
 private function RestoreOriginalCameraBounds takes nothing returns nothing
     set lastTileX = -1
     set lastTileY = -1
-    call QueueMapUpdate(null, false, false, -1, -1, CAMERA_WORLD_MIN_X, CAMERA_WORLD_MIN_Y, CAMERA_WORLD_MAX_X, CAMERA_WORLD_MAX_Y)
+    call QueueMapUpdate(null, false, false, -1, -1, cameraWorldMinX, cameraWorldMinY, cameraWorldMaxX, cameraWorldMaxY)
 endfunction
 
 private function RequestFullMapUpdate takes nothing returns nothing
-    call QueueMapUpdate(FULL_MAP_TEXTURE, renderSource == DYNAMIC_MINIMAP_SOURCE_IMPORTED, false, -1, -1, CAMERA_WORLD_MIN_X, CAMERA_WORLD_MIN_Y, CAMERA_WORLD_MAX_X, CAMERA_WORLD_MAX_Y)
+    call QueueMapUpdate(FULL_MAP_TEXTURE, renderSource == DYNAMIC_MINIMAP_SOURCE_IMPORTED, false, -1, -1, cameraWorldMinX, cameraWorldMinY, cameraWorldMaxX, cameraWorldMaxY)
 endfunction
 
 private function UpdateMinimapAndBounds takes integer chunkCoordX, integer chunkCoordY returns nothing
@@ -357,8 +360,8 @@ private function UpdateMinimapAndBounds takes integer chunkCoordX, integer chunk
     local real boundsHalfHeight
     local real chunkWorldWidth
     local real chunkWorldHeight
-    local real scaleX = (MAP_WORLD_MAX_X - MAP_WORLD_MIN_X) / I2R(CHUNK_COORDINATE_SYSTEM)
-    local real scaleY = (MAP_WORLD_MAX_Y - MAP_WORLD_MIN_Y) / I2R(CHUNK_COORDINATE_SYSTEM)
+    local real scaleX = (mapWorldMaxX - mapWorldMinX) / I2R(CHUNK_COORDINATE_SYSTEM)
+    local real scaleY = (mapWorldMaxY - mapWorldMinY) / I2R(CHUNK_COORDINATE_SYSTEM)
     
     // Only update if position changed
     if chunkCoordX == lastTileX and chunkCoordY == lastTileY and not pendingMapUpdate then
@@ -369,8 +372,8 @@ private function UpdateMinimapAndBounds takes integer chunkCoordX, integer chunk
 
     set chunkWorldWidth = I2R(currentChunkSize) * scaleX
     set chunkWorldHeight = I2R(currentChunkSize) * scaleY
-    set centerX = MAP_WORLD_MIN_X + MINIMAP_ART_OFFSET_X + I2R(chunkCoordX) * scaleX + chunkWorldWidth * 0.5
-    set centerY = MAP_WORLD_MIN_Y + MINIMAP_ART_OFFSET_Y + I2R(chunkCoordY) * scaleY + chunkWorldHeight * 0.5
+    set centerX = mapWorldMinX + MINIMAP_ART_OFFSET_X + I2R(chunkCoordX) * scaleX + chunkWorldWidth * 0.5
+    set centerY = mapWorldMinY + MINIMAP_ART_OFFSET_Y + I2R(chunkCoordY) * scaleY + chunkWorldHeight * 0.5
     set boundsHalfWidth = chunkWorldWidth * BOUNDS_PADDING_MULTIPLIER * 0.5
     set boundsHalfHeight = chunkWorldHeight * BOUNDS_PADDING_MULTIPLIER * 0.5
     set minX = centerX - boundsHalfWidth
@@ -422,7 +425,7 @@ private function IsApproachingChunkBorder takes real cameraX, real cameraY, inte
         set lookaheadY = cameraY - ROTATION_LOOKAHEAD_DISTANCE
     endif
 
-    return GetChunkCoordinate(lookaheadX, MAP_WORLD_MIN_X, MAP_WORLD_MAX_X, MINIMAP_ART_OFFSET_X) != chunkX or GetChunkCoordinate(lookaheadY, MAP_WORLD_MIN_Y, MAP_WORLD_MAX_Y, MINIMAP_ART_OFFSET_Y) != chunkY
+    return GetChunkCoordinate(lookaheadX, mapWorldMinX, mapWorldMaxX, MINIMAP_ART_OFFSET_X) != chunkX or GetChunkCoordinate(lookaheadY, mapWorldMinY, mapWorldMaxY, MINIMAP_ART_OFFSET_Y) != chunkY
 endfunction
 
 //===========================================================================
@@ -469,8 +472,8 @@ private function PeriodicUpdate takes nothing returns nothing
     set unitX = GetCameraTargetPositionX()
     set unitY = GetCameraTargetPositionY()
     
-    set chunkCoordX = GetChunkCoordinate(unitX, MAP_WORLD_MIN_X, MAP_WORLD_MAX_X, MINIMAP_ART_OFFSET_X)
-    set chunkCoordY = GetChunkCoordinate(unitY, MAP_WORLD_MIN_Y, MAP_WORLD_MAX_Y, MINIMAP_ART_OFFSET_Y)
+    set chunkCoordX = GetChunkCoordinate(unitX, mapWorldMinX, mapWorldMaxX, MINIMAP_ART_OFFSET_X)
+    set chunkCoordY = GetChunkCoordinate(unitY, mapWorldMinY, mapWorldMaxY, MINIMAP_ART_OFFSET_Y)
     set approachingBorder = IsApproachingChunkBorder(unitX, unitY, chunkCoordX, chunkCoordY)
     set previousCameraTargetX = unitX
     set previousCameraTargetY = unitY
@@ -975,10 +978,19 @@ private function Init takes nothing returns nothing
     local framehandle gameUI
     local framehandle parentFrame
     
+    set mapWorldMinX = GetRectMinX(bj_mapInitialPlayableArea)
+    set mapWorldMaxX = GetRectMaxX(bj_mapInitialPlayableArea)
+    set mapWorldMinY = GetRectMinY(bj_mapInitialPlayableArea)
+    set mapWorldMaxY = GetRectMaxY(bj_mapInitialPlayableArea)
+    set cameraWorldMinX = mapWorldMinX + GetCameraMargin(CAMERA_MARGIN_LEFT)
+    set cameraWorldMaxX = mapWorldMaxX - GetCameraMargin(CAMERA_MARGIN_RIGHT)
+    set cameraWorldMinY = mapWorldMinY + GetCameraMargin(CAMERA_MARGIN_BOTTOM)
+    set cameraWorldMaxY = mapWorldMaxY - GetCameraMargin(CAMERA_MARGIN_TOP)
+
     if DEBUG then
         call BJDebugMsg("|cffFFFF00DynamicMinimap: Starting initialization...|r")
-        call BJDebugMsg("|cffAAAAFFMap bounds configured: X(" + R2S(MAP_WORLD_MIN_X) + " to " + R2S(MAP_WORLD_MAX_X) + "), Y(" + R2S(MAP_WORLD_MIN_Y) + " to " + R2S(MAP_WORLD_MAX_Y) + ")|r")
-        call BJDebugMsg("|cffAAAAFFCamera bounds configured: X(" + R2S(CAMERA_WORLD_MIN_X) + " to " + R2S(CAMERA_WORLD_MAX_X) + "), Y(" + R2S(CAMERA_WORLD_MIN_Y) + " to " + R2S(CAMERA_WORLD_MAX_Y) + ")|r")
+        call BJDebugMsg("|cffAAAAFFMap bounds configured: X(" + R2S(mapWorldMinX) + " to " + R2S(mapWorldMaxX) + "), Y(" + R2S(mapWorldMinY) + " to " + R2S(mapWorldMaxY) + ")|r")
+        call BJDebugMsg("|cffAAAAFFCamera bounds configured: X(" + R2S(cameraWorldMinX) + " to " + R2S(cameraWorldMaxX) + "), Y(" + R2S(cameraWorldMinY) + " to " + R2S(cameraWorldMaxY) + ")|r")
     endif
     
     // Create border frame at map init (CRITICAL: ConsoleUI operations must be done at map init, not in timers)
