@@ -1,5 +1,8 @@
 # Warcraft III 3.0 P0/P1 Validation Log
 
+Parent plan: [Warcraft III 3.0 Systems Upgrade Plan](Warcraft%20III%203.0%20Systems%20Upgrade%20Plan.md)  
+Documentation home: [Warcraft III 3.0 Upgrade](README.md)
+
 ## Table of contents
 
 - [Scope](#scope)
