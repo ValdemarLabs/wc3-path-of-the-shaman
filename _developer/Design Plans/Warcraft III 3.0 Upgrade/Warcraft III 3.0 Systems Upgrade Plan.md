@@ -1,6 +1,6 @@
 # Warcraft III 3.0 Systems Upgrade Plan
 
-Status: In progress — Phase 0 baseline implemented; P0/P1 runtime validation pending
+Status: P2 in progress — first SpeciFX slice implemented; manual World Editor and runtime validation pending
 Target baseline: Warcraft III 3.0.0, build 24268  
 Primary API references: [`_Blizzard/common.j`](../../../_Blizzard/common.j) and [`_Blizzard/blizzard.j`](../../../_Blizzard/blizzard.j)  
 Patch reference: [Warcraft III: Reforged - Forsaken Kingdom Patch Notes](https://us.forums.blizzard.com/en/warcraft3/t/warcraft-iii-reforged-forsaken-kingdom-patch-notes/38400)
@@ -82,18 +82,18 @@ Example assignment:
 
 | High-level ID | Scope | Priority | Status | Child task IDs |
 | --- | --- | --- | --- | --- |
-| `W3-HL-HARNESS` | Full-map 3.0 harness and semantic probes | Foundation | IN PROGRESS | `W3-PH0-*` |
-| `W3-HL-API` | Active native diff, Object Editor stat carriers, and Game Data Version compatibility | Foundation | IN PROGRESS | `W3-PH0-038` through `W3-PH0-044` |
+| `W3-HL-HARNESS` | Full-map 3.0 harness and semantic probes | Foundation | IMPLEMENTED — MANUAL VALIDATION PENDING | `W3-PH0-*` |
+| `W3-HL-API` | Active native diff, Object Editor stat carriers, and Game Data Version compatibility | Foundation | BASELINE COMPLETE — P4 CARRIER RESEARCH DEFERRED | `W3-PH0-038` through `W3-PH0-044` |
 | `W3-HL-ITEMDATA` | WC3ItemManager schema, UI, W3T, and backfill | P4 / LAST | DEFERRED — DATA-VERSION MIGRATION RISK | `W3-PH1-*` |
 | `W3-HL-EQUIPMENT` | Native inventory bridge, equipment bonuses, stats, and UI | P4 / LAST | DEFERRED — DATA-VERSION MIGRATION RISK | `W3-PH2-*` |
 | `W3-HL-ITEMECO` | Item consumers, loot, quests, random items, and item color | P4 / LAST | DEFERRED — DATA-VERSION MIGRATION RISK | `W3-PH3-*` |
 | `W3-HL-COMBAT` | Cooldown, aura, and attack-reset APIs | P2/P3 | NOT STARTED | `W3-PH4-*` |
-| `W3-HL-CAMERA` | Camera ownership, local input, and bounded orbit | P0 | IN PROGRESS | `W3-PH5-001` through `W3-PH5-034` |
+| `W3-HL-CAMERA` | Camera ownership, local input, and bounded orbit | P0 | IMPLEMENTED — MANUAL VALIDATION PENDING | `W3-PH5-001` through `W3-PH5-034` |
 | `W3-HL-MINIMAP` | Dynamic minimap generation | P2 | NOT STARTED | `W3-PH5-035` through `W3-PH5-039` |
-| `W3-HL-FOG` | Fog state, presets, parity, and restoration | P0 | IN PROGRESS | `W3-PH6-001` through `W3-PH6-008` |
+| `W3-HL-FOG` | Fog state, presets, parity, and restoration | P0 | IMPLEMENTED — MANUAL VALIDATION PENDING | `W3-PH6-001` through `W3-PH6-008` |
 | `W3-HL-LIGHTING` | SD lighting, omni lights, shadows, and post processing | P3 | NOT STARTED | `W3-PH6-009` through `W3-PH6-014` |
-| `W3-HL-DOODADS` | Doodad enumeration, instances, rotation, axes, and color | P1 | IN PROGRESS | `W3-PH7-*` |
-| `W3-HL-EFFECTS` | Special-effect animation and blending | P2 | NOT STARTED | `W3-PH8-001` through `W3-PH8-005` |
+| `W3-HL-DOODADS` | Doodad enumeration, instances, rotation, axes, and color | P1 | IMPLEMENTED — MANUAL/CONDITIONAL VALIDATION PENDING | `W3-PH7-*` |
+| `W3-HL-EFFECTS` | Special-effect animation and blending | P2 | IMPLEMENTED — MANUAL VALIDATION PENDING | `W3-PH8-001` through `W3-PH8-005` |
 | `W3-HL-HUD` | Orc HUD and hero-presentation compatibility | P2 | NOT STARTED | `W3-PH8-006` through `W3-PH8-009` |
 | `W3-HL-SOUND` | Editable sound-variable paths and exports | P3 | NOT STARTED | `W3-PH8-010` through `W3-PH8-012` |
 | `W3-HL-WORKFLOW` | Trigger authoring and World Editor workflow | P3 | NOT STARTED | `W3-PH8-013` through `W3-PH8-017` |
@@ -104,14 +104,35 @@ Example assignment:
 
 | Order | Priority | High-level ID | Task IDs | Deliverable | State |
 | ---: | --- | --- | --- | --- | --- |
-| 1 | P0 | `W3-HL-HARNESS` | `W3-PH0-017`, `W3-VAL-001`, `W3-VAL-004` | Compile the passive harness and record an unchanged full-map baseline. | READY FOR WORLD EDITOR TEST |
+| 1 | P0 | `W3-HL-HARNESS` | `W3-PH0-017`, `W3-PH0-045`, `W3-VAL-001`, `W3-VAL-004` | Compile the passive harness, run its read-only self-test, and record an unchanged full-map baseline. | IMPLEMENTED; READY FOR WORLD EDITOR TEST |
 | 2 | P0 | `W3-HL-CAMERA` | `W3-PH0-018`, `W3-PH5-008` through `W3-PH5-010`, `W3-VAL-024` | Establish the two-client local-input safety baseline. | READY FOR TWO-CLIENT TEST |
-| 3 | P0 | `W3-HL-CAMERA` | `W3-PH5-003`, `W3-PH5-012`, `W3-PH5-013`, `W3-PH5-022` | Implement the disabled bounded middle-mouse orbit prototype and camera-type probe. | IMPLEMENTED; RUNTIME TEST PENDING |
-| 4 | P0 | `W3-HL-CAMERA` | `W3-PH5-017` through `W3-PH5-021`, `W3-PH5-025`, `W3-PH5-029` through `W3-PH5-034` | Validate camera ownership, cancellation, UI suppression, suspension, performance, and multiplayer behavior. | READY FOR MATRIX TEST |
+| 3 | P0 | `W3-HL-CAMERA` | `W3-PH5-003`, `W3-PH5-004`, `W3-PH5-012`, `W3-PH5-013`, `W3-PH5-022` | Implement disabled, reversible camera-type, input-ownership, and bounded middle-mouse orbit probes. | IMPLEMENTED; RUNTIME TEST PENDING |
+| 4 | P0 | `W3-HL-CAMERA` | `W3-PH5-017` through `W3-PH5-021`, `W3-PH5-025`, `W3-PH5-029` through `W3-PH5-034` | Validate camera ownership, cancellation, UI suppression, suspension, performance, and multiplayer behavior. | IMPLEMENTED; READY FOR MATRIX TEST |
 | 5 | P0 | `W3-HL-FOG` | `W3-PH6-001`, `W3-PH6-003` through `W3-PH6-007`, `W3-VAL-006` | Capture legacy fog parity, introduce the complete preset state, and validate restoration/locality. | READY FOR CAPTURE AND TEST |
 | 6 | P1 | `W3-HL-DOODADS` | `W3-PH7-001`, `W3-PH7-003`, `W3-PH7-004`, `W3-PH7-010` through `W3-PH7-014`, `W3-VAL-007` | Add guarded doodad enumeration and reviewed pitch/roll, local-axis, color, and resettable-instance probes. | READY FOR AUTHORING AND TEST |
 
 The repository implementation for every row is now present. Runtime-only evidence and exact commands are tracked in [`Warcraft III 3.0 P0-P1 Validation Log.md`](Warcraft%20III%203.0%20P0-P1%20Validation%20Log.md); rows remain open until their World Editor or two-client pass is recorded there.
+
+### Foundation/P0/P1 completion boundary
+
+No additional repository implementation is required before P2. The remaining unchecked Foundation/P0/P1 tasks fall into one of three explicit categories:
+
+- **Manual validation:** World Editor/JassHelper compilation, SD visual review, authored doodad checks, and one-/two-client runtime evidence. These remain open and are owned by Valdemar.
+- **Conditional optimization:** global doodad indexing/render replacement and pathing-native replacement proceed only if the recorded benchmarks and equivalence tests justify them. They are not prerequisites for P2.
+- **Deferred optional experiments:** captured cursor mode, right-drag, local yaw/pitch, cinematic depth of field, and camera blockers are outside the accepted bounded-camera scope. They remain documented but do not block P2.
+
+The Foundation API baseline is complete for current work. Tasks `W3-PH0-041` through `W3-PH0-044` belong to the separately deferred P4 Forsaken Game Data Version/carrier investigation and are not hidden P0/P1 blockers.
+
+### Current P2 focus queue
+
+| Order | Priority | High-level ID | Task IDs | Deliverable | State |
+| ---: | --- | --- | --- | --- | --- |
+| 1 | P2 | `W3-HL-EFFECTS` | `W3-PH0-046`, `W3-PH8-001` through `W3-PH8-004` | Add backward-compatible named animation, queue, and blend APIs with a resettable full-map probe. | IMPLEMENTED; READY FOR WORLD EDITOR TEST |
+| 2 | P2 | `W3-HL-MINIMAP` | `W3-PH5-035` through `W3-PH5-038` | Enable and compare native camera-bounds minimap generation without removing the current modes. | MANUAL WORLD EDITOR BASELINE REQUIRED |
+| 3 | P2 | `W3-HL-COMBAT` | `W3-PH4-001` through `W3-PH4-006` | Establish cooldown-adjustment semantics, then migrate only proven Shaman use cases. | NOT STARTED — COMBAT SEMANTICS GATE |
+| 4 | P2 | `W3-HL-DOODADS` | `W3-PH7-012`, `W3-PH7-013` | Validate narrowly authored faction/state colors with documented reset behavior. | MANUAL AUTHORING REQUIRED |
+
+`W3-HL-EFFECTS` starts P2 because it can be added without changing existing effect call sites. The native minimap option and doodad colors begin in World Editor, while cooldown migration remains blocked on combat-semantics evidence. Exact effect commands and acceptance criteria are recorded in [`Warcraft III 3.0 P2 Validation Log.md`](Warcraft%20III%203.0%20P2%20Validation%20Log.md).
 
 ## W3-HL-HARNESS — Phase 0 - Full-map 3.0 validation harness
 
@@ -126,7 +147,7 @@ PotS integration tests must run in the complete map. A reduced map would omit th
 - [ ] **W3-PH0-005** — Run position-dependent probes at the selected hero, current camera target, or a deliberately chosen existing development area. Do not add artificial rect duplicates merely to make a test self-contained.
 - [x] **W3-PH0-006** — Every current mutating probe has an explicit off/reset command; the doodad ledger also requires a map reload when a reviewed model lacks a reversible `hide`/`show` pair.
 - [x] **W3-PH0-007** — Feature flags remain separate from the harness: orbit starts disabled, extended fog requires an explicit test command, and doodad mutation is never part of startup.
-- [ ] **W3-PH0-008** — Print concise before/after values and PASS/FAIL invariants in game, then record the exact editor/client build, map build, SD graphics settings, suite, player, and feature-flag state in the associated developer notes. _(Status: READY FOR TEST; Owner: Valdemar; Updated: 2026-09-17)_
+- [ ] **W3-PH0-008** — Print concise before/after values and PASS/FAIL invariants in game, then record the exact editor/client build, map build, SD graphics settings, suite, player, and feature-flag state in the associated developer notes. The read-only PASS/FAIL command is implemented; environment/evidence recording remains manual. _(Status: READY FOR TEST; Owner: Valdemar; Updated: 2026-09-17)_
 - [ ] **W3-PH0-009** — Test host and second player, full map reload, hero death/revival, morphing, item transfer, and item destruction where relevant.
 - [x] **W3-PH0-010** — Camera/input and fog presentation calls are locally guarded; the harness does not write local query results into synchronized gameplay state.
 - [ ] **W3-PH0-011** — Verify behavior in the supported SD/Classic presentation at representative low and high settings where applicable.
@@ -137,9 +158,11 @@ PotS integration tests must run in the complete map. A reduced map would omit th
 - [x] **W3-PH0-013** — Added `/debug wc3 status`, `/debug wc3 camera`, `/debug wc3 fog`, and `/debug wc3 doodads` as the first read-only full-map baseline suite.
 - [x] **W3-PH0-014** — Camera diagnostics report the existing `CameraControl` mode and stored fields plus 3.0 camera type, local-client state, resolution, mouse pixels/frame coordinates, and middle-button state. All local input/camera queries are guarded for the triggering local player.
 - [x] **W3-PH0-015** — Fog diagnostics report the effective current values, transition targets, fade state, and override depth without changing the existing linear fog path.
-- [x] **W3-PH0-016** — Doodad diagnostics call only `BlzGetNumDoodads`; index enumeration, animation, color changes, and global renderer ownership remain disabled.
+- [x] **W3-PH0-016** — Passive doodad diagnostics call only `BlzGetNumDoodads`. Index enumeration and the single-instance animation probe require explicit commands; color changes and global renderer ownership remain disabled.
 - [ ] **W3-PH0-017** — Compile the imported harness in World Editor/JassHelper 3.0.0.24268 and capture the first full-map baseline. Repository-side inspection cannot establish runtime/native behavior. _(Status: READY FOR TEST; Owner: Valdemar; Updated: 2026-09-17)_
 - [ ] **W3-PH0-018** — Repeat the camera diagnostic with two clients at different camera positions before enabling the orbit prototype. _(Status: READY FOR TEST; Owner: Valdemar; Updated: 2026-09-17; Depends on: `W3-PH0-017`)_
+- [x] **W3-PH0-045** — Added `/debug wc3 selftest`, a read-only local baseline that reports PASS/FAIL for client dimensions, camera type range, fog state invariants, full-map doodad visibility, and optional camera-ownership persistence without changing state.
+- [x] **W3-PH0-046** — Added `Debug/Warcraft300P2TestHarness.j` with an explicit, synchronized, resettable `wc3 effects` suite. It owns at most one probe effect per triggering player and performs no startup mutation.
 
 ### Full-map test workflow
 
@@ -482,17 +505,17 @@ Implementation work:
 - [x] **W3-PH5-001** — Camera ownership diagnostics and bounded orbit are implemented behind a developer command; orbit is disabled by default and the no-flag path retains existing behavior.
 - [x] **W3-PH5-002** — Add the non-mutating camera/input baseline command used before any ownership or orbit experiment.
 - [ ] **W3-PH5-003** — Prototype `BlzCameraSetCameraType`/`BlzCameraGetCameraType` and document valid integer camera types. The guarded `0`–`16` probe and reset are implemented; visual meanings require client testing. _(Status: READY FOR TEST; Owner: Valdemar; Updated: 2026-09-17)_
-- [ ] **W3-PH5-004** — Use `SetCameraFieldControlledByInput` to give the engine or PotS exclusive ownership of each camera field during Normal, Advanced, Developer, dialog, death, travel, and fullscreen cinematic modes.
-- [ ] **W3-PH5-005** — Evaluate `CAMERA_FIELD_ZABSOLUTE`, depth-of-field distance, and depth-of-field scale for cinematic presets only.
-- [ ] **W3-PH5-006** — Evaluate `EnableCameraBlocker` and `AddCameraBlocker` for authored zone restrictions instead of repeated corrective camera movement.
-- [ ] **W3-PH5-007** — Preserve `CameraControl_Suspend*`, resume state, `DialogCamera`, death camera, travel camera, and DynamicMinimap contracts.
+- [x] **W3-PH5-004** — Added a disabled local `SetCameraFieldControlledByInput` ownership probe for distance, far Z, angle, field of view, and rotation. It snapshots every engine flag, gives PotS exclusive ownership while enabled, reapplies after mode/type changes, and restores the exact snapshot on reset; mode-matrix behavior remains a manual test.
+- [ ] **W3-PH5-005** — Evaluate `CAMERA_FIELD_ZABSOLUTE`, depth-of-field distance, and depth-of-field scale for cinematic presets only. _(Status: DEFERRED OPTIONAL EXPERIMENT; not required before P2; Updated: 2026-09-17)_
+- [ ] **W3-PH5-006** — Evaluate `EnableCameraBlocker` and `AddCameraBlocker` for authored zone restrictions instead of repeated corrective camera movement. _(Status: DEFERRED UNTIL AN AUTHORED ZONE NEED EXISTS; not required before P2; Updated: 2026-09-17)_
+- [x] **W3-PH5-007** — Existing `CameraControl_Suspend*`, resume state, `DialogCamera`, death camera, travel camera, and DynamicMinimap source contracts were retained; the validation matrix remains open for in-client equivalence.
 
 ### Input and coordinate APIs
 
 - [ ] **W3-PH5-008** — Evaluate `BlzIsKeyPressed`, `BlzIsMetaKeyPressed`, and `BlzIsMouseButtonPressed` for robust modifier and held-input state. Middle-button polling is implemented; held-state and focus behavior require client testing. _(Status: READY FOR TEST; Owner: Valdemar; Updated: 2026-09-17)_
 - [ ] **W3-PH5-009** — Evaluate `BlzGetMouseScreenPosX/Y` plus pixel/frame conversion for UI hit testing and drag interactions. Resolution-aware frame deltas are implemented; sensitivity requires client testing. _(Status: READY FOR TEST; Owner: Valdemar; Updated: 2026-09-17)_
 - [x] **W3-PH5-010** — Local input and camera results remain local presentation state and are not written into synchronized gameplay state.
-- [ ] **W3-PH5-011** — Replace `CameraControl`'s hidden item pathing probe with `BlzIsTerrainPathableEx` only if it matches the current collision behavior around items, cliffs, destructibles, water, and narrow passages.
+- [ ] **W3-PH5-011** — Replace `CameraControl`'s hidden item pathing probe with `BlzIsTerrainPathableEx` only if it matches the current collision behavior around items, cliffs, destructibles, water, and narrow passages. _(Status: CONDITIONAL EQUIVALENCE TEST; legacy path retained; not required before P2; Updated: 2026-09-17)_
 
 ### WoW-style mouse-drag free camera
 
@@ -516,9 +539,9 @@ Initial behavior decision:
 
 - [x] **W3-PH5-012** — Implemented disabled bounded orbit around `CameraControl`'s current target: horizontal drag updates rotation and vertical drag updates angle through the existing stored-state application path.
 - [x] **W3-PH5-013** — Middle mouse is the prototype button; movement beyond the dead zone orbits, while a short click preserves the existing reset behavior.
-- [ ] **W3-PH5-014** — Keep right-drag as an optional experiment only. Warcraft III uses right-click for smart orders, so it must not become the default unless testing proves that dragging can avoid accidental unit orders and ground commands.
-- [ ] **W3-PH5-015** — Compare this custom orbit behavior with valid `BlzCameraSetCameraType` values before deciding whether PotS should implement every free-camera field itself.
-- [ ] **W3-PH5-016** — Prototype `CAMERA_FIELD_ROTATION`/`CAMERA_FIELD_ANGLE_OF_ATTACK` first, then compare `CAMERA_FIELD_LOCAL_YAW`/`CAMERA_FIELD_LOCAL_PITCH` only where the selected camera type gives useful free-look behavior.
+- [ ] **W3-PH5-014** — Keep right-drag as an optional experiment only. Warcraft III uses right-click for smart orders, so it must not become the default unless testing proves that dragging can avoid accidental unit orders and ground commands. _(Status: DEFERRED; bounded middle-drag is the accepted prototype; not required before P2; Updated: 2026-09-17)_
+- [ ] **W3-PH5-015** — Compare this custom orbit behavior with valid `BlzCameraSetCameraType` values before deciding whether PotS should implement every free-camera field itself. _(Status: READY FOR MANUAL TEST; no further repository implementation required; Updated: 2026-09-17)_
+- [ ] **W3-PH5-016** — Prototype `CAMERA_FIELD_ROTATION`/`CAMERA_FIELD_ANGLE_OF_ATTACK` first, then compare `CAMERA_FIELD_LOCAL_YAW`/`CAMERA_FIELD_LOCAL_PITCH` only where the selected camera type gives useful free-look behavior. _(Status: ROTATION/ANGLE IMPLEMENTED; LOCAL YAW/PITCH DEFERRED; not required before P2; Updated: 2026-09-17)_
 
 Local drag loop:
 
@@ -542,8 +565,8 @@ Local/multiplayer safety requirements:
 Cursor policy:
 
 - [x] **W3-PH5-022** — The prototype is bounded, leaves the cursor visible, and never calls `BlzSetMousePos` or `BlzEnableCursor`.
-- [ ] **W3-PH5-023** — Evaluate an optional captured mode that hides and recenters the cursor only after bounded dragging is stable.
-- [ ] **W3-PH5-024** — If recentering is adopted, warp to the local client center before the cursor reaches an edge, ignore the synthetic post-warp delta, and restore the cursor on every exit path.
+- [ ] **W3-PH5-023** — Evaluate an optional captured mode that hides and recenters the cursor only after bounded dragging is stable. _(Status: DEFERRED; bounded visible-cursor policy retained; not required before P2; Updated: 2026-09-17)_
+- [ ] **W3-PH5-024** — If recentering is adopted, warp to the local client center before the cursor reaches an edge, ignore the synthetic post-warp delta, and restore the cursor on every exit path. _(Status: DEFERRED WITH `W3-PH5-023`; not required before P2; Updated: 2026-09-17)_
 - [x] **W3-PH5-025** — Drag state cancels when `BlzIsLocalClientActive()` is false; the bounded prototype never hides the cursor.
 
 Prototype and regression matrix:
@@ -615,11 +638,11 @@ Target natives include `BlzGetNumDoodads`, doodad index getters, `BlzSetSingleDo
 - [x] **W3-PH7-002** — Add the first observational step: `/debug wc3 doodads` reports `BlzGetNumDoodads()` without enumerating or mutating instances.
 - [x] **W3-PH7-003** — The first pass does not replace `DoodadRender`; the probe rejects its managed rawcodes and the batched scan remains explicit and read-only.
 - [ ] **W3-PH7-004** — Test whether doodad indices are stable across clients, map saves, variations, and editor rebuilds. Count plus rawcode/position fingerprints are implemented for comparison. _(Status: READY FOR TEST; Owner: Valdemar; Updated: 2026-09-17)_
-- [ ] **W3-PH7-005** — Build a runtime spatial index from doodad X/Y/rawcode only if initialization time and memory beat the current rect-by-rawcode approach.
-- [ ] **W3-PH7-006** — Compare single-instance hide/show against `SetDoodadAnimationRect` for call count, correctness, and FPS on the current approximately 50,000 placements.
-- [ ] **W3-PH7-007** — Preserve `DoodadManager` per-type render distances and fullscreen cinematic suspension.
-- [ ] **W3-PH7-008** — Use exact instance animation to avoid hiding nearby same-type doodads outside the intended cell.
-- [ ] **W3-PH7-009** — Retain the generated `war3map.doo` reference workflow if runtime enumeration is slower or index behavior is unstable.
+- [ ] **W3-PH7-005** — Build a runtime spatial index from doodad X/Y/rawcode only if initialization time and memory beat the current rect-by-rawcode approach. _(Status: CONDITIONAL ON SCAN BENCHMARKS; not required before P2; Updated: 2026-09-17)_
+- [ ] **W3-PH7-006** — Compare single-instance hide/show against `SetDoodadAnimationRect` for call count, correctness, and FPS on the current approximately 50,000 placements. _(Status: READY FOR MANUAL BENCHMARK; no production replacement exists; Updated: 2026-09-17)_
+- [x] **W3-PH7-007** — The isolated 3.0 probe leaves `DoodadManager` per-type render distances and fullscreen cinematic suspension unchanged; any future renderer replacement must preserve both contracts.
+- [x] **W3-PH7-008** — The guarded test mutation uses `BlzSetSingleDoodadAnimation` for one reviewed index, so nearby same-type doodads are not intentionally included; runtime confirmation remains in `W3-VAL-007`.
+- [ ] **W3-PH7-009** — Retain the generated `war3map.doo` reference workflow if runtime enumeration is slower or index behavior is unstable. _(Status: CURRENT WORKFLOW RETAINED; replacement is conditional on `W3-PH7-004` through `W3-PH7-006`; not required before P2; Updated: 2026-09-17)_
 
 ### Rotation, local axes, and colors
 
@@ -637,11 +660,11 @@ Do not schedule HD water doodads, HD decals, HD shadow blockers, or per-doodad H
 
 ### W3-HL-EFFECTS — SpeciFX
 
-- [ ] **W3-PH8-001** — Add named-animation APIs using `BlzSetSpecialEffectAnimation` and `BlzQueueSpecialEffectAnimation`.
-- [ ] **W3-PH8-002** — Add an optional blend-time API using `BlzSetSpecialEffectAnimationBlendTime`.
-- [ ] **W3-PH8-003** — Keep existing `animtype` support through `BlzPlaySpecialEffect` for backward compatibility.
-- [ ] **W3-PH8-004** — Test queued animation cleanup, invalid animation names, time scale, looping models, and effect destruction.
-- [ ] **W3-PH8-005** — Migrate only effects that currently require recreation or timers solely to sequence animations.
+- [x] **W3-PH8-001** — Added direct-effect and managed-tag named-animation APIs using `BlzSetSpecialEffectAnimation` and `BlzQueueSpecialEffectAnimation`; blank names and null effects are ignored safely.
+- [x] **W3-PH8-002** — Added direct-effect and managed-tag blend-time APIs using `BlzSetSpecialEffectAnimationBlendTime`; negative input is normalized to zero.
+- [x] **W3-PH8-003** — Existing `animtype` support through `BlzPlaySpecialEffect` remains unchanged in `SpeciFX_ConfigureEffect`; the P2 harness includes a legacy attack-animation comparison.
+- [ ] **W3-PH8-004** — Test queued animation cleanup, invalid animation names, time scale, looping models, and effect destruction. The synchronized create/animation/queue/blend/legacy/destroy suite is implemented. _(Status: READY FOR TEST; Owner: Valdemar; Updated: 2026-09-17)_
+- [ ] **W3-PH8-005** — Migrate only effects that currently require recreation or timers solely to sequence animations. _(Status: CONDITIONAL; no production effect call site is migrated in the first P2 slice; Updated: 2026-09-17)_
 
 ### W3-HL-HUD — Orc HUD compatibility and hero presentation
 
