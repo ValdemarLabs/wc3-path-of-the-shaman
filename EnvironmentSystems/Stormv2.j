@@ -1,6 +1,6 @@
 library Storm initializer Init requires DNC, ZoneEvent, FogSystem
     
-    // Storm v1.3.1
+    // Storm v1.4.0
     // by OVOgenez
     
     /*
@@ -404,7 +404,7 @@ library Storm initializer Init requires DNC, ZoneEvent, FogSystem
                     set TempTF_red     = r
                     set TempTF_green   = g
                     set TempTF_blue    = b
-                    call SetTerrainFogEx(TF_style, zs, ze, d, r, g, b)
+                    call FogSystem_ApplyOverrideForPlayer(FogSystem_IsCurrentExtended(localPlayer), TF_style, zs, ze, d, FogSystem_GetCurrentHeightStart(localPlayer), FogSystem_GetCurrentHeightEnd(localPlayer), FogSystem_GetCurrentLinearStart(localPlayer), FogSystem_GetCurrentLinearEnd(localPlayer), FogSystem_GetCurrentMaxLinearDensity(localPlayer), FogSystem_GetCurrentDrawOverSky(localPlayer), r, g, b, localPlayer)
                 endif
             elseif TempTF != TF then
                 //call ResetTerrainFog()
