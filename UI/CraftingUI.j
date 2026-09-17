@@ -742,6 +742,7 @@ private function CUI_HideForPlayer takes player whichPlayer returns nothing
         endif
         call BlzFrameSetVisible(CUI_Parent, false)
     endif
+    call CameraControl_SetMouseOrbitBlockReason(whichPlayer, CameraControl_MOUSE_ORBIT_BLOCK_CRAFTING, false)
 endfunction
 
 private function CUI_ReleaseButtonFocus takes player whichPlayer returns nothing
@@ -773,6 +774,7 @@ private function CUI_OpenForPlayerEx takes player whichPlayer, unit station, uni
     set pid = GetPlayerId(whichPlayer)
     // Crafting is a gameplay panel, so it must restore normal adjustable camera input.
     call CameraControl_ResumeQuick(whichPlayer)
+    call CameraControl_SetMouseOrbitBlockReason(whichPlayer, CameraControl_MOUSE_ORBIT_BLOCK_CRAFTING, true)
     call DInventoryEquipment_HideForPlayer(whichPlayer)
     set CUI_Station[pid] = station
     set CUI_Crafter[pid] = crafter
@@ -1226,6 +1228,7 @@ public function Hide takes nothing returns nothing
     if CUI_Parent != null then
         call BlzFrameSetVisible(CUI_Parent, false)
     endif
+    call CameraControl_SetMouseOrbitBlockReason(GetLocalPlayer(), CameraControl_MOUSE_ORBIT_BLOCK_CRAFTING, false)
 endfunction
 
 public function TryContinueQueryCraft takes nothing returns nothing
