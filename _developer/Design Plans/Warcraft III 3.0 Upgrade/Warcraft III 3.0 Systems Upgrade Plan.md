@@ -39,7 +39,7 @@ The separate 16-bit launcher and World Editor crash investigation is intentional
 | Foundation | `W3-HL-API` | Active 3.0 API, Object Editor carrier, and data-version compatibility audit | `_Blizzard`, full-map object data, upgrade documentation | Prevents native/data-version assumptions before implementation |
 | P0 | `W3-HL-CAMERA` | Free-camera ownership and input queries | `CameraControl`, `DialogCamera` | High and independently reversible |
 | P0 | `W3-HL-FOG` | Expanded fog controls with legacy-default parity | `FogSystem`, `Storm`, `WeatherSystemV4`, zones | High and visually testable |
-| P1 | `W3-HL-DOODADS` | Doodad rotation/local axes, read-only enumeration, and instance animation probes | `DoodadManager`, `DoodadRender`, procedural destructibles | High when introduced narrowly |
+| P1 | `W3-HL-DOODADS` | Doodad renderer performance, runtime indexing, rotation/local axes, enumeration, and instance animation | `DoodadManager`, `DoodadRender`, procedural destructibles | High when introduced behind the legacy default |
 | P2 | `W3-HL-MINIMAP` | Dynamic minimap generation within camera bounds | `DynamicMinimap` | Potentially very high but camera-bound sensitive |
 | P2 | `W3-HL-COMBAT` | Remaining/percentage ability cooldown control | `ShamanCommon`, talent-driven cooldowns | High but combat-sensitive |
 | P2 | `W3-HL-EFFECTS` | Special-effect animation queue and blend control | `SpeciFX`, ability visuals | Medium |
@@ -92,7 +92,7 @@ Example assignment:
 | `W3-HL-MINIMAP` | Dynamic minimap generation | P2 | IMPLEMENTED — MANUAL VALIDATION PENDING | `W3-PH0-047`, `W3-PH5-035` through `W3-PH5-039` |
 | `W3-HL-FOG` | Fog state, presets, parity, and restoration | P0 | IMPLEMENTED — MANUAL VALIDATION PENDING | `W3-PH6-001` through `W3-PH6-008` |
 | `W3-HL-LIGHTING` | SD lighting, omni lights, shadows, and post processing | P3 | NOT STARTED | `W3-PH6-009` through `W3-PH6-014` |
-| `W3-HL-DOODADS` | Doodad enumeration, instances, rotation, and axes | P1 | IN PROGRESS — MANUAL/CONDITIONAL TASKS OPEN | `W3-PH7-*` |
+| `W3-HL-DOODADS` | Doodad renderer performance, enumeration, instances, rotation, and axes | P1 | INDEXED BACKEND IMPLEMENTED — MANUAL BENCHMARK PENDING | `W3-PH7-*` |
 | `W3-HL-EFFECTS` | Special-effect animation and blending | P2 | IMPLEMENTED — MANUAL VALIDATION PENDING | `W3-PH8-001` through `W3-PH8-005` |
 | `W3-HL-HUD` | Orc HUD and hero-presentation compatibility | P2 | NOT STARTED | `W3-PH8-006` through `W3-PH8-009` |
 | `W3-HL-SOUND` | Editable sound-variable paths and exports | P3 | NOT STARTED | `W3-PH8-010` through `W3-PH8-012` |
@@ -109,7 +109,7 @@ Example assignment:
 | 3 | P0 | `W3-HL-CAMERA` | `W3-PH5-003`, `W3-PH5-004`, `W3-PH5-012`, `W3-PH5-013`, `W3-PH5-022` | Implement disabled, reversible camera-type, input-ownership, and bounded middle-mouse orbit probes. | IMPLEMENTED; RUNTIME TEST PENDING |
 | 4 | P0 | `W3-HL-CAMERA` | `W3-PH5-017` through `W3-PH5-021`, `W3-PH5-025`, `W3-PH5-029` through `W3-PH5-034` | Validate camera ownership, cancellation, UI suppression, suspension, performance, and multiplayer behavior. | IMPLEMENTED; READY FOR MATRIX TEST |
 | 5 | P0 | `W3-HL-FOG` | `W3-PH6-001`, `W3-PH6-003` through `W3-PH6-007`, `W3-VAL-006` | Capture legacy fog parity, introduce the complete preset state, and validate restoration/locality. | READY FOR CAPTURE AND TEST |
-| 6 | P1 | `W3-HL-DOODADS` | `W3-PH7-001`, `W3-PH7-003`, `W3-PH7-004`, `W3-PH7-010`, `W3-PH7-011`, `W3-PH7-013`, `W3-PH7-014`, `W3-VAL-007` | Add guarded doodad enumeration and reviewed pitch/roll, local-axis, and resettable-instance animation probes. | MANUAL/CONDITIONAL TASKS OPEN |
+| 6 | P1 | `W3-HL-DOODADS` | `W3-PH7-001`, `W3-PH7-004` through `W3-PH7-009`, `W3-PH7-015`, `W3-VAL-007` | Compare the legacy rawcode/rect renderer against an opt-in 3.0 instance-indexed backend using identical types and distances. | IMPLEMENTED; READY FOR PERFORMANCE MATRIX |
 
 The planned repository probes for every row are now present. Runtime-only evidence and exact commands are tracked in [`Warcraft III 3.0 P0-P1 Validation Log.md`](Warcraft%20III%203.0%20P0-P1%20Validation%20Log.md); `W3-HL-DOODADS` remains in progress because its authoring, persistence, pathing, and conditional optimization tasks are intentionally manual or evidence-gated.
 
@@ -238,7 +238,7 @@ The production policy is therefore **defer, do not migrate now**. DEquipment, WC
 | Cooldown remaining/percent adjustment, attack reset, and aura enablement | Planned under `W3-HL-COMBAT`; gameplay-sensitive and not implied by the new stat carriers. |
 | Camera type/input ownership, held input, mouse screen coordinates, and pixel/frame conversion | Implemented behind disabled/local probes under `W3-HL-CAMERA`; runtime and two-client gates remain open. |
 | Extended fog controls | Implemented with legacy-default parity under `W3-HL-FOG`; visual/locality gates remain open. |
-| Doodad enumeration/animation and destructable pitch/roll creation | Enumeration and a resettable per-instance animation probe are implemented under `W3-HL-DOODADS`; authoring, persistence, pathing, and broad renderer migration remain open until their manual gates pass. Doodad/destructible coloring is excluded. |
+| Doodad enumeration/animation and destructable pitch/roll creation | Enumeration, a resettable per-instance animation probe, and an opt-in indexed `DoodadRender` backend are implemented under `W3-HL-DOODADS`; production migration remains open until initialization, transition-stutter, steady-FPS, correctness, and multiplayer gates pass. Doodad/destructible coloring is excluded. |
 | Special-effect named animation, queue, and blend time | Implemented behind explicit P2 probes under `W3-HL-EFFECTS`; production migration remains evidence-gated. |
 | HD water | Not adopted because PotS targets SD/Classic presentation. |
 | Race skin, hero glow, model cinematics, shadow-casting light count, pathability, text-area autoscroll, trigger state/interrupt, thematic-music focus, and animation-duration helpers | Keep in the API backlog. Adopt only for a concrete PotS use case with an exact local signature check and a focused runtime test. |
@@ -639,11 +639,12 @@ Target natives include `BlzGetNumDoodads`, doodad index getters, and `BlzSetSing
 - [x] **W3-PH7-002** — Add the first observational step: `/debug wc3 doodads` reports `BlzGetNumDoodads()` without enumerating or mutating instances.
 - [x] **W3-PH7-003** — The first pass does not replace `DoodadRender`; the probe rejects its managed rawcodes and the batched scan remains explicit and read-only.
 - [ ] **W3-PH7-004** — Test whether doodad indices are stable across clients, map saves, variations, and editor rebuilds. Count plus rawcode/position fingerprints are implemented for comparison. _(Status: READY FOR TEST; Owner: Valdemar; Updated: 2026-09-17)_
-- [ ] **W3-PH7-005** — Build a runtime spatial index from doodad X/Y/rawcode only if initialization time and memory beat the current rect-by-rawcode approach. _(Status: CONDITIONAL ON SCAN BENCHMARKS; not required before P2; Updated: 2026-09-17)_
-- [ ] **W3-PH7-006** — Compare single-instance hide/show against `SetDoodadAnimationRect` for call count, correctness, and FPS on the current approximately 50,000 placements. _(Status: READY FOR MANUAL BENCHMARK; no production replacement exists; Updated: 2026-09-17)_
-- [x] **W3-PH7-007** — The isolated 3.0 probe leaves `DoodadManager` per-type render distances and fullscreen cinematic suspension unchanged; any future renderer replacement must preserve both contracts.
+- [x] **W3-PH7-005** — Added a lazy runtime spatial index from the 3.0 doodad index, X/Y, and rawcode natives. Hashtable-backed type/cell lists avoid JASS array-capacity dependence; build time, source count, and managed-instance count are exposed for the full-map benchmark.
+- [ ] **W3-PH7-006** — Compare the indexed `BlzSetSingleDoodadAnimation` backend against legacy `SetDoodadAnimationRect` for initialization cost, native-call count, transition stutter, correctness, and steady FPS on the current approximately 50,000 placements. Both backends and resettable diagnostics are implemented. _(Status: READY FOR PERFORMANCE MATRIX; Owner: Valdemar; Updated: 2026-09-17)_
+- [x] **W3-PH7-007** — Both renderer backends reuse `DoodadManager` per-type distances and preserve enable/disable, refresh, cinematic suspension depth, and full-show restoration contracts. The legacy area backend remains the default.
 - [x] **W3-PH7-008** — The guarded test mutation uses `BlzSetSingleDoodadAnimation` for one reviewed index, so nearby same-type doodads are not intentionally included; runtime confirmation remains in `W3-VAL-007`.
-- [ ] **W3-PH7-009** — Retain the generated `war3map.doo` reference workflow if runtime enumeration is slower or index behavior is unstable. _(Status: CURRENT WORKFLOW RETAINED; replacement is conditional on `W3-PH7-004` through `W3-PH7-006`; not required before P2; Updated: 2026-09-17)_
+- [ ] **W3-PH7-009** — Retain the generated `war3map.doo` reference workflow and legacy area backend if runtime enumeration is slower, index behavior is unstable, or the indexed route does not materially improve transition cost or FPS. _(Status: LEGACY DEFAULT RETAINED; decision pending `W3-PH7-004` and `W3-PH7-006`; Updated: 2026-09-17)_
+- [x] **W3-PH7-015** — Added synchronized debug controls for area/indexed backend selection, enable/disable, refresh, status, and diagnostic reset. No indexed enumeration runs while the legacy default remains selected.
 
 ### Rotation and local axes
 
