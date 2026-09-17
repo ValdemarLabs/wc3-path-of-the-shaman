@@ -20,6 +20,20 @@
 
 ### Technical Updates
 
+- Updated `UI/CameraControl.j` with a disabled-by-default bounded middle-mouse orbit prototype, resolution-aware and clamped local drag deltas, camera-type readback/set/reset probes, complete cancellation paths, and source-specific modal input blockers.
+- Updated `UI/FullscreenUI.j`, `UI/MasterUI.j`, `UI/CraftingUI.j`, `UI/ShopUI.j`, `UI/QuestUI.j`, `UI/TalentsUI.j`, `UI/AbilitiesUI.j`, `UI/GambleUI.j`, and the PotS `DInventory`/`DEquipment` libraries to suppress mouse orbit while modal UI owns mouse input without overlapping panels prematurely releasing each other's block.
+- Updated `EnvironmentSystems/FogSystem.j` with complete legacy and Warcraft III 3.0 fog state, including style, density, height range, linear range, maximum density, draw-over-sky, RGB, interpolation, diagnostics, and complete override restoration while preserving legacy `AddFogForPlayer` behavior.
+- Updated `EnvironmentSystems/Stormv2.j` so lightning flashes preserve and restore every legacy and extended fog field.
+- Expanded `Debug/Warcraft300TestHarness.j` with explicit camera orbit/type commands, resettable parity/height/exponential fog probes, a batched read-only doodad scan with timing and stability fingerprints, per-index inspection, and a guarded single-instance hide/show probe that rejects `DoodadRender`-managed types.
+- Updated `Debug/DebugCommands.j` to advertise the expanded Warcraft III 3.0 camera, fog, and doodad probe suite.
+- Added `_developer/Issues/2026-09-patch3/Warcraft III 3.0 P0-P1 Validation Log.md` with the exact full-map import, passive baseline, camera, two-client, fog, doodad, authoring, evidence, and rollback procedures for the current P0/P1 queue.
+- Updated `_developer/Design Plans/Warcraft III 3.0 Systems Upgrade Plan.md` with per-row queue states and per-task implementation/runtime-test status. The active procedural destructible review found no justified pitch/roll migration: current sites are hidden blockers/platforms or level quest scenery.
+- Verified the existing disposable folder-map `war3map.j` baseline with `_JassHelper/pjass.exe` against the active Warcraft III 3.0 API. An in-memory replacement of its old `CameraControl` section with the current source also parses successfully, as do focused transformed-source checks for `FogSystem` and `Warcraft300TestHarness`; these static checks do not replace the required World Editor/JassHelper import test.
+- Updated `_developer/Design Plans/Warcraft III 3.0 Systems Upgrade Plan.md` with 16 descriptive high-level workstream IDs and 278 immutable phase/validation task IDs, ownership and intermediate-status conventions, assignable Phase 9 rollout milestones, and a cross-referenced P0/P1 focus queue for camera, fog, and doodad work.
+- Added `Debug/Warcraft300TestHarness.j` as a passive Warcraft III 3.0 full-map baseline harness with `/debug wc3 status`, `camera`, `fog`, and `doodads` commands. The first suite is read-only and keeps local camera/input queries confined to the triggering client.
+- Updated `Debug/DebugCommands.j` to route the new Warcraft III 3.0 diagnostics through the existing centralized debug command interface.
+- Updated `EnvironmentSystems/FogSystem.j` with read-only target-fog, fade-state, and override-depth accessors so current and pending fog state can be compared without changing legacy fog behavior.
+- Updated `_developer/Design Plans/Warcraft III 3.0 Systems Upgrade Plan.md` with the completed Phase 0 baseline implementation and the remaining World Editor, multiplayer camera, fog-capture, and doodad-enumeration validation gates.
 - Validated the complete 12-model zero-face-geoset repair set in World Editor 3.0.0.24268. With the repaired models installed, the PotS map no longer crashes during loading or when viewing the Crypt area.
 - Closed `_developer/Issues/2026-09-patch3/Warcraft III 3.0 Import Crash Investigation.md` and `_developer/Issues/2026-09-patch3/Crypt Doodad Model Audit.md` as resolved. The test confirms vertices-without-faces geosets as the controlling crash defect class; the all-at-once Crypt repair does not identify one singleton model and does not need to for the implemented family-wide fix.
 - Updated `_developer/Design Plans/Warcraft III 3.0 Systems Upgrade Plan.md` with a `DEquipment` native-style stat presentation design: equipment must remain a separately tracked bonus layer, show positive/negative native attributes, damage, and armor as green/red deltas, avoid permanent/base stat mutation and double application, and pass lifecycle tests covering progression, morphs, item mutations, set bonuses, revival, load, and repeated equip cycles.
@@ -34,6 +48,8 @@
 
 ### Actions Remaining
 
+- Import the current P0/P1 source set into the disposable complete map and execute `_developer/Issues/2026-09-patch3/Warcraft III 3.0 P0-P1 Validation Log.md`. World Editor/JassHelper compilation, visual parity, authored pitch/roll/color checks, and simultaneous two-client behavior cannot be established by repository-only static checks.
+- Import and compile the new Warcraft III 3.0 harness through World Editor/JassHelper 3.0.0.24268, run its commands in the disposable full-map copy, and capture the initial single-player and two-client baseline before enabling any camera, fog, or doodad mutation.
 - Keep the broken/fixed SHA-256 report and repair utility for regression checks. Any later collision-box, extent, or generated-camera cleanup is optional asset-health/performance work and is separate from the resolved World Editor crash.
 
 
