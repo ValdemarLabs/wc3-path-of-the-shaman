@@ -61,14 +61,14 @@ Repository-side baseline recorded on 17 September 2026:
 
 | Workstream | Implemented and ready to import | Runtime-only evidence still required |
 | --- | --- | --- |
-| Harness | Explicit camera, fog, and doodad suites; reset commands; no startup mutation | Full-map compile/start and command output |
-| Camera | Disabled bounded middle-drag orbit, camera-type probe, cancellation paths, source-specific modal blockers | Camera-type meanings, input semantics, UI matrix, two-client safety |
+| Harness | Explicit read-only self-test plus camera, fog, and doodad suites; reset commands; no startup mutation | Full-map compile/start and command output |
+| Camera | Disabled bounded middle-drag orbit, reversible input-ownership and camera-type probes, cancellation paths, source-specific modal blockers | Camera-type meanings, ownership semantics, UI matrix, two-client safety |
 | Fog | Complete legacy/extended current and target state, numeric interpolation, complete storm override restoration | Visual parity, zone/weather transitions, two-client locality |
 | Doodads | Batched read-only scan, fingerprints, inspection, one guarded hide/show instance probe | Index base/stability, scan cost, reviewed instance reset, authoring/pathing checks |
 
 ## Import and compilation gate
 
-Task IDs: `W3-PH0-017`, `W3-VAL-001`, `W3-VAL-004`.
+Task IDs: `W3-PH0-017`, `W3-PH0-045`, `W3-VAL-001`, `W3-VAL-004`.
 
 1. Start from a disposable copy of the complete map that already contains the
    repaired 3.0-safe models.
@@ -76,7 +76,9 @@ Task IDs: `W3-PH0-017`, `W3-VAL-001`, `W3-VAL-004`.
    `CameraControl` must precede `MasterUI`, `SharedDInvLib`, `DInventory`,
    `DEquipment`, `CraftingUI`, `ShopUI`, `QuestUI`, `TalentsUI`, `AbilitiesUI`,
    `GambleUI`, and `FullscreenUI`; `FogSystem` must precede `Storm`; and
-   `Warcraft300TestHarness` must precede `DebugCommands`.
+   `Warcraft300TestHarness` must precede `DebugCommands`. The current
+   `DebugCommands` also requires `Warcraft300P2TestHarness`, which must follow
+   `SpeciFX`; importing it does not run a P2 probe at startup.
 3. Compile and save through World Editor/JassHelper 3.0.0.24268.
 4. Start the map without entering a debug command.
 5. Confirm no camera, fog, or doodad experiment activates automatically.
@@ -90,6 +92,7 @@ Pass criteria:
 - Orbit remains disabled.
 - Legacy zone fog and storm behavior remain active.
 - No doodad scan timer or mutation runs at startup.
+- No P2 special-effect probe exists until `/debug wc3 effects create` is used.
 
 ## Passive baseline
 
@@ -97,12 +100,15 @@ Run on player 1, then player 2 in the two-client session:
 
 ```text
 /debug wc3 status
+/debug wc3 selftest
 /debug wc3 camera
 /debug wc3 fog
 /debug wc3 doodads
 ```
 
-Capture the complete output. Repeat in one outdoor zone, one dungeon, during a
+The self-test is read-only and must report `7/7` before any mutating probe is
+enabled. A failed check is evidence to investigate, not permission to relax the
+invariant. Capture the complete output. Repeat in one outdoor zone, one dungeon, during a
 storm, and during a camera-suspending dialog/cinematic. These commands must not
 change the viewed state.
 
@@ -124,6 +130,37 @@ values. A successful readback does not by itself mean a type is safe for PotS.
 Repeat `set` for values `0` through `16`. Reject a value if it breaks targeting,
 camera restoration, SD rendering, or any existing mode. Do not select a
 production default during this probe.
+
+### Reversible camera input ownership
+
+Task ID: `W3-PH5-004`.
+
+Capture `/debug wc3 camera` before enabling the probe; its five `Engine input`
+flags are the restoration baseline. Then run:
+
+```text
+/debug wc3 camera ownership on
+/debug wc3 camera
+/debug wc3 selftest
+```
+
+While enabled, `Input ownership` must report `enabled=true, applied=true`, all
+five engine-input flags (distance, far Z, angle, field of view, and rotation)
+must be `false`, and the self-test must still report `7/7`. Exercise Normal,
+Advanced, Developer, dialog, death, travel, fullscreen cinematic, suspend/resume,
+and each camera type retained from the camera-type probe. PotS camera behavior
+must remain available while ordinary engine input cannot fight the owned fields.
+
+Restore and verify the exact captured flags:
+
+```text
+/debug wc3 camera ownership off
+/debug wc3 camera
+```
+
+Run this independently on both clients. Enabling or restoring one client must
+not change the other client's camera or synchronized gameplay state. Never use
+the local readback values for synchronized branching.
 
 ### Bounded middle-drag orbit
 
@@ -318,6 +355,8 @@ needed.
 ## Rollback
 
 - Camera: `/debug wc3 camera orbit off` and `/debug wc3 camera type reset`.
+- Camera ownership: `/debug wc3 camera ownership off` restores the five captured
+  engine-input flags; use it before ending every ownership test.
 - Fog: `/debug wc3 fog reset`; reload the map if an interruption prevented reset.
 - Doodads: `/debug wc3 doodads probe reset`; reload if the chosen model lacks a
   reversible `show` sequence.
