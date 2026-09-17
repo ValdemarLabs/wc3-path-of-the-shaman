@@ -14,7 +14,7 @@
     Tasyen (TasQuestBox as inspiration)
 
     How to install:
-    Import after Talents, AbilitiesPlayer, MasterUI, Table, and Interface.
+    Import after Talents, AbilitiesPlayer, MasterUI, Table, Interface, and CameraControl.
     AbilitiesLiteUI can open this UI through TalentsUI_ShowForUnit.
 
     API:
@@ -24,7 +24,7 @@
     - call TalentsUI_Refresh()
 
 **/
-library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, AbilitiesPlayer, Interface
+library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, AbilitiesPlayer, Interface, CameraControl
     globals
         private constant integer TUI_TREE_BUTTON_COUNT = 4
         private constant integer TUI_GRID_ROWS = 8
@@ -624,6 +624,7 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
             call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_OPEN, Player(0))
         endif
         call MasterUI_Hide()
+        call CameraControl_SetMouseOrbitBlockReason(GetLocalPlayer(), CameraControl_MOUSE_ORBIT_BLOCK_TALENTS, true)
         call BlzFrameSetVisible(TUI_Parent, true)
         call TUI_Update()
     endfunction
@@ -637,6 +638,7 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
             call TUI_HideTalentTooltips()
             call BlzFrameSetVisible(TUI_Parent, false)
         endif
+        call CameraControl_SetMouseOrbitBlockReason(GetLocalPlayer(), CameraControl_MOUSE_ORBIT_BLOCK_TALENTS, false)
     endfunction
 
     public function Refresh takes nothing returns nothing
