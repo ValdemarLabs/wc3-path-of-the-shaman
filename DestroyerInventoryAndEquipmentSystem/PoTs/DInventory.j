@@ -13,8 +13,8 @@
     - Tasyen, Warcraft III frame guidance
 
     How to install:
-    Import after Table, SharedDInvLib, and Interface. Configure capacity and the
-    inventory ability in DConfigurationArea.
+    Import after Table, SharedDInvLib, Interface, and CameraControl. Configure
+    capacity and the inventory ability in DConfigurationArea.
 
     API:
     - call DInvShowUnitForPlayer(viewer, unit, inspectMode)
@@ -23,7 +23,7 @@
 
 **/
 
-library DInventory initializer Init requires Table, SharedDInvLib, Interface, FallenHeroState, optional UnitStats
+library DInventory initializer Init requires Table, SharedDInvLib, Interface, FallenHeroState, CameraControl, optional UnitStats
 
 globals
 trigger trg_OpenDInvAbilityUsed = CreateTrigger()
@@ -835,6 +835,7 @@ call BlzFrameSetVisible(InventoryPageRightButtonFrame[pid], false)
 call BlzFrameSetVisible(InventoryPageCounterTextFrame[pid], false)
 call BlzFrameSetVisible(InventoryCapacityTextFrame[pid], false)
 call DeactivateActiveDItemSlotIds(pid)
+call CameraControl_SetMouseOrbitBlockReason(Player(pid), CameraControl_MOUSE_ORBIT_BLOCK_INVENTORY, false)
 endif
 ////call BJDebugMsg("CloseDInventory finished")
 endfunction
@@ -1031,6 +1032,7 @@ if pid == localplyr then
     call BlzFrameSetVisible(InventoryXButtonIconFrame[pid], TRUE)
     call BlzFrameSetVisible(InventoryCapacityTextFrame[pid], TRUE)
     call BlzFrameSetLevel(InventoryMainFrame[pid], 3)
+    call CameraControl_SetMouseOrbitBlockReason(Player(pid), CameraControl_MOUSE_ORBIT_BLOCK_INVENTORY, true)
 
     set invCap = MaxBagCapacityOfBID(ownerPid, bid)
     call DInvApplyCapacityLayout(pid, invCap)
