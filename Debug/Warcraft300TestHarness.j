@@ -2,7 +2,7 @@
     Warcraft300TestHarness
 
     Author: Valdemar
-    Version: 0.4.1
+    Version: 0.5.0
 
     Description:
     Provides explicit Warcraft III 3.0 diagnostics and resettable camera, fog,
@@ -11,15 +11,15 @@
     Credits:
 
     How to install:
-    Import CameraControl, FogSystem, DoodadManager, and Ascii before this
-    library, then import this library before DebugCommands.
+    Import CameraControl, FogSystem, DoodadRender, DoodadManager, and Ascii
+    before this library, then import this library before DebugCommands.
 
     API:
     - Warcraft300TestHarness_Execute(player, command) -> boolean
     - /debug wc3 help
 
 **/
-library Warcraft300TestHarness requires CameraControl, FogSystem, DoodadManager, Ascii
+library Warcraft300TestHarness requires CameraControl, FogSystem, DoodadRender, DoodadManager, Ascii
     globals
         private constant string W3T_PREFIX = "|cff80dfff[WC3 3.0]|r "
         private constant string W3T_GAME_BUILD = "3.0.0.24268"
@@ -109,6 +109,7 @@ library Warcraft300TestHarness requires CameraControl, FogSystem, DoodadManager,
         call W3T_Message(whichPlayer, "Camera type: camera type | camera type set <0-16> | camera type reset")
         call W3T_Message(whichPlayer, "Fog: fog test parity|height|exp | fog reset")
         call W3T_Message(whichPlayer, "Doodads: doodads scan|cancel | doodads inspect <index> | doodads probe hide <index>|reset")
+        call W3T_Message(whichPlayer, "Doodad renderer: doodads renderer status|area|indexed|on|off|refresh|reset")
         call W3T_Message(whichPlayer, "P2: effects help | minimap help")
     endfunction
 
@@ -245,6 +246,20 @@ library Warcraft300TestHarness requires CameraControl, FogSystem, DoodadManager,
         call W3T_Message(whichPlayer, "Doodads: native count=" + I2S(BlzGetNumDoodads()) + ", scanActive=" + W3T_BooleanText(W3T_DoodadScanActive) + ", activeProbe=" + I2S(W3T_DoodadProbeIndex) + ".")
     endfunction
 
+    private function W3T_ShowDoodadRenderer takes player whichPlayer returns nothing
+        call W3T_Message(whichPlayer, "Renderer: backend=" + DoodadRender_GetBackendName() + ", enabled=" + W3T_BooleanText(DoodadRender_IsEnabled()) + ", types=" + I2S(DoodadManager_GetTypeCount()) + ", indexedBuilt=" + W3T_BooleanText(DoodadRender_IsIndexedDatabaseBuilt()) + ".")
+        call W3T_Message(whichPlayer, "Index: source=" + I2S(DoodadRender_GetIndexedSourceCount()) + ", managed=" + I2S(DoodadRender_GetIndexedInstanceCount()) + ", build=" + R2S(DoodadRender_GetIndexedBuildElapsed()) + "s.")
+        call W3T_Message(whichPlayer, "Renderer calls: area=" + I2S(DoodadRender_GetAreaAnimationCallCount()) + ", indexed=" + I2S(DoodadRender_GetIndexedAnimationCallCount()) + ", transitions=" + I2S(DoodadRender_GetTransitionCount()) + ", full=" + I2S(DoodadRender_GetFullRefreshCount()) + ".")
+        call W3T_Message(whichPlayer, "Renderer timing: rebuild=" + R2S(DoodadRender_GetLastRebuildElapsed()) + "s, transition total=" + R2S(DoodadRender_GetTransitionElapsedTotal()) + "s, max=" + R2S(DoodadRender_GetTransitionElapsedMax()) + "s.")
+    endfunction
+
+    private function W3T_SetDoodadRendererBackend takes player whichPlayer, integer value returns nothing
+        local boolean accepted = DoodadRender_SetBackend(value)
+
+        call W3T_Message(whichPlayer, "Renderer backend request accepted=" + W3T_BooleanText(accepted) + ", active=" + DoodadRender_GetBackendName() + ".")
+        call W3T_ShowDoodadRenderer(whichPlayer)
+    endfunction
+
     private function W3T_FinishDoodadScan takes nothing returns nothing
         local real elapsed = TimerGetElapsed(W3T_DoodadScanClock)
 
@@ -375,7 +390,7 @@ library Warcraft300TestHarness requires CameraControl, FogSystem, DoodadManager,
     endfunction
 
     private function W3T_ShowStatus takes player whichPlayer returns nothing
-        call W3T_Message(whichPlayer, "Harness 0.4.1 for game build " + W3T_GAME_BUILD + "; every mutation requires an explicit command.")
+        call W3T_Message(whichPlayer, "Harness 0.5.0 for game build " + W3T_GAME_BUILD + "; every mutation requires an explicit command.")
         call W3T_ShowCamera(whichPlayer)
         call W3T_ShowFog(whichPlayer)
         call W3T_ShowDoodads(whichPlayer)
@@ -460,6 +475,24 @@ library Warcraft300TestHarness requires CameraControl, FogSystem, DoodadManager,
             call W3T_ResetFogTest(whichPlayer)
         elseif lowerCommand == "wc3 doodads" or lowerCommand == "wc3 doodad" or lowerCommand == "wc3 doodads status" then
             call W3T_ShowDoodads(whichPlayer)
+        elseif lowerCommand == "wc3 doodads renderer" or lowerCommand == "wc3 doodads renderer status" then
+            call W3T_ShowDoodadRenderer(whichPlayer)
+        elseif lowerCommand == "wc3 doodads renderer area" then
+            call W3T_SetDoodadRendererBackend(whichPlayer, DOODAD_RENDER_BACKEND_AREA)
+        elseif lowerCommand == "wc3 doodads renderer indexed" then
+            call W3T_SetDoodadRendererBackend(whichPlayer, DOODAD_RENDER_BACKEND_INDEXED)
+        elseif lowerCommand == "wc3 doodads renderer on" then
+            call DoodadRender_Enable()
+            call W3T_ShowDoodadRenderer(whichPlayer)
+        elseif lowerCommand == "wc3 doodads renderer off" then
+            call DoodadRender_Disable()
+            call W3T_ShowDoodadRenderer(whichPlayer)
+        elseif lowerCommand == "wc3 doodads renderer refresh" then
+            call DoodadRender_Refresh()
+            call W3T_ShowDoodadRenderer(whichPlayer)
+        elseif lowerCommand == "wc3 doodads renderer reset" then
+            call DoodadRender_ResetDiagnostics()
+            call W3T_Message(whichPlayer, "Doodad renderer diagnostics reset.")
         elseif lowerCommand == "wc3 doodads scan" then
             call W3T_StartDoodadScan(whichPlayer)
         elseif lowerCommand == "wc3 doodads scan cancel" or lowerCommand == "wc3 doodads cancel" then
