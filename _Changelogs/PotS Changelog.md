@@ -18,6 +18,18 @@
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
 
+## [18.9.2026]
+
+### Technical Updates
+
+- Added `UnitSystems/UnitHider4.j` as the recommended UnitHider implementation. It preserves system-owned visibility, tracks player-controlled and registered AI heroes as revealers while protecting every hero from hiding, consumes companion/pet registrations, protects active combat and casting units, prioritizes already-hidden units, suspends changes during cinematics, caches squared-distance reference positions, and replaces full-map half-second scans with bounded Unit Event index batches.
+- Added `UnitSystems/UnitHider4_Review.md` with the archived version history, implementation comparison, PotS integration decisions, warnings about obsolete optimization estimates, and the full-map validation checklist.
+- Reviewed the archived UnitHider history: v1.0 was the reliable fallback, v1.1 was reverted for worse lag and incorrect behavior, v2 introduced severe lag and slow hiding, and v3 was reported working but remained disabled. UnitHider4 carries forward the reliable v1 ownership behavior and the safe v3 caching improvements while removing v3's 20-reference cap and periodic full-map enumeration spike.
+
+### Actions Remaining
+
+- Import `UnitSystems/UnitHider4.j` in place of earlier UnitHider versions, then validate initial hiding, AI hero movement/combat, companion and pet reveal radii, cinematic suspension, enable/disable restoration, revival, transports, and long-session frame pacing in the full World Editor map.
+
 ## [17.9.2026]
 
 ### Technical Updates
