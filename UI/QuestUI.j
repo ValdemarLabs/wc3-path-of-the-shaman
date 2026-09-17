@@ -12,7 +12,7 @@
     Tasyen (TasQuestBox frame templates and list interaction pattern)
 
     How to install:
-    Import after QuestMaster, MasterUI, Interface, and Table. Import the
+    Import after QuestMaster, MasterUI, Interface, Table, and CameraControl. Import the
     existing TasQuestBox.toc and TasQuestBox.fdf assets with their current
     war3mapImported paths.
 
@@ -23,7 +23,7 @@
     - QuestUI_FlashButton() marks new quest activity on the replacement button.
 
 **/
-library QuestUI initializer AutoInit requires QuestMaster, MasterUI, Interface, Table
+library QuestUI initializer AutoInit requires QuestMaster, MasterUI, Interface, Table, CameraControl
 
 globals
     // Imported TasQuestBox frame configuration
@@ -613,6 +613,7 @@ public function Hide takes nothing returns nothing
         call Interface_NotifyQuestLogClosed()
         call BlzFrameSetVisible(QUI_Parent, false)
     endif
+    call CameraControl_SetMouseOrbitBlockReason(GetLocalPlayer(), CameraControl_MOUSE_ORBIT_BLOCK_QUEST_UI, false)
 endfunction
 
 public function Show takes nothing returns nothing
@@ -623,6 +624,7 @@ public function Show takes nothing returns nothing
     if QUI_Parent != null then
         call Interface_NotifyUIOpened()
         call BlzFrameSetVisible(QUI_Parent, true)
+        call CameraControl_SetMouseOrbitBlockReason(GetLocalPlayer(), CameraControl_MOUSE_ORBIT_BLOCK_QUEST_UI, true)
         call QUI_UpdateForPlayer(GetLocalPlayer())
     endif
 endfunction
