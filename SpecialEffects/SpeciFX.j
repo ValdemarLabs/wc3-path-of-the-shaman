@@ -1,10 +1,27 @@
-/*
-//==============================================================================
-// SpeciFX System v1.2
-//==============================================================================
-A simple special effects library for creating and managing special effects on units and points with extended control options.
+/**
+    SpeciFX
 
-Author: [Valdemar]
+    Author: Valdemar
+    Version: 1.3.0
+
+    Description:
+    Creates and manages special effects on units and points with extended
+    transforms, cleanup, terrain alignment, and Warcraft III 3.0 named
+    animation control.
+
+    Credits:
+    Terrain alignment by Antares. Table by Bribe.
+
+    How to install:
+    Import Table before this library through the normal JassHelper workflow.
+
+    API:
+    - SpeciFX_SetAnimation(effect, animationName)
+    - SpeciFX_QueueAnimation(effect, animationName)
+    - SpeciFX_SetAnimationBlendTime(effect, blendTime)
+    - SpeciFX_SetAnimationByTag(tag, animationName)
+    - SpeciFX_QueueAnimationByTag(tag, animationName)
+    - SpeciFX_SetAnimationBlendTimeByTag(tag, blendTime)
 
 Features:
  - Create effects on units with attachment points
@@ -29,6 +46,12 @@ Features:
  - void SpeciFX_RemoveByTag(string tag) - removes all effects with this tag
  - void SpeciFX_SetScaleOnUnit(unit, string tag, real scale)
  - void SpeciFX_SetHeightOnUnit(unit, string tag, real height)
+ - void SpeciFX_SetAnimation(effect, string animationName)
+ - void SpeciFX_QueueAnimation(effect, string animationName)
+ - void SpeciFX_SetAnimationBlendTime(effect, real blendTime)
+ - void SpeciFX_SetAnimationByTag(string tag, string animationName)
+ - void SpeciFX_QueueAnimationByTag(string tag, string animationName)
+ - void SpeciFX_SetAnimationBlendTimeByTag(string tag, real blendTime)
  - void SpeciFX_ConfigureEffect(unit, string tag, integer red, integer green, integer blue, integer alpha, animtype whichAnim, real orientation, real pitch, real yaw, real roll, real timeScale, real time)
    Optional configurational API - use -1 for any parameter to skip modification (use null for animtype to skip)
 
@@ -90,11 +113,7 @@ Features:
     // Destroy the most recently created SpeciFX/GUI effect after 2 seconds
     call SpeciFX_Duration(2.00)
 
-    Requirements:
-    - Bribe's Table library
-
-//==============================================================================
-*/
+**/
 
 library SpeciFX requires Table
 
@@ -710,6 +729,82 @@ library SpeciFX requires Table
             
             set currentId = EffectNext[currentId]
         endloop
+    endfunction
+
+    // Warcraft III 3.0 named-animation controls. Existing animtype APIs remain unchanged.
+    public function SetAnimation takes effect whichEffect, string animationName returns nothing
+        if whichEffect == null or animationName == null or animationName == "" then
+            return
+        endif
+        call BlzSetSpecialEffectAnimation(whichEffect, animationName)
+    endfunction
+
+    public function QueueAnimation takes effect whichEffect, string animationName returns nothing
+        if whichEffect == null or animationName == null or animationName == "" then
+            return
+        endif
+        call BlzQueueSpecialEffectAnimation(whichEffect, animationName)
+    endfunction
+
+    public function SetAnimationBlendTime takes effect whichEffect, real blendTime returns nothing
+        if whichEffect == null then
+            return
+        endif
+        if blendTime < 0.00 then
+            set blendTime = 0.00
+        endif
+        call BlzSetSpecialEffectAnimationBlendTime(whichEffect, blendTime)
+    endfunction
+
+    public function SetAnimationByTag takes string tag, string animationName returns nothing
+        local integer currentId
+        local effect whichEffect
+
+        if tag == null or tag == "" or animationName == null or animationName == "" then
+            return
+        endif
+        set currentId = TagEffects[GetTagHash(tag)]
+        loop
+            exitwhen currentId == 0
+            set whichEffect = EffectHandle.effect[currentId]
+            call SetAnimation(whichEffect, animationName)
+            set currentId = EffectTagNext[currentId]
+        endloop
+        set whichEffect = null
+    endfunction
+
+    public function QueueAnimationByTag takes string tag, string animationName returns nothing
+        local integer currentId
+        local effect whichEffect
+
+        if tag == null or tag == "" or animationName == null or animationName == "" then
+            return
+        endif
+        set currentId = TagEffects[GetTagHash(tag)]
+        loop
+            exitwhen currentId == 0
+            set whichEffect = EffectHandle.effect[currentId]
+            call QueueAnimation(whichEffect, animationName)
+            set currentId = EffectTagNext[currentId]
+        endloop
+        set whichEffect = null
+    endfunction
+
+    public function SetAnimationBlendTimeByTag takes string tag, real blendTime returns nothing
+        local integer currentId
+        local effect whichEffect
+
+        if tag == null or tag == "" then
+            return
+        endif
+        set currentId = TagEffects[GetTagHash(tag)]
+        loop
+            exitwhen currentId == 0
+            set whichEffect = EffectHandle.effect[currentId]
+            call SetAnimationBlendTime(whichEffect, blendTime)
+            set currentId = EffectTagNext[currentId]
+        endloop
+        set whichEffect = null
     endfunction
 
     // Configure effect properties - use -1 (integer) or -1.0 (real) to skip a parameter, use null for animtype
