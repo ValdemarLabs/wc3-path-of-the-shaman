@@ -9,7 +9,8 @@
     Credits: Tasyen (TasQuestBox as inspiration)
 
     How to install:
-    Import after Table and Interface and before panels that return to MasterUI.
+    Import after Table, Interface, and CameraControl and before panels that
+    return to MasterUI.
 
     API:
     - call MasterUI_Show()
@@ -25,7 +26,7 @@
     hide list.
 
 **/
-library MasterUI initializer AutoInit requires Table, Interface
+library MasterUI initializer AutoInit requires Table, Interface, CameraControl
 
 globals
     private boolean MUI_Initialized = false
@@ -201,6 +202,7 @@ endfunction
 public function ClosePanels takes nothing returns nothing
     call MUI_HideMaster()
     call MUI_HideAllPanels()
+    call CameraControl_SetMouseOrbitBlockReason(GetLocalPlayer(), CameraControl_MOUSE_ORBIT_BLOCK_MASTER_UI, false)
 endfunction
 
 private function MUI_HideAllPanelsForCinematic takes nothing returns nothing
@@ -316,6 +318,7 @@ private function MUI_OpenAction takes nothing returns nothing
         else
             call Interface_NotifyUIClosed()
         endif
+        call CameraControl_SetMouseOrbitBlockReason(GetTriggerPlayer(), CameraControl_MOUSE_ORBIT_BLOCK_MASTER_UI, showPanel)
     endif
 endfunction
 
@@ -325,6 +328,7 @@ private function MUI_CloseAction takes nothing returns nothing
             call Interface_NotifyUIClosed()
         endif
         call BlzFrameSetVisible(MUI_Parent, false)
+        call CameraControl_SetMouseOrbitBlockReason(GetTriggerPlayer(), CameraControl_MOUSE_ORBIT_BLOCK_MASTER_UI, false)
     endif
 endfunction
 
@@ -340,6 +344,7 @@ private function MUI_EscapeAction takes nothing returns nothing
         call MUI_HideMaster()
     endif
     call MUI_HideAllPanels()
+    call CameraControl_SetMouseOrbitBlockReason(GetTriggerPlayer(), CameraControl_MOUSE_ORBIT_BLOCK_MASTER_UI, false)
 endfunction
 
 private function MUI_MenuAction takes nothing returns nothing
@@ -493,6 +498,7 @@ public function Show takes nothing returns nothing
             call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_OPEN, Player(0))
         endif
         call BlzFrameSetVisible(MUI_Parent, true)
+        call CameraControl_SetMouseOrbitBlockReason(GetLocalPlayer(), CameraControl_MOUSE_ORBIT_BLOCK_MASTER_UI, true)
     endif
 endfunction
 
@@ -502,6 +508,7 @@ public function Hide takes nothing returns nothing
             call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_CLOSE, Player(0))
         endif
         call BlzFrameSetVisible(MUI_Parent, false)
+        call CameraControl_SetMouseOrbitBlockReason(GetLocalPlayer(), CameraControl_MOUSE_ORBIT_BLOCK_MASTER_UI, false)
     endif
 endfunction
 
@@ -523,6 +530,7 @@ public function HideGameButton takes nothing returns nothing
         call Init()
     endif
     call MUI_HideAllPanelsForCinematic()
+    call CameraControl_SetMouseOrbitBlockReason(GetLocalPlayer(), CameraControl_MOUSE_ORBIT_BLOCK_MASTER_UI, false)
     set MUI_OpenButtonVisible = false
     call MUI_ApplyOpenButtonVisibility()
     static if LIBRARY_QuestUI then
