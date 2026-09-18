@@ -2,7 +2,7 @@
     Boss
 
     Author: Valdemar
-    Version: 0.4.0
+    Version: 0.5.0
 
     Description:
     Shared foundation for PotS boss encounters. The library registers
@@ -26,7 +26,9 @@
     How to install:
     Import after Table, Events, UnitDeathEvent, DamageEngine, and CreepRespawn.
     Import this library before encounter-specific boss libraries. Combat-area
-    rects passed to Boss_SetCombatArea are borrowed map references.
+    rects passed to Boss_SetCombatArea are borrowed map references. ThreatSystem
+    is optional; when present, boss defeat, reset, replacement, and unregister
+    paths clear the affected threat table automatically.
 
     API:
     - set bossId = Boss_Register(whichUnit, displayName)
@@ -64,7 +66,7 @@
     Boss_EventKiller, Boss_EventPreviousPhase, and Boss_EventPhase.
 
 **/
-library Boss initializer Init requires Table, Events, UnitDeathEvent, DamageEngine, CreepRespawn
+library Boss initializer Init requires Table, Events, UnitDeathEvent, DamageEngine, CreepRespawn, optional ThreatSystem
     globals
         // Lifecycle states.
         constant integer BOSS_STATE_NONE = 0
@@ -214,6 +216,10 @@ library Boss initializer Init requires Table, Events, UnitDeathEvent, DamageEngi
             set Boss_ActiveCount = Boss_ActiveCount - 1
         endif
         set Boss_State[bossId] = BOSS_STATE_DEFEATED
+
+        static if LIBRARY_ThreatSystem then
+            call ThreatSystem_ClearUnit(whichUnit)
+        endif
 
         if Boss_DefeatMode[bossId] == BOSS_DEFEAT_MODE_SCRIPTED and Boss_IsUnitAlive(whichUnit) then
             call SetUnitInvulnerable(whichUnit, true)
@@ -454,6 +460,9 @@ library Boss initializer Init requires Table, Events, UnitDeathEvent, DamageEngi
         if Boss_State[bossId] == BOSS_STATE_ACTIVE and Boss_ActiveCount > 0 then
             set Boss_ActiveCount = Boss_ActiveCount - 1
         endif
+        static if LIBRARY_ThreatSystem then
+            call ThreatSystem_ClearUnit(Boss_Unit[bossId])
+        endif
         call Boss_UnitId.remove(GetHandleId(Boss_Unit[bossId]))
         if udg_BOSS != null then
             call GroupRemoveUnit(udg_BOSS, Boss_Unit[bossId])
@@ -508,6 +517,9 @@ library Boss initializer Init requires Table, Events, UnitDeathEvent, DamageEngi
         endif
 
         set oldUnit = Boss_Unit[bossId]
+        static if LIBRARY_ThreatSystem then
+            call ThreatSystem_ClearUnit(oldUnit)
+        endif
         call Boss_UnitId.remove(GetHandleId(oldUnit))
         if udg_BOSS != null then
             call GroupRemoveUnit(udg_BOSS, oldUnit)
@@ -697,6 +709,10 @@ library Boss initializer Init requires Table, Events, UnitDeathEvent, DamageEngi
         endif
         set previousPhase = Boss_Phase[bossId]
         set Boss_State[bossId] = BOSS_STATE_RESETTING
+
+        static if LIBRARY_ThreatSystem then
+            call ThreatSystem_ClearUnit(whichUnit)
+        endif
 
         call SetUnitInvulnerable(whichUnit, false)
         call PauseUnit(whichUnit, false)

@@ -22,6 +22,8 @@
 
 ### Technical Updates
 
+- Added `Threat/ThreatSystem.j` with automatic damage, effective ally-healing, and ally-buff threat; WoW-style 110% melee/130% ranged aggro thresholds; autonomous retargeting; floating aggro-change notices; bounded cleanup; taunt, modifier, and query APIs; and optional boss lifecycle cleanup through `DungeonsAndBosses/Boss.j`.
+- Added `UI/TargetUnitUI.j`, a no-FDF top-center boss frame that automatically shows the active boss name, health, mana, current aggro target, and top-three threat list with the aggro holder fixed at rank one.
 - Added `UnitSystems/UnitHider4.j` as the recommended UnitHider implementation. It preserves system-owned visibility, tracks player-controlled and registered AI heroes as revealers while protecting every hero from hiding, consumes companion/pet registrations, protects active combat and casting units, prioritizes already-hidden units, suspends changes during cinematics, caches squared-distance reference positions, and replaces full-map half-second scans with bounded Unit Event index batches.
 - Added `UnitSystems/UnitHider4_Review.md` with the archived version history, implementation comparison, PotS integration decisions, warnings about obsolete optimization estimates, and the full-map validation checklist.
 - Documented the World Editor migration for UnitHider4: keep the legacy reference initializer disabled, do not register the reputation/companion/stats dummies as revealers, and remove UnitHider enable/disable calls from Cinematic ON/OFF because `udg_InCinematic` now suspends the system directly.
@@ -29,6 +31,7 @@
 
 ### Actions Remaining
 
+- Import `Threat/ThreatSystem.j` after Table, Events, UnitDeathEvent, DamageEngine, and HealEngine; import `UI/TargetUnitUI.j` after ThreatSystem and Boss; then compile the full map and validate damage/healing/buff threat, 110%/130% aggro pulls, taunts, death/reset cleanup, floating text, boss target-frame layout, and two-client frame consistency.
 - Import `UnitSystems/UnitHider4.j` in place of earlier UnitHider versions, then validate initial hiding, AI hero movement/combat, companion and pet reveal radii, cinematic suspension, enable/disable restoration, revival, transports, and long-session frame pacing in the full World Editor map.
 
 ## [17.9.2026]
