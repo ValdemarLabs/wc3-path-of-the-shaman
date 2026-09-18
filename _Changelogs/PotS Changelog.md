@@ -22,6 +22,8 @@
 
 ### Technical Updates
 
+- Added `AI/AI_Register.j` as the central simple-NPC classifier for generic, aggressive, passive, civilian, guard, scripted, vendor, caster, and healer profiles. Vendor and quest-giver registrations now feed the shared AI unit-type lifecycle, while existing specific profiles, heroes, structures, and boss-owned instances remain protected from generic takeover.
+- Updated `AI/AI.j`, `AI/Generic/AI_Scripted.j`, `AI/Generic/AI_Vendor.j`, `AI/_Plans/AI_MasterPlan.md`, `AI/Specific/AI_Valeria.j`, `AI/Specific/AI_Aradion.j`, `DungeonsAndBosses/Boss.j`, `QuestsAndDialogs/QuestMaster.j`, `QuestsAndDialogs/QuestGiver.j`, and the vendor registration libraries with callback-aware target scanning, default-profile inspection, opt-out shared revival, safe profile replacement, and explicit ownership handoff so pre-placed and later-created NPCs can auto-register without unnecessary combat scans or overlap with hero, story-character, ambient-routine, respawn, or boss controllers.
 - Added `Threat/ThreatSystem.j` with automatic damage, effective ally-healing, and ally-buff threat; WoW-style 110% melee/130% ranged aggro thresholds; autonomous retargeting; floating aggro-change notices; bounded cleanup; taunt, modifier, and query APIs; and optional boss lifecycle cleanup through `DungeonsAndBosses/Boss.j`.
 - Added `UI/TargetUnitUI.j`, a no-FDF top-center boss frame that automatically shows the active boss name, health, mana, current aggro target, and top-three threat list with the aggro holder fixed at rank one.
 - Added `UnitSystems/UnitHider4.j` as the recommended UnitHider implementation. It preserves system-owned visibility, tracks player-controlled and registered AI heroes as revealers while protecting every hero from hiding, consumes companion/pet registrations, protects active combat and casting units, prioritizes already-hidden units, suspends changes during cinematics, caches squared-distance reference positions, and replaces full-map half-second scans with bounded Unit Event index batches.
@@ -31,6 +33,7 @@
 
 ### Actions Remaining
 
+- Import `AI/AI_Register.j` after `QuestGiver.j` and the generic AI profile libraries, compile the full map, and validate representative pre-placed and recreated vendors/quest givers, Valeria and Aradion profile takeover, boss registration/respawn exclusion, and AIRoutines order ownership.
 - Import `Threat/ThreatSystem.j` after Table, Events, UnitDeathEvent, DamageEngine, and HealEngine; import `UI/TargetUnitUI.j` after ThreatSystem and Boss; then compile the full map and validate damage/healing/buff threat, 110%/130% aggro pulls, taunts, death/reset cleanup, floating text, boss target-frame layout, and two-client frame consistency.
 - Import `UnitSystems/UnitHider4.j` in place of earlier UnitHider versions, then validate initial hiding, AI hero movement/combat, companion and pet reveal radii, cinematic suspension, enable/disable restoration, revival, transports, and long-session frame pacing in the full World Editor map.
 
