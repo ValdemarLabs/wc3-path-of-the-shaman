@@ -2,7 +2,7 @@
     GeneralGoodsVendor
 
     Author: Valdemar
-    Version: 1.3.0
+    Version: 1.3.1
 
     Description:
     Template general goods merchant for the PotS shop system. This vendor sells
@@ -22,7 +22,7 @@
     - call GeneralGoodsVendor_BindAIProfile(profileId)
 
 **/
-library GeneralGoodsVendor initializer Init requires Shop, VoicelinesVendorLines, optional AI
+library GeneralGoodsVendor initializer Init requires Shop, VoicelinesVendorLines, optional AI, optional AIRegister
     globals
         private constant integer VGG_UNIT_TYPE_UTILITIES_VENDOR = 'o62U'
         private constant integer VGG_UNIT_TYPE_THRAKNAR = 'o61U'
@@ -48,12 +48,23 @@ library GeneralGoodsVendor initializer Init requires Shop, VoicelinesVendorLines
     public function RegisterUnit takes unit vendor returns boolean
         local boolean result = Shop_RegisterVendorUnit(vendor, VGG_VendorId)
 
+        static if LIBRARY_AIRegister then
+            if result then
+                call AIRegister_RegisterVendorUnit(vendor)
+            endif
+        endif
         set vendor = null
         return result
     endfunction
 
     public function RegisterUnitType takes integer unitTypeId returns boolean
-        return Shop_RegisterVendorUnitType(VGG_VendorId, unitTypeId)
+        local boolean result = Shop_RegisterVendorUnitType(VGG_VendorId, unitTypeId)
+        static if LIBRARY_AIRegister then
+            if result then
+                call AIRegister_RegisterVendorType(unitTypeId, "")
+            endif
+        endif
+        return result
     endfunction
 
     public function BindAIProfile takes integer profileId returns nothing

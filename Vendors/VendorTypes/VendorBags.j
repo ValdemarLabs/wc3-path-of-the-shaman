@@ -2,7 +2,7 @@
     VendorBags
 
     Author: Valdemar
-    Version: 2.0.2
+    Version: 2.0.3
 
     Description:
     Shared racial and faction bag merchants for the PotS shop system. Each
@@ -26,7 +26,7 @@
       'XXXX' marks identities whose unit type has not been created yet.
 
 **/
-library VendorBags initializer Init requires Shop, VoicelinesVendorLines, Reputation
+library VendorBags initializer Init requires Shop, VoicelinesVendorLines, Reputation, optional AIRegister
     globals
         public constant integer UNIT_TYPE_GRAKNAR = 'o61S'
 
@@ -66,15 +66,27 @@ library VendorBags initializer Init requires Shop, VoicelinesVendorLines, Reputa
     public function RegisterUnit takes unit vendor returns boolean
         local boolean result = Shop_RegisterVendorUnit(vendor, VBAG_VendorId)
 
+        static if LIBRARY_AIRegister then
+            if result then
+                call AIRegister_RegisterVendorUnit(vendor)
+            endif
+        endif
         set vendor = null
         return result
     endfunction
 
     public function RegisterUnitType takes integer unitTypeId returns boolean
+        local boolean result
         if unitTypeId == VBAG_UNIT_TYPE_PLACEHOLDER then
             return false
         endif
-        return Shop_RegisterVendorUnitType(VBAG_VendorId, unitTypeId)
+        set result = Shop_RegisterVendorUnitType(VBAG_VendorId, unitTypeId)
+        static if LIBRARY_AIRegister then
+            if result then
+                call AIRegister_RegisterVendorType(unitTypeId, "")
+            endif
+        endif
+        return result
     endfunction
 
     public function RegisterUnitTypeEx takes integer unitTypeId, string displayName, string profile, string voiceType, string factionName returns boolean

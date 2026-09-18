@@ -2,7 +2,7 @@
     BlacksmithVendor
 
     Author: Valdemar
-    Version: 1.2.0
+    Version: 1.2.1
 
     Description:
     Template blacksmith merchant for the PotS shop system. This vendor sells
@@ -22,7 +22,7 @@
     - call BlacksmithVendor_BindAIProfile(profileId)
 
 **/
-library BlacksmithVendor initializer Init requires Shop, VoicelinesVendorLines, Reputation, optional AI
+library BlacksmithVendor initializer Init requires Shop, VoicelinesVendorLines, Reputation, optional AI, optional AIRegister
     globals
         private constant integer VB_UNIT_TYPE_HUMAN_BLACKSMITH = 'h00I'
         private constant integer VB_UNIT_TYPE_ORC_BLACKSMITH = 'o60H'
@@ -51,12 +51,23 @@ library BlacksmithVendor initializer Init requires Shop, VoicelinesVendorLines, 
     public function RegisterUnit takes unit vendor returns boolean
         local boolean result = Shop_RegisterVendorUnit(vendor, VB_VendorId)
 
+        static if LIBRARY_AIRegister then
+            if result then
+                call AIRegister_RegisterVendorUnit(vendor)
+            endif
+        endif
         set vendor = null
         return result
     endfunction
 
     public function RegisterUnitType takes integer unitTypeId returns boolean
-        return Shop_RegisterVendorUnitType(VB_VendorId, unitTypeId)
+        local boolean result = Shop_RegisterVendorUnitType(VB_VendorId, unitTypeId)
+        static if LIBRARY_AIRegister then
+            if result then
+                call AIRegister_RegisterVendorType(unitTypeId, "")
+            endif
+        endif
+        return result
     endfunction
 
     public function BindAIProfile takes integer profileId returns nothing
@@ -103,6 +114,9 @@ library BlacksmithVendor initializer Init requires Shop, VoicelinesVendorLines, 
     private function Init takes nothing returns nothing
         set VB_VendorId = Shop_CreateVendor("Blacksmith", VB_UNIT_TYPE_HUMAN_BLACKSMITH)
         call Shop_SetVendorTypeLabel(VB_VendorId, "Blacksmith")
+        static if LIBRARY_AIRegister then
+            call AIRegister_RegisterVendorType(VB_UNIT_TYPE_HUMAN_BLACKSMITH, "")
+        endif
         call BlacksmithVendor_RegisterUnitType(VB_UNIT_TYPE_ORC_BLACKSMITH)
         call BlacksmithVendor_RegisterUnitType(VB_UNIT_TYPE_BROKKAR)
         call BlacksmithVendor_RegisterUnitType(VB_UNIT_TYPE_THROGAR)

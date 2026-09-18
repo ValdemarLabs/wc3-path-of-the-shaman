@@ -1,6 +1,6 @@
 # AI Master Plan
 
-Last updated: 2026-07-05
+Last updated: 2026-09-18
 
 This document is the required planning artifact before creating `AI.j` and the
 AI sublibraries. It records how the old GUI AI triggers in
@@ -547,6 +547,25 @@ Implementation rule:
 - generic AI registration must not put Aradion into the random spawn pool.
 
 ## Sublibrary Plan
+
+### Global NPC Registration
+
+`AI/AI_Register.j` is the central classifier for simple global NPCs. Systems
+that already know an NPC's purpose register its unit type as generic,
+aggressive, passive, civilian, guard, scripted, vendor, caster, or healer.
+Unknown explicit registrations fall back to `AIGeneric`; the classifier does
+not guess across every map unit because that would absorb creeps, bosses,
+heroes, and routine-owned ambient actors.
+
+The classifier uses the `AI.j` unit-type default profile so the existing unit
+index event covers pre-placed and later-created replacements. It also performs
+a deferred world scan for types registered after initial indexing. Existing
+class/specific defaults win, heroes and structures are rejected, Boss removes
+its units from generic ownership, and `AIRoutines` remains authoritative unless
+a routine explicitly opts into shared AI registration. Classifier-owned simple
+NPC profiles disable shared automatic revival and unregister on death so their
+existing quest, vendor, creep-respawn, or creation system remains the lifecycle
+owner.
 
 First wave:
 

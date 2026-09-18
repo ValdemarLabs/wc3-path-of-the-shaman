@@ -79,6 +79,9 @@ public function Enable takes unit whichUnit returns integer
     if existing != null and existing != whichUnit then
         call AI_UnregisterUnit(existing)
     endif
+    if AI_GetInstance(whichUnit) > 0 and AI_GetProfileId(whichUnit) != AI_Aradion_ProfileId then
+        call AI_UnregisterUnit(whichUnit)
+    endif
     set existing = null
     return AI_RegisterUnit(whichUnit, AI_Aradion_ProfileId, AI_ARADION_UNIQUE_ID)
 endfunction
@@ -89,7 +92,7 @@ public function Disable takes unit whichUnit returns nothing
 endfunction
 
 private function TryAutoEnable takes nothing returns nothing
-    if AutoEnableAllowed and udg_Aradion != null and AI_GetInstance(udg_Aradion) <= 0 then
+    if AutoEnableAllowed and udg_Aradion != null and AI_GetProfileId(udg_Aradion) != AI_Aradion_ProfileId then
         call AIAradion_Enable(udg_Aradion)
     endif
 endfunction
@@ -256,6 +259,7 @@ endfunction
 private function Init takes nothing returns nothing
     set AI_Aradion_ClassId = AI_RegisterClass("Magister")
     set AI_Aradion_ProfileId = AI_RegisterProfile(AI_Aradion_ClassId, AI_ARADION_UNIT, "Aradion")
+    call AI_SetUnitTypeDefaultProfile(AI_ARADION_UNIT, AI_Aradion_ProfileId)
     call AI_SetProfileFaction(AI_Aradion_ProfileId, "Elarindor")
     call AI_SetProfileCap(AI_Aradion_ProfileId, 1)
     call AI_SetUnitTypeCap(AI_ARADION_UNIT, 1)

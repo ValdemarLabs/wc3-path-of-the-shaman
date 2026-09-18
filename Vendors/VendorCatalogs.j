@@ -2,7 +2,7 @@
     VendorCatalogs
 
     Author: Valdemar
-    Version: 1.3.3
+    Version: 1.3.4
 
     Description:
     Ready-to-use PotS vendor definitions for equipment, professions, factions,
@@ -27,7 +27,7 @@
     - Canonical vendor names are registered automatically by unit rawcode.
 
 **/
-library VendorCatalogs initializer Init requires Shop, VendorLines, VoicelinesVendorLines, Reputation
+library VendorCatalogs initializer Init requires Shop, VendorLines, VoicelinesVendorLines, Reputation, optional AIRegister
     globals
         public constant integer VENDOR_CATALOG_WEAPONS = 1
         public constant integer VENDOR_CATALOG_ARMOR = 2
@@ -568,6 +568,11 @@ library VendorCatalogs initializer Init requires Shop, VendorLines, VoicelinesVe
         local integer vendorId = VendorCatalogs_GetVendorId(catalogType)
         local boolean result = Shop_RegisterVendorUnit(vendor, vendorId)
 
+        static if LIBRARY_AIRegister then
+            if result then
+                call AIRegister_RegisterVendorUnit(vendor)
+            endif
+        endif
         if result and voiceProfile != null and voiceProfile != "" then
             call VendorLines_BindUnitProfile(vendor, voiceProfile)
         endif
@@ -579,6 +584,11 @@ library VendorCatalogs initializer Init requires Shop, VendorLines, VoicelinesVe
         local integer vendorId = VendorCatalogs_GetVendorId(catalogType)
         local boolean result = Shop_RegisterVendorUnitType(vendorId, unitTypeId)
 
+        static if LIBRARY_AIRegister then
+            if result then
+                call AIRegister_RegisterVendorType(unitTypeId, "")
+            endif
+        endif
         if result and voiceProfile != null and voiceProfile != "" then
             call VendorLines_BindUnitTypeProfile(unitTypeId, voiceProfile)
         endif

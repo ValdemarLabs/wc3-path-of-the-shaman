@@ -71,6 +71,9 @@ public function Enable takes unit whichUnit returns integer
     if existing != null and existing != whichUnit then
         call AI_UnregisterUnit(existing)
     endif
+    if AI_GetInstance(whichUnit) > 0 and AI_GetProfileId(whichUnit) != AI_Valeria_ProfileId then
+        call AI_UnregisterUnit(whichUnit)
+    endif
     set existing = null
     return AI_RegisterUnit(whichUnit, AI_Valeria_ProfileId, AI_VALERIA_UNIQUE_ID)
 endfunction
@@ -81,7 +84,7 @@ public function Disable takes unit whichUnit returns nothing
 endfunction
 
 private function TryAutoEnable takes nothing returns nothing
-    if AutoEnableAllowed and udg_Valeria != null and AI_GetInstance(udg_Valeria) <= 0 then
+    if AutoEnableAllowed and udg_Valeria != null and AI_GetProfileId(udg_Valeria) != AI_Valeria_ProfileId then
         call AIValeria_Enable(udg_Valeria)
     endif
 endfunction
@@ -248,6 +251,7 @@ endfunction
 private function Init takes nothing returns nothing
     set AI_Valeria_ClassId = AI_RegisterClass("Ranger")
     set AI_Valeria_ProfileId = AI_RegisterProfile(AI_Valeria_ClassId, AI_VALERIA_UNIT, "Valeria")
+    call AI_SetUnitTypeDefaultProfile(AI_VALERIA_UNIT, AI_Valeria_ProfileId)
     call AI_SetProfileFaction(AI_Valeria_ProfileId, "Elarindor")
     call AI_SetProfileCap(AI_Valeria_ProfileId, 1)
     call AI_SetUnitTypeCap(AI_VALERIA_UNIT, 1)

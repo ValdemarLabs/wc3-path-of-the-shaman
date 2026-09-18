@@ -2,7 +2,7 @@
     QuestGiver
 
     Author: Valdemar
-    Version: 1.3.0
+    Version: 1.3.1
 
     Description:
     Provides PotS quest creation helpers, objective tracking, quest-item
@@ -28,6 +28,8 @@
     - QuestGiver_RestoreCompanion(...) silently restores a preserved party
       roster entry without replaying its recruitment feedback.
     - QuestGiver_ResetRequirements(questId) clears objective progress.
+    - QuestGiver_RegisterRegistrationCallback(callback) observes giver registration;
+      callbacks read QuestGiver_EventUnit.
 
 **/
 library QuestGiver initializer Init requires QuestMaster, DialogInteraction, DialogSystem, HeroItemCheck, SharedDInvLib, Table, UnitDeathEvent
@@ -38,6 +40,8 @@ library QuestGiver initializer Init requires QuestMaster, DialogInteraction, Dia
 
 globals
 	private constant boolean DEBUG = false
+	unit QuestGiver_EventUnit = null
+	private trigger QuestGiver_RegistrationCallbacks = null
 
 	constant integer QUESTGIVER_GREET_DEFAULT = 0
 	constant integer QUESTGIVER_GREET_NAZGREK_THEN_NPC = 1
@@ -390,10 +394,24 @@ public function RemoveCompanion takes unit companionUnit returns nothing
 	call DebugMsg("Removed companion: " + GetUnitName(companionUnit))
 endfunction
 
+public function RegisterRegistrationCallback takes code callback returns nothing
+	if QuestGiver_RegistrationCallbacks == null then
+		set QuestGiver_RegistrationCallbacks = CreateTrigger()
+	endif
+	call TriggerAddAction(QuestGiver_RegistrationCallbacks, callback)
+endfunction
+
 public function Register takes unit u returns nothing
+	local unit previousEventUnit = QuestGiver_EventUnit
 	call DebugMsg("Register giver id=" + I2S(GetHandleId(u)))
 	call QuestMaster_RegisterGiver(u)
 	call DialogInteraction_Register(u)
+	if QuestGiver_RegistrationCallbacks != null then
+		set QuestGiver_EventUnit = u
+		call TriggerExecute(QuestGiver_RegistrationCallbacks)
+		set QuestGiver_EventUnit = previousEventUnit
+	endif
+	set previousEventUnit = null
 endfunction
 
 public function Unregister takes unit u returns nothing
@@ -2708,6 +2726,7 @@ endfunction
 private function Init takes nothing returns nothing
 	set CompanionIndex = Table.create()
 	set CompanionIcon = Table.create()
+	set QuestGiver_RegistrationCallbacks = CreateTrigger()
 
 	// Register with centralized death event system at map start
 	call UnitDeathEvent_Register(function OnUnitDeath)

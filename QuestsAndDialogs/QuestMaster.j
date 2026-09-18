@@ -2,7 +2,7 @@
     QuestMaster
 
     Author: Valdemar
-    Version: 1.3.8
+    Version: 1.3.9
 
     Description:
     Owns PotS quest data, state transitions, rewards, availability, custom
@@ -28,6 +28,7 @@
       and quest markers to times when that hero is owned or a companion.
     - QuestMaster_GetRegisteredGiverByType(unitTypeId) resolves the current
       registered handle used by respawn transfer wrappers.
+    - QuestMaster_IsRegisteredGiver(unit) reports whether a unit is registered.
     - QuestMaster_AddDailyResetAction(handler) listens for daily resets.
     - QuestMaster_ResetDailyQuests() manually resets completed daily quests.
 
@@ -2374,6 +2375,13 @@ public function GetRegisteredGiverByType takes integer unitTypeId returns unit
 		return null
 	endif
 	return QuestGiverList[index]
+endfunction
+
+public function IsRegisteredGiver takes unit questGiver returns boolean
+	if questGiver == null then
+		return false
+	endif
+	return QuestGiverIndex.integer[GetHandleId(questGiver)] > 0
 endfunction
 
 public function GetByNameAndGiver takes string questName, unit questGiver returns QuestData

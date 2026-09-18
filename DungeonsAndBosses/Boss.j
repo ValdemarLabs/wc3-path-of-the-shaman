@@ -2,7 +2,7 @@
     Boss
 
     Author: Valdemar
-    Version: 0.5.0
+    Version: 0.5.1
 
     Description:
     Shared foundation for PotS boss encounters. The library registers
@@ -66,7 +66,7 @@
     Boss_EventKiller, Boss_EventPreviousPhase, and Boss_EventPhase.
 
 **/
-library Boss initializer Init requires Table, Events, UnitDeathEvent, DamageEngine, CreepRespawn, optional ThreatSystem
+library Boss initializer Init requires Table, Events, UnitDeathEvent, DamageEngine, CreepRespawn, optional ThreatSystem, optional AIRegister
     globals
         // Lifecycle states.
         constant integer BOSS_STATE_NONE = 0
@@ -438,6 +438,9 @@ library Boss initializer Init requires Table, Events, UnitDeathEvent, DamageEngi
         set Boss_HomeY[bossId] = GetUnitY(whichUnit)
         set Boss_HomeFacing[bossId] = GetUnitFacing(whichUnit)
         set Boss_UnitId[GetHandleId(whichUnit)] = bossId
+        static if LIBRARY_AIRegister then
+            call AIRegister_ExcludeUnit(whichUnit)
+        endif
         call CreepRespawn_DiscardUnit(whichUnit)
 
         if udg_BOSS == null then
@@ -462,6 +465,9 @@ library Boss initializer Init requires Table, Events, UnitDeathEvent, DamageEngi
         endif
         static if LIBRARY_ThreatSystem then
             call ThreatSystem_ClearUnit(Boss_Unit[bossId])
+        endif
+        static if LIBRARY_AIRegister then
+            call AIRegister_AllowUnit(Boss_Unit[bossId])
         endif
         call Boss_UnitId.remove(GetHandleId(Boss_Unit[bossId]))
         if udg_BOSS != null then
@@ -520,6 +526,9 @@ library Boss initializer Init requires Table, Events, UnitDeathEvent, DamageEngi
         static if LIBRARY_ThreatSystem then
             call ThreatSystem_ClearUnit(oldUnit)
         endif
+        static if LIBRARY_AIRegister then
+            call AIRegister_AllowUnit(oldUnit)
+        endif
         call Boss_UnitId.remove(GetHandleId(oldUnit))
         if udg_BOSS != null then
             call GroupRemoveUnit(udg_BOSS, oldUnit)
@@ -527,6 +536,9 @@ library Boss initializer Init requires Table, Events, UnitDeathEvent, DamageEngi
 
         set Boss_Unit[bossId] = newUnit
         set Boss_UnitId[GetHandleId(newUnit)] = bossId
+        static if LIBRARY_AIRegister then
+            call AIRegister_ExcludeUnit(newUnit)
+        endif
         call CreepRespawn_DiscardUnit(newUnit)
         if udg_BOSS == null then
             set udg_BOSS = CreateGroup()

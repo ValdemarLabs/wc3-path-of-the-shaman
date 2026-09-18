@@ -26,9 +26,6 @@ globals
     integer AI_Scripted_ClassId = 0
 endglobals
 
-private function Think takes nothing returns nothing
-endfunction
-
 public function RegisterProfile takes integer unitTypeId, string profileName returns integer
     local integer profileId
     if unitTypeId == 0 or profileName == "" then
@@ -36,7 +33,6 @@ public function RegisterProfile takes integer unitTypeId, string profileName ret
     endif
     set profileId = AI_RegisterProfile(AI_Scripted_ClassId, unitTypeId, profileName)
     call AI_SetProfileAutonomous(profileId, false)
-    call AI_SetProfileThinkCallback(profileId, function Think)
     return profileId
 endfunction
 

@@ -35,9 +35,11 @@
     call AI_SetUnitTypeCap(unitTypeId, cap)
     call AI_SetProfileRandomUniqueId(profileId, uniqueId)
     call AI_SetUnitTypeDefaultProfile(unitTypeId, profileId)
+    call AI_GetUnitTypeDefaultProfile(unitTypeId) returns integer
     call AI_SetProfileFixedHeroLevel(profileId, level)
     call AI_SetProfileXpLockedUntilInvite(profileId, enabled)
     call AI_SetProfileUsesFakeDeath(profileId, enabled)
+    call AI_SetProfileAutomaticRevive(profileId, enabled)
     call AI_SetProfileAutonomous(profileId, enabled)
     call AI_SetProfileSpawnOwner(profileId, owner)
     call AI_SetProfileFaction(profileId, factionName)
@@ -293,6 +295,7 @@ globals
     private Table ProfileLockXpUntilInvite = 0
     private Table ProfileNoManaRestore = 0
     private Table ProfileUsesFakeDeath = 0
+    private Table ProfileAutomaticReviveDisabled = 0
     private Table ProfileAllowCompanionTravel = 0
     private Table ProfileAutonomousDisabled = 0
     private Table ProfileFaction = 0
@@ -515,6 +518,7 @@ private function EnsureState takes nothing returns nothing
         set ProfileLockXpUntilInvite = Table.create()
         set ProfileNoManaRestore = Table.create()
         set ProfileUsesFakeDeath = Table.create()
+        set ProfileAutomaticReviveDisabled = Table.create()
         set ProfileAllowCompanionTravel = Table.create()
         set ProfileAutonomousDisabled = Table.create()
         set ProfileFaction = Table.create()
@@ -2523,10 +2527,25 @@ endfunction
 
 public function SetUnitTypeDefaultProfile takes integer unitTypeId, integer profileId returns nothing
     call EnsureState()
-    if unitTypeId == 0 or profileId <= 0 or ProfileUnitType[profileId] != unitTypeId then
+    if unitTypeId == 0 then
+        return
+    endif
+    if profileId <= 0 then
+        call UnitTypeDefaultProfile.remove(unitTypeId)
+        return
+    endif
+    if ProfileUnitType[profileId] != unitTypeId then
         return
     endif
     set UnitTypeDefaultProfile[unitTypeId] = profileId
+endfunction
+
+public function GetUnitTypeDefaultProfile takes integer unitTypeId returns integer
+    call EnsureState()
+    if unitTypeId == 0 then
+        return 0
+    endif
+    return UnitTypeDefaultProfile[unitTypeId]
 endfunction
 
 public function SetProfileFaction takes integer profileId, string factionName returns nothing
@@ -2644,6 +2663,11 @@ endfunction
 public function SetProfileUsesFakeDeath takes integer profileId, boolean enabled returns nothing
     call EnsureState()
     set ProfileUsesFakeDeath.boolean[profileId] = enabled
+endfunction
+
+public function SetProfileAutomaticRevive takes integer profileId, boolean enabled returns nothing
+    call EnsureState()
+    set ProfileAutomaticReviveDisabled.boolean[profileId] = not enabled
 endfunction
 
 public function SetProfileCompanionRetreat takes integer profileId, boolean enabled returns nothing
@@ -6334,6 +6358,9 @@ private function RunProfileThink takes integer instanceId, unit whichUnit return
     if instanceId <= 0 or whichUnit == null then
         return
     endif
+    if ProfileThinkTrigger.trigger[InstanceProfile[instanceId]] == null then
+        return
+    endif
     if IsCompanionControlled(whichUnit) and IsDialogBlockingBark() then
         return
     endif
@@ -6740,10 +6767,12 @@ private function HandleDeath takes nothing returns nothing
     local unit victim = UnitDeathEvent_GetDyingUnit()
     local unit killer = UnitDeathEvent_GetKillingUnit()
     local integer instanceId = UnitInstance[GetHandleId(victim)]
+    local integer profileId
     if instanceId <= 0 and IsCompanionControlled(victim) then
         set instanceId = AI_RegisterUnitByType(victim, 0)
     endif
     if instanceId > 0 then
+        set profileId = InstanceProfile[instanceId]
         set InstanceAlive.boolean[instanceId] = false
         set InstanceTraveling.boolean[instanceId] = false
         call RemoveTrackedProfessionTool(instanceId)
@@ -6755,7 +6784,9 @@ private function HandleDeath takes nothing returns nothing
             call RequestCompanionDeathBark(victim)
         endif
         call RunProfileTrigger(ProfileDeathTrigger, instanceId, victim)
-        if IsUnitType(victim, UNIT_TYPE_HERO) or not IsCompanionControlled(victim) then
+        if ProfileAutomaticReviveDisabled.boolean[profileId] then
+            call AI_UnregisterUnit(victim)
+        elseif IsUnitType(victim, UNIT_TYPE_HERO) or not IsCompanionControlled(victim) then
             call StartReviveTimer(instanceId, victim)
         endif
     endif
