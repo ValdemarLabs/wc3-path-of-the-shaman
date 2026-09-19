@@ -2,15 +2,15 @@
     DynamicMinimap
 
     Author: Valdemar
-    Version: 1.7.0
+    Version: 1.7.1
 
     Description:
         Supports imported 256-coordinate minimap chunks or Warcraft III 3.0
         terrain generation within the current camera bounds. Full/chunked map
         modes and normal/enlarged frame layouts can be toggled.
-        World and authored full-camera bounds are read from the initialized map
-        and engine camera margins so World Editor size changes are not duplicated
-        in library constants.
+        Map-size, authored camera, and entire-world bounds are captured separately
+        so chunk math, gameplay restoration, and full-map icon placement retain
+        their correct coordinate transforms.
         Approaching chunk borders can request a gentle safe-angle correction
         from CameraControl. Cinematic suspension cancels all pending chunk work
         and restores the full-map presentation.
@@ -25,8 +25,8 @@
         native terrain mode. Imported mode additionally requires the pre-rendered
         256x256 BLP chunks and full-map texture under war3mapImported\. Import
         this library after Interface and configure only the minimap-art calibration
-        below when a verified source image requires it. Map and camera bounds are
-        read at initialization. Import CameraControl after this library to service
+        below when a verified source image requires it. Runtime bounds are read
+        at initialization. Import CameraControl after this library to service
         smooth safe-rotation requests.
 
     Uses:
@@ -98,8 +98,9 @@ globals
     private constant real BOUNDS_PADDING_MULTIPLIER = 1.0  // Camera bounds = chunk size * this (MUST be 1.0 for accurate alignment)
     private constant integer CHUNK_COORDINATE_SYSTEM = 256  // Chunk files use 256-tile coordinate system
     
-    // Runtime map and authored full-camera bounds are captured from World
-    // Editor data during initialization instead of duplicated as constants.
+    // Runtime coordinate domains are captured from World Editor data. Chunk
+    // textures use map size, ordinary gameplay restores authored camera bounds,
+    // and the legacy full-map texture/icon transform uses the entire world rect.
     private real mapWorldMinX = 0.0
     private real mapWorldMaxX = 0.0
     private real mapWorldMinY = 0.0
@@ -108,6 +109,10 @@ globals
     private real cameraWorldMaxX = 0.0
     private real cameraWorldMinY = 0.0
     private real cameraWorldMaxY = 0.0
+    private real fullMapWorldMinX = 0.0
+    private real fullMapWorldMaxX = 0.0
+    private real fullMapWorldMinY = 0.0
+    private real fullMapWorldMaxY = 0.0
 
     // Minimap-art calibration in world units. Positive values move the art's represented
     // world area east/north. Keep both at 0 until an accurately cropped source is available.
@@ -345,7 +350,7 @@ private function RestoreOriginalCameraBounds takes nothing returns nothing
 endfunction
 
 private function RequestFullMapUpdate takes nothing returns nothing
-    call QueueMapUpdate(FULL_MAP_TEXTURE, renderSource == DYNAMIC_MINIMAP_SOURCE_IMPORTED, false, -1, -1, cameraWorldMinX, cameraWorldMinY, cameraWorldMaxX, cameraWorldMaxY)
+    call QueueMapUpdate(FULL_MAP_TEXTURE, renderSource == DYNAMIC_MINIMAP_SOURCE_IMPORTED, false, -1, -1, fullMapWorldMinX, fullMapWorldMinY, fullMapWorldMaxX, fullMapWorldMaxY)
 endfunction
 
 private function UpdateMinimapAndBounds takes integer chunkCoordX, integer chunkCoordY returns nothing
@@ -610,15 +615,17 @@ function DynamicMinimap_SuspendForScriptedCamera takes nothing returns nothing
         call CancelPendingMapUpdate()
 
         // The texture swap itself is safe and ensures cinematics always display
-        // the full map. Full bounds are restored only when the entry rotation is
-        // safe; no bounds operation may remain queued after camera ownership moves.
-        if renderSource == DYNAMIC_MINIMAP_SOURCE_IMPORTED then
-            call BlzChangeMinimapTerrainTex(FULL_MAP_TEXTURE)
-        endif
+        // the full map. Its entire-world icon transform is restored only when the
+        // entry rotation is safe; never defer bounds work into camera ownership.
         if IsCameraRotationSafe() then
-            call RestoreOriginalCameraBounds()
-        elseif DEBUG then
-            call BJDebugMsg("|cffFF8800DynamicMinimap: cinematic suspension skipped unsafe full-bounds update|r")
+            call RequestFullMapUpdate()
+        else
+            if renderSource == DYNAMIC_MINIMAP_SOURCE_IMPORTED then
+                call BlzChangeMinimapTerrainTex(FULL_MAP_TEXTURE)
+            endif
+            if DEBUG then
+                call BJDebugMsg("|cffFF8800DynamicMinimap: cinematic suspension skipped unsafe full-bounds update|r")
+            endif
         endif
     endif
 
@@ -975,6 +982,7 @@ endfunction
 private function Init takes nothing returns nothing
     local real startX
     local real startY
+    local rect entireWorldBounds
     local framehandle gameUI
     local framehandle parentFrame
     
@@ -982,15 +990,37 @@ private function Init takes nothing returns nothing
     set mapWorldMaxX = GetRectMaxX(bj_mapInitialPlayableArea)
     set mapWorldMinY = GetRectMinY(bj_mapInitialPlayableArea)
     set mapWorldMaxY = GetRectMaxY(bj_mapInitialPlayableArea)
-    set cameraWorldMinX = mapWorldMinX + GetCameraMargin(CAMERA_MARGIN_LEFT)
-    set cameraWorldMaxX = mapWorldMaxX - GetCameraMargin(CAMERA_MARGIN_RIGHT)
-    set cameraWorldMinY = mapWorldMinY + GetCameraMargin(CAMERA_MARGIN_BOTTOM)
-    set cameraWorldMaxY = mapWorldMaxY - GetCameraMargin(CAMERA_MARGIN_TOP)
+    if bj_mapInitialCameraBounds != null then
+        set cameraWorldMinX = GetRectMinX(bj_mapInitialCameraBounds)
+        set cameraWorldMaxX = GetRectMaxX(bj_mapInitialCameraBounds)
+        set cameraWorldMinY = GetRectMinY(bj_mapInitialCameraBounds)
+        set cameraWorldMaxY = GetRectMaxY(bj_mapInitialCameraBounds)
+    else
+        set cameraWorldMinX = mapWorldMinX + GetCameraMargin(CAMERA_MARGIN_LEFT)
+        set cameraWorldMaxX = mapWorldMaxX - GetCameraMargin(CAMERA_MARGIN_RIGHT)
+        set cameraWorldMinY = mapWorldMinY + GetCameraMargin(CAMERA_MARGIN_BOTTOM)
+        set cameraWorldMaxY = mapWorldMaxY - GetCameraMargin(CAMERA_MARGIN_TOP)
+    endif
+    set entireWorldBounds = GetEntireMapRect()
+    if entireWorldBounds != null then
+        set fullMapWorldMinX = GetRectMinX(entireWorldBounds)
+        set fullMapWorldMaxX = GetRectMaxX(entireWorldBounds)
+        set fullMapWorldMinY = GetRectMinY(entireWorldBounds)
+        set fullMapWorldMaxY = GetRectMaxY(entireWorldBounds)
+        call RemoveRect(entireWorldBounds)
+    else
+        set fullMapWorldMinX = mapWorldMinX
+        set fullMapWorldMaxX = mapWorldMaxX
+        set fullMapWorldMinY = mapWorldMinY
+        set fullMapWorldMaxY = mapWorldMaxY
+    endif
+    set entireWorldBounds = null
 
     if DEBUG then
         call BJDebugMsg("|cffFFFF00DynamicMinimap: Starting initialization...|r")
         call BJDebugMsg("|cffAAAAFFMap bounds configured: X(" + R2S(mapWorldMinX) + " to " + R2S(mapWorldMaxX) + "), Y(" + R2S(mapWorldMinY) + " to " + R2S(mapWorldMaxY) + ")|r")
         call BJDebugMsg("|cffAAAAFFCamera bounds configured: X(" + R2S(cameraWorldMinX) + " to " + R2S(cameraWorldMaxX) + "), Y(" + R2S(cameraWorldMinY) + " to " + R2S(cameraWorldMaxY) + ")|r")
+        call BJDebugMsg("|cffAAAAFFFull-map bounds configured: X(" + R2S(fullMapWorldMinX) + " to " + R2S(fullMapWorldMaxX) + "), Y(" + R2S(fullMapWorldMinY) + " to " + R2S(fullMapWorldMaxY) + ")|r")
     endif
     
     // Create border frame at map init (CRITICAL: ConsoleUI operations must be done at map init, not in timers)

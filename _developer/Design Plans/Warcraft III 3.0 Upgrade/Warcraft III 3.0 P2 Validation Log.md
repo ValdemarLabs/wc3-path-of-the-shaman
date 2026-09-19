@@ -242,6 +242,15 @@ the engine camera margins during initialization, so future World Editor size or
 margin changes are not duplicated in source constants. Reimport/compile and
 edge/corner runtime confirmation remain required.
 
+Regression follow-up on 19 September 2026 found that the runtime-bounds revision
+incorrectly reused authored gameplay camera bounds for the imported full-map
+texture. The older working implementation used `GetEntireMapRect()` for that
+texture and its unit-icon transform. `DynamicMinimap` 1.7.1 restores three
+separate domains: `bj_mapInitialPlayableArea` for chunk-coordinate math,
+`bj_mapInitialCameraBounds` for ordinary gameplay restoration, and
+`GetEntireMapRect()` for full-map texture/icon presentation. Runtime validation
+of repeated full/chunked, size, rotation, and cinematic transitions remains open.
+
 ## Two-client gate
 
 1. Have player 1 create a probe at one camera target and player 2 at another.
@@ -274,6 +283,7 @@ bounds must remain independent and must not affect synchronized state.
 | 2026-09-17 | `W3-PH0-047`, `W3-PH5-036` | Player 1 | Imported/native visual comparison | NATIVE REJECTED | Native terrain/destructibles lacked the detail of custom chunk textures |
 | 2026-09-17 | `W3-PH5-037` | Player 1 | Production source decision | PASS — IMPORTED | Imported chunks remain required; source-image and bounds calibration are the remaining work |
 | 2026-09-17 | `W3-PH5-040` | Repository/generated full-map script | Bounds source audit and runtime derivation | PASS (SOURCE) | Exact map bounds confirmed; library now reads initialized map bounds and camera margins; runtime reimport pending |
+| 2026-09-19 | `W3-PH5-038`, `W3-PH5-040` | Player 1 / repository | Imported full-map toggle regression and source comparison | FIX IMPLEMENTED, RUNTIME PENDING | Full-map mode had reused authored camera bounds instead of the legacy entire-world transform; 1.7.1 restores separate chunk, gameplay-camera, and full-map domains |
 |  | `W3-PH5-038` | Two clients | Imported full/chunked ownership and endurance | PENDING | Native mode is optional diagnostic evidence only |
 
 ## Rollback
