@@ -22,10 +22,12 @@
 
 ### Player-Facing Updates
 
+- Fixed the DynamicMinimap full-map toggle using the wrong camera-bounds transform, which could place units from the previous chunk incorrectly across the full-map image.
 - Updated `UI/TargetUnitUI.j` so selecting any ordinary enemy with active threat opens a compact translucent selected-unit view; a unit without threat does not replace the automatic boss display or open its own view, and the current aggro holder remains fixed at the top of the list.
 
 ### Technical Updates
 
+- Updated `DynamicMinimap/DynamicMinimap_lastWorking.j` to restore the pre-3.0 separation between map-size bounds used for chunk math, exact initialized camera bounds used when returning to ordinary gameplay, and `GetEntireMapRect()` bounds used by the imported full-map texture and unit-icon transform. Fullscreen cinematic presentation now uses the same full-map transaction when its entry rotation is safe.
 - Updated `Threat/ThreatSystem.j` so only active combatants own threat tables, support-threat distribution iterates a dense active-table list, death cleanup remains event-driven, and per-table one-shot inactivity timers replace the global repeating maintenance sweep and reset threat after 20 seconds without threat activity.
 - Updated `AI/AI.j`, `AI/AI_Register.j`, `AI/AI_GlobalNPCProfiles.j`, and `AI/_Plans/AI_MasterPlan.md` with a dedicated lightweight global-NPC tier. Classifier-owned units now skip full hero AI initialization and expensive inventory, equipment, profession, social, travel, party, shopping, camping, retreat, stuck-order, debug-icon, and bark work; ordinary generic/combat/flee and no-think scripted/vendor profiles use no periodic processing slot and react through native acquisition or attacked events; only explicit caster/healer profiles use the bounded lightweight tick; and the recycled shared registry now supports 8190 active units instead of failing at 512.
 - Reduced likely AI-update lag by spreading automatic world registration across 16-unit batches, preventing inferred unit types from scheduling redundant full-world reconciliation scans, restricting hero-AI party, social, travel, boss-evade, bark, and debug scans to full AI instances, and reporting full/event-only/periodic AI counts when `/debug ai` is enabled.
@@ -33,6 +35,7 @@
 
 ### Actions Remaining
 
+- Reimport `DynamicMinimap/DynamicMinimap_lastWorking.j` 1.7.1, then repeatedly toggle chunked/full and minimized/enlarged views at safe and unsafe rotations. Verify the full-map texture, unit icons, pings, and camera bounds recover on the first toggle, and repeat before, during, and after a fullscreen cinematic.
 - Reimport `Threat/ThreatSystem.j` and `UI/TargetUnitUI.j`, then validate ordinary-unit selection/deselection, automatic hiding at zero threat and after the 20-second inactivity reset, death cleanup, active-boss fallback, compact frame placement, and two-client local-selection consistency.
 - Compile the full map and stress-test more than 512 classified NPCs, map-start registration frame time, mass create/remove/respawn cycles, attacked civilian/combat reactions, explicit caster/healer scheduling, and unchanged hero/specific AI behavior and frame pacing.
 
