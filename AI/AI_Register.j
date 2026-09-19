@@ -2,7 +2,7 @@
     AI_Register
 
     Author: Valdemar
-    Version: 1.0.0
+    Version: 1.3.0
 
     Description:
     Central unit-type classifier for simple global NPC AI. Registered types use
@@ -10,7 +10,8 @@
     so pre-placed, created, sold, and replacement units are initialized through
     the existing unit-index lifecycle. Existing class/specific AI profiles are
     never replaced. Heroes, structures, excluded types, and excluded instances
-    are deliberately left to their owning systems.
+    are deliberately left to their owning systems. Registry-owned profiles use
+    the lightweight AI processing tier rather than full hero AI state.
 
     Credits:
     - PotS AI JASS migration
@@ -23,6 +24,7 @@
 
     API:
     call AIRegister_RegisterType(unitTypeId, role, profileName)
+    call AIRegister_RegisterInferredType(unitTypeId, role, profileName)
     call AIRegister_RegisterGenericType(unitTypeId, profileName)
     call AIRegister_RegisterAggressiveType(unitTypeId, profileName)
     call AIRegister_RegisterPassiveType(unitTypeId, profileName)
@@ -37,8 +39,13 @@
     call AIRegister_RegisterScriptedUnit(whichUnit)
     call AIRegister_RegisterVendorUnit(whichUnit)
     call AIRegister_ExcludeUnitType(unitTypeId)
+    call AIRegister_AllowUnitType(unitTypeId)
+    call AIRegister_ResetUnitType(unitTypeId)
     call AIRegister_ExcludeUnit(whichUnit)
     call AIRegister_AllowUnit(whichUnit)
+    call AIRegister_IsUnitTypeExcluded(unitTypeId) returns boolean
+    call AIRegister_IsUnitExcluded(whichUnit) returns boolean
+    call AIRegister_IsOwnedProfile(profileId) returns boolean
     call AIRegister_GetRole(unitTypeId) returns integer
     call AIRegister_GetProfile(unitTypeId) returns integer
 
@@ -64,6 +71,7 @@ globals
     private Table ExcludedUnit = 0
     private group ScanGroup = null
     private timer ScanTimer = null
+    private trigger UnitDeindexTrigger = null
 endglobals
 
 private function IsSimpleNpcType takes integer unitTypeId returns boolean
@@ -130,11 +138,14 @@ private function RegisterProfile takes integer unitTypeId, integer role, integer
     set ProfileByUnitType[unitTypeId] = profileId
     set OwnedProfile.boolean[profileId] = true
     call AI_SetProfileAutomaticRevive(profileId, false)
+    call AI_SetProfileGlobalNpcOnly(profileId, true)
+    call AI_SetProfileLightweight(profileId, true)
+    call AI_SetProfileLightweightPeriodic(profileId, role == AI_REGISTER_ROLE_CASTER or role == AI_REGISTER_ROLE_HEALER)
     call AI_SetUnitTypeDefaultProfile(unitTypeId, profileId)
     return profileId
 endfunction
 
-private function RegisterSimpleTypeInternal takes integer unitTypeId, integer role, string profileName returns integer
+private function RegisterSimpleTypeInternal takes integer unitTypeId, integer role, string profileName, boolean replaceOwned returns integer
     local integer existingRole
     local integer defaultProfile
     local integer profileId
@@ -155,7 +166,7 @@ private function RegisterSimpleTypeInternal takes integer unitTypeId, integer ro
     if existingRole == role then
         return ProfileByUnitType[unitTypeId]
     endif
-    if existingRole > 0 and existingRole != AI_REGISTER_ROLE_GENERIC then
+    if existingRole > 0 and not replaceOwned then
         return ProfileByUnitType[unitTypeId]
     endif
     set profileName = GetProfileName(unitTypeId, role, profileName)
@@ -189,6 +200,9 @@ private function ScanUnit takes unit whichUnit returns integer
                 return AI_RegisterUnit(whichUnit, profileId, 0)
             endif
         endif
+        if existingProfile > 0 and OwnedProfile.boolean[existingProfile] then
+            call AI_UnregisterUnit(whichUnit)
+        endif
         return AI_GetInstance(whichUnit)
     endif
     if existingProfile == profileId then
@@ -213,7 +227,7 @@ private function ScanAll takes nothing returns nothing
         exitwhen whichUnit == null
         call GroupRemoveUnit(ScanGroup, whichUnit)
         if QuestMaster_IsRegisteredGiver(whichUnit) then
-            call RegisterSimpleTypeInternal(GetUnitTypeId(whichUnit), AI_REGISTER_ROLE_SCRIPTED, "")
+            call RegisterSimpleTypeInternal(GetUnitTypeId(whichUnit), AI_REGISTER_ROLE_SCRIPTED, "", true)
         endif
         call ScanUnit(whichUnit)
     endloop
@@ -231,11 +245,15 @@ private function QueueScan takes nothing returns nothing
 endfunction
 
 public function RegisterType takes integer unitTypeId, integer role, string profileName returns integer
-    local integer profileId = RegisterSimpleTypeInternal(unitTypeId, role, profileName)
+    local integer profileId = RegisterSimpleTypeInternal(unitTypeId, role, profileName, true)
     if profileId > 0 and ProfileByUnitType[unitTypeId] == profileId then
         call QueueScan()
     endif
     return profileId
+endfunction
+
+public function RegisterInferredType takes integer unitTypeId, integer role, string profileName returns integer
+    return RegisterSimpleTypeInternal(unitTypeId, role, profileName, false)
 endfunction
 
 public function RegisterGenericType takes integer unitTypeId, string profileName returns integer
@@ -276,6 +294,9 @@ public function RegisterCasterType takes integer unitTypeId, string profileName,
     if defaultProfile > 0 and not OwnedProfile.boolean[defaultProfile] then
         return defaultProfile
     endif
+    if RoleByUnitType[unitTypeId] == AI_REGISTER_ROLE_CASTER and ProfileByUnitType[unitTypeId] > 0 then
+        return ProfileByUnitType[unitTypeId]
+    endif
     set profileName = GetProfileName(unitTypeId, AI_REGISTER_ROLE_CASTER, profileName)
     set profileId = AIGenericCaster_RegisterProfile(unitTypeId, profileName, abilityId, order, cooldown, range, false)
     if RegisterProfile(unitTypeId, AI_REGISTER_ROLE_CASTER, profileId) > 0 then
@@ -293,6 +314,9 @@ public function RegisterHealerType takes integer unitTypeId, string profileName,
     set defaultProfile = AI_GetUnitTypeDefaultProfile(unitTypeId)
     if defaultProfile > 0 and not OwnedProfile.boolean[defaultProfile] then
         return defaultProfile
+    endif
+    if RoleByUnitType[unitTypeId] == AI_REGISTER_ROLE_HEALER and ProfileByUnitType[unitTypeId] > 0 then
+        return ProfileByUnitType[unitTypeId]
     endif
     set profileName = GetProfileName(unitTypeId, AI_REGISTER_ROLE_HEALER, profileName)
     set profileId = AIGenericHealer_RegisterProfile(unitTypeId, profileName, abilityId, order, cooldown, range, threshold, false)
@@ -328,11 +352,19 @@ public function RegisterGenericUnit takes unit whichUnit returns integer
 endfunction
 
 public function RegisterScriptedUnit takes unit whichUnit returns integer
-    return AIRegister_RegisterUnit(whichUnit, AI_REGISTER_ROLE_SCRIPTED)
+    if whichUnit == null or GetUnitTypeId(whichUnit) == 0 then
+        return 0
+    endif
+    call AIRegister_RegisterScriptedType(GetUnitTypeId(whichUnit), "")
+    return ScanUnit(whichUnit)
 endfunction
 
 public function RegisterVendorUnit takes unit whichUnit returns integer
-    return AIRegister_RegisterUnit(whichUnit, AI_REGISTER_ROLE_VENDOR)
+    if whichUnit == null or GetUnitTypeId(whichUnit) == 0 then
+        return 0
+    endif
+    call AIRegister_RegisterVendorType(GetUnitTypeId(whichUnit), "")
+    return ScanUnit(whichUnit)
 endfunction
 
 public function ExcludeUnitType takes integer unitTypeId returns nothing
@@ -344,6 +376,36 @@ public function ExcludeUnitType takes integer unitTypeId returns nothing
     if profileId > 0 and AI_GetUnitTypeDefaultProfile(unitTypeId) == profileId then
         call AI_SetUnitTypeDefaultProfile(unitTypeId, 0)
     endif
+    call QueueScan()
+endfunction
+
+public function AllowUnitType takes integer unitTypeId returns nothing
+    local integer defaultProfile
+    local integer profileId
+    if unitTypeId == 0 then
+        return
+    endif
+    call ExcludedUnitType.boolean.remove(unitTypeId)
+    set profileId = ProfileByUnitType[unitTypeId]
+    set defaultProfile = AI_GetUnitTypeDefaultProfile(unitTypeId)
+    if profileId > 0 and (defaultProfile <= 0 or OwnedProfile.boolean[defaultProfile]) then
+        call AI_SetUnitTypeDefaultProfile(unitTypeId, profileId)
+    endif
+    call QueueScan()
+endfunction
+
+public function ResetUnitType takes integer unitTypeId returns nothing
+    local integer profileId
+    if unitTypeId == 0 then
+        return
+    endif
+    set profileId = ProfileByUnitType[unitTypeId]
+    call ExcludedUnitType.boolean.remove(unitTypeId)
+    if profileId > 0 and AI_GetUnitTypeDefaultProfile(unitTypeId) == profileId then
+        call AI_SetUnitTypeDefaultProfile(unitTypeId, 0)
+    endif
+    call RoleByUnitType.remove(unitTypeId)
+    call ProfileByUnitType.remove(unitTypeId)
     call QueueScan()
 endfunction
 
@@ -368,7 +430,25 @@ public function AllowUnit takes unit whichUnit returns nothing
     set whichUnit = null
 endfunction
 
+public function IsUnitTypeExcluded takes integer unitTypeId returns boolean
+    return unitTypeId != 0 and ExcludedUnitType.boolean[unitTypeId]
+endfunction
+
+public function IsUnitExcluded takes unit whichUnit returns boolean
+    if whichUnit == null then
+        return true
+    endif
+    return ExcludedUnit.boolean[GetHandleId(whichUnit)]
+endfunction
+
+public function IsOwnedProfile takes integer profileId returns boolean
+    return profileId > 0 and OwnedProfile.boolean[profileId]
+endfunction
+
 public function GetRole takes integer unitTypeId returns integer
+    if ExcludedUnitType.boolean[unitTypeId] then
+        return 0
+    endif
     return RoleByUnitType[unitTypeId]
 endfunction
 
@@ -380,6 +460,14 @@ private function OnQuestGiverRegistered takes nothing returns nothing
     call AIRegister_RegisterScriptedUnit(QuestGiver_EventUnit)
 endfunction
 
+private function OnUnitDeindexed takes nothing returns nothing
+    local unit deindexedUnit = udg_UDexUnits[udg_UDex]
+    if deindexedUnit != null then
+        call ExcludedUnit.boolean.remove(GetHandleId(deindexedUnit))
+    endif
+    set deindexedUnit = null
+endfunction
+
 private function Init takes nothing returns nothing
     set RoleByUnitType = Table.create()
     set ProfileByUnitType = Table.create()
@@ -387,6 +475,9 @@ private function Init takes nothing returns nothing
     set ExcludedUnitType = Table.create()
     set ExcludedUnit = Table.create()
     set ScanGroup = CreateGroup()
+    set UnitDeindexTrigger = CreateTrigger()
+    call TriggerRegisterVariableEvent(UnitDeindexTrigger, "udg_UnitIndexEvent", EQUAL, 2.00)
+    call TriggerAddAction(UnitDeindexTrigger, function OnUnitDeindexed)
     call QuestGiver_RegisterRegistrationCallback(function OnQuestGiverRegistered)
     call QueueScan()
 endfunction
