@@ -2,14 +2,16 @@
     ThreatSystem
 
     Author: Valdemar
-    Version: 1.0.0
+    Version: 1.1.0
 
     Description:
     Automatic PvE threat and aggro management for computer-controlled enemies.
     Damage creates threat at 1:1. Effective healing of an ally creates 25%
     threat split between enemies engaged with that ally's faction. Ally-targeted
     support spells create a small split threat amount. Aggro changes at 110% in
-    melee range or 130% at range and are announced with floating text.
+    melee range or 130% at range and are announced with floating text. Only
+    units with active threat tables consume runtime maintenance state; one-shot
+    timers reset tables after inactivity.
 
     Credits:
     - Blizzard Entertainment, World of Warcraft threat rules
@@ -31,6 +33,7 @@
     - call ThreatSystem_SetSourceMultiplier(source, multiplier)
     - set value = ThreatSystem_GetThreat(threatUnit, source)
     - set source = ThreatSystem_GetAggroTarget(threatUnit)
+    - set active = ThreatSystem_HasThreat(threatUnit)
     - set source = ThreatSystem_GetRankedUnit(threatUnit, rank)
     - set value = ThreatSystem_GetRankedThreat(threatUnit, rank)
 
@@ -46,34 +49,35 @@ globals
     private constant real THREAT_MELEE_PULL_MULTIPLIER = 1.10
     private constant real THREAT_RANGED_PULL_MULTIPLIER = 1.30
     private constant real THREAT_MELEE_RANGE = 200.00
+    private constant real THREAT_SUPPORT_ENGAGE_RANGE = 4000.00
 
     // Tables are bounded to protect the global JASS array limit.
     private constant integer THREAT_MAX_TABLES = 200
     private constant integer THREAT_MAX_ENTRIES = 32
-    private constant real THREAT_UPDATE_INTERVAL = 0.50
-    private constant integer THREAT_IDLE_TICKS = 40
-    private constant real THREAT_LEASH_RANGE = 5000.00
+    private constant real THREAT_OUT_OF_COMBAT_TIMEOUT = 20.00
     private constant integer THREAT_ATTACK_ORDER_ID = 851983
     private constant boolean THREAT_SHOW_AGGRO_TEXT = true
 
     private Table Threat_TableByTarget = 0
+    private Table Threat_TableByTimer = 0
     private Table Threat_DisabledTarget = 0
     private Table Threat_SourceMultiplier = 0
 
     private integer Threat_NextTableId = 1
     private integer Threat_FreeCount = 0
-    private integer Threat_ClockTick = 0
+    private integer Threat_ActiveCount = 0
     private integer array Threat_FreeTableId
+    private integer array Threat_ActiveTableId
+    private integer array Threat_ActivePosition
     private boolean array Threat_TableActive
     private integer array Threat_EntryCount
-    private integer array Threat_LastActivityTick
     private unit array Threat_Target
     private unit array Threat_AggroTarget
     private unit array Threat_EntrySource
     private real array Threat_EntryValue
+    private timer array Threat_ResetTimer
 
     private trigger Threat_HealTrigger = null
-    private timer Threat_UpdateTimer = null
 endglobals
 
 private function Threat_IsAlive takes unit whichUnit returns boolean
@@ -176,14 +180,22 @@ private function Threat_AllocateTable takes unit threatUnit returns integer
     set Threat_Target[tableId] = threatUnit
     set Threat_AggroTarget[tableId] = null
     set Threat_EntryCount[tableId] = 0
-    set Threat_LastActivityTick[tableId] = Threat_ClockTick
     set Threat_TableByTarget[GetHandleId(threatUnit)] = tableId
+    if Threat_ResetTimer[tableId] == null then
+        set Threat_ResetTimer[tableId] = CreateTimer()
+        set Threat_TableByTimer[GetHandleId(Threat_ResetTimer[tableId])] = tableId
+    endif
+    set Threat_ActiveCount = Threat_ActiveCount + 1
+    set Threat_ActiveTableId[Threat_ActiveCount] = tableId
+    set Threat_ActivePosition[tableId] = Threat_ActiveCount
     return tableId
 endfunction
 
 private function Threat_ReleaseTable takes integer tableId returns nothing
     local integer position = 1
     local integer entryIndex
+    local integer activePosition
+    local integer movedTableId
     local unit threatUnit = null
 
     if tableId <= 0 or tableId >= Threat_NextTableId or not Threat_TableActive[tableId] then
@@ -204,13 +216,40 @@ private function Threat_ReleaseTable takes integer tableId returns nothing
     endloop
 
     set Threat_TableActive[tableId] = false
+    call PauseTimer(Threat_ResetTimer[tableId])
     set Threat_Target[tableId] = null
     set Threat_AggroTarget[tableId] = null
     set Threat_EntryCount[tableId] = 0
-    set Threat_LastActivityTick[tableId] = 0
+
+    set activePosition = Threat_ActivePosition[tableId]
+    if activePosition > 0 then
+        set movedTableId = Threat_ActiveTableId[Threat_ActiveCount]
+        set Threat_ActiveTableId[activePosition] = movedTableId
+        set Threat_ActivePosition[movedTableId] = activePosition
+        set Threat_ActiveTableId[Threat_ActiveCount] = 0
+        set Threat_ActivePosition[tableId] = 0
+        set Threat_ActiveCount = Threat_ActiveCount - 1
+    endif
+
     set Threat_FreeCount = Threat_FreeCount + 1
     set Threat_FreeTableId[Threat_FreeCount] = tableId
     set threatUnit = null
+endfunction
+
+private function Threat_OnCombatTimeout takes nothing returns nothing
+    local timer expiredTimer = GetExpiredTimer()
+    local integer tableId = Threat_TableByTimer[GetHandleId(expiredTimer)]
+
+    if tableId > 0 and Threat_TableActive[tableId] then
+        call Threat_ReleaseTable(tableId)
+    endif
+    set expiredTimer = null
+endfunction
+
+private function Threat_TouchTable takes integer tableId returns nothing
+    if tableId > 0 and Threat_TableActive[tableId] then
+        call TimerStart(Threat_ResetTimer[tableId], THREAT_OUT_OF_COMBAT_TIMEOUT, false, function Threat_OnCombatTimeout)
+    endif
 endfunction
 
 private function Threat_RemoveEntry takes integer tableId, integer position returns nothing
@@ -367,6 +406,7 @@ private function Threat_AddInternal takes unit threatUnit, unit source, real amo
                 set position = position + 1
             endloop
             if adjustedAmount <= lowestThreat then
+                call Threat_TouchTable(tableId)
                 return
             endif
             set position = lowestPosition
@@ -379,7 +419,7 @@ private function Threat_AddInternal takes unit threatUnit, unit source, real amo
         set Threat_EntryValue[entryIndex] = Threat_EntryValue[entryIndex] + adjustedAmount
     endif
 
-    set Threat_LastActivityTick[tableId] = Threat_ClockTick
+    call Threat_TouchTable(tableId)
     call Threat_EvaluateAggro(tableId)
 endfunction
 
@@ -390,6 +430,9 @@ private function Threat_IsEngagedWithAlly takes integer tableId, unit alliedUnit
     local boolean engaged = false
 
     if not Threat_TableActive[tableId] or alliedUnit == null then
+        return false
+    endif
+    if not IsUnitInRange(Threat_Target[tableId], alliedUnit, THREAT_SUPPORT_ENGAGE_RANGE) then
         return false
     endif
 
@@ -408,7 +451,8 @@ private function Threat_IsEngagedWithAlly takes integer tableId, unit alliedUnit
 endfunction
 
 private function Threat_AddSupportThreat takes unit source, unit alliedTarget, real totalThreat returns nothing
-    local integer tableId = 1
+    local integer activePosition = 1
+    local integer tableId
     local integer engagedCount = 0
     local real splitThreat
 
@@ -417,11 +461,12 @@ private function Threat_AddSupportThreat takes unit source, unit alliedTarget, r
     endif
 
     loop
-        exitwhen tableId >= Threat_NextTableId
-        if Threat_TableActive[tableId] and Threat_CanManageTarget(Threat_Target[tableId]) and IsUnitEnemy(source, GetOwningPlayer(Threat_Target[tableId])) and Threat_IsEngagedWithAlly(tableId, alliedTarget) then
+        exitwhen activePosition > Threat_ActiveCount
+        set tableId = Threat_ActiveTableId[activePosition]
+        if Threat_CanManageTarget(Threat_Target[tableId]) and IsUnitEnemy(source, GetOwningPlayer(Threat_Target[tableId])) and Threat_IsEngagedWithAlly(tableId, alliedTarget) then
             set engagedCount = engagedCount + 1
         endif
-        set tableId = tableId + 1
+        set activePosition = activePosition + 1
     endloop
 
     if engagedCount <= 0 then
@@ -429,13 +474,14 @@ private function Threat_AddSupportThreat takes unit source, unit alliedTarget, r
     endif
 
     set splitThreat = totalThreat / I2R(engagedCount)
-    set tableId = 1
+    set activePosition = 1
     loop
-        exitwhen tableId >= Threat_NextTableId
-        if Threat_TableActive[tableId] and Threat_CanManageTarget(Threat_Target[tableId]) and IsUnitEnemy(source, GetOwningPlayer(Threat_Target[tableId])) and Threat_IsEngagedWithAlly(tableId, alliedTarget) then
+        exitwhen activePosition > Threat_ActiveCount
+        set tableId = Threat_ActiveTableId[activePosition]
+        if Threat_CanManageTarget(Threat_Target[tableId]) and IsUnitEnemy(source, GetOwningPlayer(Threat_Target[tableId])) and Threat_IsEngagedWithAlly(tableId, alliedTarget) then
             call Threat_AddInternal(Threat_Target[tableId], source, splitThreat)
         endif
-        set tableId = tableId + 1
+        set activePosition = activePosition + 1
     endloop
 endfunction
 
@@ -471,10 +517,10 @@ public function Modify takes unit threatUnit, unit source, real amount returns n
     else
         set Threat_EntryValue[entryIndex] = newThreat
     endif
-    set Threat_LastActivityTick[tableId] = Threat_ClockTick
     if Threat_EntryCount[tableId] <= 0 then
         call Threat_ReleaseTable(tableId)
     else
+        call Threat_TouchTable(tableId)
         call Threat_EvaluateAggro(tableId)
     endif
 endfunction
@@ -491,27 +537,33 @@ public function ClearUnit takes unit threatUnit returns nothing
 endfunction
 
 public function ClearSource takes unit source returns nothing
-    local integer tableId = 1
+    local integer activePosition = 1
+    local integer tableId
     local integer position
+    local boolean released
 
     if source == null then
         return
     endif
 
     loop
-        exitwhen tableId >= Threat_NextTableId
-        if Threat_TableActive[tableId] then
-            set position = Threat_FindEntry(tableId, source)
-            if position > 0 then
-                call Threat_RemoveEntry(tableId, position)
-                if Threat_EntryCount[tableId] <= 0 then
-                    call Threat_ReleaseTable(tableId)
-                else
-                    call Threat_EvaluateAggro(tableId)
-                endif
+        exitwhen activePosition > Threat_ActiveCount
+        set tableId = Threat_ActiveTableId[activePosition]
+        set released = false
+        set position = Threat_FindEntry(tableId, source)
+        if position > 0 then
+            call Threat_RemoveEntry(tableId, position)
+            if Threat_EntryCount[tableId] <= 0 then
+                call Threat_ReleaseTable(tableId)
+                set released = true
+            else
+                call Threat_TouchTable(tableId)
+                call Threat_EvaluateAggro(tableId)
             endif
         endif
-        set tableId = tableId + 1
+        if not released then
+            set activePosition = activePosition + 1
+        endif
     endloop
 endfunction
 
@@ -570,6 +622,12 @@ public function GetAggroTarget takes unit threatUnit returns unit
         return null
     endif
     return Threat_AggroTarget[tableId]
+endfunction
+
+public function HasThreat takes unit threatUnit returns boolean
+    local integer tableId = Threat_GetTableId(threatUnit)
+
+    return tableId > 0 and Threat_TableActive[tableId] and Threat_EntryCount[tableId] > 0 and Threat_AggroTarget[tableId] != null
 endfunction
 
 public function GetRankedUnit takes unit threatUnit, integer rank returns unit
@@ -678,61 +736,9 @@ public function Taunt takes unit threatUnit, unit source returns nothing
     endif
     if sourcePosition > 0 then
         set Threat_EntryValue[Threat_GetEntryIndex(tableId, sourcePosition)] = highestThreat
-        set Threat_LastActivityTick[tableId] = Threat_ClockTick
+        call Threat_TouchTable(tableId)
         call Threat_SetAggroTarget(tableId, source)
     endif
-endfunction
-
-private function Threat_PruneTable takes integer tableId returns nothing
-    local integer position = 1
-    local integer entryIndex
-    local unit source = null
-
-    loop
-        exitwhen position > Threat_EntryCount[tableId]
-        set entryIndex = Threat_GetEntryIndex(tableId, position)
-        set source = Threat_EntrySource[entryIndex]
-        if not Threat_IsValidSource(Threat_Target[tableId], source) or not IsUnitInRange(Threat_Target[tableId], source, THREAT_LEASH_RANGE) then
-            call Threat_RemoveEntry(tableId, position)
-        else
-            set position = position + 1
-        endif
-    endloop
-    set source = null
-endfunction
-
-private function Threat_OnPeriodic takes nothing returns nothing
-    local integer tableId = 1
-    local unit threatUnit = null
-    local unit aggroTarget = null
-
-    set Threat_ClockTick = Threat_ClockTick + 1
-    loop
-        exitwhen tableId >= Threat_NextTableId
-        if Threat_TableActive[tableId] then
-            set threatUnit = Threat_Target[tableId]
-            if not Threat_CanManageTarget(threatUnit) then
-                call Threat_ReleaseTable(tableId)
-            else
-                call Threat_PruneTable(tableId)
-                if Threat_EntryCount[tableId] <= 0 then
-                    call Threat_ReleaseTable(tableId)
-                elseif Threat_ClockTick - Threat_LastActivityTick[tableId] >= THREAT_IDLE_TICKS and GetUnitCurrentOrder(threatUnit) == 0 then
-                    call Threat_ReleaseTable(tableId)
-                else
-                    call Threat_EvaluateAggro(tableId)
-                    set aggroTarget = Threat_AggroTarget[tableId]
-                    if aggroTarget != null and GetUnitCurrentOrder(threatUnit) == 0 and not IsUnitPaused(threatUnit) and not IsUnitType(threatUnit, UNIT_TYPE_STUNNED) then
-                        call IssueTargetOrderById(threatUnit, THREAT_ATTACK_ORDER_ID, aggroTarget)
-                    endif
-                endif
-            endif
-        endif
-        set tableId = tableId + 1
-    endloop
-
-    set threatUnit = null
-    set aggroTarget = null
 endfunction
 
 private function Threat_OnDamage takes nothing returns nothing
@@ -774,15 +780,13 @@ endfunction
 
 private function Init takes nothing returns nothing
     set Threat_TableByTarget = Table.create()
+    set Threat_TableByTimer = Table.create()
     set Threat_DisabledTarget = Table.create()
     set Threat_SourceMultiplier = Table.create()
 
     set Threat_HealTrigger = CreateTrigger()
     call TriggerRegisterVariableEvent(Threat_HealTrigger, "udg_AfterHealEvent", EQUAL, 1.00)
     call TriggerAddAction(Threat_HealTrigger, function Threat_OnHeal)
-
-    set Threat_UpdateTimer = CreateTimer()
-    call TimerStart(Threat_UpdateTimer, THREAT_UPDATE_INTERVAL, true, function Threat_OnPeriodic)
 
     call RegisterDamageEngine(function Threat_OnDamage, "After", 1.00)
     call Events_RegisterSpellEffect(function Threat_OnSpellEffect)

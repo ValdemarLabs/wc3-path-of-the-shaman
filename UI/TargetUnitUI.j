@@ -2,37 +2,40 @@
     TargetUnitUI
 
     Author: Valdemar
-    Version: 1.0.0
+    Version: 1.1.0
 
     Description:
-    Compact top-center target frame for active boss encounters. It shows the
-    boss name, health, mana, current aggro target, and the top three threat
-    units. Rank one is always the unit that currently has aggro.
+    Compact top-center target frame for active boss encounters and selected
+    ordinary enemies. The selected-unit view opens only while that unit has
+    active threat; otherwise the frame returns to an active boss or hides. It
+    shows name, health, mana, current aggro target, and the top three threat
+    units. Rank one is always the current aggro holder.
 
     Credits:
     - Blizzard Entertainment, native frame API
 
     How to install:
     Import after ThreatSystem and Boss. No FDF or TOC import is required.
-    Active bosses registered through Boss are discovered automatically.
+    Active bosses registered through Boss are discovered automatically. Unit
+    selection and deselection use the shared Events dispatcher.
 
     API:
-    - call TargetUnitUI_ShowForUnit(whichUnit) // Pin a non-boss or boss target
+    - call TargetUnitUI_ShowForUnit(whichUnit) // Shows only active threat
     - call TargetUnitUI_ShowAutomatic()        // Return to active-boss display
     - set whichUnit = TargetUnitUI_GetDisplayedUnit()
 
 **/
-library TargetUnitUI initializer Init requires ThreatSystem, Boss
+library TargetUnitUI initializer Init requires ThreatSystem, Boss, Events
 
 globals
     // Top-center layout, below the native upper game UI border.
     private constant real TUI_PANEL_CENTER_X = 0.400
     private constant real TUI_PANEL_TOP = 0.570
-    private constant real TUI_PANEL_WIDTH = 0.340
-    private constant real TUI_PANEL_HEIGHT = 0.145
-    private constant real TUI_BAR_WIDTH = 0.310
-    private constant real TUI_BAR_HEIGHT = 0.011
-    private constant real TUI_UPDATE_INTERVAL = 0.10
+    private constant real TUI_PANEL_WIDTH = 0.275
+    private constant real TUI_PANEL_HEIGHT = 0.115
+    private constant real TUI_BAR_WIDTH = 0.245
+    private constant real TUI_BAR_HEIGHT = 0.009
+    private constant real TUI_UPDATE_INTERVAL = 0.25
 
     private constant string TUI_EMPTY_BAR_TEXTURE = "UI\\Widgets\\EscMenu\\Human\\blank-background.blp"
     private constant string TUI_HEALTH_TEXTURE = "ReplaceableTextures\\TeamColor\\TeamColor06.blp"
@@ -111,14 +114,14 @@ endfunction
 private function TUI_GetAutomaticBoss takes nothing returns unit
     set TUI_AutoBoss = null
     set TUI_AutoBossId = 0
-    if udg_BOSS != null then
+    if Boss_GetActiveCount() > 0 and udg_BOSS != null then
         call ForGroup(udg_BOSS, function TUI_ConsiderBoss)
     endif
     return TUI_AutoBoss
 endfunction
 
 private function TUI_ResolveDisplayUnit takes nothing returns unit
-    if TUI_IsAlive(TUI_PinnedUnit) then
+    if TUI_IsAlive(TUI_PinnedUnit) and ThreatSystem_HasThreat(TUI_PinnedUnit) then
         return TUI_PinnedUnit
     endif
     set TUI_PinnedUnit = null
@@ -183,9 +186,9 @@ private function TUI_Update takes nothing returns nothing
     call TUI_SetBar(TUI_HealthFill, TUI_HealthText, TUI_ClampPercent(currentLife, maximumLife), "HP", R2I(currentLife + 0.50), R2I(maximumLife + 0.50))
     call TUI_SetBar(TUI_ManaFill, TUI_ManaText, TUI_ClampPercent(currentMana, maximumMana), "Mana", R2I(currentMana + 0.50), R2I(maximumMana + 0.50))
     if aggroTarget == null then
-        call BlzFrameSetText(TUI_CurrentTargetText, "Target: |cffbfbfbfNone|r")
+        call BlzFrameSetText(TUI_CurrentTargetText, "Aggro: |cffbfbfbfNone|r")
     else
-        call BlzFrameSetText(TUI_CurrentTargetText, "Target: |cffff8040" + GetUnitName(aggroTarget) + "|r")
+        call BlzFrameSetText(TUI_CurrentTargetText, "Aggro: |cffff8040" + GetUnitName(aggroTarget) + "|r")
     endif
 
     loop
@@ -201,8 +204,42 @@ private function TUI_Update takes nothing returns nothing
     set rankedUnit = null
 endfunction
 
+private function TUI_OnUnitSelected takes nothing returns nothing
+    local unit selectedUnit = GetTriggerUnit()
+    local player selectingPlayer = GetTriggerPlayer()
+
+    if selectingPlayer == GetLocalPlayer() then
+        if ThreatSystem_HasThreat(selectedUnit) then
+            set TUI_PinnedUnit = selectedUnit
+        else
+            set TUI_PinnedUnit = null
+        endif
+        call TUI_Update()
+    endif
+
+    set selectedUnit = null
+    set selectingPlayer = null
+endfunction
+
+private function TUI_OnUnitDeselected takes nothing returns nothing
+    local unit deselectedUnit = GetTriggerUnit()
+    local player deselectingPlayer = GetTriggerPlayer()
+
+    if deselectingPlayer == GetLocalPlayer() and TUI_PinnedUnit == deselectedUnit then
+        set TUI_PinnedUnit = null
+        call TUI_Update()
+    endif
+
+    set deselectedUnit = null
+    set deselectingPlayer = null
+endfunction
+
 public function ShowForUnit takes unit whichUnit returns nothing
-    set TUI_PinnedUnit = whichUnit
+    if ThreatSystem_HasThreat(whichUnit) then
+        set TUI_PinnedUnit = whichUnit
+    else
+        set TUI_PinnedUnit = null
+    endif
     call TUI_Update()
 endfunction
 
@@ -231,7 +268,7 @@ private function TUI_CreateBar takes framehandle backFrame, framehandle fillFram
 
     call BlzFrameSetAllPoints(textFrame, backFrame)
     call BlzFrameSetTextAlignment(textFrame, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_CENTER)
-    call BlzFrameSetScale(textFrame, 0.64)
+    call BlzFrameSetScale(textFrame, 0.54)
     call BlzFrameSetEnable(textFrame, false)
     call BlzFrameSetLevel(textFrame, 7)
 endfunction
@@ -240,54 +277,56 @@ private function TUI_CreateFrames takes nothing returns nothing
     local integer row = 1
     local real y
 
-    set TUI_Parent = BlzCreateFrameByType("BACKDROP", "TargetUnitUIPanel", BlzGetOriginFrame(ORIGIN_FRAME_GAME_UI, 0), "EscMenuBackdrop", 0)
+    set TUI_Parent = BlzCreateFrameByType("BACKDROP", "TargetUnitUIPanel", BlzGetOriginFrame(ORIGIN_FRAME_GAME_UI, 0), "", 0)
+    call BlzFrameSetTexture(TUI_Parent, TUI_EMPTY_BAR_TEXTURE, 0, false)
+    call BlzFrameSetVertexColor(TUI_Parent, BlzConvertColor(210, 25, 25, 25))
     call BlzFrameSetSize(TUI_Parent, TUI_PANEL_WIDTH, TUI_PANEL_HEIGHT)
     call BlzFrameSetAbsPoint(TUI_Parent, FRAMEPOINT_TOP, TUI_PANEL_CENTER_X, TUI_PANEL_TOP)
     call BlzFrameSetLevel(TUI_Parent, 4)
 
     set TUI_Title = BlzCreateFrameByType("TEXT", "TargetUnitUITitle", TUI_Parent, "", 0)
-    call BlzFrameSetPoint(TUI_Title, FRAMEPOINT_TOPLEFT, TUI_Parent, FRAMEPOINT_TOPLEFT, 0.015, -0.012)
-    call BlzFrameSetSize(TUI_Title, TUI_BAR_WIDTH, 0.016)
+    call BlzFrameSetPoint(TUI_Title, FRAMEPOINT_TOPLEFT, TUI_Parent, FRAMEPOINT_TOPLEFT, 0.015, -0.009)
+    call BlzFrameSetSize(TUI_Title, TUI_BAR_WIDTH, 0.014)
     call BlzFrameSetTextAlignment(TUI_Title, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_CENTER)
-    call BlzFrameSetScale(TUI_Title, 0.90)
+    call BlzFrameSetScale(TUI_Title, 0.78)
     call BlzFrameSetEnable(TUI_Title, false)
     call BlzFrameSetLevel(TUI_Title, 7)
 
     set TUI_HealthBack = BlzCreateFrameByType("BACKDROP", "TargetUnitUIHealthBack", TUI_Parent, "", 0)
     set TUI_HealthFill = BlzCreateFrameByType("BACKDROP", "TargetUnitUIHealthFill", TUI_HealthBack, "", 0)
     set TUI_HealthText = BlzCreateFrameByType("TEXT", "TargetUnitUIHealthText", TUI_HealthBack, "", 0)
-    call TUI_CreateBar(TUI_HealthBack, TUI_HealthFill, TUI_HealthText, -0.032, TUI_HEALTH_TEXTURE)
+    call TUI_CreateBar(TUI_HealthBack, TUI_HealthFill, TUI_HealthText, -0.025, TUI_HEALTH_TEXTURE)
 
     set TUI_ManaBack = BlzCreateFrameByType("BACKDROP", "TargetUnitUIManaBack", TUI_Parent, "", 0)
     set TUI_ManaFill = BlzCreateFrameByType("BACKDROP", "TargetUnitUIManaFill", TUI_ManaBack, "", 0)
     set TUI_ManaText = BlzCreateFrameByType("TEXT", "TargetUnitUIManaText", TUI_ManaBack, "", 0)
-    call TUI_CreateBar(TUI_ManaBack, TUI_ManaFill, TUI_ManaText, -0.046, TUI_MANA_TEXTURE)
+    call TUI_CreateBar(TUI_ManaBack, TUI_ManaFill, TUI_ManaText, -0.036, TUI_MANA_TEXTURE)
 
     set TUI_CurrentTargetText = BlzCreateFrameByType("TEXT", "TargetUnitUICurrentTarget", TUI_Parent, "", 0)
-    call BlzFrameSetPoint(TUI_CurrentTargetText, FRAMEPOINT_TOPLEFT, TUI_Parent, FRAMEPOINT_TOPLEFT, 0.015, -0.063)
-    call BlzFrameSetSize(TUI_CurrentTargetText, TUI_BAR_WIDTH, 0.013)
+    call BlzFrameSetPoint(TUI_CurrentTargetText, FRAMEPOINT_TOPLEFT, TUI_Parent, FRAMEPOINT_TOPLEFT, 0.015, -0.049)
+    call BlzFrameSetSize(TUI_CurrentTargetText, TUI_BAR_WIDTH, 0.011)
     call BlzFrameSetTextAlignment(TUI_CurrentTargetText, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
-    call BlzFrameSetScale(TUI_CurrentTargetText, 0.68)
+    call BlzFrameSetScale(TUI_CurrentTargetText, 0.58)
     call BlzFrameSetEnable(TUI_CurrentTargetText, false)
     call BlzFrameSetLevel(TUI_CurrentTargetText, 7)
 
     set TUI_ThreatHeader = BlzCreateFrameByType("TEXT", "TargetUnitUIThreatHeader", TUI_Parent, "", 0)
-    call BlzFrameSetPoint(TUI_ThreatHeader, FRAMEPOINT_TOPLEFT, TUI_Parent, FRAMEPOINT_TOPLEFT, 0.015, -0.080)
-    call BlzFrameSetSize(TUI_ThreatHeader, TUI_BAR_WIDTH, 0.012)
+    call BlzFrameSetPoint(TUI_ThreatHeader, FRAMEPOINT_TOPLEFT, TUI_Parent, FRAMEPOINT_TOPLEFT, 0.015, -0.062)
+    call BlzFrameSetSize(TUI_ThreatHeader, TUI_BAR_WIDTH, 0.010)
     call BlzFrameSetText(TUI_ThreatHeader, "|cffbfbfbfThreat|r")
     call BlzFrameSetTextAlignment(TUI_ThreatHeader, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
-    call BlzFrameSetScale(TUI_ThreatHeader, 0.64)
+    call BlzFrameSetScale(TUI_ThreatHeader, 0.56)
     call BlzFrameSetEnable(TUI_ThreatHeader, false)
     call BlzFrameSetLevel(TUI_ThreatHeader, 7)
 
     loop
         exitwhen row > 3
-        set y = -0.094 - I2R(row - 1) * 0.014
+        set y = -0.073 - I2R(row - 1) * 0.011
         set TUI_ThreatRow[row] = BlzCreateFrameByType("TEXT", "TargetUnitUIThreatRow" + I2S(row), TUI_Parent, "", 0)
         call BlzFrameSetPoint(TUI_ThreatRow[row], FRAMEPOINT_TOPLEFT, TUI_Parent, FRAMEPOINT_TOPLEFT, 0.015, y)
-        call BlzFrameSetSize(TUI_ThreatRow[row], TUI_BAR_WIDTH, 0.012)
+        call BlzFrameSetSize(TUI_ThreatRow[row], TUI_BAR_WIDTH, 0.010)
         call BlzFrameSetTextAlignment(TUI_ThreatRow[row], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
-        call BlzFrameSetScale(TUI_ThreatRow[row], 0.62)
+        call BlzFrameSetScale(TUI_ThreatRow[row], 0.55)
         call BlzFrameSetEnable(TUI_ThreatRow[row], false)
         call BlzFrameSetLevel(TUI_ThreatRow[row], 7)
         set row = row + 1
@@ -300,6 +339,8 @@ private function Init takes nothing returns nothing
     call TUI_CreateFrames()
     set TUI_UpdateTimer = CreateTimer()
     call TimerStart(TUI_UpdateTimer, TUI_UPDATE_INTERVAL, true, function TUI_Update)
+    call Events_RegisterPlayerUnitEvent(function TUI_OnUnitSelected, EVENT_PLAYER_UNIT_SELECTED)
+    call Events_RegisterPlayerUnitEvent(function TUI_OnUnitDeselected, EVENT_PLAYER_UNIT_DESELECTED)
 endfunction
 
 endlibrary
