@@ -1,6 +1,6 @@
 # AI Master Plan
 
-Last updated: 2026-09-18
+Last updated: 2026-09-19
 
 This document is the required planning artifact before creating `AI.j` and the
 AI sublibraries. It records how the old GUI AI triggers in
@@ -550,22 +550,56 @@ Implementation rule:
 
 ### Global NPC Registration
 
-`AI/AI_Register.j` is the central classifier for simple global NPCs. Systems
-that already know an NPC's purpose register its unit type as generic,
+`AI/AI_Register.j` is the central profile registry for simple global NPCs.
+Systems that already know an NPC's purpose register its unit type as generic,
 aggressive, passive, civilian, guard, scripted, vendor, caster, or healer.
-Unknown explicit registrations fall back to `AIGeneric`; the classifier does
-not guess across every map unit because that would absorb creeps, bosses,
-heroes, and routine-owned ambient actors.
+Unknown explicit registrations fall back to `AIGeneric`.
+
+`AI/AI_GlobalNPCProfiles.j` supplies the first automatic classification layer
+for otherwise unclaimed NPCs. It defers processing until the creating system
+has had a chance to claim the unit, rejects user-controlled units, heroes,
+structures, summons, Locust helpers, dead units, and explicit exclusions, then
+uses attack availability, melee/ranged range, magic attack type, mana, ability
+count, and ownership to select a conservative simple profile. Units that look
+like casters remain on `AIGeneric` until an explicit ability/order/targeting
+configuration can safely select `AIGenericCaster` or `AIGenericHealer`.
+
+The future WC3Manager bridge should call
+`AIGlobalNPCProfiles_SetDefaultProfile` during initialization and
+`AIGlobalNPCProfiles_SetUnitTypeProfile` for stored overrides. Its stable data
+contract is: `none` disables global AI, `auto` enables trait classification, a
+known role selects that role, and missing/invalid profile data selects
+`AIGeneric`. Per-instance disable/enable APIs remain available for bosses and
+other exceptional owners. Until that bridge exists, the library starts with
+`auto` as its default; the bridge can switch the default to
+`AI_GLOBAL_NPC_PROFILE_DEFAULT` before the deferred initial scan executes.
 
 The classifier uses the `AI.j` unit-type default profile so the existing unit
 index event covers pre-placed and later-created replacements. It also performs
 a deferred world scan for types registered after initial indexing. Existing
 class/specific defaults win, heroes and structures are rejected, Boss removes
 its units from generic ownership, and `AIRoutines` remains authoritative unless
-a routine explicitly opts into shared AI registration. Classifier-owned simple
-NPC profiles disable shared automatic revival and unregister on death so their
-existing quest, vendor, creep-respawn, or creation system remains the lifecycle
-owner.
+a routine explicitly opts into shared AI registration. `AIRoutines` excludes a
+unit while it owns that unit and queues it for reclassification when ownership
+ends. Classifier-owned simple NPC profiles disable shared automatic revival and
+unregister on death so their existing quest, vendor, creep-respawn, or creation
+system remains the lifecycle owner. AI instance IDs are recycled after clean
+unregistration so created and replacement NPCs do not consume the finite
+instance space permanently.
+
+All `AIRegister`-owned profiles are lightweight. They use only core identity,
+death/unregister, and profile-think state; they skip hero inventory/equipment,
+profession, social, travel, party, shop, camp, retreat, stuck-order, and debug
+icon initialization. Generic, aggressive, guard, passive, civilian, scripted,
+and vendor profiles consume no periodic processing slot and rely on Warcraft's
+native acquisition plus an immediate profile reaction when attacked. Only
+explicit caster/healer profiles use the bounded lightweight round-robin tick.
+Initial world registration is also spread across bounded batches, and inferred
+types do not request redundant full-world reconciliation scans. The shared
+instance pool supports up to 8190 active registrations and recycles cleanly
+released IDs, while full hero/specific AI retains its normal tick path. Party,
+social, random travel, boss-evade, bark, and debug registry scans use only the
+full-instance list and never traverse lightweight global NPCs.
 
 First wave:
 
