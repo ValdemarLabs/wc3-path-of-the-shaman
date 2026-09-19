@@ -40,6 +40,9 @@
     call AI_SetProfileXpLockedUntilInvite(profileId, enabled)
     call AI_SetProfileUsesFakeDeath(profileId, enabled)
     call AI_SetProfileAutomaticRevive(profileId, enabled)
+    call AI_SetProfileGlobalNpcOnly(profileId, enabled)
+    call AI_SetProfileLightweight(profileId, enabled)
+    call AI_SetProfileLightweightPeriodic(profileId, enabled)
     call AI_SetProfileAutonomous(profileId, enabled)
     call AI_SetProfileSpawnOwner(profileId, owner)
     call AI_SetProfileFaction(profileId, factionName)
@@ -164,7 +167,7 @@ globals
     boolean AI_TravelRequestHandled = false
 
     private constant boolean DEBUG_DEFAULT = false
-    private constant integer MAX_AI_INSTANCES = 512
+    private constant integer MAX_AI_INSTANCES = 8190
     private constant integer MAX_BOSS_CASTS = 64
     private constant integer MAX_PROFILE_POINTS = 64
     private constant integer MAX_PROFILE_ITEMS = 64
@@ -177,6 +180,9 @@ globals
     private constant real AI_DEFAULT_THINK_MAX = 1.20
     private constant real AI_DEFAULT_REVIVE_DELAY = 60.00
     private constant real AI_DEFAULT_ABILITY_GAP = 2.00
+    private constant integer AI_LIGHTWEIGHT_BUDGET_PER_TICK = 16
+    private constant real AI_LIGHTWEIGHT_THINK_MIN = 2.50
+    private constant real AI_LIGHTWEIGHT_THINK_MAX = 4.00
     private constant real AI_EQUIPMENT_CHECK_MIN = 6.00
     private constant real AI_EQUIPMENT_CHECK_MAX = 14.00
     private constant real AI_ABILITY_ORDER_JITTER = 0.35
@@ -296,6 +302,9 @@ globals
     private Table ProfileNoManaRestore = 0
     private Table ProfileUsesFakeDeath = 0
     private Table ProfileAutomaticReviveDisabled = 0
+    private Table ProfileGlobalNpcOnly = 0
+    private Table ProfileLightweight = 0
+    private Table ProfileLightweightPeriodic = 0
     private Table ProfileAllowCompanionTravel = 0
     private Table ProfileAutonomousDisabled = 0
     private Table ProfileFaction = 0
@@ -321,6 +330,8 @@ globals
     private Table InstanceState = 0
     private Table InstancePreviousState = 0
     private Table InstanceActiveSlot = 0
+    private Table InstanceHeavySlot = 0
+    private Table InstanceLightweightSlot = 0
     private Table InstanceAlive = 0
     private Table InstanceTraveling = 0
     private Table InstanceRandomManaged = 0
@@ -343,6 +354,10 @@ globals
     private Table InstanceProfessionBlockedUntil = 0
     private Table InstanceIgnoredGatherUnit = 0
     private Table InstanceIgnoredGatherItem = 0
+    private Table InstanceIgnoredGatherUnitCount = 0
+    private Table InstanceIgnoredGatherUnitKey = 0
+    private Table InstanceIgnoredGatherItemCount = 0
+    private Table InstanceIgnoredGatherItemKey = 0
     private Table InstanceNextCamp = 0
     private Table InstanceNextSocial = 0
     private Table InstanceSocialUntil = 0
@@ -406,7 +421,14 @@ globals
 
     private integer ActiveCount = 0
     private integer array ActiveInstances
+    private integer HeavyCount = 0
+    private integer array HeavyInstances
+    private integer LightweightCount = 0
+    private integer array LightweightInstances
+    private integer LightweightCursor = 1
     private integer NextInstanceId = 1
+    private integer FreeInstanceCount = 0
+    private integer array FreeInstanceIds
     private integer NextClassId = 1
     private integer NextProfileId = 1
     private integer RandomSpawnProfileCount = 0
@@ -432,6 +454,7 @@ globals
     private timer DialogUnlockTimer = null
     private timer PendingCommandBarkTimer = null
     private trigger UnitIndexTrigger = null
+    private trigger UnitDeindexTrigger = null
     private trigger DebugSpawnTrigger = null
     private trigger DebugModeTrigger = null
     private trigger DebugCampTrigger = null
@@ -519,6 +542,9 @@ private function EnsureState takes nothing returns nothing
         set ProfileNoManaRestore = Table.create()
         set ProfileUsesFakeDeath = Table.create()
         set ProfileAutomaticReviveDisabled = Table.create()
+        set ProfileGlobalNpcOnly = Table.create()
+        set ProfileLightweight = Table.create()
+        set ProfileLightweightPeriodic = Table.create()
         set ProfileAllowCompanionTravel = Table.create()
         set ProfileAutonomousDisabled = Table.create()
         set ProfileFaction = Table.create()
@@ -541,6 +567,8 @@ private function EnsureState takes nothing returns nothing
         set InstanceState = Table.create()
         set InstancePreviousState = Table.create()
         set InstanceActiveSlot = Table.create()
+        set InstanceHeavySlot = Table.create()
+        set InstanceLightweightSlot = Table.create()
         set InstanceAlive = Table.create()
         set InstanceTraveling = Table.create()
         set InstanceRandomManaged = Table.create()
@@ -563,6 +591,10 @@ private function EnsureState takes nothing returns nothing
         set InstanceProfessionBlockedUntil = Table.create()
         set InstanceIgnoredGatherUnit = Table.create()
         set InstanceIgnoredGatherItem = Table.create()
+        set InstanceIgnoredGatherUnitCount = Table.create()
+        set InstanceIgnoredGatherUnitKey = Table.create()
+        set InstanceIgnoredGatherItemCount = Table.create()
+        set InstanceIgnoredGatherItemKey = Table.create()
         set InstanceNextCamp = Table.create()
         set InstanceNextSocial = Table.create()
         set InstanceSocialUntil = Table.create()
@@ -943,6 +975,63 @@ private function RemoveActiveInstance takes integer instanceId returns nothing
     set ActiveInstances[ActiveCount] = 0
     set ActiveCount = ActiveCount - 1
     call InstanceActiveSlot.remove(instanceId)
+endfunction
+
+private function AddHeavyInstance takes integer instanceId returns nothing
+    if instanceId <= 0 or InstanceHeavySlot[instanceId] > 0 then
+        return
+    endif
+    set HeavyCount = HeavyCount + 1
+    set HeavyInstances[HeavyCount] = instanceId
+    set InstanceHeavySlot[instanceId] = HeavyCount
+endfunction
+
+private function RemoveHeavyInstance takes integer instanceId returns nothing
+    local integer slot
+    local integer moved
+    if instanceId <= 0 then
+        return
+    endif
+    set slot = InstanceHeavySlot[instanceId]
+    if slot <= 0 or slot > HeavyCount then
+        return
+    endif
+    set moved = HeavyInstances[HeavyCount]
+    set HeavyInstances[slot] = moved
+    set InstanceHeavySlot[moved] = slot
+    set HeavyInstances[HeavyCount] = 0
+    set HeavyCount = HeavyCount - 1
+    call InstanceHeavySlot.remove(instanceId)
+endfunction
+
+private function AddLightweightInstance takes integer instanceId returns nothing
+    if instanceId <= 0 or InstanceLightweightSlot[instanceId] > 0 then
+        return
+    endif
+    set LightweightCount = LightweightCount + 1
+    set LightweightInstances[LightweightCount] = instanceId
+    set InstanceLightweightSlot[instanceId] = LightweightCount
+endfunction
+
+private function RemoveLightweightInstance takes integer instanceId returns nothing
+    local integer slot
+    local integer moved
+    if instanceId <= 0 then
+        return
+    endif
+    set slot = InstanceLightweightSlot[instanceId]
+    if slot <= 0 or slot > LightweightCount then
+        return
+    endif
+    set moved = LightweightInstances[LightweightCount]
+    set LightweightInstances[slot] = moved
+    set InstanceLightweightSlot[moved] = slot
+    set LightweightInstances[LightweightCount] = 0
+    set LightweightCount = LightweightCount - 1
+    call InstanceLightweightSlot.remove(instanceId)
+    if LightweightCursor > LightweightCount then
+        set LightweightCursor = 1
+    endif
 endfunction
 
 private function IncrementCounts takes integer classId, integer profileId, integer unitTypeId returns nothing
@@ -1612,8 +1701,8 @@ private function CountRandomManagedVisible takes nothing returns integer
     local integer index = 1
     local integer count = 0
     loop
-        exitwhen index > ActiveCount
-        if IsRandomManagedVisible(ActiveInstances[index]) then
+        exitwhen index > HeavyCount
+        if IsRandomManagedVisible(HeavyInstances[index]) then
             set count = count + 1
         endif
         set index = index + 1
@@ -2096,8 +2185,8 @@ private function RefreshDebugIcons takes nothing returns nothing
     local integer instanceId
     local unit whichUnit
     loop
-        exitwhen index > ActiveCount
-        set instanceId = ActiveInstances[index]
+        exitwhen index > HeavyCount
+        set instanceId = HeavyInstances[index]
         set whichUnit = InstanceUnit.unit[instanceId]
         if DebugMode then
             call EnsureDebugIcon(instanceId, whichUnit)
@@ -2121,6 +2210,41 @@ private function RefreshInstanceProfessionSkills takes integer instanceId, unit 
     call GNS_RegisterTrackedGatherer(whichUnit)
 endfunction
 
+private function GetIgnoredGatherListKey takes integer instanceId, integer index, boolean itemEntry returns integer
+    if itemEntry then
+        return StringHash(I2S(instanceId) + ":ignored-item:" + I2S(index))
+    endif
+    return StringHash(I2S(instanceId) + ":ignored-unit:" + I2S(index))
+endfunction
+
+private function ClearInstanceIgnoredGatherEntries takes integer instanceId returns nothing
+    local integer index = 1
+    local integer count = InstanceIgnoredGatherUnitCount[instanceId]
+    local integer listKey
+    local integer ignoredKey
+    loop
+        exitwhen index > count
+        set listKey = GetIgnoredGatherListKey(instanceId, index, false)
+        set ignoredKey = InstanceIgnoredGatherUnitKey[listKey]
+        call InstanceIgnoredGatherUnit.remove(ignoredKey)
+        call InstanceIgnoredGatherUnitKey.remove(listKey)
+        set index = index + 1
+    endloop
+    call InstanceIgnoredGatherUnitCount.remove(instanceId)
+
+    set index = 1
+    set count = InstanceIgnoredGatherItemCount[instanceId]
+    loop
+        exitwhen index > count
+        set listKey = GetIgnoredGatherListKey(instanceId, index, true)
+        set ignoredKey = InstanceIgnoredGatherItemKey[listKey]
+        call InstanceIgnoredGatherItem.remove(ignoredKey)
+        call InstanceIgnoredGatherItemKey.remove(listKey)
+        set index = index + 1
+    endloop
+    call InstanceIgnoredGatherItemCount.remove(instanceId)
+endfunction
+
 private function ClearInstanceProfessionState takes integer instanceId, unit whichUnit returns nothing
     if instanceId <= 0 then
         return
@@ -2129,6 +2253,7 @@ private function ClearInstanceProfessionState takes integer instanceId, unit whi
     call InstanceNextProfession.remove(instanceId)
     call InstanceProfessionFailCount.remove(instanceId)
     call InstanceProfessionBlockedUntil.remove(instanceId)
+    call ClearInstanceIgnoredGatherEntries(instanceId)
     set InstanceProfessionTargetUnit[instanceId] = null
     if whichUnit != null then
         call GNS_UnregisterTrackedGatherer(whichUnit)
@@ -2337,8 +2462,8 @@ private function RemoveInstanceFromAiParty takes integer instanceId returns noth
     endif
     if leaderId == instanceId then
         loop
-            exitwhen index > ActiveCount
-            set memberId = ActiveInstances[index]
+            exitwhen index > HeavyCount
+            set memberId = HeavyInstances[index]
             if InstanceAiPartyLeader[memberId] == instanceId then
                 call InstanceAiPartyLeader.remove(memberId)
                 if memberId != instanceId and InstanceState[memberId] == AI_STATE_SOCIAL then
@@ -2415,13 +2540,13 @@ private function EnforceRandomSpawnActiveCap takes nothing returns nothing
         return
     endif
     loop
-        exitwhen CountRandomManagedVisible() <= RandomSpawnActiveCap or guard >= ActiveCount
+        exitwhen CountRandomManagedVisible() <= RandomSpawnActiveCap or guard >= HeavyCount
         set index = 1
         set selected = 0
         set seen = 0
         loop
-            exitwhen index > ActiveCount
-            set instanceId = ActiveInstances[index]
+            exitwhen index > HeavyCount
+            set instanceId = HeavyInstances[index]
             if IsRandomManagedVisible(instanceId) then
                 set seen = seen + 1
                 if GetRandomInt(1, seen) == 1 then
@@ -2668,6 +2793,42 @@ endfunction
 public function SetProfileAutomaticRevive takes integer profileId, boolean enabled returns nothing
     call EnsureState()
     set ProfileAutomaticReviveDisabled.boolean[profileId] = not enabled
+endfunction
+
+public function SetProfileGlobalNpcOnly takes integer profileId, boolean enabled returns nothing
+    call EnsureState()
+    if profileId <= 0 then
+        return
+    endif
+    if enabled then
+        set ProfileGlobalNpcOnly.boolean[profileId] = true
+    else
+        call ProfileGlobalNpcOnly.boolean.remove(profileId)
+    endif
+endfunction
+
+public function SetProfileLightweight takes integer profileId, boolean enabled returns nothing
+    call EnsureState()
+    if profileId <= 0 then
+        return
+    endif
+    if enabled then
+        set ProfileLightweight.boolean[profileId] = true
+    else
+        call ProfileLightweight.boolean.remove(profileId)
+    endif
+endfunction
+
+public function SetProfileLightweightPeriodic takes integer profileId, boolean enabled returns nothing
+    call EnsureState()
+    if profileId <= 0 then
+        return
+    endif
+    if enabled then
+        set ProfileLightweightPeriodic.boolean[profileId] = true
+    else
+        call ProfileLightweightPeriodic.boolean.remove(profileId)
+    endif
 endfunction
 
 public function SetProfileCompanionRetreat takes integer profileId, boolean enabled returns nothing
@@ -3282,8 +3443,8 @@ private function HasNearbyChatTarget takes unit speaker, string className, strin
         return true
     endif
     loop
-        exitwhen index > ActiveCount
-        set instanceId = ActiveInstances[index]
+        exitwhen index > HeavyCount
+        set instanceId = HeavyInstances[index]
         set candidate = InstanceUnit.unit[instanceId]
         if candidate != null and candidate != speaker and IsAliveUnit(candidate) and not IsUnitHidden(candidate) and IsUnitAlly(candidate, GetOwningPlayer(speaker)) and IsUnitInRange(candidate, speaker, AI_SOCIAL_SCAN_RANGE) then
             if profileName != "" then
@@ -3331,8 +3492,8 @@ private function FindCompanionResponder takes integer profileId, unit speaker re
     local unit responder = null
     local integer seen = 0
     loop
-        exitwhen i > ActiveCount
-        set instanceId = ActiveInstances[i]
+        exitwhen i > HeavyCount
+        set instanceId = HeavyInstances[i]
         set candidate = InstanceUnit.unit[instanceId]
         if candidate != null and candidate != speaker and InstanceProfile[instanceId] == profileId then
             if IsAliveUnit(candidate) and IsCompanionControlled(candidate) and IsBarkNearPlayerHero(candidate) and (speaker == null or IsUnitInRange(candidate, speaker, AI_BARK_REPLY_RANGE)) then
@@ -3621,6 +3782,9 @@ public function RegisterUnit takes unit whichUnit, integer profileId, integer un
         call DebugMsg("Registration rejected for " + GetDebugUnitName(whichUnit) + " because unit type does not match profile " + I2S(profileId))
         return 0
     endif
+    if ProfileGlobalNpcOnly.boolean[profileId] and (GetPlayerController(GetOwningPlayer(whichUnit)) == MAP_CONTROL_USER or IsUnitType(whichUnit, UNIT_TYPE_HERO) or IsUnitType(whichUnit, UNIT_TYPE_STRUCTURE) or IsUnitType(whichUnit, UNIT_TYPE_SUMMONED) or GetUnitAbilityLevel(whichUnit, 'Aloc') > 0) then
+        return 0
+    endif
     set existing = UnitInstance[GetHandleId(whichUnit)]
     if existing > 0 then
         return existing
@@ -3637,13 +3801,18 @@ public function RegisterUnit takes unit whichUnit, integer profileId, integer un
         endif
         return 0
     endif
-    if NextInstanceId > MAX_AI_INSTANCES then
-        call BJDebugMsg("[AI] ERROR: MAX_AI_INSTANCES reached.")
+    if NextInstanceId <= MAX_AI_INSTANCES then
+        set instanceId = NextInstanceId
+        set NextInstanceId = NextInstanceId + 1
+    elseif FreeInstanceCount > 0 then
+        set instanceId = FreeInstanceIds[FreeInstanceCount]
+        set FreeInstanceIds[FreeInstanceCount] = 0
+        set FreeInstanceCount = FreeInstanceCount - 1
+    else
+        call BJDebugMsg("[AI] ERROR: AI registration capacity " + I2S(MAX_AI_INSTANCES) + " reached (active=" + I2S(ActiveCount) + ", full=" + I2S(HeavyCount) + ", lightweight-think=" + I2S(LightweightCount) + ").")
         return 0
     endif
     set classId = ProfileClass[profileId]
-    set instanceId = NextInstanceId
-    set NextInstanceId = NextInstanceId + 1
     set UnitInstance[GetHandleId(whichUnit)] = instanceId
     set InstanceUnit.unit[instanceId] = whichUnit
     set InstanceClass[instanceId] = classId
@@ -3653,6 +3822,22 @@ public function RegisterUnit takes unit whichUnit, integer profileId, integer un
     set InstanceAlive.boolean[instanceId] = IsAliveUnit(whichUnit)
     set InstanceRandomManaged.boolean[instanceId] = false
     set InstanceHiddenByCap.boolean[instanceId] = false
+    if ProfileLightweight.boolean[profileId] then
+        set InstanceNextThink.real[instanceId] = GetNow() + GetRandomReal(0.00, AI_LIGHTWEIGHT_THINK_MAX)
+        set InstanceNextAbility.real[instanceId] = GetNow() + GetRandomReal(0.00, AI_DEFAULT_ABILITY_GAP)
+        call SetInstanceState(instanceId, AI_STATE_IDLE)
+        call AddActiveInstance(instanceId)
+        if ProfileLightweightPeriodic.boolean[profileId] and ProfileThinkTrigger.trigger[profileId] != null then
+            call AddLightweightInstance(instanceId)
+        endif
+        call IncrementCounts(classId, profileId, unitTypeId)
+        if uniqueId != 0 then
+            set UniqueInstance[uniqueId] = instanceId
+        endif
+        call RunProfileTrigger(ProfileRegisterTrigger, instanceId, whichUnit)
+        call DebugMsg("Registered lightweight " + GetDebugInstanceName(instanceId, whichUnit) + " instance=" + I2S(instanceId) + " profile=" + I2S(profileId) + " unitType=" + I2S(unitTypeId) + ".")
+        return instanceId
+    endif
     set InstanceHomeX.real[instanceId] = GetUnitX(whichUnit)
     set InstanceHomeY.real[instanceId] = GetUnitY(whichUnit)
     set InstanceNextThink.real[instanceId] = GetNow() + GetRandomReal(0.00, AI_DEFAULT_THINK_MAX)
@@ -3672,6 +3857,7 @@ public function RegisterUnit takes unit whichUnit, integer profileId, integer un
     set InstanceStuckSince.real[instanceId] = 0.00
     call SetInstanceState(instanceId, AI_STATE_IDLE)
     call AddActiveInstance(instanceId)
+    call AddHeavyInstance(instanceId)
     call IncrementCounts(classId, profileId, unitTypeId)
     if uniqueId != 0 then
         set UniqueInstance[uniqueId] = instanceId
@@ -3743,6 +3929,8 @@ public function UnregisterUnit takes unit whichUnit returns nothing
     endif
     call RemoveInstanceFromAiParty(instanceId)
     call ClearDebugIcon(instanceId)
+    call RemoveHeavyInstance(instanceId)
+    call RemoveLightweightInstance(instanceId)
     call RemoveActiveInstance(instanceId)
     call DecrementCounts(classId, profileId, unitTypeId)
     if uniqueId != 0 and UniqueInstance[uniqueId] == instanceId then
@@ -3793,6 +3981,8 @@ public function UnregisterUnit takes unit whichUnit returns nothing
     call InstanceActionX.remove(instanceId)
     call InstanceActionY.remove(instanceId)
     call InstanceActionShopUnit.unit.remove(instanceId)
+    set FreeInstanceCount = FreeInstanceCount + 1
+    set FreeInstanceIds[FreeInstanceCount] = instanceId
     set reviveTimer = null
 endfunction
 
@@ -4076,8 +4266,8 @@ private function TryUnhideRandomManaged takes boolean showMessage returns boolea
         return false
     endif
     loop
-        exitwhen index > ActiveCount
-        set instanceId = ActiveInstances[index]
+        exitwhen index > HeavyCount
+        set instanceId = HeavyInstances[index]
         if InstanceRandomManaged.boolean[instanceId] and InstanceHiddenByCap.boolean[instanceId] and not InstanceTraveling.boolean[instanceId] then
             set whichUnit = InstanceUnit.unit[instanceId]
             if whichUnit != null and IsAliveUnit(whichUnit) and not IsCompanionControlled(whichUnit) then
@@ -4113,8 +4303,8 @@ private function GetRandomTravelInstance takes nothing returns integer
     local unit whichUnit
     local unit enemy
     loop
-        exitwhen index > ActiveCount
-        set instanceId = ActiveInstances[index]
+        exitwhen index > HeavyCount
+        set instanceId = HeavyInstances[index]
         set state = InstanceState[instanceId]
         if IsRandomManagedVisible(instanceId) and not IsCompanionControlled(InstanceUnit.unit[instanceId]) and (state == AI_STATE_IDLE or state == AI_STATE_WANDER) then
             set whichUnit = InstanceUnit.unit[instanceId]
@@ -4530,6 +4720,9 @@ private function QueueCommandResponseBark takes unit speaker, integer barkType r
     if instanceId <= 0 or speaker == null or barkType <= 0 then
         return false
     endif
+    if ProfileLightweight.boolean[InstanceProfile[instanceId]] then
+        return false
+    endif
     if not IsAliveUnit(speaker) or not IsCommandBarkContextAllowed(speaker, barkType) then
         return false
     endif
@@ -4562,6 +4755,9 @@ public function RequestBark takes unit speaker, integer barkType returns boolean
     local real duration
     local boolean replyScheduled
     if instanceId <= 0 or speaker == null or barkType <= 0 then
+        return false
+    endif
+    if ProfileLightweight.boolean[InstanceProfile[instanceId]] then
         return false
     endif
     if not IsAliveUnit(speaker) or udg_CompanionDialogueActive then
@@ -4657,8 +4853,8 @@ public function HandleBossCast takes unit caster, integer abilityId, real target
             endif
             set activeIndex = 1
             loop
-                exitwhen activeIndex > ActiveCount
-                set instanceId = ActiveInstances[activeIndex]
+                exitwhen activeIndex > HeavyCount
+                set instanceId = HeavyInstances[activeIndex]
                 set whichUnit = InstanceUnit.unit[instanceId]
                 if whichUnit != null and IsAliveUnit(whichUnit) and not InstanceTraveling.boolean[instanceId] then
                     set dx = GetUnitX(whichUnit) - originX
@@ -4884,7 +5080,7 @@ endfunction
 private function DebugModeAction takes nothing returns nothing
     call AI_SetDebugMode(not DebugMode)
     if DebugMode then
-        call BJDebugMsg("[AI] Debug mode enabled.")
+        call BJDebugMsg("[AI] Debug mode enabled. active=" + I2S(ActiveCount) + " full=" + I2S(HeavyCount) + " lightweight-periodic=" + I2S(LightweightCount) + " lightweight-event=" + I2S(ActiveCount - HeavyCount - LightweightCount) + ".")
     else
         call BJDebugMsg("[AI] Debug mode disabled.")
     endif
@@ -5024,8 +5220,8 @@ public function DebugForceShopBuy takes nothing returns integer
     local unit whichUnit
     call EnsureState()
     loop
-        exitwhen index > ActiveCount
-        set instanceId = ActiveInstances[index]
+        exitwhen index > HeavyCount
+        set instanceId = HeavyInstances[index]
         set whichUnit = InstanceUnit.unit[instanceId]
         if IsShopActionCandidate(instanceId, whichUnit, InstanceState[instanceId], false) then
             if TryBeginShopBuy(instanceId, whichUnit, now) then
@@ -5047,8 +5243,8 @@ public function DebugForceShopSell takes nothing returns integer
     local unit whichUnit
     call EnsureState()
     loop
-        exitwhen index > ActiveCount
-        set instanceId = ActiveInstances[index]
+        exitwhen index > HeavyCount
+        set instanceId = HeavyInstances[index]
         set whichUnit = InstanceUnit.unit[instanceId]
         if IsShopActionCandidate(instanceId, whichUnit, InstanceState[instanceId], false) then
             if TryBeginShopSell(instanceId, whichUnit, now) then
@@ -5070,8 +5266,8 @@ public function DebugForceShopByInventory takes nothing returns integer
     local unit whichUnit
     call EnsureState()
     loop
-        exitwhen index > ActiveCount
-        set instanceId = ActiveInstances[index]
+        exitwhen index > HeavyCount
+        set instanceId = HeavyInstances[index]
         set whichUnit = InstanceUnit.unit[instanceId]
         if IsShopActionCandidate(instanceId, whichUnit, InstanceState[instanceId], false) then
             if IsInventoryFull(whichUnit) then
@@ -5154,8 +5350,8 @@ private function TryCreateAiPartyForLeader takes integer leaderId returns boolea
     endif
     call AddAiPartyMember(leaderId, leaderId)
     loop
-        exitwhen index > ActiveCount or added >= AI_PARTY_MAX_SIZE
-        set memberId = ActiveInstances[index]
+        exitwhen index > HeavyCount or added >= AI_PARTY_MAX_SIZE
+        set memberId = HeavyInstances[index]
         if memberId != leaderId then
             set member = InstanceUnit.unit[memberId]
             if IsAiPartyCandidate(memberId, member) and IsUnitAlly(member, GetOwningPlayer(leader)) then
@@ -5195,8 +5391,8 @@ private function TryOrganizeAiParty takes real now returns nothing
         return
     endif
     loop
-        exitwhen index > ActiveCount
-        set instanceId = ActiveInstances[index]
+        exitwhen index > HeavyCount
+        set instanceId = HeavyInstances[index]
         set whichUnit = InstanceUnit.unit[instanceId]
         if IsAiPartyCandidate(instanceId, whichUnit) then
             set seen = seen + 1
@@ -5280,6 +5476,8 @@ private function MarkLowSkillIgnoredGatherUnit takes integer instanceId, unit wh
     call EnsureState()
     set key = GetIgnoredGatherNodeKey(instanceId, GetHandleId(node))
     if not InstanceIgnoredGatherUnit.has(key) then
+        set InstanceIgnoredGatherUnitCount[instanceId] = InstanceIgnoredGatherUnitCount[instanceId] + 1
+        set InstanceIgnoredGatherUnitKey[GetIgnoredGatherListKey(instanceId, InstanceIgnoredGatherUnitCount[instanceId], false)] = key
         if HasProfileProfession(InstanceProfile[instanceId], professionId) then
             call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " ignores " + GN_GetGatherUnitName(node) + " until " + GNS_GetProfessionName(professionId) + " " + I2S(requiredSkill) + ".")
         else
@@ -5305,6 +5503,8 @@ private function MarkLowSkillIgnoredGatherItem takes integer instanceId, unit wh
     call EnsureState()
     set key = GetIgnoredGatherNodeKey(instanceId, GetHandleId(nodeItem))
     if not InstanceIgnoredGatherItem.has(key) then
+        set InstanceIgnoredGatherItemCount[instanceId] = InstanceIgnoredGatherItemCount[instanceId] + 1
+        set InstanceIgnoredGatherItemKey[GetIgnoredGatherListKey(instanceId, InstanceIgnoredGatherItemCount[instanceId], true)] = key
         if HasProfileProfession(InstanceProfile[instanceId], professionId) then
             call DebugMsg(GetDebugInstanceName(instanceId, whichUnit) + " ignores " + GN_GetGatherItemName(nodeItem) + " until " + GNS_GetProfessionName(professionId) + " " + I2S(requiredSkill) + ".")
         else
@@ -5743,8 +5943,8 @@ public function DebugForceProfessionCraft takes nothing returns integer
     call EnsureState()
 
     loop
-        exitwhen index > ActiveCount
-        set instanceId = ActiveInstances[index]
+        exitwhen index > HeavyCount
+        set instanceId = HeavyInstances[index]
         set whichUnit = InstanceUnit.unit[instanceId]
         set profileId = InstanceProfile[instanceId]
         set selectedStation = null
@@ -5968,8 +6168,8 @@ private function FindSocialTarget takes integer instanceId, unit whichUnit retur
         return null
     endif
     loop
-        exitwhen index > ActiveCount
-        set otherInstance = ActiveInstances[index]
+        exitwhen index > HeavyCount
+        set otherInstance = HeavyInstances[index]
         if otherInstance != instanceId and not InstanceTraveling.boolean[otherInstance] and not InstanceHiddenByCap.boolean[otherInstance] then
             set other = InstanceUnit.unit[otherInstance]
             set otherState = InstanceState[otherInstance]
@@ -6173,8 +6373,8 @@ public function DebugForceNightCamp takes nothing returns integer
         return 0
     endif
     loop
-        exitwhen index > ActiveCount
-        set instanceId = ActiveInstances[index]
+        exitwhen index > HeavyCount
+        set instanceId = HeavyInstances[index]
         set whichUnit = InstanceUnit.unit[instanceId]
         set state = InstanceState[instanceId]
         if whichUnit != null and IsAliveUnit(whichUnit) and not IsUnitHidden(whichUnit) and not IsCompanionControlled(whichUnit) and not udg_InCinematic and IsSideActionState(state) and not HasNearbyCombatEnemy(whichUnit, 900.00) then
@@ -6368,6 +6568,16 @@ private function RunProfileThink takes integer instanceId, unit whichUnit return
         return
     endif
     set AI_EventTarget = AI_FindClosestEnemy(whichUnit, 700.00)
+    call RunProfileTrigger(ProfileThinkTrigger, instanceId, whichUnit)
+    set AI_EventTarget = null
+endfunction
+
+private function RunLightweightThinkAgainst takes integer instanceId, unit whichUnit, unit target returns nothing
+    if instanceId <= 0 or whichUnit == null or target == null or udg_InCinematic or IsCastingLocked(whichUnit) or ProfileThinkTrigger.trigger[InstanceProfile[instanceId]] == null then
+        return
+    endif
+    set InstanceNextThink.real[instanceId] = GetNow() + GetRandomReal(AI_LIGHTWEIGHT_THINK_MIN, AI_LIGHTWEIGHT_THINK_MAX)
+    set AI_EventTarget = target
     call RunProfileTrigger(ProfileThinkTrigger, instanceId, whichUnit)
     set AI_EventTarget = null
 endfunction
@@ -6732,14 +6942,46 @@ private function ProcessInstance takes integer instanceId, real now returns noth
     set whichUnit = null
 endfunction
 
+private function ProcessLightweightInstance takes integer instanceId, real now returns nothing
+    local unit whichUnit = InstanceUnit.unit[instanceId]
+    if instanceId <= 0 or whichUnit == null or GetUnitTypeId(whichUnit) == 0 or not InstanceAlive.boolean[instanceId] or not IsAliveUnit(whichUnit) or IsUnitHidden(whichUnit) or udg_InCinematic then
+        set whichUnit = null
+        return
+    endif
+    if now < InstanceNextThink.real[instanceId] then
+        set whichUnit = null
+        return
+    endif
+    set InstanceNextThink.real[instanceId] = now + GetRandomReal(AI_LIGHTWEIGHT_THINK_MIN, AI_LIGHTWEIGHT_THINK_MAX)
+    call RunProfileThink(instanceId, whichUnit)
+    set whichUnit = null
+endfunction
+
+private function ProcessLightweightBatch takes real now returns nothing
+    local integer processed = 0
+    local integer available = LightweightCount
+    local integer instanceId
+    loop
+        exitwhen processed >= AI_LIGHTWEIGHT_BUDGET_PER_TICK or processed >= available or LightweightCount <= 0
+        if LightweightCursor > LightweightCount then
+            set LightweightCursor = 1
+        endif
+        set instanceId = LightweightInstances[LightweightCursor]
+        set LightweightCursor = LightweightCursor + 1
+        call ProcessLightweightInstance(instanceId, now)
+        set processed = processed + 1
+    endloop
+endfunction
+
 private function Think takes nothing returns nothing
     local integer i = 1
     local real now = GetNow()
     loop
-        exitwhen i > ActiveCount
-        call ProcessInstance(ActiveInstances[i], now)
+        exitwhen i > HeavyCount
+        call ProcessInstance(HeavyInstances[i], now)
         set i = i + 1
     endloop
+    call ProcessLightweightBatch(now)
     call TryOrganizeAiParty(now)
 endfunction
 
@@ -6748,8 +6990,8 @@ private function RequestCompanionDeathBark takes unit victim returns nothing
     local integer instanceId
     local unit speaker
     loop
-        exitwhen i > ActiveCount
-        set instanceId = ActiveInstances[i]
+        exitwhen i > HeavyCount
+        set instanceId = HeavyInstances[i]
         set speaker = InstanceUnit.unit[instanceId]
         if speaker != null and speaker != victim and IsCompanionControlled(speaker) and IsAliveUnit(speaker) and GetRandomInt(1, 2) == 1 then
             set AI_EventTarget = victim
@@ -6833,7 +7075,9 @@ private function HandleAttack takes nothing returns nothing
         set AI_EventTarget = null
     endif
     set instanceId = UnitInstance[GetHandleId(attacked)]
-    if instanceId > 0 and GetRandomReal(0.00, 100.00) <= AI_SHIELD_BLOCK_CHANCE then
+    if instanceId > 0 and ProfileLightweight.boolean[InstanceProfile[instanceId]] then
+        call RunLightweightThinkAgainst(instanceId, attacked, attacker)
+    elseif instanceId > 0 and GetRandomReal(0.00, 100.00) <= AI_SHIELD_BLOCK_CHANCE then
         call IssueImmediateOrder(attacked, "berserk")
     endif
     set attacker = null
@@ -6933,6 +7177,14 @@ private function HandleIndexedUnit takes nothing returns nothing
         call AI_RegisterUnitByType(indexedUnit, 0)
     endif
     set indexedUnit = null
+endfunction
+
+private function HandleDeindexedUnit takes nothing returns nothing
+    local unit deindexedUnit = udg_UDexUnits[udg_UDex]
+    if deindexedUnit != null and AI_GetInstance(deindexedUnit) > 0 then
+        call AI_UnregisterUnit(deindexedUnit)
+    endif
+    set deindexedUnit = null
 endfunction
 
 private function UnlockInviteGatedProfileState takes integer instanceId, unit whichUnit returns nothing
@@ -7106,6 +7358,10 @@ private function Init takes nothing returns nothing
     set UnitIndexTrigger = CreateTrigger()
     call TriggerRegisterVariableEvent(UnitIndexTrigger, "udg_UnitIndexEvent", EQUAL, 1.50)
     call TriggerAddAction(UnitIndexTrigger, function HandleIndexedUnit)
+
+    set UnitDeindexTrigger = CreateTrigger()
+    call TriggerRegisterVariableEvent(UnitDeindexTrigger, "udg_UnitIndexEvent", EQUAL, 2.00)
+    call TriggerAddAction(UnitDeindexTrigger, function HandleDeindexedUnit)
 
     call UnitDeathEvent_Register(function HandleDeath)
     call Companions_RegisterCommandEvent(function HandleCompanionCommand)
