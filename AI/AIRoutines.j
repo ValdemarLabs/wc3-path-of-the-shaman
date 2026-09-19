@@ -147,7 +147,7 @@
       // reports at least one player hero in zone 2.
 
 **/
-library AIRoutines initializer Init requires AI, Table, ZoneEvent, FallenHeroState
+library AIRoutines initializer Init requires AI, Table, ZoneEvent, FallenHeroState, optional AIRegister, optional AIGlobalNPCProfiles
 
 globals
     constant integer AIR_STEP_WAIT = 1
@@ -707,6 +707,12 @@ private function AIR_ClearUnitRegistration takes unit whichUnit, boolean wakeFir
     call AIR_UnitHadSleepAbility.boolean.remove(unitKey)
     call AIR_UnitTurnoverTime.real.remove(unitKey)
     call AIR_UnitLeaving.boolean.remove(unitKey)
+    static if LIBRARY_AIRegister then
+        call AIRegister_AllowUnit(whichUnit)
+    endif
+    static if LIBRARY_AIGlobalNPCProfiles then
+        call AIGlobalNPCProfiles_QueueUnit(whichUnit)
+    endif
 endfunction
 
 private function AIR_RegisterUnitInternalEx takes unit whichUnit, integer routineId, integer zoneId returns boolean
@@ -728,6 +734,9 @@ private function AIR_RegisterUnitInternalEx takes unit whichUnit, integer routin
     set AIR_UnitStep[unitKey] = 0
     set AIR_UnitNextTime.real[unitKey] = 0.00
     call AIR_UnitPaused.boolean.remove(unitKey)
+    static if LIBRARY_AIRegister then
+        call AIRegister_ExcludeUnit(whichUnit)
+    endif
     call AIR_TryRegisterAI(whichUnit, routineId, unitKey)
     call AIR_DebugMsg("Registered " + GetUnitName(whichUnit) + " to " + AIR_RoutineName[routineId] + ".")
     return true
