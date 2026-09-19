@@ -18,10 +18,25 @@
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
 
+## [19.9.2026]
+
+### Technical Updates
+
+- Updated `AI/AI.j`, `AI/AI_Register.j`, `AI/AI_GlobalNPCProfiles.j`, and `AI/_Plans/AI_MasterPlan.md` with a dedicated lightweight global-NPC tier. Classifier-owned units now skip full hero AI initialization and expensive inventory, equipment, profession, social, travel, party, shopping, camping, retreat, stuck-order, debug-icon, and bark work; ordinary generic/combat/flee and no-think scripted/vendor profiles use no periodic processing slot and react through native acquisition or attacked events; only explicit caster/healer profiles use the bounded lightweight tick; and the recycled shared registry now supports 8190 active units instead of failing at 512.
+- Reduced likely AI-update lag by spreading automatic world registration across 16-unit batches, preventing inferred unit types from scheduling redundant full-world reconciliation scans, restricting hero-AI party, social, travel, boss-evade, bark, and debug scans to full AI instances, and reporting full/event-only/periodic AI counts when `/debug ai` is enabled.
+- Added AI unit-deindex cleanup and tracked profession-ignore cleanup so removed units release their registrations safely and recycled instance IDs cannot inherit stale per-instance state.
+
+### Actions Remaining
+
+- Compile the full map and stress-test more than 512 classified NPCs, map-start registration frame time, mass create/remove/respawn cycles, attacked civilian/combat reactions, explicit caster/healer scheduling, and unchanged hero/specific AI behavior and frame pacing.
+
+
 ## [18.9.2026]
 
 ### Technical Updates
 
+- Added `AI/AI_GlobalNPCProfiles.j` with deferred trait-based registration for unclaimed global NPCs. It classifies noncombat, melee, ranged, and caster-like units from attack availability/range/type, mana, ability count, and ownership; safely falls back to `AI_Generic`; exposes default and per-unit-type profile selections for a future WC3Manager bridge; supports automatic mode and complete type/instance opt-out; and leaves user units, heroes, structures, summons, Locust helpers, bosses, specific AI, and ambient routines under their existing owners.
+- Updated `AI/AI_Register.j`, `AI/AI.j`, `AI/AIRoutines.j`, and `AI/_Plans/AI_MasterPlan.md` with inferred-versus-explicit profile precedence, reset/query APIs for a future WC3Manager profile bridge, routine ownership handoff, and recycled AI instance IDs so repeated NPC creation and respawn do not permanently consume the finite shared registry.
 - Added `AI/AI_Register.j` as the central simple-NPC classifier for generic, aggressive, passive, civilian, guard, scripted, vendor, caster, and healer profiles. Vendor and quest-giver registrations now feed the shared AI unit-type lifecycle, while existing specific profiles, heroes, structures, and boss-owned instances remain protected from generic takeover.
 - Updated `AI/AI.j`, `AI/Generic/AI_Scripted.j`, `AI/Generic/AI_Vendor.j`, `AI/_Plans/AI_MasterPlan.md`, `AI/Specific/AI_Valeria.j`, `AI/Specific/AI_Aradion.j`, `DungeonsAndBosses/Boss.j`, `QuestsAndDialogs/QuestMaster.j`, `QuestsAndDialogs/QuestGiver.j`, and the vendor registration libraries with callback-aware target scanning, default-profile inspection, opt-out shared revival, safe profile replacement, and explicit ownership handoff so pre-placed and later-created NPCs can auto-register without unnecessary combat scans or overlap with hero, story-character, ambient-routine, respawn, or boss controllers.
 - Added `Threat/ThreatSystem.j` with automatic damage, effective ally-healing, and ally-buff threat; WoW-style 110% melee/130% ranged aggro thresholds; autonomous retargeting; floating aggro-change notices; bounded cleanup; taunt, modifier, and query APIs; and optional boss lifecycle cleanup through `DungeonsAndBosses/Boss.j`.
@@ -31,8 +46,13 @@
 - Documented the World Editor migration for UnitHider4: keep the legacy reference initializer disabled, do not register the reputation/companion/stats dummies as revealers, and remove UnitHider enable/disable calls from Cinematic ON/OFF because `udg_InCinematic` now suspends the system directly.
 - Reviewed the archived UnitHider history: v1.0 was the reliable fallback, v1.1 was reverted for worse lag and incorrect behavior, v2 introduced severe lag and slow hiding, and v3 was reported working but remained disabled. UnitHider4 carries forward the reliable v1 ownership behavior and the safe v3 caching improvements while removing v3's 20-reference cap and periodic full-map enumeration spike.
 
+### Imports
+
+- Imported cool fog model by mechanix: `Thick fog1.mdx`
+
 ### Actions Remaining
 
+- Import `AI/AI_GlobalNPCProfiles.j` after `AI/AI_Register.j`; then compile and validate its trait decisions against representative unarmed civilians, melee guards, ranged NPCs, mana casters, hostile creeps, created replacements, explicit `none` exclusions, and AIRoutines ownership handoff before connecting WC3Manager profile metadata.
 - Import `AI/AI_Register.j` after `QuestGiver.j` and the generic AI profile libraries, compile the full map, and validate representative pre-placed and recreated vendors/quest givers, Valeria and Aradion profile takeover, boss registration/respawn exclusion, and AIRoutines order ownership.
 - Import `Threat/ThreatSystem.j` after Table, Events, UnitDeathEvent, DamageEngine, and HealEngine; import `UI/TargetUnitUI.j` after ThreatSystem and Boss; then compile the full map and validate damage/healing/buff threat, 110%/130% aggro pulls, taunts, death/reset cleanup, floating text, boss target-frame layout, and two-client frame consistency.
 - Import `UnitSystems/UnitHider4.j` in place of earlier UnitHider versions, then validate initial hiding, AI hero movement/combat, companion and pet reveal radii, cinematic suspension, enable/disable restoration, revival, transports, and long-session frame pacing in the full World Editor map.
