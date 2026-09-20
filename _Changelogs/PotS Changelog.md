@@ -18,6 +18,20 @@
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
 
+## [20.9.2026]
+
+### Technical Updates
+
+- Updated `UnitSystems/UnitHider4.j` to reduce its scheduled ceiling from 12,288 to 1,920 unit passes per second, skip duplicate hidden/indexed processing, rebuild automatic references when re-enabled, and keep active combat/casting units visible without turning every remote combatant into a proximity revealer. Player heroes, registered AI heroes, companions, pets, and explicit references still reveal nearby populations, while ordinary nonhero vendors and quest givers remain hideable regardless of their scripted/vendor AI role.
+- Updated `AI/AI.j`, `AI/AI_Register.j`, `AI/AI_GlobalNPCProfiles.j`, and `AI/AIRoutines.j` so automatically inferred global NPCs receive no startup or unit-index AI instance. Their first attack or positive damage event now classifies participating NPCs, with the attacked/damaged NPC immediately running its intended lightweight reaction; ordinary inferred profiles remain event-only afterward, while explicit AIRegister profiles retain their existing eager lifecycle behavior.
+- Updated `Threat/ThreatSystem.j` to fast-path the common playing-user faction check before its broader alliance scan, reducing per-damage overhead while preserving computer-owned companion support.
+- Updated `AI/_Plans/AI_MasterPlan.md` and `UnitSystems/UnitHider4_Review.md` with the lazy global-NPC lifecycle, the UnitHider regression analysis, revised workload bounds, and retained behavior.
+
+### Actions Remaining
+
+- Reimport the changed AI, UnitHider, and Threat libraries, compile the full map, and compare FPS with UnitHider enabled/disabled in an idle populated area and during large combat. Validate initial hide time, reveal response while moving at maximum speed, distant nonhero vendor/quest-giver hiding and interaction-range reveal, combat/casting protection, first-hit generic/guard/civilian reactions, spell-damage activation, explicit vendor/quest-giver replacement registration, support threat, death/deindex cleanup, and two-client synchronization.
+
+
 ## [19.9.2026]
 
 ### Player-Facing Updates
