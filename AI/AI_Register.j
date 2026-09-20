@@ -2,16 +2,18 @@
     AI_Register
 
     Author: Valdemar
-    Version: 1.3.0
+    Version: 1.4.0
 
     Description:
-    Central unit-type classifier for simple global NPC AI. Registered types use
-    the matching `AI/Generic` profile factory and `AI.j` default-profile lookup,
-    so pre-placed, created, sold, and replacement units are initialized through
-    the existing unit-index lifecycle. Existing class/specific AI profiles are
-    never replaced. Heroes, structures, excluded types, and excluded instances
-    are deliberately left to their owning systems. Registry-owned profiles use
-    the lightweight AI processing tier rather than full hero AI state.
+    Central unit-type classifier for simple global NPC AI. Explicitly registered
+    types use the matching `AI/Generic` profile factory and `AI.j` default-profile
+    lookup, so pre-placed, created, sold, and replacement units are initialized
+    through the existing unit-index lifecycle. Reconciliation scans preserve
+    lazy profile activation until a caller directly registers a unit. Existing
+    class/specific AI profiles are never replaced. Heroes, structures, excluded
+    types, and excluded instances are deliberately left to their owning systems.
+    Registry-owned profiles use the lightweight AI processing tier rather than
+    full hero AI state.
 
     Credits:
     - PotS AI JASS migration
@@ -174,7 +176,7 @@ private function RegisterSimpleTypeInternal takes integer unitTypeId, integer ro
     return RegisterProfile(unitTypeId, role, profileId)
 endfunction
 
-private function ScanUnit takes unit whichUnit returns integer
+private function ScanUnit takes unit whichUnit, boolean activateLazy returns integer
     local integer unitTypeId
     local integer profileId
     local integer existingProfile
@@ -197,6 +199,9 @@ private function ScanUnit takes unit whichUnit returns integer
                 call AI_UnregisterUnit(whichUnit)
                 return AI_RegisterUnit(whichUnit, profileId, 0)
             elseif existingProfile <= 0 then
+                if not activateLazy and AI_IsProfileLazyActivation(profileId) then
+                    return 0
+                endif
                 return AI_RegisterUnit(whichUnit, profileId, 0)
             endif
         endif
@@ -214,6 +219,9 @@ private function ScanUnit takes unit whichUnit returns integer
         endif
         call AI_UnregisterUnit(whichUnit)
     endif
+    if not activateLazy and AI_IsProfileLazyActivation(profileId) then
+        return 0
+    endif
     return AI_RegisterUnit(whichUnit, profileId, 0)
 endfunction
 
@@ -229,7 +237,7 @@ private function ScanAll takes nothing returns nothing
         if QuestMaster_IsRegisteredGiver(whichUnit) then
             call RegisterSimpleTypeInternal(GetUnitTypeId(whichUnit), AI_REGISTER_ROLE_SCRIPTED, "", true)
         endif
-        call ScanUnit(whichUnit)
+        call ScanUnit(whichUnit, false)
     endloop
     call DestroyTimer(ScanTimer)
     set ScanTimer = null
@@ -247,6 +255,7 @@ endfunction
 public function RegisterType takes integer unitTypeId, integer role, string profileName returns integer
     local integer profileId = RegisterSimpleTypeInternal(unitTypeId, role, profileName, true)
     if profileId > 0 and ProfileByUnitType[unitTypeId] == profileId then
+        call AI_SetProfileLazyActivation(profileId, false)
         call QueueScan()
     endif
     return profileId
@@ -300,6 +309,7 @@ public function RegisterCasterType takes integer unitTypeId, string profileName,
     set profileName = GetProfileName(unitTypeId, AI_REGISTER_ROLE_CASTER, profileName)
     set profileId = AIGenericCaster_RegisterProfile(unitTypeId, profileName, abilityId, order, cooldown, range, false)
     if RegisterProfile(unitTypeId, AI_REGISTER_ROLE_CASTER, profileId) > 0 then
+        call AI_SetProfileLazyActivation(profileId, false)
         call QueueScan()
     endif
     return profileId
@@ -321,6 +331,7 @@ public function RegisterHealerType takes integer unitTypeId, string profileName,
     set profileName = GetProfileName(unitTypeId, AI_REGISTER_ROLE_HEALER, profileName)
     set profileId = AIGenericHealer_RegisterProfile(unitTypeId, profileName, abilityId, order, cooldown, range, threshold, false)
     if RegisterProfile(unitTypeId, AI_REGISTER_ROLE_HEALER, profileId) > 0 then
+        call AI_SetProfileLazyActivation(profileId, false)
         call QueueScan()
     endif
     return profileId
@@ -341,7 +352,7 @@ public function RegisterUnit takes unit whichUnit, integer fallbackRole returns 
     if profileId > 0 and ProfileByUnitType[unitTypeId] <= 0 then
         set profileId = AI_RegisterUnitByType(whichUnit, 0)
     else
-        set profileId = ScanUnit(whichUnit)
+        set profileId = ScanUnit(whichUnit, true)
     endif
     set whichUnit = null
     return profileId
@@ -356,7 +367,7 @@ public function RegisterScriptedUnit takes unit whichUnit returns integer
         return 0
     endif
     call AIRegister_RegisterScriptedType(GetUnitTypeId(whichUnit), "")
-    return ScanUnit(whichUnit)
+    return ScanUnit(whichUnit, true)
 endfunction
 
 public function RegisterVendorUnit takes unit whichUnit returns integer
@@ -364,7 +375,7 @@ public function RegisterVendorUnit takes unit whichUnit returns integer
         return 0
     endif
     call AIRegister_RegisterVendorType(GetUnitTypeId(whichUnit), "")
-    return ScanUnit(whichUnit)
+    return ScanUnit(whichUnit, true)
 endfunction
 
 public function ExcludeUnitType takes integer unitTypeId returns nothing
