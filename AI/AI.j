@@ -41,6 +41,8 @@
     call AI_SetProfileUsesFakeDeath(profileId, enabled)
     call AI_SetProfileAutomaticRevive(profileId, enabled)
     call AI_SetProfileGlobalNpcOnly(profileId, enabled)
+    call AI_SetProfileLazyActivation(profileId, enabled)
+    set lazyActivation = AI_IsProfileLazyActivation(profileId)
     call AI_SetProfileLightweight(profileId, enabled)
     call AI_SetProfileLightweightPeriodic(profileId, enabled)
     call AI_SetProfileAutonomous(profileId, enabled)
@@ -49,6 +51,7 @@
     call AI_GetProfileFaction(profileId) returns string
     call AI_SetProfileRegisterCallback(profileId, callback)
     call AI_SetProfileThinkCallback(profileId, callback)
+    set handled = AI_HandleLightweightAttack(whichUnit, attacker)
     call AI_SetProfileCompanionRetreat(profileId, enabled)
     call AI_AddProfileProfession(profileId, AI_PROFESSION_MINING)
     call AI_RemoveProfileProfession(profileId, AI_PROFESSION_MINING)
@@ -303,6 +306,7 @@ globals
     private Table ProfileUsesFakeDeath = 0
     private Table ProfileAutomaticReviveDisabled = 0
     private Table ProfileGlobalNpcOnly = 0
+    private Table ProfileLazyActivation = 0
     private Table ProfileLightweight = 0
     private Table ProfileLightweightPeriodic = 0
     private Table ProfileAllowCompanionTravel = 0
@@ -543,6 +547,7 @@ private function EnsureState takes nothing returns nothing
         set ProfileUsesFakeDeath = Table.create()
         set ProfileAutomaticReviveDisabled = Table.create()
         set ProfileGlobalNpcOnly = Table.create()
+        set ProfileLazyActivation = Table.create()
         set ProfileLightweight = Table.create()
         set ProfileLightweightPeriodic = Table.create()
         set ProfileAllowCompanionTravel = Table.create()
@@ -2805,6 +2810,23 @@ public function SetProfileGlobalNpcOnly takes integer profileId, boolean enabled
     else
         call ProfileGlobalNpcOnly.boolean.remove(profileId)
     endif
+endfunction
+
+public function SetProfileLazyActivation takes integer profileId, boolean enabled returns nothing
+    call EnsureState()
+    if profileId <= 0 then
+        return
+    endif
+    if enabled then
+        set ProfileLazyActivation.boolean[profileId] = true
+    else
+        call ProfileLazyActivation.boolean.remove(profileId)
+    endif
+endfunction
+
+public function IsProfileLazyActivation takes integer profileId returns boolean
+    call EnsureState()
+    return profileId > 0 and ProfileLazyActivation.boolean[profileId]
 endfunction
 
 public function SetProfileLightweight takes integer profileId, boolean enabled returns nothing
@@ -6582,6 +6604,20 @@ private function RunLightweightThinkAgainst takes integer instanceId, unit which
     set AI_EventTarget = null
 endfunction
 
+public function HandleLightweightAttack takes unit whichUnit, unit attacker returns boolean
+    local integer instanceId
+
+    if whichUnit == null or attacker == null then
+        return false
+    endif
+    set instanceId = UnitInstance[GetHandleId(whichUnit)]
+    if instanceId <= 0 or not ProfileLightweight.boolean[InstanceProfile[instanceId]] then
+        return false
+    endif
+    call RunLightweightThinkAgainst(instanceId, whichUnit, attacker)
+    return true
+endfunction
+
 private function ResetCompanionCommandState takes integer instanceId, unit whichUnit, boolean keepCompanionOrders returns nothing
     local real now
     if instanceId <= 0 or whichUnit == null then
@@ -7075,9 +7111,7 @@ private function HandleAttack takes nothing returns nothing
         set AI_EventTarget = null
     endif
     set instanceId = UnitInstance[GetHandleId(attacked)]
-    if instanceId > 0 and ProfileLightweight.boolean[InstanceProfile[instanceId]] then
-        call RunLightweightThinkAgainst(instanceId, attacked, attacker)
-    elseif instanceId > 0 and GetRandomReal(0.00, 100.00) <= AI_SHIELD_BLOCK_CHANCE then
+    if not AI_HandleLightweightAttack(attacked, attacker) and instanceId > 0 and GetRandomReal(0.00, 100.00) <= AI_SHIELD_BLOCK_CHANCE then
         call IssueImmediateOrder(attacked, "berserk")
     endif
     set attacker = null
@@ -7160,11 +7194,15 @@ endfunction
 
 private function HandleSoldUnit takes nothing returns nothing
     local unit soldUnit = GetSoldUnit()
-    local integer instanceId
+    local integer instanceId = 0
+    local integer profileId
     if soldUnit == null then
         return
     endif
-    set instanceId = AI_RegisterUnitByType(soldUnit, 0)
+    set profileId = UnitTypeDefaultProfile[GetUnitTypeId(soldUnit)]
+    if profileId > 0 and not ProfileLazyActivation.boolean[profileId] then
+        set instanceId = AI_RegisterUnitByType(soldUnit, 0)
+    endif
     if instanceId > 0 then
         call DebugMsg("Sold unit initialized as " + GetDebugInstanceName(instanceId, soldUnit) + " instance=" + I2S(instanceId) + ".")
     endif
@@ -7173,8 +7211,12 @@ endfunction
 
 private function HandleIndexedUnit takes nothing returns nothing
     local unit indexedUnit = udg_UDexUnits[udg_UDex]
+    local integer profileId
     if indexedUnit != null and GetUnitTypeId(indexedUnit) != 0 then
-        call AI_RegisterUnitByType(indexedUnit, 0)
+        set profileId = UnitTypeDefaultProfile[GetUnitTypeId(indexedUnit)]
+        if profileId > 0 and not ProfileLazyActivation.boolean[profileId] then
+            call AI_RegisterUnitByType(indexedUnit, 0)
+        endif
     endif
     set indexedUnit = null
 endfunction
