@@ -711,7 +711,7 @@ private function AIR_ClearUnitRegistration takes unit whichUnit, boolean wakeFir
         call AIRegister_AllowUnit(whichUnit)
     endif
     static if LIBRARY_AIGlobalNPCProfiles then
-        call AIGlobalNPCProfiles_QueueUnit(whichUnit)
+        call AIGlobalNPCProfiles_EnableUnit(whichUnit)
     endif
 endfunction
 
