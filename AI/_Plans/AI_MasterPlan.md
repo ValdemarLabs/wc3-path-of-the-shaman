@@ -556,8 +556,11 @@ aggressive, passive, civilian, guard, scripted, vendor, caster, or healer.
 Unknown explicit registrations fall back to `AIGeneric`.
 
 `AI/AI_GlobalNPCProfiles.j` supplies the first automatic classification layer
-for otherwise unclaimed NPCs. It defers processing until the creating system
-has had a chance to claim the unit, rejects user-controlled units, heroes,
+for otherwise unclaimed NPCs. It performs no startup or unit-index world
+registration. Instead, an unregistered NPC is classified and registered when
+it first attacks, is attacked, deals positive damage, or receives positive
+damage, after its creating system has had a chance to claim or exclude it. The
+classifier rejects user-controlled units, heroes,
 structures, summons, Locust helpers, dead units, and explicit exclusions, then
 uses attack availability, melee/ranged range, magic attack type, mana, ability
 count, and ownership to select a conservative simple profile. Units that look
@@ -572,20 +575,22 @@ known role selects that role, and missing/invalid profile data selects
 `AIGeneric`. Per-instance disable/enable APIs remain available for bosses and
 other exceptional owners. Until that bridge exists, the library starts with
 `auto` as its default; the bridge can switch the default to
-`AI_GLOBAL_NPC_PROFILE_DEFAULT` before the deferred initial scan executes.
+`AI_GLOBAL_NPC_PROFILE_DEFAULT` before combat activation begins.
 
-The classifier uses the `AI.j` unit-type default profile so the existing unit
-index event covers pre-placed and later-created replacements. It also performs
-a deferred world scan for types registered after initial indexing. Existing
+The classifier uses the `AI.j` unit-type default profile, but marks inferred
+profiles for lazy activation so the normal unit-index and sold-unit lifecycle
+hooks and later AIRegister reconciliation scans do not eagerly attach them to
+every unit of that type. Explicit AIRegister profiles keep their existing eager
+lifecycle behavior. Existing
 class/specific defaults win, heroes and structures are rejected, Boss removes
 its units from generic ownership, and `AIRoutines` remains authoritative unless
 a routine explicitly opts into shared AI registration. `AIRoutines` excludes a
-unit while it owns that unit and queues it for reclassification when ownership
-ends. Classifier-owned simple NPC profiles disable shared automatic revival and
-unregister on death so their existing quest, vendor, creep-respawn, or creation
-system remains the lifecycle owner. AI instance IDs are recycled after clean
-unregistration so created and replacement NPCs do not consume the finite
-instance space permanently.
+unit while it owns that unit and merely makes it eligible again when ownership
+ends; combat performs any later automatic registration. Classifier-owned simple
+NPC profiles disable shared automatic revival and unregister on death so their
+existing quest, vendor, creep-respawn, or creation system remains the lifecycle
+owner. AI instance IDs are recycled after clean unregistration so created and
+replacement NPCs do not consume the finite instance space permanently.
 
 All `AIRegister`-owned profiles are lightweight. They use only core identity,
 death/unregister, and profile-think state; they skip hero inventory/equipment,
@@ -594,12 +599,15 @@ icon initialization. Generic, aggressive, guard, passive, civilian, scripted,
 and vendor profiles consume no periodic processing slot and rely on Warcraft's
 native acquisition plus an immediate profile reaction when attacked. Only
 explicit caster/healer profiles use the bounded lightweight round-robin tick.
-Initial world registration is also spread across bounded batches, and inferred
-types do not request redundant full-world reconciliation scans. The shared
-instance pool supports up to 8190 active registrations and recycles cleanly
-released IDs, while full hero/specific AI retains its normal tick path. Party,
-social, random travel, boss-evade, bark, and debug registry scans use only the
-full-instance list and never traverse lightweight global NPCs.
+Automatic profiles therefore consume neither startup registration work nor an
+idle periodic slot; attack and damage events activate only NPCs that actually
+enter combat. An attacked or damaged NPC runs its immediate reactive profile;
+an attacking or damage-dealing NPC is registered without replacing the action
+it already initiated. The shared instance pool supports up to 8190 active
+registrations and recycles cleanly released IDs, while full hero/specific AI
+retains its normal tick path. Party, social, random travel, boss-evade, bark,
+and debug registry scans use only the full-instance list and never traverse
+lightweight global NPCs.
 
 First wave:
 
