@@ -2,27 +2,28 @@
     AI_GlobalNPCProfiles
 
     Author: Valdemar
-    Version: 1.2.0
+    Version: 1.3.0
 
     Description:
     Trait-based default profiles for unclaimed global NPCs. The classifier
     uses attack availability, attack range/type, mana, ability count, and
-    ownership to choose a conservative simple role. Explicit AI profiles keep
+    ownership to choose a conservative simple role when an NPC first attacks,
+    is attacked, deals damage, or receives damage. Explicit AI profiles keep
     priority, while unknown or unsafe caster cases use `AI_Generic`.
 
     Credits:
     - PotS AI JASS migration
 
     How to install:
-    Import after `AI_Register.j`. This library listens to Unit Indexer and also
-    performs a deferred world scan for pre-placed units. Systems that take
-    direct order ownership should exclude their units through `AIRegister`.
-    Initial registration is spread across bounded batches to avoid a map-start
-    workload spike.
+    Import after `AI_Register.j`, Events, and DamageEngine. Global NPCs are
+    registered lazily on their first attack or positive damage event; no
+    startup/index scan is performed. Systems that take direct order ownership
+    should exclude their units through `AIRegister`.
 
     API:
+    call AIGlobalNPCProfiles_ActivateUnit(whichUnit) returns integer
     call AIGlobalNPCProfiles_QueueUnit(whichUnit)
-    call AIGlobalNPCProfiles_QueueWorldScan()
+    call AIGlobalNPCProfiles_QueueWorldScan() // Explicit maintenance only
     call AIGlobalNPCProfiles_SetDefaultProfile(profileSelection)
     call AIGlobalNPCProfiles_SetUnitTypeProfile(unitTypeId, profileSelection)
     call AIGlobalNPCProfiles_ClearUnitTypeProfile(unitTypeId)
@@ -37,11 +38,11 @@
     AI_GLOBAL_NPC_PROFILE_AUTO enables trait classification.
     AI_GLOBAL_NPC_PROFILE_NONE disables global AI for the unit type.
     AI_REGISTER_ROLE_* selects an explicit simple role.
-    The startup default is AUTO. A future manager should set its default during
-    initialization, before the deferred initial scan processes units.
+    The startup default is AUTO. Profile selection is applied when an inactive
+    NPC first participates in an attack or positive damage event.
 
 **/
-library AIGlobalNPCProfiles initializer Init requires AIRegister, Table
+library AIGlobalNPCProfiles initializer Init requires AIRegister, Table, Events, DamageEngine
 
 globals
     constant integer AI_GLOBAL_NPC_PROFILE_DEFAULT = -2
@@ -62,7 +63,6 @@ globals
 
     private group PendingUnits = null
     private timer PendingTimer = null
-    private trigger UnitIndexTrigger = null
     private integer DefaultProfileSelection = AI_GLOBAL_NPC_PROFILE_AUTO
     private Table ProfileSelectionByUnitType = 0
     private Table HasProfileSelection = 0
@@ -229,6 +229,9 @@ private function ApplyAutomaticProfile takes unit whichUnit returns integer
             set role = AI_REGISTER_ROLE_GENERIC
             set profileId = AIRegister_RegisterInferredType(unitTypeId, role, "Auto Generic")
         endif
+        if profileId > 0 then
+            call AI_SetProfileLazyActivation(profileId, true)
+        endif
     endif
     if profileId <= 0 then
         set profileId = AIRegister_GetProfile(unitTypeId)
@@ -237,6 +240,10 @@ private function ApplyAutomaticProfile takes unit whichUnit returns integer
         return 0
     endif
     return AIRegister_RegisterUnit(whichUnit, role)
+endfunction
+
+public function ActivateUnit takes unit whichUnit returns integer
+    return ApplyAutomaticProfile(whichUnit)
 endfunction
 
 private function ProcessPending takes nothing returns nothing
@@ -286,7 +293,6 @@ public function SetDefaultProfile takes integer profileSelection returns nothing
     else
         set DefaultProfileSelection = NormalizeSimpleProfile(profileSelection)
     endif
-    call AIGlobalNPCProfiles_QueueWorldScan()
 endfunction
 
 public function SetUnitTypeProfile takes integer unitTypeId, integer profileSelection returns integer
@@ -301,7 +307,6 @@ public function SetUnitTypeProfile takes integer unitTypeId, integer profileSele
     endif
     if profileSelection == AI_GLOBAL_NPC_PROFILE_AUTO then
         call AIRegister_ResetUnitType(unitTypeId)
-        call AIGlobalNPCProfiles_QueueWorldScan()
         return 0
     endif
     call AIRegister_AllowUnitType(unitTypeId)
@@ -316,7 +321,6 @@ public function ClearUnitTypeProfile takes integer unitTypeId returns nothing
     call ProfileSelectionByUnitType.remove(unitTypeId)
     call HasProfileSelection.boolean.remove(unitTypeId)
     call AIRegister_ResetUnitType(unitTypeId)
-    call AIGlobalNPCProfiles_QueueWorldScan()
 endfunction
 
 public function DisableUnit takes unit whichUnit returns nothing
@@ -325,21 +329,50 @@ endfunction
 
 public function EnableUnit takes unit whichUnit returns nothing
     call AIRegister_AllowUnit(whichUnit)
-    call AIGlobalNPCProfiles_QueueUnit(whichUnit)
 endfunction
 
-private function OnUnitIndexed takes nothing returns nothing
-    call AIGlobalNPCProfiles_QueueUnit(udg_UDexUnits[udg_UDex])
+private function ActivateCombatUnit takes unit whichUnit, unit opponent, boolean react returns nothing
+    if whichUnit == null or opponent == null or AI_GetInstance(whichUnit) > 0 then
+        return
+    endif
+    if AIGlobalNPCProfiles_ActivateUnit(whichUnit) > 0 then
+        if react then
+            call AI_HandleLightweightAttack(whichUnit, opponent)
+        endif
+    endif
+endfunction
+
+private function OnUnitAttacked takes nothing returns nothing
+    local unit attacked = GetTriggerUnit()
+    local unit attacker = GetAttacker()
+
+    // AI's earlier attack callback could not react before lazy registration.
+    call ActivateCombatUnit(attacked, attacker, true)
+    call ActivateCombatUnit(attacker, attacked, false)
+
+    set attacked = null
+    set attacker = null
+endfunction
+
+private function OnDamage takes nothing returns nothing
+    local unit attacked = udg_DamageEventTarget
+    local unit attacker = udg_DamageEventSource
+
+    if udg_DamageEventAmount > 0.00 then
+        call ActivateCombatUnit(attacked, attacker, true)
+        call ActivateCombatUnit(attacker, attacked, false)
+    endif
+
+    set attacked = null
+    set attacker = null
 endfunction
 
 private function Init takes nothing returns nothing
     set ProfileSelectionByUnitType = Table.create()
     set HasProfileSelection = Table.create()
     set PendingUnits = CreateGroup()
-    set UnitIndexTrigger = CreateTrigger()
-    call TriggerRegisterVariableEvent(UnitIndexTrigger, "udg_UnitIndexEvent", EQUAL, 1.50)
-    call TriggerAddAction(UnitIndexTrigger, function OnUnitIndexed)
-    call AIGlobalNPCProfiles_QueueWorldScan()
+    call Events_RegisterPlayerUnitEvent(function OnUnitAttacked, EVENT_PLAYER_UNIT_ATTACKED)
+    call RegisterDamageEngine(function OnDamage, "After", 1.00)
 endfunction
 
 endlibrary
