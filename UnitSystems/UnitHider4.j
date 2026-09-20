@@ -2,13 +2,15 @@
     UnitHider4
 
     Author: Valdemar
-    Version: 4.0.0
+    Version: 4.1.0
 
     Description:
     Hides distant units in bounded batches so the work is spread across frames.
     Player-controlled and registered AI heroes, registered companions and pets,
-    active combatants, and explicit reference units reveal nearby units. Every
-    hero is protected from hiding. The system only shows units that it hid.
+    and explicit reference units reveal nearby units. Every hero and active
+    combat/casting unit is protected from hiding. Ordinary nonhero vendors and
+    quest givers remain hideable; their AI role alone does not make them a
+    revealer. The system only shows units that it hid.
 
     Credits:
     - UnitHider 1.0 for the reliable owned-hidden-unit model
@@ -39,10 +41,10 @@ library UnitHider4 initializer Init requires FallenHeroState, optional AI
 
 globals
     // Configuration
-    private constant real UnitHider4_TICK_INTERVAL = 0.03125
-    private constant integer UnitHider4_UNITS_PER_TICK = 128
-    private constant integer UnitHider4_HIDDEN_UNITS_PER_TICK = 256
-    private constant integer UnitHider4_REFERENCE_REFRESH_TICKS = 4
+    private constant real UnitHider4_TICK_INTERVAL = 0.10
+    private constant integer UnitHider4_UNITS_PER_TICK = 64
+    private constant integer UnitHider4_HIDDEN_UNITS_PER_TICK = 128
+    private constant integer UnitHider4_REFERENCE_REFRESH_TICKS = 2
     private constant integer UnitHider4_MAX_REFERENCES = 8190
     private constant real UnitHider4_DEFAULT_HIDE_DISTANCE = 5500.00
     private constant real UnitHider4_DEFAULT_SHOW_DISTANCE = 5200.00
@@ -119,19 +121,20 @@ private function UnitHider4_IsActiveCombatUnit takes unit whichUnit returns bool
     return unitId > 0 and (udg_GCSM_UnitInCombat[unitId] or udg_UnitIsCasting[unitId])
 endfunction
 
-private function UnitHider4_IsAutomaticReference takes unit whichUnit returns boolean
-    if not FallenHeroState_IsAlive(whichUnit) or IsUnitLoaded(whichUnit) then
+private function UnitHider4_IsAutomaticReference takes unit whichUnit, boolean isAlive, boolean isLoaded returns boolean
+    if not isAlive or isLoaded then
         return false
     endif
-    return UnitHider4_IsTrackedHero(whichUnit) or UnitHider4_IsLegacyCompanionReference(whichUnit) or UnitHider4_IsActiveCombatUnit(whichUnit)
+    // Combat state and nonhero AI roles do not by themselves create revealers.
+    return UnitHider4_IsTrackedHero(whichUnit) or UnitHider4_IsLegacyCompanionReference(whichUnit)
 endfunction
 
-private function UnitHider4_UpdateAutomaticReference takes unit whichUnit returns boolean
-    local boolean isReference = UnitHider4_IsAutomaticReference(whichUnit)
+private function UnitHider4_UpdateAutomaticReference takes unit whichUnit, boolean isAlive, boolean isLoaded returns boolean
+    local boolean isReference = UnitHider4_IsAutomaticReference(whichUnit, isAlive, isLoaded)
 
-    if isReference then
+    if isReference and not IsUnitInGroup(whichUnit, UnitHider4_AutomaticReferences) then
         call GroupAddUnit(UnitHider4_AutomaticReferences, whichUnit)
-    else
+    elseif not isReference and IsUnitInGroup(whichUnit, UnitHider4_AutomaticReferences) then
         call GroupRemoveUnit(UnitHider4_AutomaticReferences, whichUnit)
     endif
     return isReference
@@ -166,6 +169,29 @@ private function UnitHider4_UpdateReferenceCache takes nothing returns nothing
     call UnitHider4_CacheReferenceGroup(UnitHider4_ReferenceCacheGroup)
 endfunction
 
+private function UnitHider4_RebuildAutomaticReferences takes nothing returns nothing
+    local integer index = 1
+    local unit whichUnit
+    local boolean isAlive
+    local boolean isLoaded
+
+    call GroupClear(UnitHider4_AutomaticReferences)
+    loop
+        exitwhen index > udg_UDexMax
+        set whichUnit = udg_UDexUnits[index]
+        if whichUnit != null and GetUnitTypeId(whichUnit) != 0 then
+            set isAlive = FallenHeroState_IsAlive(whichUnit)
+            set isLoaded = IsUnitLoaded(whichUnit)
+            if UnitHider4_IsAutomaticReference(whichUnit, isAlive, isLoaded) then
+                call GroupAddUnit(UnitHider4_AutomaticReferences, whichUnit)
+            endif
+        endif
+        set index = index + 1
+    endloop
+    call UnitHider4_UpdateReferenceCache()
+    set whichUnit = null
+endfunction
+
 private function UnitHider4_IsNearReference takes unit whichUnit, real distanceSq returns boolean
     local real unitX = GetUnitX(whichUnit)
     local real unitY = GetUnitY(whichUnit)
@@ -186,7 +212,7 @@ private function UnitHider4_IsNearReference takes unit whichUnit, real distanceS
 endfunction
 
 private function UnitHider4_IsProtected takes unit whichUnit, boolean isAutomaticReference returns boolean
-    return isAutomaticReference or IsUnitType(whichUnit, UNIT_TYPE_HERO) or IsUnitInGroup(whichUnit, UnitHider4_RegisteredReferences) or IsUnitInGroup(whichUnit, udg_UnitHider_ReferenceGroup) or IsUnitInGroup(whichUnit, udg_UnitHider_IgnoredUnits) or GetUnitAbilityLevel(whichUnit, 'Aloc') > 0
+    return isAutomaticReference or UnitHider4_IsActiveCombatUnit(whichUnit) or IsUnitType(whichUnit, UNIT_TYPE_HERO) or IsUnitInGroup(whichUnit, UnitHider4_RegisteredReferences) or IsUnitInGroup(whichUnit, udg_UnitHider_ReferenceGroup) or IsUnitInGroup(whichUnit, udg_UnitHider_IgnoredUnits) or GetUnitAbilityLevel(whichUnit, 'Aloc') > 0
 endfunction
 
 private function UnitHider4_ShowOwned takes unit whichUnit, boolean show returns nothing
@@ -197,12 +223,16 @@ endfunction
 
 private function UnitHider4_ProcessUnit takes unit whichUnit returns nothing
     local boolean isAutomaticReference
+    local boolean isAlive
+    local boolean isLoaded
 
     if whichUnit == null or GetUnitTypeId(whichUnit) == 0 then
         return
     endif
 
-    set isAutomaticReference = UnitHider4_UpdateAutomaticReference(whichUnit)
+    set isAlive = FallenHeroState_IsAlive(whichUnit)
+    set isLoaded = IsUnitLoaded(whichUnit)
+    set isAutomaticReference = UnitHider4_UpdateAutomaticReference(whichUnit, isAlive, isLoaded)
     if not UnitHider4_Enabled then
         return
     endif
@@ -210,10 +240,10 @@ private function UnitHider4_ProcessUnit takes unit whichUnit returns nothing
     set UnitHider4_Checked = UnitHider4_Checked + 1
 
     if IsUnitInGroup(whichUnit, UnitHider4_HiddenUnits) then
-        if IsUnitLoaded(whichUnit) then
+        if isLoaded then
             return
         endif
-        if UnitHider4_ReferenceCount == 0 or not FallenHeroState_IsAlive(whichUnit) or UnitHider4_IsProtected(whichUnit, isAutomaticReference) or UnitHider4_IsNearReference(whichUnit, UnitHider4_ShowDistanceSq) then
+        if UnitHider4_ReferenceCount == 0 or not isAlive or UnitHider4_IsProtected(whichUnit, isAutomaticReference) or UnitHider4_IsNearReference(whichUnit, UnitHider4_ShowDistanceSq) then
             call UnitHider4_ShowOwned(whichUnit, true)
             call GroupRemoveUnit(UnitHider4_HiddenUnits, whichUnit)
             set UnitHider4_Shown = UnitHider4_Shown + 1
@@ -222,7 +252,7 @@ private function UnitHider4_ProcessUnit takes unit whichUnit returns nothing
     endif
 
     // IsUnitHidden here means another system owns the hidden state.
-    if IsUnitHidden(whichUnit) or not FallenHeroState_IsAlive(whichUnit) or IsUnitLoaded(whichUnit) or UnitHider4_IsProtected(whichUnit, isAutomaticReference) then
+    if IsUnitHidden(whichUnit) or not isAlive or isLoaded or UnitHider4_IsProtected(whichUnit, isAutomaticReference) then
         return
     endif
 
@@ -287,6 +317,9 @@ private function UnitHider4_ProcessBatch takes nothing returns nothing
         set UnitHider4_RefreshTick = UnitHider4_REFERENCE_REFRESH_TICKS
         set UnitHider4_ScanIndex = 1
     endif
+    if not UnitHider4_Enabled then
+        return
+    endif
 
     set UnitHider4_RefreshTick = UnitHider4_RefreshTick + 1
     if UnitHider4_RefreshTick >= UnitHider4_REFERENCE_REFRESH_TICKS then
@@ -294,9 +327,7 @@ private function UnitHider4_ProcessBatch takes nothing returns nothing
         call UnitHider4_UpdateReferenceCache()
     endif
 
-    if UnitHider4_Enabled then
-        call UnitHider4_ProcessHiddenBatch()
-    endif
+    call UnitHider4_ProcessHiddenBatch()
 
     loop
         exitwhen processed >= UnitHider4_UNITS_PER_TICK
@@ -306,7 +337,9 @@ private function UnitHider4_ProcessBatch takes nothing returns nothing
             set processed = UnitHider4_UNITS_PER_TICK
         else
             set whichUnit = udg_UDexUnits[UnitHider4_ScanIndex]
-            call UnitHider4_ProcessUnit(whichUnit)
+            if whichUnit != null and not IsUnitInGroup(whichUnit, UnitHider4_HiddenUnits) then
+                call UnitHider4_ProcessUnit(whichUnit)
+            endif
             set UnitHider4_ScanIndex = UnitHider4_ScanIndex + 1
             set processed = processed + 1
         endif
@@ -354,12 +387,17 @@ function UnitHider_SetDebugEnabled takes boolean enable returns nothing
 endfunction
 
 function UnitHider_SetSystemEnabled takes boolean enable returns nothing
+    local boolean wasEnabled = UnitHider4_Enabled
     set UnitHider4_Enabled = enable
     set udg_UnitHider_SetSystem = enable
     if enable then
         set UnitHider4_ScanIndex = 1
         set UnitHider4_HiddenScanIndex = 0
         set UnitHider4_RefreshTick = UnitHider4_REFERENCE_REFRESH_TICKS
+        if not wasEnabled then
+            call UnitHider4_RebuildAutomaticReferences()
+            set UnitHider4_RefreshTick = 0
+        endif
     else
         call UnitHider4_UnhideAllManaged()
     endif
