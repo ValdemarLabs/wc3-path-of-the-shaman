@@ -2,7 +2,7 @@
     ThreatSystem
 
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.2.0
 
     Description:
     Automatic PvE threat and aggro management for computer-controlled enemies.
@@ -86,11 +86,18 @@ endfunction
 
 private function Threat_IsPlayerFactionUnit takes unit whichUnit returns boolean
     local integer playerIndex = 0
+    local player unitOwner = null
     local player whichPlayer = null
     local boolean result = false
 
     if not Threat_IsAlive(whichUnit) then
         return false
+    endif
+
+    set unitOwner = GetOwningPlayer(whichUnit)
+    if GetPlayerController(unitOwner) == MAP_CONTROL_USER and GetPlayerSlotState(unitOwner) == PLAYER_SLOT_STATE_PLAYING then
+        set unitOwner = null
+        return true
     endif
 
     loop
@@ -102,6 +109,7 @@ private function Threat_IsPlayerFactionUnit takes unit whichUnit returns boolean
         set playerIndex = playerIndex + 1
     endloop
 
+    set unitOwner = null
     set whichPlayer = null
     return result
 endfunction
