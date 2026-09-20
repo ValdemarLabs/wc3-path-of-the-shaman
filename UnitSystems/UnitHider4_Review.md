@@ -28,7 +28,7 @@ correct and performant enough for permanent use.
 | `UnitHider.j` (1.0) | Simple two-phase ownership: check owned hidden units for showing, then visible units for hiding. It was the known working fallback. | Enumerates the full map every 0.5 seconds; creates and destroys a reference group for every proximity test; uses `SquareRoot`; leaks a newly created work group on every disabled timer tick; does not recognize the `UnitHider_ReferenceUnits` registrations used by current AI, companions, and pets. |
 | `UnitHider2.j` | Reuses work groups, filters invalid units, compares squared distances, and keeps the reliable two-phase flow. | Still enumerates nearly every eligible map unit every 0.5 seconds and copies the full reference group for every proximity test. `Table` state duplicates the authoritative hidden group without improving behavior. The archived runtime result was slow hiding and severe lag. |
 | `UnitHider3_Optimized.j` | Caches reference positions, uses squared distances, reuses main work groups, and retains the reliable two-phase flow. The archive says it worked. | Still performs a full-world enumeration every 0.5 seconds; creates a temporary reference group each cycle; limits references to 20; aborts with zero references without restoring already hidden units; does not consume current array registrations; and can show units another system intentionally hid because visibility ownership is not transferred on foreign `ShowUnit` calls. |
-| `UnitHider4.j` | Uses Unit Event's indexed registry in fixed batches; caches reference positions; preserves foreign visibility ownership; has hide/show hysteresis; treats player-controlled and registered AI heroes, registered companions/pets, and active combat/casting units as revealers; honors explicit reference/ignored groups; suspends mutation during cinematics. | Requires full-map runtime validation because hiding units changes simulation behavior by design. Its current tuning is 128 indexed slots plus up to 256 already-hidden units per 0.03125-second tick, a 5500 hide radius, and a 5200 show radius. |
+| `UnitHider4.j` | Uses Unit Event's indexed registry in fixed batches; caches reference positions; preserves foreign visibility ownership; has hide/show hysteresis; treats player-controlled and registered AI heroes plus registered companions/pets as revealers; protects combat/casting units without turning every combatant into a revealer; honors explicit reference/ignored groups; suspends mutation during cinematics. | Requires full-map runtime validation because hiding units changes simulation behavior by design. Version 4.1 processes 64 indexed slots plus up to 128 already-hidden units per 0.10-second tick, a 5500 hide radius, and a 5200 show radius. |
 
 Some older UnitHider Markdown files describe an earlier proposed "smart filter"
 and quote estimated operation reductions. The final `UnitHider3_Optimized.j`
@@ -46,7 +46,12 @@ Treat those estimates as historical planning notes rather than measured results.
   `udg_UnitHider_ReferenceUnits` together with `udg_Companion_Group` and
   `udg_TamedUnits`.
 - Units marked by GCSM as in combat, or by the casting system as casting, are
-  protected and temporarily act as revealers.
+  protected from hiding but do not reveal unrelated nearby map populations.
+  This prevents large or remote combats from multiplying every proximity scan.
+- Ordinary nonhero vendors and quest givers remain eligible for distance
+  hiding. Their `AI_REGISTER_ROLE_VENDOR` or `AI_REGISTER_ROLE_SCRIPTED`
+  registration does not make them revealers; only companion/pet membership or
+  an explicit UnitHider registration overrides that behavior.
 - `udg_UnitHider_ReferenceGroup` remains an explicit override for existing GUI
   work. The public register/unregister API supports new JASS systems.
 - `udg_UnitHider_IgnoredUnits`, Locust units, loaded units, dead units, and
@@ -60,7 +65,26 @@ Treat those estimates as historical planning notes rather than measured results.
   units it hid.
 - A separate bounded pass revisits already-hidden units before the normal
   indexed scan, keeping reveal response bounded even when Unit Event's maximum
-  allocated index has grown after many temporary units.
+  allocated index has grown after many temporary units. The indexed pass skips
+  those hidden units, so one timer tick cannot process the same unit twice.
+- Re-enabling the system rebuilds the automatic revealer set once before hiding
+  resumes, so references created while disabled are not missed.
+
+## 20 September 2026 performance correction
+
+The initial 4.0 tuning could execute 128 indexed and 256 hidden-unit passes at
+32 Hz: up to 12,288 `UnitHider4_ProcessUnit` calls per second. Each eligible
+unit then performed a linear scan across every cached revealer. Because every
+GCSM combat/casting unit also became a revealer, large combat state could turn
+that into millions of interpreted JASS distance comparisons per second.
+
+Version 4.1 reduces the bound to 64 indexed and 128 hidden-unit passes at 10 Hz
+(1,920 maximum calls per second before early exits), prevents duplicate
+indexed/hidden processing, and limits automatic revealers to the player/party
+units that actually define populated areas. Combat and casting protection is
+retained per unit. This removes about 84% of the raw scheduled unit passes and,
+more importantly, prevents combat population from multiplying every distance
+check.
 
 ## Full-map validation
 
@@ -72,12 +96,14 @@ Treat those estimates as historical planning notes rather than measured results.
    combat acquisition, remain interactive through combat/casting, and hide
    again after every revealer leaves.
 4. Repeat with normal companions, Shadowclaw, and a tamed pet.
-5. Exercise travel, dialog cinematics, scripted quest hides, hero death/revive,
+5. Confirm distant nonhero vendors and quest givers hide, reveal before the
+   player reaches interaction range, and still open their normal shop/dialog.
+6. Exercise travel, dialog cinematics, scripted quest hides, hero death/revive,
    transports, and enable/disable cycles. No foreign-hidden unit should be
    force-shown.
-6. Test with zero valid revealers. UnitHider-owned units should be restored and
+7. Test with zero valid revealers. UnitHider-owned units should be restored and
    no new unit should hide.
-7. Enable debug temporarily and compare complete-sweep counts and frame pacing
+8. Enable debug temporarily and compare complete-sweep counts and frame pacing
    during a long session. Tune `UnitHider4_UNITS_PER_TICK` only from measured
    full-map results.
 
