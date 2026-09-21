@@ -2,6 +2,8 @@
 
 *Based on the current `dev` branch story implementation and quest structure.*
 
+> **Document status — incorporated review (21 September 2026):** This file records the repository review and reasoning that informed the current narrative direction. Its core recommendations are incorporated into [Story and Quest Design.md](Story%20and%20Quest%20Design.md). Current narrative canon belongs there; quest implementation details and technical status belong in the [Story and Quest Implementation Ledger](Story%20and%20Quest%20Implementation%20Ledger.md). Retain this guide as provenance rather than maintaining it as a third source of current truth.
+
 ## Purpose
 
 This document is intended as a practical guide for continuing the narrative design of **Path of the Shaman (PotS)**.
