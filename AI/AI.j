@@ -45,6 +45,8 @@
     set lazyActivation = AI_IsProfileLazyActivation(profileId)
     call AI_SetProfileLightweight(profileId, enabled)
     call AI_SetProfileLightweightPeriodic(profileId, enabled)
+    call AI_SetProfileLightweightCombatGated(profileId, enabled)
+    set combatGated = AI_IsProfileLightweightCombatGated(profileId)
     call AI_SetProfileAutonomous(profileId, enabled)
     call AI_SetProfileSpawnOwner(profileId, owner)
     call AI_SetProfileFaction(profileId, factionName)
@@ -101,6 +103,7 @@
     call AI_IsReviving(whichUnit) returns boolean
     call AI_RegisterAutomaticReviveCallback(callback)
     call AI_IsAlive(whichUnit) returns boolean
+    call AI_HasHeroNearPoint(x, y, range) returns boolean
     call AI_UsesFakeDeath(whichUnit) returns boolean
     call AI_ReviveAt(whichUnit, x, y, showEffects) returns boolean
     call AI_ArePartyMembers(firstUnit, secondUnit) returns boolean
@@ -309,6 +312,7 @@ globals
     private Table ProfileLazyActivation = 0
     private Table ProfileLightweight = 0
     private Table ProfileLightweightPeriodic = 0
+    private Table ProfileLightweightCombatGated = 0
     private Table ProfileAllowCompanionTravel = 0
     private Table ProfileAutonomousDisabled = 0
     private Table ProfileFaction = 0
@@ -550,6 +554,7 @@ private function EnsureState takes nothing returns nothing
         set ProfileLazyActivation = Table.create()
         set ProfileLightweight = Table.create()
         set ProfileLightweightPeriodic = Table.create()
+        set ProfileLightweightCombatGated = Table.create()
         set ProfileAllowCompanionTravel = Table.create()
         set ProfileAutonomousDisabled = Table.create()
         set ProfileFaction = Table.create()
@@ -2853,6 +2858,23 @@ public function SetProfileLightweightPeriodic takes integer profileId, boolean e
     endif
 endfunction
 
+public function SetProfileLightweightCombatGated takes integer profileId, boolean enabled returns nothing
+    call EnsureState()
+    if profileId <= 0 then
+        return
+    endif
+    if enabled then
+        set ProfileLightweightCombatGated.boolean[profileId] = true
+    else
+        call ProfileLightweightCombatGated.boolean.remove(profileId)
+    endif
+endfunction
+
+public function IsProfileLightweightCombatGated takes integer profileId returns boolean
+    call EnsureState()
+    return profileId > 0 and ProfileLightweightCombatGated.boolean[profileId]
+endfunction
+
 public function SetProfileCompanionRetreat takes integer profileId, boolean enabled returns nothing
     call EnsureState()
     set ProfileCompanionRetreatDisabled.boolean[profileId] = not enabled
@@ -3625,6 +3647,45 @@ public function GetInstance takes unit whichUnit returns integer
         return 0
     endif
     return UnitInstance[GetHandleId(whichUnit)]
+endfunction
+
+private function IsUnitNearPoint takes unit whichUnit, real x, real y, real rangeSq returns boolean
+    local real dx
+    local real dy
+    if whichUnit == null then
+        return false
+    endif
+    set dx = GetUnitX(whichUnit) - x
+    set dy = GetUnitY(whichUnit) - y
+    return dx * dx + dy * dy <= rangeSq
+endfunction
+
+public function HasHeroNearPoint takes real x, real y, real range returns boolean
+    local integer index = 1
+    local unit whichUnit
+    local real rangeSq
+    call EnsureState()
+    if range <= 0.00 then
+        return false
+    endif
+    set rangeSq = range * range
+    if IsPlayerOwnedHeroListener(udg_Nazgrek) and not IsUnitHidden(udg_Nazgrek) and IsUnitNearPoint(udg_Nazgrek, x, y, rangeSq) then
+        return true
+    endif
+    if IsPlayerOwnedHeroListener(udg_Zulkis) and not IsUnitHidden(udg_Zulkis) and IsUnitNearPoint(udg_Zulkis, x, y, rangeSq) then
+        return true
+    endif
+    loop
+        exitwhen index > HeavyCount
+        set whichUnit = InstanceUnit.unit[HeavyInstances[index]]
+        if whichUnit != null and InstanceAlive.boolean[HeavyInstances[index]] and IsUnitType(whichUnit, UNIT_TYPE_HERO) and IsAliveUnit(whichUnit) and not IsUnitHidden(whichUnit) and IsUnitNearPoint(whichUnit, x, y, rangeSq) then
+            set whichUnit = null
+            return true
+        endif
+        set index = index + 1
+    endloop
+    set whichUnit = null
+    return false
 endfunction
 
 public function IsAlive takes unit whichUnit returns boolean
@@ -6980,6 +7041,7 @@ endfunction
 
 private function ProcessLightweightInstance takes integer instanceId, real now returns nothing
     local unit whichUnit = InstanceUnit.unit[instanceId]
+    local integer unitId
     if instanceId <= 0 or whichUnit == null or GetUnitTypeId(whichUnit) == 0 or not InstanceAlive.boolean[instanceId] or not IsAliveUnit(whichUnit) or IsUnitHidden(whichUnit) or udg_InCinematic then
         set whichUnit = null
         return
@@ -6989,6 +7051,13 @@ private function ProcessLightweightInstance takes integer instanceId, real now r
         return
     endif
     set InstanceNextThink.real[instanceId] = now + GetRandomReal(AI_LIGHTWEIGHT_THINK_MIN, AI_LIGHTWEIGHT_THINK_MAX)
+    if ProfileLightweightCombatGated.boolean[InstanceProfile[instanceId]] then
+        set unitId = GetUnitUserData(whichUnit)
+        if unitId <= 0 or not udg_GCSM_UnitInCombat[unitId] then
+            set whichUnit = null
+            return
+        endif
+    endif
     call RunProfileThink(instanceId, whichUnit)
     set whichUnit = null
 endfunction
