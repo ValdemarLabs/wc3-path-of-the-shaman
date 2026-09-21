@@ -1,6 +1,6 @@
 # AI Master Plan
 
-Last updated: 2026-09-19
+Last updated: 2026-09-21
 
 This document is the required planning artifact before creating `AI.j` and the
 AI sublibraries. It records how the old GUI AI triggers in
@@ -560,54 +560,101 @@ for otherwise unclaimed NPCs. It performs no startup or unit-index world
 registration. Instead, an unregistered NPC is classified and registered when
 it first attacks, is attacked, deals positive damage, or receives positive
 damage, after its creating system has had a chance to claim or exclude it. The
-classifier rejects user-controlled units, heroes,
-structures, summons, Locust helpers, dead units, and explicit exclusions, then
-uses attack availability, melee/ranged range, magic attack type, mana, ability
-count, and ownership to select a conservative simple profile. Units that look
-like casters remain on `AIGeneric` until an explicit ability/order/targeting
-configuration can safely select `AIGenericCaster` or `AIGenericHealer`.
+classifier rejects user-controlled units, heroes, structures, summons, Locust
+helpers, dead units, explicit exclusions, and units without an enabled attack.
+An uncertain attack-capable NPC always receives `AIGeneric`; ownership, range,
+mana, and combat stats are not sufficient evidence for guard or aggressive
+intent. A matching W3U/W3A export may add a reviewed caster or healer mapping,
+but only when the exact unit ability, base order, targeting behavior, and lack
+of another profile owner are verified. No automatic guard mappings are derived
+from Object Editor data. The current review is recorded in
+`AI/_Plans/GlobalNPCObjectProfileAudit_2026-09-20.md`.
 
 The future WC3Manager bridge should call
 `AIGlobalNPCProfiles_SetDefaultProfile` during initialization and
 `AIGlobalNPCProfiles_SetUnitTypeProfile` for stored overrides. Its stable data
-contract is: `none` disables global AI, `auto` enables trait classification, a
-known role selects that role, and missing/invalid profile data selects
-`AIGeneric`. Per-instance disable/enable APIs remain available for bosses and
-other exceptional owners. Until that bridge exists, the library starts with
-`auto` as its default; the bridge can switch the default to
-`AI_GLOBAL_NPC_PROFILE_DEFAULT` before combat activation begins.
+contract is: `none` disables this automatic manager for the type, `auto`
+enables conservative classification, a known non-specialist simple role selects
+that role, and missing/invalid profile data selects `AIGeneric`. Manager and reviewed
+specialist setters only store configuration: they do not scan existing units,
+reset `AIRegister`, or replace an explicit class, hero, boss, vendor, quest,
+routine, or manually registered profile. Per-instance disable/enable APIs
+remain available for bosses and other exceptional owners. Until that bridge
+exists, the library starts with `auto` as its default; the bridge can switch the
+default to `AI_GLOBAL_NPC_PROFILE_DEFAULT` before combat activation begins.
 
 The classifier uses the `AI.j` unit-type default profile, but marks inferred
 profiles for lazy activation so the normal unit-index and sold-unit lifecycle
 hooks and later AIRegister reconciliation scans do not eagerly attach them to
 every unit of that type. Explicit AIRegister profiles keep their existing eager
-lifecycle behavior. Existing
-class/specific defaults win, heroes and structures are rejected, Boss removes
-its units from generic ownership, and `AIRoutines` remains authoritative unless
-a routine explicitly opts into shared AI registration. `AIRoutines` excludes a
-unit while it owns that unit and merely makes it eligible again when ownership
-ends; combat performs any later automatic registration. Classifier-owned simple
-NPC profiles disable shared automatic revival and unregister on death so their
-existing quest, vendor, creep-respawn, or creation system remains the lifecycle
-owner. AI instance IDs are recycled after clean unregistration so created and
-replacement NPCs do not consume the finite instance space permanently.
+lifecycle behavior. Reviewed inferred caster/healer profiles are also created
+only by the first eligible combat event and are never allowed to replace an
+existing `AIRegister` role. Existing class/specific defaults win, heroes and
+structures are rejected, Boss removes its units from generic ownership, and
+`AIRoutines` remains authoritative unless a routine explicitly opts into shared
+AI registration. Routine-created per-instance profiles immediately clear the
+unit-type default that `AI_RegisterProfile` would otherwise leak to unrelated
+units of the same type. `AIRoutines` excludes a unit while it owns that unit and
+merely makes it eligible again when ownership ends; combat performs any later
+automatic registration. Classifier-owned simple NPC profiles disable shared
+automatic revival and unregister on death so their existing quest, vendor,
+creep-respawn, or creation system remains the lifecycle owner. AI instance IDs
+are recycled after clean unregistration so created and replacement NPCs do not
+consume the finite instance space permanently.
 
 All `AIRegister`-owned profiles are lightweight. They use only core identity,
 death/unregister, and profile-think state; they skip hero inventory/equipment,
 profession, social, travel, party, shop, camp, retreat, stuck-order, and debug
 icon initialization. Generic, aggressive, guard, passive, civilian, scripted,
 and vendor profiles consume no periodic processing slot and rely on Warcraft's
-native acquisition plus an immediate profile reaction when attacked. Only
-explicit caster/healer profiles use the bounded lightweight round-robin tick.
+native acquisition plus an immediate profile reaction when attacked. Caster and
+healer profiles use the bounded lightweight round-robin list. Automatically
+inferred specialists run their spell target scan only while
+`GlobalCombatStateMachine` reports that instance in combat; an idle inferred
+specialist merely advances its next-think time. Explicit caster/healer
+registrations retain their prior periodic behavior.
 Automatic profiles therefore consume neither startup registration work nor an
-idle periodic slot; attack and damage events activate only NPCs that actually
-enter combat. An attacked or damaged NPC runs its immediate reactive profile;
-an attacking or damage-dealing NPC is registered without replacing the action
-it already initiated. The shared instance pool supports up to 8190 active
-registrations and recycles cleanly released IDs, while full hero/specific AI
-retains its normal tick path. Party, social, random travel, boss-evade, bark,
+idle spell-target scan; attack and damage events activate only NPCs that
+actually enter combat. An attacked or damaged NPC runs its immediate reactive
+profile; an attacking or damage-dealing NPC is registered without replacing the
+action it already initiated. The shared instance pool supports up to 8190
+active registrations and recycles cleanly released IDs, while full hero/specific
+AI retains its normal tick path. Party, social, random travel, boss-evade, bark,
 and debug registry scans use only the full-instance list and never traverse
 lightweight global NPCs.
+
+### Ambient AI Events
+
+`AI/AI_AmbientEvents.j` is the shared coarse scheduler for optional living-world
+controllers. It owns one 15-second timer, checks only one registered controller
+per tick, limits simultaneous active events, and performs no unit enumeration.
+Each controller supplies a bounded attempt callback and reports its start and
+finish so retry and cooldown windows remain centralized. New ambient events
+must use this scheduler instead of introducing another permanent high-frequency
+world scan.
+
+`AI/AI_AmbientWolfHunt.j` is the first controller. A completed hunt receives an
+8-13 minute cooldown; an attempt that cannot start retries after 2-4 minutes,
+plus the shared scheduler's round-robin latency. It may choose one visible idle
+neutral-passive stag or boar in Twilight Grove, Sereneglade, Thornwoods, or
+Havenwoods. The prey must be within 10,000 range of a living player hero or
+registered AI hero. One rare zone-local enumeration chooses the prey, then a
+3,000-range scan selects the closest wolf as the pack anchor and each nearest
+remaining neighbor until the one-to-four-wolf pack is full. If the local pack
+is short, one 35% roll may fill every missing slot with temporary wolves spawned
+inside the same zone.
+
+The wolf controller never creates or assigns an AI profile. It temporarily
+excludes only the exact placed wolf instances it orders, issues one native
+attack order, and releases those claims at event end. Player-owned, summoned,
+tamed, companion, hidden, busy, combat-active, profile-owned, scripted/excluded,
+or special named wolves are ineligible. Spawned wolves are discarded from creep
+respawn, receive timed life, and stay excluded from global NPC AI until removal.
+If one is tamed or changes owner, its timed life is cancelled and its exact
+instance exclusion is released so the controlling system can keep it safely.
+Only an active hunt owns a five-second monitor, which stops after 90 seconds or
+as soon as the prey dies, becomes hidden, all wolves are gone, or no eligible
+hero remains within 10,000 range.
 
 First wave:
 
@@ -742,6 +789,21 @@ Special tests:
 - travel hides and returns units without losing state;
 - Valeria AI can remain registered during patrol without taking over patrol or
   `qAradion` scripted movement;
+- confirm an attack-capable unknown NPC receives only lazy `AIGeneric`, while a
+  no-attack NPC receives no profile even after taking spell damage;
+- confirm each reviewed caster/healer type receives its specialist only on its
+  first combat event, casts only while combat-active, and never replaces an
+  explicit class, boss, vendor, quest, routine, or manual profile;
+- confirm releasing an `AIRoutines` unit cannot leave its routine profile as a
+  type-wide default for another unit of the same rawcode;
+- test wolf hunts in all four configured zones with heroes inside and outside
+  10,000 range, including solo and closest-pack selection, optional spawning,
+  prey death, timeout, hero departure, and timed-life cleanup;
+- confirm summoned, tamed, companion, named/special, hidden, already-in-combat,
+  excluded, and profile-owned wolves are never claimed by the ambient hunt;
+- compare idle and active-hunt frame pacing and confirm UnitHider may still hide
+  ordinary vendors, quest givers, prey, and event wolves when they are outside
+  its normal visibility/combat protection rules;
 - old AI stutter from many periodic triggers is not reproduced.
 
 ## Open Decisions For Later Implementation
