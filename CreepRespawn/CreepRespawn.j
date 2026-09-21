@@ -343,7 +343,8 @@ endfunction
 // allowed to respawn; only instances that actually fired the summon event are
 // excluded.
 private function OnUnitSummonEvent takes nothing returns nothing
-    local unit summoned = Events_GetSummonedUnit()
+    // Events registers this as a direct action, so use the native event response.
+    local unit summoned = GetSummonedUnit()
     local integer id
 
     if summoned == null then
