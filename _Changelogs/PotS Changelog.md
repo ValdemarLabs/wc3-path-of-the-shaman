@@ -18,6 +18,25 @@
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
 
+## [21.9.2026]
+
+### Player-Facing Updates
+
+- Added rare ambient wolf hunts in Twilight Grove, Sereneglade, Thornwoods, and Havenwoods. When a player or registered AI hero is nearby, idle wild wolves may form a local hunting pack for a stag or boar, with occasional temporary pack members.
+
+### Technical Updates
+
+- Updated `AI/AI.j`, `AI/AI_Register.j`, `AI/AI_GlobalNPCProfiles.j`, `AI/Generic/AI_GenericCaster.j`, and `AI/AIRoutines.j` with conservative profiles derived from the matching 20.9.2026 unit/ability exports. Unknown attack-capable NPCs now receive lazy `AIGeneric`, attack-disabled NPCs receive no automatic profile, and twelve reviewed caster/healer types receive lazy specialist logic only after first combat, including Gnoll Cursers, both Ogre Warlocks, Murloc Sorcerers, and Restoration Shamans. Explicit profiles still win, explicit caster/healer registrations keep their eager periodic behavior, automatic specialist scans stop outside combat, wider configured caster ranges are honored, manager overrides no longer trigger world scans or ownership resets, and routine-specific profiles cannot leak into a unit-type default.
+- Added `AI/AI_AmbientEvents.j` and `AI/AI_AmbientWolfHunt.j` as a reusable coarse ambient-event scheduler and its first lightweight controller. Rare zone-local hunts can form one-to-four-wolf packs around eligible stag/boar prey in Twilight Grove, Sereneglade, Thornwoods, or Havenwoods only while a player or registered AI hero is within 10,000 range; the controller uses bounded enumerations, native attack orders, one temporary five-second monitor, exact instance exclusions, summon/tame/companion safeguards, and optional timed-life wolves instead of persistent per-wolf AI.
+- Updated `CreepRespawn/CreepRespawn.j` to read the native summoned-unit event response in its direct `Events` callback, preserving actual-summon exclusion and cleanup after the shared dispatcher restores its compatibility accessor state.
+- Updated `DungeonsAndBosses/OpenWorld/Scorchion/BossScorchion.j` so created and adopted Dark Shamans remain exclusively controlled by the encounter script, and updated `AI/_Plans/AI_MasterPlan.md` plus added `AI/_Plans/GlobalNPCObjectProfileAudit_2026-09-20.md` with profile evidence, precedence rules, wildlife rawcode safeguards, performance bounds, and validation requirements.
+
+### Actions Remaining
+
+- Reimport the changed AI libraries with `AI_AmbientEvents.j` before `AI_AmbientWolfHunt.j`; import the wolf controller after `AI`, `AIRegister`, `Table`, `Events`, `PetDefinitions`, `CreepRespawn`, and `FallenHeroState`, retaining `gg_rct_001TwilightGroveFull`, `gg_rct_02SereneGlade`, `gg_rct_06Thornwoods`, and `gg_rct_07Havenwoods`; reimport `CreepRespawn.j` and `BossScorchion.j` after their listed dependencies; then compile the full map through World Editor/JassHelper. Validate every reviewed caster/healer rawcode and order, same-rawcode instances with and without their mapped spell, unknown attackers, attack-disabled NPCs, `none` overrides after inference, explicit profile promotion, same-rawcode routine ownership, Scorchion Dark Shamans, actual summons, death/deindex cleanup, and idle/large-combat FPS.
+- Test wolf hunts in all four zones with player and AI heroes inside/outside 10,000 range; cover solo/closest-pack selection, optional spawning, prey death/transfer, hero departure, timeout, summoned/tamed/companion/named-wolf rejection, taming or transferring a spawned wolf, timed-life cancellation, UnitHider transitions, CreepRespawn exclusion, and two-client synchronization/frame pacing.
+
+
 ## [20.9.2026]
 
 ### Technical Updates
