@@ -2,7 +2,7 @@
     AI_Register
 
     Author: Valdemar
-    Version: 1.4.0
+    Version: 1.5.0
 
     Description:
     Central unit-type classifier for simple global NPC AI. Explicitly registered
@@ -36,6 +36,8 @@
     call AIRegister_RegisterVendorType(unitTypeId, profileName)
     call AIRegister_RegisterCasterType(unitTypeId, profileName, abilityId, order, cooldown, range)
     call AIRegister_RegisterHealerType(unitTypeId, profileName, abilityId, order, cooldown, range, threshold)
+    call AIRegister_RegisterInferredCasterType(unitTypeId, profileName, abilityId, order, cooldown, range)
+    call AIRegister_RegisterInferredHealerType(unitTypeId, profileName, abilityId, order, cooldown, range, threshold)
     call AIRegister_RegisterUnit(whichUnit, fallbackRole)
     call AIRegister_RegisterGenericUnit(whichUnit)
     call AIRegister_RegisterScriptedUnit(whichUnit)
@@ -48,6 +50,7 @@
     call AIRegister_IsUnitTypeExcluded(unitTypeId) returns boolean
     call AIRegister_IsUnitExcluded(whichUnit) returns boolean
     call AIRegister_IsOwnedProfile(profileId) returns boolean
+    call AIRegister_IsInferredType(unitTypeId) returns boolean
     call AIRegister_GetRole(unitTypeId) returns integer
     call AIRegister_GetProfile(unitTypeId) returns integer
 
@@ -69,6 +72,7 @@ globals
     private Table RoleByUnitType = 0
     private Table ProfileByUnitType = 0
     private Table OwnedProfile = 0
+    private Table InferredUnitType = 0
     private Table ExcludedUnitType = 0
     private Table ExcludedUnit = 0
     private group ScanGroup = null
@@ -162,6 +166,7 @@ private function RegisterSimpleTypeInternal takes integer unitTypeId, integer ro
     if defaultProfile > 0 and not OwnedProfile.boolean[defaultProfile] then
         call RoleByUnitType.remove(unitTypeId)
         call ProfileByUnitType.remove(unitTypeId)
+        call InferredUnitType.boolean.remove(unitTypeId)
         return defaultProfile
     endif
     set existingRole = RoleByUnitType[unitTypeId]
@@ -225,18 +230,33 @@ private function ScanUnit takes unit whichUnit, boolean activateLazy returns int
     return AI_RegisterUnit(whichUnit, profileId, 0)
 endfunction
 
+private function DiscoverQuestGiverType takes nothing returns nothing
+    local unit whichUnit = GetEnumUnit()
+    local integer unitTypeId
+    local integer profileId
+    if QuestMaster_IsRegisteredGiver(whichUnit) then
+        set unitTypeId = GetUnitTypeId(whichUnit)
+        set profileId = RegisterSimpleTypeInternal(unitTypeId, AI_REGISTER_ROLE_SCRIPTED, "", true)
+        if profileId > 0 and ProfileByUnitType[unitTypeId] == profileId then
+            call InferredUnitType.boolean.remove(unitTypeId)
+            call AI_SetProfileLazyActivation(profileId, false)
+            call AI_SetProfileLightweightCombatGated(profileId, false)
+        endif
+    endif
+    set whichUnit = null
+endfunction
+
 private function ScanAll takes nothing returns nothing
     local rect worldBounds = GetWorldBounds()
     local unit whichUnit
     call GroupClear(ScanGroup)
     call GroupEnumUnitsInRect(ScanGroup, worldBounds, null)
+    // Resolve explicit quest-giver types before scanning any same-type unit.
+    call ForGroup(ScanGroup, function DiscoverQuestGiverType)
     loop
         set whichUnit = FirstOfGroup(ScanGroup)
         exitwhen whichUnit == null
         call GroupRemoveUnit(ScanGroup, whichUnit)
-        if QuestMaster_IsRegisteredGiver(whichUnit) then
-            call RegisterSimpleTypeInternal(GetUnitTypeId(whichUnit), AI_REGISTER_ROLE_SCRIPTED, "", true)
-        endif
         call ScanUnit(whichUnit, false)
     endloop
     call DestroyTimer(ScanTimer)
@@ -255,14 +275,22 @@ endfunction
 public function RegisterType takes integer unitTypeId, integer role, string profileName returns integer
     local integer profileId = RegisterSimpleTypeInternal(unitTypeId, role, profileName, true)
     if profileId > 0 and ProfileByUnitType[unitTypeId] == profileId then
+        call InferredUnitType.boolean.remove(unitTypeId)
         call AI_SetProfileLazyActivation(profileId, false)
+        call AI_SetProfileLightweightCombatGated(profileId, false)
         call QueueScan()
     endif
     return profileId
 endfunction
 
 public function RegisterInferredType takes integer unitTypeId, integer role, string profileName returns integer
-    return RegisterSimpleTypeInternal(unitTypeId, role, profileName, false)
+    local integer previousProfile = ProfileByUnitType[unitTypeId]
+    local integer profileId = RegisterSimpleTypeInternal(unitTypeId, role, profileName, false)
+    if previousProfile <= 0 and profileId > 0 and ProfileByUnitType[unitTypeId] == profileId then
+        set InferredUnitType.boolean[unitTypeId] = true
+        call AI_SetProfileLazyActivation(profileId, true)
+    endif
+    return profileId
 endfunction
 
 public function RegisterGenericType takes integer unitTypeId, string profileName returns integer
@@ -293,7 +321,8 @@ public function RegisterVendorType takes integer unitTypeId, string profileName 
     return AIRegister_RegisterType(unitTypeId, AI_REGISTER_ROLE_VENDOR, profileName)
 endfunction
 
-public function RegisterCasterType takes integer unitTypeId, string profileName, integer abilityId, string order, real cooldown, real range returns integer
+private function RegisterCasterTypeInternal takes integer unitTypeId, string profileName, integer abilityId, string order, real cooldown, real range, boolean replaceOwned, boolean eager returns integer
+    local integer existingRole
     local integer defaultProfile
     local integer profileId
     if ExcludedUnitType.boolean[unitTypeId] or not IsSimpleNpcType(unitTypeId) then
@@ -301,21 +330,45 @@ public function RegisterCasterType takes integer unitTypeId, string profileName,
     endif
     set defaultProfile = AI_GetUnitTypeDefaultProfile(unitTypeId)
     if defaultProfile > 0 and not OwnedProfile.boolean[defaultProfile] then
+        call RoleByUnitType.remove(unitTypeId)
+        call ProfileByUnitType.remove(unitTypeId)
+        call InferredUnitType.boolean.remove(unitTypeId)
         return defaultProfile
     endif
-    if RoleByUnitType[unitTypeId] == AI_REGISTER_ROLE_CASTER and ProfileByUnitType[unitTypeId] > 0 then
-        return ProfileByUnitType[unitTypeId]
+    set existingRole = RoleByUnitType[unitTypeId]
+    set profileId = ProfileByUnitType[unitTypeId]
+    if existingRole == AI_REGISTER_ROLE_CASTER and profileId > 0 then
+        if eager then
+            call AIGenericCaster_Configure(profileId, abilityId, order, cooldown, range)
+            call InferredUnitType.boolean.remove(unitTypeId)
+            call AI_SetProfileLazyActivation(profileId, false)
+            call AI_SetProfileLightweightCombatGated(profileId, false)
+            call QueueScan()
+        endif
+        return profileId
+    endif
+    if existingRole > 0 and not replaceOwned then
+        return profileId
     endif
     set profileName = GetProfileName(unitTypeId, AI_REGISTER_ROLE_CASTER, profileName)
     set profileId = AIGenericCaster_RegisterProfile(unitTypeId, profileName, abilityId, order, cooldown, range, false)
     if RegisterProfile(unitTypeId, AI_REGISTER_ROLE_CASTER, profileId) > 0 then
-        call AI_SetProfileLazyActivation(profileId, false)
-        call QueueScan()
+        if eager then
+            call InferredUnitType.boolean.remove(unitTypeId)
+        else
+            set InferredUnitType.boolean[unitTypeId] = true
+        endif
+        call AI_SetProfileLazyActivation(profileId, not eager)
+        call AI_SetProfileLightweightCombatGated(profileId, not eager)
+        if eager then
+            call QueueScan()
+        endif
     endif
     return profileId
 endfunction
 
-public function RegisterHealerType takes integer unitTypeId, string profileName, integer abilityId, string order, real cooldown, real range, real threshold returns integer
+private function RegisterHealerTypeInternal takes integer unitTypeId, string profileName, integer abilityId, string order, real cooldown, real range, real threshold, boolean replaceOwned, boolean eager returns integer
+    local integer existingRole
     local integer defaultProfile
     local integer profileId
     if ExcludedUnitType.boolean[unitTypeId] or not IsSimpleNpcType(unitTypeId) then
@@ -323,18 +376,57 @@ public function RegisterHealerType takes integer unitTypeId, string profileName,
     endif
     set defaultProfile = AI_GetUnitTypeDefaultProfile(unitTypeId)
     if defaultProfile > 0 and not OwnedProfile.boolean[defaultProfile] then
+        call RoleByUnitType.remove(unitTypeId)
+        call ProfileByUnitType.remove(unitTypeId)
+        call InferredUnitType.boolean.remove(unitTypeId)
         return defaultProfile
     endif
-    if RoleByUnitType[unitTypeId] == AI_REGISTER_ROLE_HEALER and ProfileByUnitType[unitTypeId] > 0 then
-        return ProfileByUnitType[unitTypeId]
+    set existingRole = RoleByUnitType[unitTypeId]
+    set profileId = ProfileByUnitType[unitTypeId]
+    if existingRole == AI_REGISTER_ROLE_HEALER and profileId > 0 then
+        if eager then
+            call AIGenericHealer_Configure(profileId, abilityId, order, cooldown, range, threshold)
+            call InferredUnitType.boolean.remove(unitTypeId)
+            call AI_SetProfileLazyActivation(profileId, false)
+            call AI_SetProfileLightweightCombatGated(profileId, false)
+            call QueueScan()
+        endif
+        return profileId
+    endif
+    if existingRole > 0 and not replaceOwned then
+        return profileId
     endif
     set profileName = GetProfileName(unitTypeId, AI_REGISTER_ROLE_HEALER, profileName)
     set profileId = AIGenericHealer_RegisterProfile(unitTypeId, profileName, abilityId, order, cooldown, range, threshold, false)
     if RegisterProfile(unitTypeId, AI_REGISTER_ROLE_HEALER, profileId) > 0 then
-        call AI_SetProfileLazyActivation(profileId, false)
-        call QueueScan()
+        if eager then
+            call InferredUnitType.boolean.remove(unitTypeId)
+        else
+            set InferredUnitType.boolean[unitTypeId] = true
+        endif
+        call AI_SetProfileLazyActivation(profileId, not eager)
+        call AI_SetProfileLightweightCombatGated(profileId, not eager)
+        if eager then
+            call QueueScan()
+        endif
     endif
     return profileId
+endfunction
+
+public function RegisterCasterType takes integer unitTypeId, string profileName, integer abilityId, string order, real cooldown, real range returns integer
+    return RegisterCasterTypeInternal(unitTypeId, profileName, abilityId, order, cooldown, range, true, true)
+endfunction
+
+public function RegisterHealerType takes integer unitTypeId, string profileName, integer abilityId, string order, real cooldown, real range, real threshold returns integer
+    return RegisterHealerTypeInternal(unitTypeId, profileName, abilityId, order, cooldown, range, threshold, true, true)
+endfunction
+
+public function RegisterInferredCasterType takes integer unitTypeId, string profileName, integer abilityId, string order, real cooldown, real range returns integer
+    return RegisterCasterTypeInternal(unitTypeId, profileName, abilityId, order, cooldown, range, false, false)
+endfunction
+
+public function RegisterInferredHealerType takes integer unitTypeId, string profileName, integer abilityId, string order, real cooldown, real range, real threshold returns integer
+    return RegisterHealerTypeInternal(unitTypeId, profileName, abilityId, order, cooldown, range, threshold, false, false)
 endfunction
 
 public function RegisterUnit takes unit whichUnit, integer fallbackRole returns integer
@@ -417,6 +509,7 @@ public function ResetUnitType takes integer unitTypeId returns nothing
     endif
     call RoleByUnitType.remove(unitTypeId)
     call ProfileByUnitType.remove(unitTypeId)
+    call InferredUnitType.boolean.remove(unitTypeId)
     call QueueScan()
 endfunction
 
@@ -456,6 +549,10 @@ public function IsOwnedProfile takes integer profileId returns boolean
     return profileId > 0 and OwnedProfile.boolean[profileId]
 endfunction
 
+public function IsInferredType takes integer unitTypeId returns boolean
+    return unitTypeId != 0 and InferredUnitType.boolean[unitTypeId]
+endfunction
+
 public function GetRole takes integer unitTypeId returns integer
     if ExcludedUnitType.boolean[unitTypeId] then
         return 0
@@ -483,6 +580,7 @@ private function Init takes nothing returns nothing
     set RoleByUnitType = Table.create()
     set ProfileByUnitType = Table.create()
     set OwnedProfile = Table.create()
+    set InferredUnitType = Table.create()
     set ExcludedUnitType = Table.create()
     set ExcludedUnit = Table.create()
     set ScanGroup = CreateGroup()
