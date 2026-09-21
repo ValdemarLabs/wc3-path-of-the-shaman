@@ -12,14 +12,15 @@
     - DungeonsAndBosses/OpenWorld/Scorchion/_oldGUI
 
     How to install:
-    Import after Boss, DamageEngine, ExSound, CreepRespawn, and UnitDeathEvent. Keep the
-    named Scorchion and Dark Shaman rects and disable the legacy GUI triggers.
+    Import after Boss, DamageEngine, ExSound, CreepRespawn, UnitDeathEvent, and
+    AIRegister. Keep the named Scorchion and Dark Shaman rects and disable the
+    legacy GUI triggers.
 
     API:
     - BossScorchion_GetId() returns integer
 
 **/
-library BossScorchion initializer Init requires Boss, DamageEngine, ExSound, CreepRespawn, UnitDeathEvent
+library BossScorchion initializer Init requires Boss, DamageEngine, ExSound, CreepRespawn, UnitDeathEvent, AIRegister
     globals
         private constant integer UNIT_DARK_SHAMAN = 'n00I'
         private constant integer UNIT_FIRE_ORB = 'n00F'
@@ -88,6 +89,7 @@ library BossScorchion initializer Init requires Boss, DamageEngine, ExSound, Cre
         local unit shaman = CreateUnit(Player(11), UNIT_DARK_SHAMAN, GetRectCenterX(spawnRect), GetRectCenterY(spawnRect), facing)
         if shaman != null then
             call CreepRespawn_DiscardUnit(shaman)
+            call AIRegister_ExcludeUnit(shaman)
             call GroupAddUnit(ShamanGroup, shaman)
         endif
         set shaman = null
@@ -111,6 +113,7 @@ library BossScorchion initializer Init requires Boss, DamageEngine, ExSound, Cre
             call GroupRemoveUnit(WorkGroup, picked)
             if GetUnitTypeId(picked) == UNIT_DARK_SHAMAN and IsAlive(picked) then
                 call CreepRespawn_DiscardUnit(picked)
+                call AIRegister_ExcludeUnit(picked)
                 call GroupAddUnit(ShamanGroup, picked)
             endif
         endloop
