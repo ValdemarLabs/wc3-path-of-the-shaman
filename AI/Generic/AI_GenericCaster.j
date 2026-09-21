@@ -24,6 +24,7 @@ library AIGenericCaster initializer Init requires AI, Table
 
 globals
     integer AI_GenericCaster_ClassId = 0
+    private constant real DEFAULT_EVENT_TARGET_RANGE = 700.00
     private Table ProfileAbility = 0
     private Table ProfileOrder = 0
     private Table ProfileCooldown = 0
@@ -62,7 +63,7 @@ private function Think takes nothing returns nothing
     local real cooldown
     local real range
     call EnsureState()
-    if caster == null or target == null or profileId <= 0 then
+    if caster == null or profileId <= 0 then
         set caster = null
         set target = null
         return
@@ -71,10 +72,15 @@ private function Think takes nothing returns nothing
     set order = ProfileOrder.string[profileId]
     set cooldown = ProfileCooldown.real[profileId]
     set range = ProfileRange.real[profileId]
-    if order != "" and IsTargetInRange(caster, target, range) and AI_TryCastTarget(caster, target, abilityId, order, cooldown) then
-        call AI_RequestBark(caster, AI_BARK_CASTING)
-    else
-        call IssueTargetOrder(caster, "attack", target)
+    if range > DEFAULT_EVENT_TARGET_RANGE and (target == null or not IsTargetInRange(caster, target, range)) then
+        set target = AI_FindClosestEnemy(caster, range)
+    endif
+    if target != null then
+        if order != "" and IsTargetInRange(caster, target, range) and AI_TryCastTarget(caster, target, abilityId, order, cooldown) then
+            call AI_RequestBark(caster, AI_BARK_CASTING)
+        else
+            call IssueTargetOrder(caster, "attack", target)
+        endif
     endif
     set caster = null
     set target = null
