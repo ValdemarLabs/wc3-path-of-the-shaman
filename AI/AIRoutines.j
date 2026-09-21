@@ -623,6 +623,10 @@ private function AIR_GetOrCreateAIProfile takes integer routineId, integer unitT
     endif
     set profileId = AI_RegisterProfile(AIR_AIClassId, unitTypeId, "Routine:" + AIR_RoutineName[routineId] + ":" + I2S(unitTypeId))
     if profileId > 0 then
+        // Routine profiles belong to individual units, never every unit of the type.
+        if AI_GetUnitTypeDefaultProfile(unitTypeId) == profileId then
+            call AI_SetUnitTypeDefaultProfile(unitTypeId, 0)
+        endif
         call AI_SetProfileAutonomous(profileId, false)
         set AIR_AIProfileByRoutineType[key] = profileId
     endif
