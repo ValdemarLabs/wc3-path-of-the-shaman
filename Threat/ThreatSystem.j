@@ -2,7 +2,7 @@
     ThreatSystem
 
     Author: Valdemar
-    Version: 1.2.0
+    Version: 1.3.0
 
     Description:
     Automatic PvE threat and aggro management for computer-controlled enemies.
@@ -33,9 +33,12 @@
     - call ThreatSystem_SetSourceMultiplier(source, multiplier)
     - set value = ThreatSystem_GetThreat(threatUnit, source)
     - set source = ThreatSystem_GetAggroTarget(threatUnit)
+    - set threatUnit = ThreatSystem_GetCombatTarget(source)
     - set active = ThreatSystem_HasThreat(threatUnit)
     - set source = ThreatSystem_GetRankedUnit(threatUnit, rank)
     - set value = ThreatSystem_GetRankedThreat(threatUnit, rank)
+    - call ThreatSystem_SetAggroTextVisible(visible) // Local UI setting
+    - set visible = ThreatSystem_IsAggroTextVisible()
 
 **/
 library ThreatSystem initializer Init requires Table, Events, UnitDeathEvent, DamageEngine, HealEngine
@@ -56,12 +59,11 @@ globals
     private constant integer THREAT_MAX_ENTRIES = 32
     private constant real THREAT_OUT_OF_COMBAT_TIMEOUT = 20.00
     private constant integer THREAT_ATTACK_ORDER_ID = 851983
-    private constant boolean THREAT_SHOW_AGGRO_TEXT = true
-
     private Table Threat_TableByTarget = 0
     private Table Threat_TableByTimer = 0
     private Table Threat_DisabledTarget = 0
     private Table Threat_SourceMultiplier = 0
+    private Table Threat_CombatTargetBySource = 0
 
     private integer Threat_NextTableId = 1
     private integer Threat_FreeCount = 0
@@ -76,6 +78,7 @@ globals
     private unit array Threat_EntrySource
     private real array Threat_EntryValue
     private timer array Threat_ResetTimer
+    private boolean Threat_AggroTextVisible = true
 
     private trigger Threat_HealTrigger = null
 endglobals
@@ -157,6 +160,48 @@ private function Threat_FindEntry takes integer tableId, unit source returns int
     return 0
 endfunction
 
+private function Threat_ReassignCombatTarget takes unit source, integer excludedTableId returns nothing
+    local integer activePosition = 1
+    local integer tableId
+    local integer position
+    local integer entryIndex
+    local boolean candidateHasAggro
+    local boolean bestHasAggro = false
+    local real candidateThreat
+    local real bestThreat = -1.00
+    local unit bestTarget = null
+
+    if source == null then
+        return
+    endif
+
+    loop
+        exitwhen activePosition > Threat_ActiveCount
+        set tableId = Threat_ActiveTableId[activePosition]
+        if tableId != excludedTableId then
+            set position = Threat_FindEntry(tableId, source)
+            if position > 0 and Threat_IsAlive(Threat_Target[tableId]) then
+                set entryIndex = Threat_GetEntryIndex(tableId, position)
+                set candidateThreat = Threat_EntryValue[entryIndex]
+                set candidateHasAggro = Threat_AggroTarget[tableId] == source
+                if bestTarget == null or (candidateHasAggro and not bestHasAggro) or (candidateHasAggro == bestHasAggro and candidateThreat > bestThreat) then
+                    set bestTarget = Threat_Target[tableId]
+                    set bestThreat = candidateThreat
+                    set bestHasAggro = candidateHasAggro
+                endif
+            endif
+        endif
+        set activePosition = activePosition + 1
+    endloop
+
+    if bestTarget == null then
+        call Threat_CombatTargetBySource.unit.remove(GetHandleId(source))
+    else
+        set Threat_CombatTargetBySource.unit[GetHandleId(source)] = bestTarget
+    endif
+    set bestTarget = null
+endfunction
+
 private function Threat_GetSourceMultiplierValue takes unit source returns real
     local integer handleId
 
@@ -205,6 +250,7 @@ private function Threat_ReleaseTable takes integer tableId returns nothing
     local integer activePosition
     local integer movedTableId
     local unit threatUnit = null
+    local unit source = null
 
     if tableId <= 0 or tableId >= Threat_NextTableId or not Threat_TableActive[tableId] then
         return
@@ -218,6 +264,11 @@ private function Threat_ReleaseTable takes integer tableId returns nothing
     loop
         exitwhen position > Threat_EntryCount[tableId]
         set entryIndex = Threat_GetEntryIndex(tableId, position)
+        set source = Threat_EntrySource[entryIndex]
+        if source != null and Threat_CombatTargetBySource.unit[GetHandleId(source)] == threatUnit then
+            call Threat_CombatTargetBySource.unit.remove(GetHandleId(source))
+            call Threat_ReassignCombatTarget(source, tableId)
+        endif
         set Threat_EntrySource[entryIndex] = null
         set Threat_EntryValue[entryIndex] = 0.00
         set position = position + 1
@@ -242,6 +293,7 @@ private function Threat_ReleaseTable takes integer tableId returns nothing
     set Threat_FreeCount = Threat_FreeCount + 1
     set Threat_FreeTableId[Threat_FreeCount] = tableId
     set threatUnit = null
+    set source = null
 endfunction
 
 private function Threat_OnCombatTimeout takes nothing returns nothing
@@ -273,6 +325,10 @@ private function Threat_RemoveEntry takes integer tableId, integer position retu
     set entryIndex = Threat_GetEntryIndex(tableId, position)
     set lastIndex = Threat_GetEntryIndex(tableId, lastPosition)
     set removedSource = Threat_EntrySource[entryIndex]
+    if removedSource != null and Threat_CombatTargetBySource.unit[GetHandleId(removedSource)] == Threat_Target[tableId] then
+        call Threat_CombatTargetBySource.unit.remove(GetHandleId(removedSource))
+        call Threat_ReassignCombatTarget(removedSource, tableId)
+    endif
     if Threat_AggroTarget[tableId] == removedSource then
         set Threat_AggroTarget[tableId] = null
     endif
@@ -290,7 +346,7 @@ endfunction
 private function Threat_ShowAggroChange takes unit threatUnit, unit newTarget returns nothing
     local texttag tag = null
 
-    if not THREAT_SHOW_AGGRO_TEXT or threatUnit == null or newTarget == null then
+    if threatUnit == null or newTarget == null then
         return
     endif
 
@@ -302,6 +358,7 @@ private function Threat_ShowAggroChange takes unit threatUnit, unit newTarget re
     call SetTextTagPermanent(tag, false)
     call SetTextTagFadepoint(tag, 1.20)
     call SetTextTagLifespan(tag, 2.00)
+    call SetTextTagVisibility(tag, Threat_AggroTextVisible)
     set tag = null
 endfunction
 
@@ -377,6 +434,7 @@ private function Threat_AddInternal takes unit threatUnit, unit source, real amo
     local integer lowestPosition = 0
     local real lowestThreat = 0.00
     local real adjustedAmount
+    local unit replacedSource = null
 
     if amount <= 0.00 or not Threat_CanManageTarget(threatUnit) or not Threat_IsValidSource(threatUnit, source) then
         return
@@ -418,6 +476,12 @@ private function Threat_AddInternal takes unit threatUnit, unit source, real amo
                 return
             endif
             set position = lowestPosition
+            set entryIndex = Threat_GetEntryIndex(tableId, position)
+            set replacedSource = Threat_EntrySource[entryIndex]
+            if replacedSource != null and Threat_CombatTargetBySource.unit[GetHandleId(replacedSource)] == threatUnit then
+                call Threat_CombatTargetBySource.unit.remove(GetHandleId(replacedSource))
+                call Threat_ReassignCombatTarget(replacedSource, tableId)
+            endif
         endif
         set entryIndex = Threat_GetEntryIndex(tableId, position)
         set Threat_EntrySource[entryIndex] = source
@@ -427,8 +491,10 @@ private function Threat_AddInternal takes unit threatUnit, unit source, real amo
         set Threat_EntryValue[entryIndex] = Threat_EntryValue[entryIndex] + adjustedAmount
     endif
 
+    set Threat_CombatTargetBySource.unit[GetHandleId(source)] = threatUnit
     call Threat_TouchTable(tableId)
     call Threat_EvaluateAggro(tableId)
+    set replacedSource = null
 endfunction
 
 private function Threat_IsEngagedWithAlly takes integer tableId, unit alliedUnit returns boolean
@@ -528,6 +594,9 @@ public function Modify takes unit threatUnit, unit source, real amount returns n
     if Threat_EntryCount[tableId] <= 0 then
         call Threat_ReleaseTable(tableId)
     else
+        if newThreat > 0.00 then
+            set Threat_CombatTargetBySource.unit[GetHandleId(source)] = threatUnit
+        endif
         call Threat_TouchTable(tableId)
         call Threat_EvaluateAggro(tableId)
     endif
@@ -553,6 +622,7 @@ public function ClearSource takes unit source returns nothing
     if source == null then
         return
     endif
+    call Threat_CombatTargetBySource.unit.remove(GetHandleId(source))
 
     loop
         exitwhen activePosition > Threat_ActiveCount
@@ -630,6 +700,32 @@ public function GetAggroTarget takes unit threatUnit returns unit
         return null
     endif
     return Threat_AggroTarget[tableId]
+endfunction
+
+public function GetCombatTarget takes unit source returns unit
+    local integer tableId
+    local unit target = null
+
+    if source == null then
+        return null
+    endif
+
+    set target = Threat_CombatTargetBySource.unit[GetHandleId(source)]
+    set tableId = Threat_GetTableId(target)
+    if tableId > 0 and Threat_TableActive[tableId] and Threat_FindEntry(tableId, source) > 0 then
+        return target
+    endif
+    call Threat_CombatTargetBySource.unit.remove(GetHandleId(source))
+    set target = null
+    return null
+endfunction
+
+public function SetAggroTextVisible takes boolean visible returns nothing
+    set Threat_AggroTextVisible = visible
+endfunction
+
+public function IsAggroTextVisible takes nothing returns boolean
+    return Threat_AggroTextVisible
 endfunction
 
 public function HasThreat takes unit threatUnit returns boolean
@@ -744,6 +840,7 @@ public function Taunt takes unit threatUnit, unit source returns nothing
     endif
     if sourcePosition > 0 then
         set Threat_EntryValue[Threat_GetEntryIndex(tableId, sourcePosition)] = highestThreat
+        set Threat_CombatTargetBySource.unit[GetHandleId(source)] = threatUnit
         call Threat_TouchTable(tableId)
         call Threat_SetAggroTarget(tableId, source)
     endif
@@ -791,6 +888,7 @@ private function Init takes nothing returns nothing
     set Threat_TableByTimer = Table.create()
     set Threat_DisabledTarget = Table.create()
     set Threat_SourceMultiplier = Table.create()
+    set Threat_CombatTargetBySource = Table.create()
 
     set Threat_HealTrigger = CreateTrigger()
     call TriggerRegisterVariableEvent(Threat_HealTrigger, "udg_AfterHealEvent", EQUAL, 1.00)
