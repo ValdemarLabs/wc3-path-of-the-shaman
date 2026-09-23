@@ -1,15 +1,24 @@
-library CameraUI initializer AutoInit requires Table, MasterUI, CameraControl, Interface
 /**
-    MasterUI
+    CameraUI
     
     Author: [Valdemar]
-    Version: 1.0
+    Version: 1.1.0
 
-    Description: Provides a simple panel for switching camera modes and adjusting the main camera settings.
+    Description: Provides a panel for switching camera modes and adjusting camera and mouse-orbit settings.
 
     Credits: Tasyen (TasQuestBox as inspiration)
 
+    How to install:
+    Import after Table, MasterUI, CameraControl, and Interface.
+
+    API:
+    call CameraUI_Show()
+    call CameraUI_Hide()
+    call CameraUI_Toggle()
+    call CameraUI_IsVisible() returns boolean
+
 **/
+library CameraUI initializer AutoInit requires Table, MasterUI, CameraControl, Interface
 
 globals
     private constant string CUI_TOC_PATH = "war3mapimported\\templates.toc"
@@ -23,6 +32,9 @@ globals
     private constant integer CUI_ACTION_NORMAL = 1
     private constant integer CUI_ACTION_ADVANCED = 2
     private constant integer CUI_ACTION_DEVELOPER = 3
+    private constant integer CUI_ACTION_MOUSE_ORBIT = 4
+    private constant integer CUI_ACTION_MOUSE_HORIZONTAL = 5
+    private constant integer CUI_ACTION_MOUSE_VERTICAL = 6
 
     private boolean CUI_Initialized = false
     private boolean CUI_Syncing = false
@@ -38,6 +50,7 @@ globals
     private framehandle CUI_TargetValue = null
     private framehandle CUI_ModeTitle = null
     private framehandle CUI_ModeValue = null
+    private framehandle CUI_MouseTitle = null
     private framehandle array CUI_ActionButton
     private framehandle array CUI_Slider
     private framehandle array CUI_SliderLabel
@@ -123,6 +136,21 @@ private function CUI_RefreshFields takes player whichPlayer returns nothing
         call BlzFrameSetText(CUI_TargetValue, CameraControl_GetTargetName(whichPlayer))
         call BlzFrameSetText(CUI_ModeValue, CameraControl_GetModeName(whichPlayer))
         call BlzFrameSetText(CUI_ResetButton, "Defaults")
+        if CameraControl_IsMouseOrbitEnabled(whichPlayer) then
+            call BlzFrameSetText(CUI_ActionButton[4], "Orbit: On")
+        else
+            call BlzFrameSetText(CUI_ActionButton[4], "Orbit: Off")
+        endif
+        if CameraControl_IsMouseOrbitHorizontalInverted(whichPlayer) then
+            call BlzFrameSetText(CUI_ActionButton[5], "Horizontal: Inverted")
+        else
+            call BlzFrameSetText(CUI_ActionButton[5], "Horizontal: Normal")
+        endif
+        if CameraControl_IsMouseOrbitVerticalInverted(whichPlayer) then
+            call BlzFrameSetText(CUI_ActionButton[6], "Vertical: Inverted")
+        else
+            call BlzFrameSetText(CUI_ActionButton[6], "Vertical: Normal")
+        endif
         loop
             exitwhen i > 5
             call BlzFrameSetText(CUI_SliderLabel[i], CUI_GetSliderDisplay(i, whichPlayer))
@@ -208,6 +236,12 @@ private function CUI_ActionAction takes nothing returns nothing
             call CameraControl_SetModeAdvanced(whichPlayer)
         elseif CUI_ButtonAction.integer[handleId] == CUI_ACTION_DEVELOPER then
             call CameraControl_SetModeDeveloper(whichPlayer)
+        elseif CUI_ButtonAction.integer[handleId] == CUI_ACTION_MOUSE_ORBIT then
+            call CameraControl_SetMouseOrbitEnabled(whichPlayer, not CameraControl_IsMouseOrbitEnabled(whichPlayer))
+        elseif CUI_ButtonAction.integer[handleId] == CUI_ACTION_MOUSE_HORIZONTAL then
+            call CameraControl_SetMouseOrbitHorizontalInverted(whichPlayer, not CameraControl_IsMouseOrbitHorizontalInverted(whichPlayer))
+        elseif CUI_ButtonAction.integer[handleId] == CUI_ACTION_MOUSE_VERTICAL then
+            call CameraControl_SetMouseOrbitVerticalInverted(whichPlayer, not CameraControl_IsMouseOrbitVerticalInverted(whichPlayer))
         endif
         call CUI_RefreshFields(whichPlayer)
     endif
@@ -264,6 +298,16 @@ private function CUI_CreateSliderRow takes integer index, string label, integer 
     call BlzTriggerRegisterFrameEvent(CUI_SliderTrigger, CUI_Slider[index], FRAMEEVENT_SLIDER_VALUE_CHANGED)
     set CUI_SliderKind.integer[GetHandleId(CUI_Slider[index])] = sliderKind
     call BlzFrameSetVisible(CUI_Slider[index], false)
+endfunction
+
+private function CUI_CreateMouseButton takes integer index, string label, integer actionId, real x, real width returns nothing
+    set CUI_ActionButton[index] = BlzCreateFrameByType("GLUETEXTBUTTON", "CameraUIMouseButton" + I2S(index), CUI_RightPane, "ScriptDialogButton", 0)
+    call BlzFrameSetSize(CUI_ActionButton[index], width, 0.026)
+    call BlzFrameSetPoint(CUI_ActionButton[index], FRAMEPOINT_TOPLEFT, CUI_RightPane, FRAMEPOINT_TOPLEFT, x, -0.250)
+    call BlzFrameSetText(CUI_ActionButton[index], label)
+    call BlzTriggerRegisterFrameEvent(CUI_ActionTrigger, CUI_ActionButton[index], FRAMEEVENT_CONTROL_CLICK)
+    call BlzTriggerRegisterFrameEvent(CUI_ClearFocusTrigger, CUI_ActionButton[index], FRAMEEVENT_CONTROL_CLICK)
+    set CUI_ButtonAction.integer[GetHandleId(CUI_ActionButton[index])] = actionId
 endfunction
 
 private function CUI_CreateFrames takes nothing returns nothing
@@ -346,6 +390,17 @@ private function CUI_CreateFrames takes nothing returns nothing
     call BlzTriggerRegisterFrameEvent(CUI_ResetTrigger, CUI_ResetButton, FRAMEEVENT_CONTROL_CLICK)
     call BlzTriggerRegisterFrameEvent(CUI_ClearFocusTrigger, CUI_ResetButton, FRAMEEVENT_CONTROL_CLICK)
     call BlzFrameSetVisible(CUI_ResetButton, false)
+
+    set CUI_MouseTitle = BlzCreateFrameByType("TEXT", "CameraUIMouseTitle", CUI_RightPane, "", 0)
+    call BlzFrameSetPoint(CUI_MouseTitle, FRAMEPOINT_TOPLEFT, CUI_RightPane, FRAMEPOINT_TOPLEFT, 0.010, -0.220)
+    call BlzFrameSetSize(CUI_MouseTitle, 0.20, 0.016)
+    call BlzFrameSetTextAlignment(CUI_MouseTitle, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
+    call BlzFrameSetEnable(CUI_MouseTitle, false)
+    call BlzFrameSetText(CUI_MouseTitle, "|cffffcc00Middle-mouse orbit|r")
+
+    call CUI_CreateMouseButton(4, "Orbit: On", CUI_ACTION_MOUSE_ORBIT, 0.010, 0.076)
+    call CUI_CreateMouseButton(5, "Horizontal: Normal", CUI_ACTION_MOUSE_HORIZONTAL, 0.090, 0.098)
+    call CUI_CreateMouseButton(6, "Vertical: Normal", CUI_ACTION_MOUSE_VERTICAL, 0.192, 0.090)
 
     call BlzFrameSetVisible(CUI_Parent, false)
 endfunction

@@ -2,7 +2,7 @@
     CameraControl
     
     Author: [Valdemar]
-    Version: 1.6.0
+    Version: 1.7.0
 
     Description: Keeps each player's camera behavior consistent, including modes, target tracking, local middle-drag mouse-look, basic movement controls, and optional DynamicMinimap safety turns. Experimental camera-type and input-ownership APIs remain disabled by default.
 
@@ -22,6 +22,11 @@
     call CameraControl_ResumeQuick(whichPlayer)
     call CameraControl_IsSuspended(whichPlayer) returns boolean
     call CameraControl_SetMouseOrbitEnabled(whichPlayer, enabled)
+    call CameraControl_IsMouseOrbitEnabled(whichPlayer) returns boolean
+    call CameraControl_SetMouseOrbitHorizontalInverted(whichPlayer, inverted)
+    call CameraControl_SetMouseOrbitVerticalInverted(whichPlayer, inverted)
+    call CameraControl_IsMouseOrbitHorizontalInverted(whichPlayer) returns boolean
+    call CameraControl_IsMouseOrbitVerticalInverted(whichPlayer) returns boolean
     call CameraControl_SetMouseOrbitBlocked(whichPlayer, blocked)
     call CameraControl_SetMouseOrbitBlockReason(whichPlayer, reason, blocked)
     call CameraControl_IsMouseOrbitPressed(whichPlayer) returns boolean
@@ -88,6 +93,8 @@ globals
     private constant real CAMERA_MOUSE_ORBIT_DEAD_ZONE = 0.004
     private constant real CAMERA_MOUSE_ORBIT_MAX_FRAME_DELTA = 0.050
     private constant boolean CAMERA_MOUSE_ORBIT_ENABLED_BY_DEFAULT = true
+    private constant boolean CAMERA_MOUSE_ORBIT_HORIZONTAL_INVERTED_BY_DEFAULT = false
+    private constant boolean CAMERA_MOUSE_ORBIT_VERTICAL_INVERTED_BY_DEFAULT = false
     private constant real CAMERA_DRIFT_CHECK_INTERVAL = 0.03
     private constant real CAMERA_MINIMAP_SAFE_ROTATION_SPEED = 24.00
     private constant real CAMERA_MINIMAP_SAFE_ROTATION_DURATION = 0.12
@@ -168,6 +175,8 @@ globals
     private boolean array CC_ScriptedCameraPrepared
     private boolean array CC_WoundedActive
     private boolean array CC_MouseOrbitEnabled
+    private boolean array CC_MouseOrbitHorizontalInverted
+    private boolean array CC_MouseOrbitVerticalInverted
     private boolean array CC_MouseOrbitBlocked
     private boolean array CC_MouseOrbitBlockReason
     private integer array CC_MouseOrbitBlockCount
@@ -1033,6 +1042,12 @@ private function CC_UpdateMouseOrbit takes nothing returns nothing
     set CC_MouseOrbitDragging[pid] = true
     set deltaX = CC_Clamp(deltaX, -CAMERA_MOUSE_ORBIT_MAX_FRAME_DELTA, CAMERA_MOUSE_ORBIT_MAX_FRAME_DELTA)
     set deltaY = CC_Clamp(deltaY, -CAMERA_MOUSE_ORBIT_MAX_FRAME_DELTA, CAMERA_MOUSE_ORBIT_MAX_FRAME_DELTA)
+    if CC_MouseOrbitHorizontalInverted[pid] then
+        set deltaX = -deltaX
+    endif
+    if CC_MouseOrbitVerticalInverted[pid] then
+        set deltaY = -deltaY
+    endif
     set CC_Rotation[pid] = CC_NormalizeAngle(CC_Rotation[pid] + deltaX*CAMERA_MOUSE_ORBIT_HORIZONTAL_SENSITIVITY)
     set CC_Angle[pid] = CC_Clamp(CC_Angle[pid] + deltaY*CAMERA_MOUSE_ORBIT_VERTICAL_SENSITIVITY, CAMERA_ANGLE_MIN, CAMERA_ANGLE_MAX)
     set CC_MinimapRotationInputGraceTicks = CAMERA_MINIMAP_INPUT_GRACE_TICKS
@@ -1667,6 +1682,13 @@ public function ResetDefaults takes player whichPlayer returns nothing
     set CC_Angle[pid] = CAMERA_DEFAULT_ANGLE
     set CC_Rotation[pid] = CAMERA_DEFAULT_ROTATION
     set CC_Fov[pid] = CAMERA_DEFAULT_FOV
+    if GetLocalPlayer() == whichPlayer then
+        set CC_MouseOrbitEnabled[pid] = CAMERA_MOUSE_ORBIT_ENABLED_BY_DEFAULT
+        set CC_MouseOrbitHorizontalInverted[pid] = CAMERA_MOUSE_ORBIT_HORIZONTAL_INVERTED_BY_DEFAULT
+        set CC_MouseOrbitVerticalInverted[pid] = CAMERA_MOUSE_ORBIT_VERTICAL_INVERTED_BY_DEFAULT
+        call CC_CancelMouseOrbit(pid)
+        call CC_UpdateLoopState()
+    endif
     call CC_InvalidateNormalTraceCache(pid)
     call CC_ApplyMode(whichPlayer)
 endfunction
@@ -1903,6 +1925,30 @@ endfunction
 
 public function IsMouseOrbitEnabled takes player whichPlayer returns boolean
     return CC_MouseOrbitEnabled[CC_GetPlayerIndex(whichPlayer)]
+endfunction
+
+public function SetMouseOrbitHorizontalInverted takes player whichPlayer, boolean inverted returns nothing
+    local integer pid = CC_GetPlayerIndex(whichPlayer)
+    if GetLocalPlayer() == whichPlayer and CC_MouseOrbitHorizontalInverted[pid] != inverted then
+        set CC_MouseOrbitHorizontalInverted[pid] = inverted
+        call CC_CancelMouseOrbit(pid)
+    endif
+endfunction
+
+public function SetMouseOrbitVerticalInverted takes player whichPlayer, boolean inverted returns nothing
+    local integer pid = CC_GetPlayerIndex(whichPlayer)
+    if GetLocalPlayer() == whichPlayer and CC_MouseOrbitVerticalInverted[pid] != inverted then
+        set CC_MouseOrbitVerticalInverted[pid] = inverted
+        call CC_CancelMouseOrbit(pid)
+    endif
+endfunction
+
+public function IsMouseOrbitHorizontalInverted takes player whichPlayer returns boolean
+    return CC_MouseOrbitHorizontalInverted[CC_GetPlayerIndex(whichPlayer)]
+endfunction
+
+public function IsMouseOrbitVerticalInverted takes player whichPlayer returns boolean
+    return CC_MouseOrbitVerticalInverted[CC_GetPlayerIndex(whichPlayer)]
 endfunction
 
 public function IsMouseOrbitDragging takes player whichPlayer returns boolean
@@ -2256,6 +2302,8 @@ public function Init takes nothing returns nothing
         set CC_WoundedSecondBeatTicks[i] = 0
         set CC_WoundedPulse[i] = 0.00
         set CC_MouseOrbitEnabled[i] = CAMERA_MOUSE_ORBIT_ENABLED_BY_DEFAULT
+        set CC_MouseOrbitHorizontalInverted[i] = CAMERA_MOUSE_ORBIT_HORIZONTAL_INVERTED_BY_DEFAULT
+        set CC_MouseOrbitVerticalInverted[i] = CAMERA_MOUSE_ORBIT_VERTICAL_INVERTED_BY_DEFAULT
         set CC_MouseOrbitBlocked[i] = false
         set CC_MouseOrbitBlockCount[i] = 0
         set CC_MouseOrbitButtonWasDown[i] = false
