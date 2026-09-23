@@ -2,7 +2,7 @@
     UnitHider4
 
     Author: Valdemar
-    Version: 4.1.0
+    Version: 4.2.0
 
     Description:
     Hides distant units in bounded batches so the work is spread across frames.
@@ -43,7 +43,7 @@ globals
     // Configuration
     private constant real UnitHider4_TICK_INTERVAL = 0.10
     private constant integer UnitHider4_UNITS_PER_TICK = 64
-    private constant integer UnitHider4_HIDDEN_UNITS_PER_TICK = 128
+    private constant integer UnitHider4_HIDDEN_UNITS_PER_TICK = 256
     private constant integer UnitHider4_REFERENCE_REFRESH_TICKS = 2
     private constant integer UnitHider4_MAX_REFERENCES = 8190
     private constant real UnitHider4_DEFAULT_HIDE_DISTANCE = 5500.00
@@ -63,7 +63,7 @@ globals
     private boolean UnitHider4_Debug = false
     private boolean UnitHider4_InternalShow = false
     private boolean UnitHider4_WasInCinematic = false
-    private integer UnitHider4_ScanIndex = 1
+    private integer UnitHider4_ScanIndex = 0
     private integer UnitHider4_HiddenScanIndex = 0
     private integer UnitHider4_RefreshTick = UnitHider4_REFERENCE_REFRESH_TICKS
     private real UnitHider4_HideDistance = UnitHider4_DEFAULT_HIDE_DISTANCE
@@ -88,6 +88,13 @@ private function UnitHider4_IsLegacyCompanionReference takes unit whichUnit retu
         return false
     endif
     return (udg_Companion_Group != null and IsUnitInGroup(whichUnit, udg_Companion_Group)) or (udg_TamedUnits != null and IsUnitInGroup(whichUnit, udg_TamedUnits))
+endfunction
+
+private function UnitHider4_IsAllowedLegacyReference takes unit whichUnit returns boolean
+    if whichUnit == null or not IsUnitInGroup(whichUnit, udg_UnitHider_ReferenceGroup) then
+        return false
+    endif
+    return IsUnitType(whichUnit, UNIT_TYPE_HERO) or UnitHider4_IsLegacyCompanionReference(whichUnit)
 endfunction
 
 private function UnitHider4_IsTrackedHero takes unit whichUnit returns boolean
@@ -159,25 +166,44 @@ private function UnitHider4_CacheReferenceGroup takes group sourceGroup returns 
     set whichUnit = null
 endfunction
 
+private function UnitHider4_AddAllowedLegacyReferences takes nothing returns nothing
+    local integer index = 0
+    local integer count = BlzGroupGetSize(udg_UnitHider_ReferenceGroup)
+    local unit whichUnit
+
+    loop
+        exitwhen index >= count
+        set whichUnit = BlzGroupUnitAt(udg_UnitHider_ReferenceGroup, index)
+        if UnitHider4_IsAllowedLegacyReference(whichUnit) then
+            call GroupAddUnit(UnitHider4_ReferenceCacheGroup, whichUnit)
+        endif
+        set index = index + 1
+    endloop
+
+    set whichUnit = null
+endfunction
+
 private function UnitHider4_UpdateReferenceCache takes nothing returns nothing
     call GroupClear(UnitHider4_ReferenceCacheGroup)
     call GroupAddGroup(UnitHider4_AutomaticReferences, UnitHider4_ReferenceCacheGroup)
     call GroupAddGroup(UnitHider4_RegisteredReferences, UnitHider4_ReferenceCacheGroup)
-    call GroupAddGroup(udg_UnitHider_ReferenceGroup, UnitHider4_ReferenceCacheGroup)
+    // The legacy group often contains obsolete NPC/dummy entries. Only its
+    // hero and current companion/pet registrations may reveal map population.
+    call UnitHider4_AddAllowedLegacyReferences()
 
     set UnitHider4_ReferenceCount = 0
     call UnitHider4_CacheReferenceGroup(UnitHider4_ReferenceCacheGroup)
 endfunction
 
 private function UnitHider4_RebuildAutomaticReferences takes nothing returns nothing
-    local integer index = 1
+    local integer index = udg_UDexNext[0]
     local unit whichUnit
     local boolean isAlive
     local boolean isLoaded
 
     call GroupClear(UnitHider4_AutomaticReferences)
     loop
-        exitwhen index > udg_UDexMax
+        exitwhen index == 0
         set whichUnit = udg_UDexUnits[index]
         if whichUnit != null and GetUnitTypeId(whichUnit) != 0 then
             set isAlive = FallenHeroState_IsAlive(whichUnit)
@@ -186,7 +212,7 @@ private function UnitHider4_RebuildAutomaticReferences takes nothing returns not
                 call GroupAddUnit(UnitHider4_AutomaticReferences, whichUnit)
             endif
         endif
-        set index = index + 1
+        set index = udg_UDexNext[index]
     endloop
     call UnitHider4_UpdateReferenceCache()
     set whichUnit = null
@@ -212,7 +238,7 @@ private function UnitHider4_IsNearReference takes unit whichUnit, real distanceS
 endfunction
 
 private function UnitHider4_IsProtected takes unit whichUnit, boolean isAutomaticReference returns boolean
-    return isAutomaticReference or UnitHider4_IsActiveCombatUnit(whichUnit) or IsUnitType(whichUnit, UNIT_TYPE_HERO) or IsUnitInGroup(whichUnit, UnitHider4_RegisteredReferences) or IsUnitInGroup(whichUnit, udg_UnitHider_ReferenceGroup) or IsUnitInGroup(whichUnit, udg_UnitHider_IgnoredUnits) or GetUnitAbilityLevel(whichUnit, 'Aloc') > 0
+    return isAutomaticReference or UnitHider4_IsActiveCombatUnit(whichUnit) or IsUnitType(whichUnit, UNIT_TYPE_HERO) or IsUnitInGroup(whichUnit, UnitHider4_RegisteredReferences) or UnitHider4_IsAllowedLegacyReference(whichUnit) or IsUnitInGroup(whichUnit, udg_UnitHider_IgnoredUnits) or GetUnitAbilityLevel(whichUnit, 'Aloc') > 0
 endfunction
 
 private function UnitHider4_ShowOwned takes unit whichUnit, boolean show returns nothing
@@ -273,6 +299,10 @@ private function UnitHider4_FinishSweep takes nothing returns nothing
     set UnitHider4_Shown = 0
 endfunction
 
+private function UnitHider4_ResetIndexedScan takes nothing returns nothing
+    set UnitHider4_ScanIndex = udg_UDexNext[0]
+endfunction
+
 private function UnitHider4_ProcessHiddenBatch takes nothing returns nothing
     local integer processed = 0
     local integer count = BlzGroupGetSize(UnitHider4_HiddenUnits)
@@ -315,7 +345,7 @@ private function UnitHider4_ProcessBatch takes nothing returns nothing
     if UnitHider4_WasInCinematic then
         set UnitHider4_WasInCinematic = false
         set UnitHider4_RefreshTick = UnitHider4_REFERENCE_REFRESH_TICKS
-        set UnitHider4_ScanIndex = 1
+        call UnitHider4_ResetIndexedScan()
     endif
     if not UnitHider4_Enabled then
         return
@@ -331,16 +361,16 @@ private function UnitHider4_ProcessBatch takes nothing returns nothing
 
     loop
         exitwhen processed >= UnitHider4_UNITS_PER_TICK
-        if UnitHider4_ScanIndex > udg_UDexMax then
+        if UnitHider4_ScanIndex == 0 or udg_UDexUnits[UnitHider4_ScanIndex] == null then
             call UnitHider4_FinishSweep()
-            set UnitHider4_ScanIndex = 1
+            call UnitHider4_ResetIndexedScan()
             set processed = UnitHider4_UNITS_PER_TICK
         else
             set whichUnit = udg_UDexUnits[UnitHider4_ScanIndex]
+            set UnitHider4_ScanIndex = udg_UDexNext[UnitHider4_ScanIndex]
             if whichUnit != null and not IsUnitInGroup(whichUnit, UnitHider4_HiddenUnits) then
                 call UnitHider4_ProcessUnit(whichUnit)
             endif
-            set UnitHider4_ScanIndex = UnitHider4_ScanIndex + 1
             set processed = processed + 1
         endif
     endloop
@@ -391,7 +421,7 @@ function UnitHider_SetSystemEnabled takes boolean enable returns nothing
     set UnitHider4_Enabled = enable
     set udg_UnitHider_SetSystem = enable
     if enable then
-        set UnitHider4_ScanIndex = 1
+        call UnitHider4_ResetIndexedScan()
         set UnitHider4_HiddenScanIndex = 0
         set UnitHider4_RefreshTick = UnitHider4_REFERENCE_REFRESH_TICKS
         if not wasEnabled then
@@ -446,7 +476,7 @@ function UnitHider_IsUnitHiddenBySystem takes unit whichUnit returns boolean
 endfunction
 
 function UnitHider_Refresh takes nothing returns nothing
-    set UnitHider4_ScanIndex = 1
+    call UnitHider4_ResetIndexedScan()
     set UnitHider4_HiddenScanIndex = 0
     set UnitHider4_RefreshTick = UnitHider4_REFERENCE_REFRESH_TICKS
 endfunction
@@ -473,6 +503,7 @@ private function Init takes nothing returns nothing
     endif
     set udg_UnitHider_SetSystem = true
     set udg_UnitHider_debug = false
+    call UnitHider4_ResetIndexedScan()
     call TimerStart(UnitHider4_Timer, UnitHider4_TICK_INTERVAL, true, function UnitHider4_ProcessBatch)
 endfunction
 
