@@ -18,6 +18,31 @@
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
 
+## [23.9.2026]
+
+### Player-Facing Updates
+
+- Updated `UI/CameraUI.j` with middle-mouse orbit controls for enabling or disabling mouse orbit and independently inverting its horizontal and vertical directions.
+- Updated `UI/TargetUnitUI.j` with a StatsLite-style gear menu, minimize/maximize and close controls, optional always-show and auto-hide behavior, automatic opening for player or companion/pet combat, mana and floating-aggro-text toggles, proper hero names in the threat list, and fullscreen-relative upper-left placement beside rather than over the hero icons.
+- Fixed vendor dialogue transmissions showing the correct speaker name and text without the vendor portrait.
+
+### Technical Updates
+
+- Updated `UI/CameraControl.j` with local per-player horizontal and vertical mouse-orbit inversion preferences; camera defaults now restore the mouse-orbit settings as well as the camera fields.
+- Updated `UI/FullscreenUI.j` to preserve the native cinematic portrait frame hierarchy while keeping the full-screen background and borders transparent.
+- Updated `EnvironmentSystems/WeatherSystemV4.j` so native weather, rain impacts, clouds, steam, snow waves, and weather audio are presented only for the active zone or its inherited parent fallback. Rain active elsewhere can no longer leak into dry Emberpeak Highlands, Dragonfire Peaks, Firelands, or indoor zones.
+- Updated `Threat/ThreatSystem.j` with a cached combat-target query for UI consumers and a local-safe floating-text visibility setting; target lookup normally remains O(1) and falls back to active threat tables only when its cached encounter ends.
+- Updated `UnitSystems/UnitHider4.j` to scan Unit Event's dense active-index list instead of historical numeric slots, preventing recycled holes from delaying map hiding in long sessions. Legacy GUI references now reveal only for heroes and registered companions/pets, so obsolete nonhero generic NPC, vendor, quest-giver, and dummy entries cannot keep large map areas populated. The bounded hidden-unit revisit budget was raised from 128 to 256 per tick to make units reappear earlier during movement while retaining a 3,200-pass-per-second ceiling.
+- Updated `UnitSystems/UnitHider4_Review.md` with the corrected reference policy, active-index traversal, revised workload bound, and focused validation cases.
+
+### Actions Remaining
+
+- Reimport `UI/CameraControl.j` before `UI/CameraUI.j`, compile the full map, and validate all normal/inverted horizontal and vertical combinations, orbit enable/disable, Defaults restoration, and two-client local preference isolation.
+- Reimport `UI/FullscreenUI.j`, compile the full map through World Editor/JassHelper, and verify vendor greeting portraits in both SD and HD graphics modes while the full-screen cinematic background and borders remain transparent.
+- Reimport `Threat/ThreatSystem.j` and `UI/TargetUnitUI.j` after `Companions`, compile the full map, and validate the upper-left layout at 4:3, 16:9, and ultrawide resolutions; all config toggles; minimize/maximize/close reopening; player, companion, and pet combat discovery; hero proper names; boss fallback; and two-client local UI settings.
+- Reimport `UnitSystems/UnitHider4.j`, compile through World Editor/JassHelper, and test after heavy create/remove churn. Verify distant ordinary NPCs hide, units reveal near moving player and AI heroes without close-range pop-in, obsolete nonhero legacy references do not reveal areas, API-registered nonhero references still work, and idle/combat FPS remains stable.
+
+
 ## [21.9.2026]
 
 ### Player-Facing Updates
