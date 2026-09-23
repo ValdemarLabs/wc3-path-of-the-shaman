@@ -242,6 +242,25 @@ private function ZoneInheritsParentWeather takes integer zoneId returns boolean
     return ZonesCore_GetParentZoneId(zoneId) != 0
 endfunction
 
+// Inheriting subzones use their parent's weather rects as the sole presentation owner.
+private function IsRegionPresented takes integer regionIndex returns boolean
+    local integer parentZoneId
+    local ZoneData currentZone
+
+    if WeatherEffectsSuppressed or WeatherPresentationZoneId <= 0 then
+        return false
+    endif
+
+    set currentZone = ZonesCore_GetZoneData(WeatherPresentationZoneId)
+    if currentZone != 0 and currentZone.weatherInheritFromParent then
+        set parentZoneId = ZonesCore_GetParentZoneId(WeatherPresentationZoneId)
+        if parentZoneId > 0 then
+            return RegionZoneIndex[regionIndex] == parentZoneId
+        endif
+    endif
+    return RegionZoneIndex[regionIndex] == WeatherPresentationZoneId
+endfunction
+
 //===========================================================================
 // REGION RECT TO INDEX LOOKUP
 //===========================================================================
@@ -418,7 +437,7 @@ private function GetRainIntensityAtPoint takes real x, real y returns integer
     loop
         exitwhen i >= RegionCount
         set r = RegionRect[i]
-        if r != null and x >= GetRectMinX(r) and x <= GetRectMaxX(r) and y >= GetRectMinY(r) and y <= GetRectMaxY(r) then
+        if IsRegionPresented(i) and r != null and x >= GetRectMinX(r) and x <= GetRectMaxX(r) and y >= GetRectMinY(r) and y <= GetRectMaxY(r) then
             set weatherType = RegionWeatherType[i]
             if weatherType == WEATHER_RAIN_HEAVY or weatherType == WEATHER_STORM then
                 set intensity = 3
@@ -440,7 +459,7 @@ private function HasActiveRain takes nothing returns boolean
 
     loop
         exitwhen i >= RegionCount
-        if IsRainWeather(RegionWeatherType[i]) then
+        if IsRegionPresented(i) and IsRainWeather(RegionWeatherType[i]) then
             return true
         endif
         set i = i + 1
@@ -578,7 +597,7 @@ endfunction
 
 private function EnableCloudsInRegion takes integer regionIndex returns nothing
     // Skip if FPS optimization disables clouds
-    if WeatherEffectsSuppressed or FPS_CloudsDisabled or FPS_OptimizationEnabled then
+    if not IsRegionPresented(regionIndex) or FPS_CloudsDisabled or FPS_OptimizationEnabled then
         return
     endif
     
@@ -603,7 +622,7 @@ endfunction
 
 private function EnableSteamBreathInRegion takes integer regionIndex returns nothing
     // Skip if FPS optimization disables steam breath
-    if WeatherEffectsSuppressed or FPS_SteamDisabled or FPS_OptimizationEnabled then
+    if not IsRegionPresented(regionIndex) or FPS_SteamDisabled or FPS_OptimizationEnabled then
         return
     endif
     
@@ -739,11 +758,11 @@ private function StartSnowInRegion takes integer regionIndex, string weatherType
     local real scale
     local integer totalUnits
 
-    if WeatherEffectsSuppressed then
-        return
-    endif
     if regionIndex == -1 then
         call Debug("StartSnowInRegion: invalid regionIndex=-1")
+        return
+    endif
+    if not IsRegionPresented(regionIndex) then
         return
     endif
 
@@ -883,25 +902,24 @@ endfunction
 private function ApplyWeatherPresentationState takes nothing returns nothing
     local integer i = 0
     local string weatherType
+    local boolean showWeather
+    local sound presentedSound = null
     local ZoneData z
 
     loop
         exitwhen i >= RegionCount
         set weatherType = RegionWeatherType[i]
+        set showWeather = IsRegionPresented(i)
         set z = ZonesCore_GetZoneData(RegionZoneIndex[i])
 
         if RegionWeatherEffect[i] != null then
-            call EnableWeatherEffect(RegionWeatherEffect[i], not WeatherEffectsSuppressed)
+            call EnableWeatherEffect(RegionWeatherEffect[i], showWeather)
         endif
-        if RegionAmbientSound[i] != null then
-            if WeatherEffectsSuppressed then
-                call SetSoundVolume(RegionAmbientSound[i], 0)
-            else
-                call SetSoundVolume(RegionAmbientSound[i], AMBIENT_SOUND_VOLUME)
-            endif
+        if showWeather and RegionAmbientSound[i] != null then
+            set presentedSound = RegionAmbientSound[i]
         endif
 
-        if WeatherEffectsSuppressed then
+        if not showWeather then
             call DisableCloudsInRegion(i)
             call DisableSteamBreathInRegion(i)
             if weatherType == WEATHER_SNOW_LIGHT or weatherType == WEATHER_SNOW_MEDIUM or weatherType == WEATHER_SNOW_HEAVY then
@@ -921,9 +939,27 @@ private function ApplyWeatherPresentationState takes nothing returns nothing
         set i = i + 1
     endloop
 
-    if WeatherEffectsSuppressed then
+    set i = 0
+    loop
+        exitwhen i >= RegionCount
+        if RegionAmbientSound[i] != null then
+            if RegionAmbientSound[i] == presentedSound then
+                call SetSoundVolume(RegionAmbientSound[i], AMBIENT_SOUND_VOLUME)
+            else
+                call SetSoundVolume(RegionAmbientSound[i], 0)
+            endif
+        endif
+        set i = i + 1
+    endloop
+    if presentedSound != null then
+        call StartSound(presentedSound)
+    endif
+
+    if not HasActiveRain() then
         call ClearRainImpacts()
     endif
+    call UpdateRainImpactTimer()
+    set presentedSound = null
 endfunction
 
 private function RefreshWeatherPresentation takes nothing returns nothing
@@ -941,10 +977,8 @@ private function RefreshWeatherPresentation takes nothing returns nothing
         set suppress = z.blocksWeatherEffects
     endif
 
-    if suppress != WeatherEffectsSuppressed then
-        set WeatherEffectsSuppressed = suppress
-        call ApplyWeatherPresentationState()
-    endif
+    set WeatherEffectsSuppressed = suppress
+    call ApplyWeatherPresentationState()
 endfunction
 
 //===========================================================================
@@ -1271,15 +1305,11 @@ private function StartRegionWeatherInternal takes integer regionIndex, string we
         call UpdateRainImpactTimer()
         
         // Enable weather effect
-        call EnableWeatherEffect(RegionWeatherEffect[regionIndex], not WeatherEffectsSuppressed)
+        call EnableWeatherEffect(RegionWeatherEffect[regionIndex], IsRegionPresented(regionIndex))
         
         // Play ambient sound if configured
-        if RegionAmbientSound[regionIndex] != null then
-            if WeatherEffectsSuppressed then
-                call SetSoundVolume(RegionAmbientSound[regionIndex], 0)
-            else
-                call SetSoundVolume(RegionAmbientSound[regionIndex], AMBIENT_SOUND_VOLUME)
-            endif
+        if RegionAmbientSound[regionIndex] != null and IsRegionPresented(regionIndex) then
+            call SetSoundVolume(RegionAmbientSound[regionIndex], AMBIENT_SOUND_VOLUME)
             call StartSound(RegionAmbientSound[regionIndex])
         endif
         
