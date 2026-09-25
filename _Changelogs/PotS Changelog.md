@@ -18,18 +18,38 @@
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
 
+## [25.9.2026]
+
+### Player-Facing Updates
+
+- Updated `DungeonsAndBosses/OpenWorld/Scorchion/BossScorchion.j` so attacking a Dark Shaman begins the recovered Shaman dialogue and Scorchion presentation, disengaging restores the ritual after its delay, the final Shaman delivers a death line, and Scorchion awakens only after all four Shamans die.
+- Updated `DungeonsAndBosses/OpenWorld/Colossus/BossColossus.j` so the placed Colossus begins asleep and paused, reliably awakens when attacked, plays the recovered awakening/death sounds, and attacks an encounter target when the introduction ends.
+- Updated Mad Blix so his defeat remains permanent for the session instead of the Boom Mine dungeon reset recreating him after the one-time story outcome.
+
+### Technical Updates
+
+- Updated `DungeonsAndBosses/Boss.j` and the placed-unit boss libraries under `DungeonsAndBosses/Dungeons/` and `DungeonsAndBosses/OpenWorld/` with one-shot rawcode registration. Existing valid `udg_BossXXX` references remain preferred, every registered or respawned boss is written back to its compatibility variable, display-name matching and Rol'jin's retry loop were removed, and missing placed bosses now report a visible initialization error.
+- Updated `DungeonsAndBosses/Dungeon.j` and `DungeonsAndBosses/Dungeons/Boom Brothers Mine/BossMadBlix.j` so dungeon-boss registration is explicitly a full-respawn opt-in; Mad Blix retains Boom Mine encounter metadata without joining its 30-minute respawn roster, making his quest defeat one-time. Corrected `DungeonsAndBosses/OpenWorld/MountainGiant/BossMountainGiant.j` to bind the placed level-18 boss by its actual `e002` rawcode.
+- Updated `DungeonsAndBosses/OpenWorld/Mordrax/BossMordrax.j` to restore the placed boss's Crow Form, movement speed, and flying height without depending on the legacy `Init Boss Units` GUI trigger.
+- Restored `UI/FullscreenUI.j` portrait-decoration handling after confirming that vendor dialogue already retains the selected live vendor as its line speaker, default speaker, and active NPC context.
+- Updated `Vendors/Help/VendorsHelper.md` with cinematic-portrait requirements for imported vendor models. The 20.9.2026 unit export shows large vendor families using custom models such as `Gornek.mdl` and `Farmer1.mdl`, so a correct title and text with a blank portrait should be investigated as a model/portrait import issue rather than a vendor-name binding issue.
+
+### Actions Remaining
+
+- Reimport `DungeonsAndBosses/Boss.j` before the updated boss libraries, compile the full map through World Editor/JassHelper, and validate that every placed boss registers without an initialization error. Specifically test Scorchion engagement, retreat/reset, all four Shaman deaths, final dialogue, boss activation, reset, death, and respawn; Colossus attack-start, six-second awakening, target acquisition, reset, death, and respawn; Mountain Giant `e002` registration; and Mad Blix remaining dead through Boom Mine's 30-minute/full-reset paths.
+- In World Editor and the Import Manager, verify the portrait companion or embedded portrait camera/animations for each affected vendor model, beginning with `war3campImported\Gornek.mdl`, `war3campImported\Farmer1.mdl`, `war3campImported\Galgar.mdl`, and the custom Goblin models. Test representative vendor and quest transmissions in both SD and HD graphics modes, then re-export current unit data if Object Editor definitions change.
+
+
 ## [23.9.2026]
 
 ### Player-Facing Updates
 
 - Updated `UI/CameraUI.j` with middle-mouse orbit controls for enabling or disabling mouse orbit and independently inverting its horizontal and vertical directions.
 - Updated `UI/TargetUnitUI.j` with a StatsLite-style gear menu, minimize/maximize and close controls, optional always-show and auto-hide behavior, automatic opening for player or companion/pet combat, mana and floating-aggro-text toggles, proper hero names in the threat list, and fullscreen-relative upper-left placement beside rather than over the hero icons.
-- Fixed vendor dialogue transmissions showing the correct speaker name and text without the vendor portrait.
 
 ### Technical Updates
 
 - Updated `UI/CameraControl.j` with local per-player horizontal and vertical mouse-orbit inversion preferences; camera defaults now restore the mouse-orbit settings as well as the camera fields.
-- Updated `UI/FullscreenUI.j` to preserve the native cinematic portrait frame hierarchy while keeping the full-screen background and borders transparent.
 - Updated `EnvironmentSystems/WeatherSystemV4.j` so native weather, rain impacts, clouds, steam, snow waves, and weather audio are presented only for the active zone or its inherited parent fallback. Rain active elsewhere can no longer leak into dry Emberpeak Highlands, Dragonfire Peaks, Firelands, or indoor zones.
 - Updated `Threat/ThreatSystem.j` with a cached combat-target query for UI consumers and a local-safe floating-text visibility setting; target lookup normally remains O(1) and falls back to active threat tables only when its cached encounter ends.
 - Updated `UnitSystems/UnitHider4.j` to scan Unit Event's dense active-index list instead of historical numeric slots, preventing recycled holes from delaying map hiding in long sessions. Legacy GUI references now reveal only for heroes and registered companions/pets, so obsolete nonhero generic NPC, vendor, quest-giver, and dummy entries cannot keep large map areas populated. The bounded hidden-unit revisit budget was raised from 128 to 256 per tick to make units reappear earlier during movement while retaining a 3,200-pass-per-second ceiling.
@@ -38,7 +58,6 @@
 ### Actions Remaining
 
 - Reimport `UI/CameraControl.j` before `UI/CameraUI.j`, compile the full map, and validate all normal/inverted horizontal and vertical combinations, orbit enable/disable, Defaults restoration, and two-client local preference isolation.
-- Reimport `UI/FullscreenUI.j`, compile the full map through World Editor/JassHelper, and verify vendor greeting portraits in both SD and HD graphics modes while the full-screen cinematic background and borders remain transparent.
 - Reimport `Threat/ThreatSystem.j` and `UI/TargetUnitUI.j` after `Companions`, compile the full map, and validate the upper-left layout at 4:3, 16:9, and ultrawide resolutions; all config toggles; minimize/maximize/close reopening; player, companion, and pet combat discovery; hero proper names; boss fallback; and two-client local UI settings.
 - Reimport `UnitSystems/UnitHider4.j`, compile through World Editor/JassHelper, and test after heavy create/remove churn. Verify distant ordinary NPCs hide, units reveal near moving player and AI heroes without close-range pop-in, obsolete nonhero legacy references do not reveal areas, API-registered nonhero references still work, and idle/combat FPS remains stable.
 
