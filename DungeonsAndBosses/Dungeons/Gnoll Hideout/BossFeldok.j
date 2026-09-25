@@ -21,6 +21,7 @@
 **/
 library BossFeldok initializer Init requires Boss, CreepRespawn, DungeonGnollHideout
     globals
+        private constant integer UNIT_FELDOK = 'n609'
         private integer BossId = 0
         private timer FightTimer = null
         private timer PhaseTimer = null
@@ -154,7 +155,10 @@ library BossFeldok initializer Init requires Boss, CreepRespawn, DungeonGnollHid
 
     private function Register takes nothing returns nothing
         local timer initTimer = GetExpiredTimer()
-        local unit boss = Boss_FindUnitByName("Deathlord Fel'Dok", gg_rct_BossFeldokArea01)
+        local unit boss = udg_BossFeldok
+        if boss == null or GetUnitTypeId(boss) != UNIT_FELDOK then
+            set boss = Boss_FindUnitByType(UNIT_FELDOK, gg_rct_BossFeldokArea01)
+        endif
 
         if boss != null then
             set udg_BossFeldok = boss
@@ -168,6 +172,8 @@ library BossFeldok initializer Init requires Boss, CreepRespawn, DungeonGnollHid
             call Boss_SetEventCallback(BossId, BOSS_EVENT_DEATH, function OnEnd)
             call Boss_SetEventCallback(BossId, BOSS_EVENT_RESPAWN, function OnRespawn)
             call Dungeon_RegisterBoss(DungeonGnollHideout_GetDungeonId(), BossId)
+        else
+            call BJDebugMsg("|cffff8080[BossFeldok] ERROR:|r Could not find placed Deathlord Fel'Dok unit 'n609'.")
         endif
         call DestroyTimer(initTimer)
         set boss = null

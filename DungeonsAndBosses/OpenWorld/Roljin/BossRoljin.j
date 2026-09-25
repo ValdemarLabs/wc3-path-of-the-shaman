@@ -13,6 +13,7 @@
 */
 library BossRoljin initializer Init requires Boss, CreepRespawn
     globals
+        private constant integer UNIT_ROLJIN = 'n605'
         private integer BossId = 0
         private timer MoveTimer = null
         private timer SupportTimer = null
@@ -163,14 +164,13 @@ library BossRoljin initializer Init requires Boss, CreepRespawn
     private function Register takes nothing returns nothing
         local timer initTimer = GetExpiredTimer()
         local unit whichUnit = udg_Roljin
-        if whichUnit == null then
-            set whichUnit = Boss_FindUnitByName("Rol'jin", gg_rct_BloodtuskTribe)
+        if whichUnit == null or GetUnitTypeId(whichUnit) != UNIT_ROLJIN then
+            set whichUnit = Boss_FindUnitByType(UNIT_ROLJIN, gg_rct_BloodtuskTribe)
         endif
         if whichUnit == null then
-            set whichUnit = Boss_FindUnitByName("Roljin", gg_rct_BloodtuskTribe)
-        endif
-        if whichUnit == null then
-            call TimerStart(initTimer, 1.00, false, function Register)
+            call BJDebugMsg("|cffff8080[BossRoljin] ERROR:|r Could not find placed Rol'jin unit 'n605'.")
+            call DestroyTimer(initTimer)
+            set whichUnit = null
             set initTimer = null
             return
         endif

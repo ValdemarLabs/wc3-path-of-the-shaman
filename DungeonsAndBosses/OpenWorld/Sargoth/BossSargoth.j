@@ -13,6 +13,7 @@
 */
 library BossSargoth initializer Init requires Boss, CreepRespawn
     globals
+        private constant integer UNIT_SARGOTH = 'n622'
         private constant integer ABILITY_BURROW = 'A63A'
         private integer BossId = 0
         private timer PhaseTimer = null
@@ -159,7 +160,10 @@ library BossSargoth initializer Init requires Boss, CreepRespawn
     endfunction
     private function Register takes nothing returns nothing
         local timer initTimer = GetExpiredTimer()
-        local unit whichUnit = Boss_FindUnitByName("Sargoth", gg_rct_SargothLair)
+        local unit whichUnit = udg_BossSargoth
+        if whichUnit == null or GetUnitTypeId(whichUnit) != UNIT_SARGOTH then
+            set whichUnit = Boss_FindUnitByType(UNIT_SARGOTH, gg_rct_SargothLair)
+        endif
         if whichUnit != null then
             set udg_BossSargoth = whichUnit
             set BossId = Boss_Register(whichUnit, "Sargoth")
@@ -171,6 +175,8 @@ library BossSargoth initializer Init requires Boss, CreepRespawn
             call Boss_SetEventCallback(BossId, BOSS_EVENT_PHASE, function OnPhase)
             call Boss_SetEventCallback(BossId, BOSS_EVENT_RESET, function OnEnd)
             call Boss_SetEventCallback(BossId, BOSS_EVENT_DEATH, function OnDeath)
+        else
+            call BJDebugMsg("|cffff8080[BossSargoth] ERROR:|r Could not find placed Sargoth unit 'n622'.")
         endif
         call DestroyTimer(initTimer)
         set initTimer = null

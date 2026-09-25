@@ -17,6 +17,7 @@
 */
 library BossVoidEntity initializer Init requires Boss, BossVoidEntityDialogue
     globals
+        private constant integer UNIT_VOID_ENTITY = 'n01Z'
         private integer BossId = 0
         private timer DefeatTimer = null
         private trigger CompletionCallback = null
@@ -97,7 +98,10 @@ library BossVoidEntity initializer Init requires Boss, BossVoidEntityDialogue
     endfunction
     private function Register takes nothing returns nothing
         local timer initTimer = GetExpiredTimer()
-        local unit whichUnit = Boss_FindUnitByName("Void Entity", gg_rct_ElvenTown)
+        local unit whichUnit = udg_BossVoidEntity
+        if whichUnit == null or GetUnitTypeId(whichUnit) != UNIT_VOID_ENTITY then
+            set whichUnit = Boss_FindUnitByType(UNIT_VOID_ENTITY, gg_rct_ElvenTown)
+        endif
         if whichUnit != null then
             set udg_BossVoidEntity = whichUnit
             set BossId = Boss_Register(whichUnit, "Void Entity")
@@ -110,6 +114,8 @@ library BossVoidEntity initializer Init requires Boss, BossVoidEntityDialogue
             call Boss_SetDescription(BossId, "A hidden void manifestation tied to Mad Blix's quest in ElvenTown.", "One recovered phase; its death is a scripted quest sequence.", "No recoverable combat abilities exist; its legacy triggers provide proximity-limited combat dialogue.", "Keep the fight in ElvenTown or it resets. The last hit must remain scripted so the quest can complete.")
             call BossVoidEntityDialogue_Bind(whichUnit)
             call Hide()
+        else
+            call BJDebugMsg("|cffff8080[BossVoidEntity] ERROR:|r Could not find placed Void Entity unit 'n01Z'.")
         endif
         call DestroyTimer(initTimer)
         set initTimer = null

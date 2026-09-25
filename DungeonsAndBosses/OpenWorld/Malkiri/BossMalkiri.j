@@ -13,6 +13,7 @@
 */
 library BossMalkiri initializer Init requires Boss
     globals
+        private constant integer UNIT_MALKIRI = 'n012'
         private integer BossId = 0
         private timer RespawnTimer = null
     endglobals
@@ -36,14 +37,8 @@ library BossMalkiri initializer Init requires Boss
     private function Register takes nothing returns nothing
         local timer initTimer = GetExpiredTimer()
         local unit whichUnit = udg_BossMalkiri
-        if whichUnit == null then
-            set whichUnit = Boss_FindUnitByName("Mal'kiri (Level 15) - Panther", null)
-        endif
-        if whichUnit == null then
-            set whichUnit = Boss_FindUnitByName("Mal'kiri", null)
-        endif
-        if whichUnit == null then
-            set whichUnit = Boss_FindUnitByName("Malkiri", null)
+        if whichUnit == null or GetUnitTypeId(whichUnit) != UNIT_MALKIRI then
+            set whichUnit = Boss_FindUnitByType(UNIT_MALKIRI, null)
         endif
 
         if whichUnit != null then
@@ -52,6 +47,8 @@ library BossMalkiri initializer Init requires Boss
             call Boss_SetDescription(BossId, "Mal'kiri is catalogued as an open-world boss.", "No source phase data is available.", "No source ability data is available.", "Encounter mechanics await a design pass.")
             call Boss_SetAutoStartOnAttack(BossId, true)
             call Boss_SetEventCallback(BossId, BOSS_EVENT_DEATH, function OnDeath)
+        else
+            call BJDebugMsg("|cffff8080[BossMalkiri] ERROR:|r Could not find placed Mal'kiri unit 'n012'.")
         endif
         call DestroyTimer(initTimer)
         set initTimer = null

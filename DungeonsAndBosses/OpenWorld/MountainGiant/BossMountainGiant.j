@@ -13,6 +13,7 @@
 */
 library BossMountainGiant initializer Init requires Boss, PatrolSystem
     globals
+        private constant integer UNIT_MOUNTAIN_GIANT = 'e002'
         private integer BossId = 0
         private timer RespawnTimer = null
     endglobals
@@ -59,8 +60,8 @@ library BossMountainGiant initializer Init requires Boss, PatrolSystem
     private function Register takes nothing returns nothing
         local timer initTimer = GetExpiredTimer()
         local unit whichUnit = udg_BossMountainGiant
-        if whichUnit == null then
-            set whichUnit = Boss_FindUnitByName("Mountain Giant", null)
+        if whichUnit == null or GetUnitTypeId(whichUnit) != UNIT_MOUNTAIN_GIANT then
+            set whichUnit = Boss_FindUnitByType(UNIT_MOUNTAIN_GIANT, null)
         endif
 
         if whichUnit != null then
@@ -69,6 +70,8 @@ library BossMountainGiant initializer Init requires Boss, PatrolSystem
             call Boss_SetDescription(BossId, "A roaming mountain giant.", "No combat phases were recovered.", "No boss-only abilities were recovered.", "Watch the mountain path and avoid starting a fight without room to maneuver.")
             call Boss_SetEventCallback(BossId, BOSS_EVENT_DEATH, function OnDeath)
             call StartPatrol(whichUnit)
+        else
+            call BJDebugMsg("|cffff8080[BossMountainGiant] ERROR:|r Could not find placed Mountain Giant unit 'e002'.")
         endif
         call DestroyTimer(initTimer)
         set initTimer = null

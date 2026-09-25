@@ -13,6 +13,7 @@
 */
 library BossVorkatha initializer Init requires Boss
     globals
+        private constant integer UNIT_VORKATHA = 'n63N'
         private integer BossId = 0
         private timer RespawnTimer = null
     endglobals
@@ -36,14 +37,8 @@ library BossVorkatha initializer Init requires Boss
     private function Register takes nothing returns nothing
         local timer initTimer = GetExpiredTimer()
         local unit whichUnit = udg_BossVorkatha
-        if whichUnit == null then
-            set whichUnit = Boss_FindUnitByName("Vorkatha (Level 20) - Devilsaur", null)
-        endif
-        if whichUnit == null then
-            set whichUnit = Boss_FindUnitByName("Vorkatha", null)
-        endif
-        if whichUnit == null then
-            set whichUnit = Boss_FindUnitByName("Vorkahta", null)
+        if whichUnit == null or GetUnitTypeId(whichUnit) != UNIT_VORKATHA then
+            set whichUnit = Boss_FindUnitByType(UNIT_VORKATHA, gg_rct_DevilsaurWP1)
         endif
 
         if whichUnit != null then
@@ -52,6 +47,8 @@ library BossVorkatha initializer Init requires Boss
             call Boss_SetDescription(BossId, "Vorkatha is catalogued as an open-world boss.", "No recoverable phase data exists.", "No recoverable ability data exists.", "Encounter mechanics await a source trigger or design pass.")
             call Boss_SetAutoStartOnAttack(BossId, true)
             call Boss_SetEventCallback(BossId, BOSS_EVENT_DEATH, function OnDeath)
+        else
+            call BJDebugMsg("|cffff8080[BossVorkatha] ERROR:|r Could not find placed Vorkatha unit 'n63N'.")
         endif
         call DestroyTimer(initTimer)
         set initTimer = null

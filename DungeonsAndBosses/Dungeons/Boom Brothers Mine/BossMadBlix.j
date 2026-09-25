@@ -6,7 +6,9 @@
 
     Description:
     Implements Mad Blix's only recoverable exported combat mechanic and
-    reports his death to the converted Boom Brothers quest chain.
+    reports his one-time death to the converted Boom Brothers quest chain.
+    Mad Blix is associated with Boom Mine for UI and encounter context but is
+    deliberately excluded from the dungeon respawn roster.
 
     Credits:
     - DungeonsAndBosses/Dungeons/Boom Brothers Mine/_oldGUI/Boss Mad Blix
@@ -22,6 +24,7 @@
 **/
 library BossMadBlix initializer Init requires Boss, DungeonBoomBrothersMine
     globals
+        private constant integer UNIT_MAD_BLIX = 'n01B'
         private integer BossId = 0
         private timer ChargeTimer = null
         private group TargetGroup = null
@@ -64,17 +67,16 @@ library BossMadBlix initializer Init requires Boss, DungeonBoomBrothersMine
         endif
     endfunction
 
-    private function OnRespawn takes nothing returns nothing
-        set udg_BossMadBlix = Boss_GetUnit(BossId)
-    endfunction
-
     public function GetId takes nothing returns integer
         return BossId
     endfunction
 
     private function Register takes nothing returns nothing
         local timer initTimer = GetExpiredTimer()
-        local unit boss = Boss_FindUnitByName("Mad Blix", gg_rct_BoomBrothersMine)
+        local unit boss = udg_BossMadBlix
+        if boss == null or GetUnitTypeId(boss) != UNIT_MAD_BLIX then
+            set boss = Boss_FindUnitByType(UNIT_MAD_BLIX, gg_rct_BoomBrothersMine)
+        endif
 
         if boss != null then
             set udg_BossMadBlix = boss
@@ -85,8 +87,9 @@ library BossMadBlix initializer Init requires Boss, DungeonBoomBrothersMine
             call Boss_SetEventCallback(BossId, BOSS_EVENT_START, function OnStart)
             call Boss_SetEventCallback(BossId, BOSS_EVENT_RESET, function OnEnd)
             call Boss_SetEventCallback(BossId, BOSS_EVENT_DEATH, function OnEnd)
-            call Boss_SetEventCallback(BossId, BOSS_EVENT_RESPAWN, function OnRespawn)
-            call Dungeon_RegisterBoss(DungeonBoomBrothersMine_GetDungeonId(), BossId)
+            call Boss_SetDungeonId(BossId, DungeonBoomBrothersMine_GetDungeonId())
+        else
+            call BJDebugMsg("|cffff8080[BossMadBlix] ERROR:|r Could not find placed Mad Blix unit 'n01B'.")
         endif
         call DestroyTimer(initTimer)
         set boss = null

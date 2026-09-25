@@ -13,6 +13,7 @@
 */
 library BossMorthun initializer Init requires Boss, PatrolSystem
     globals
+        private constant integer UNIT_MORTHUN = 'n020'
         private integer BossId = 0
         private timer RespawnTimer = null
     endglobals
@@ -55,8 +56,8 @@ library BossMorthun initializer Init requires Boss, PatrolSystem
     private function Register takes nothing returns nothing
         local timer initTimer = GetExpiredTimer()
         local unit whichUnit = udg_BossMorthun
-        if whichUnit == null then
-            set whichUnit = Boss_FindUnitByName("Morthun (Level 5)", null)
+        if whichUnit == null or GetUnitTypeId(whichUnit) != UNIT_MORTHUN then
+            set whichUnit = Boss_FindUnitByType(UNIT_MORTHUN, gg_rct_MorthunWP02)
         endif
 
         if whichUnit != null then
@@ -65,6 +66,8 @@ library BossMorthun initializer Init requires Boss, PatrolSystem
             call Boss_SetDescription(BossId, "Morthun is an aggressive open-world patrol.", "No combat phases were recovered.", "No boss-only abilities were recovered.", "Expect him along the lake and mountain route.")
             call Boss_SetEventCallback(BossId, BOSS_EVENT_DEATH, function OnDeath)
             call StartPatrol(whichUnit)
+        else
+            call BJDebugMsg("|cffff8080[BossMorthun] ERROR:|r Could not find placed Morthun unit 'n020'.")
         endif
         call DestroyTimer(initTimer)
         set initTimer = null

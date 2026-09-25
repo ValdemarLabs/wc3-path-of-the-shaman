@@ -20,6 +20,7 @@
 **/
 library BossImpaler initializer Init requires Boss, DungeonGnollHideout
     globals
+        private constant integer UNIT_IMPALER = 'n634'
         private integer BossId = 0
         private timer FightTimer = null
         private real BaseArmor = 0.00
@@ -83,7 +84,10 @@ library BossImpaler initializer Init requires Boss, DungeonGnollHideout
 
     private function Register takes nothing returns nothing
         local timer initTimer = GetExpiredTimer()
-        local unit boss = Boss_FindUnitByName("Impaler", gg_rct_BossImpalerArea)
+        local unit boss = udg_BossImpaler
+        if boss == null or GetUnitTypeId(boss) != UNIT_IMPALER then
+            set boss = Boss_FindUnitByType(UNIT_IMPALER, gg_rct_BossImpalerArea)
+        endif
 
         if boss != null then
             set udg_BossImpaler = boss
@@ -98,6 +102,8 @@ library BossImpaler initializer Init requires Boss, DungeonGnollHideout
             call Boss_SetEventCallback(BossId, BOSS_EVENT_DEATH, function OnEnd)
             call Boss_SetEventCallback(BossId, BOSS_EVENT_RESPAWN, function OnRespawn)
             call Dungeon_RegisterBoss(DungeonGnollHideout_GetDungeonId(), BossId)
+        else
+            call BJDebugMsg("|cffff8080[BossImpaler] ERROR:|r Could not find placed Impaler unit 'n634'.")
         endif
         call DestroyTimer(initTimer)
         set boss = null

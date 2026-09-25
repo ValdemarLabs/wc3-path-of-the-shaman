@@ -21,6 +21,7 @@
 **/
 library BossAbomination initializer Init requires Boss, CreepRespawn, DungeonGnollHideout
     globals
+        private constant integer UNIT_ABOMINATION = 'uabo'
         private integer BossId = 0
         private timer ZombieTimer = null
         private group Adds = null
@@ -91,7 +92,10 @@ library BossAbomination initializer Init requires Boss, CreepRespawn, DungeonGno
 
     private function Register takes nothing returns nothing
         local timer initTimer = GetExpiredTimer()
-        local unit boss = Boss_FindUnitByName("Abomination", gg_rct_AbominationArea)
+        local unit boss = udg_BossAbomination
+        if boss == null or GetUnitTypeId(boss) != UNIT_ABOMINATION then
+            set boss = Boss_FindUnitByType(UNIT_ABOMINATION, gg_rct_AbominationArea)
+        endif
 
         if boss != null then
             set udg_BossAbomination = boss
@@ -104,6 +108,8 @@ library BossAbomination initializer Init requires Boss, CreepRespawn, DungeonGno
             call Boss_SetEventCallback(BossId, BOSS_EVENT_DEATH, function OnEnd)
             call Boss_SetEventCallback(BossId, BOSS_EVENT_RESPAWN, function OnRespawn)
             call Dungeon_RegisterBoss(DungeonGnollHideout_GetDungeonId(), BossId)
+        else
+            call BJDebugMsg("|cffff8080[BossAbomination] ERROR:|r Could not find placed Abomination unit 'uabo'.")
         endif
         call DestroyTimer(initTimer)
         set boss = null

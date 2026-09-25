@@ -16,6 +16,7 @@
 */
 library BossColossus initializer Init requires Boss, EmberpeakDragonfire, DamageEngine, CreepRespawn
     globals
+        private constant integer UNIT_COLOSSUS = 'n646'
         private constant integer UNIT_GOLEM = 'n64E'
         private constant integer ABILITY_SLAM = 'A6D2'
         private constant integer ABILITY_BOULDER = 'A6CY'
@@ -266,11 +267,36 @@ library BossColossus initializer Init requires Boss, EmberpeakDragonfire, Damage
         endif
         set whichUnit = null
     endfunction
+
+    private function GetEncounterTarget takes nothing returns unit
+        local unit picked = null
+        local unit target = null
+
+        call GroupClear(WorkGroup)
+        call GroupEnumUnitsInRect(WorkGroup, gg_rct_DragonFireSpam01, null)
+        loop
+            set picked = FirstOfGroup(WorkGroup)
+            exitwhen picked == null
+            call GroupRemoveUnit(WorkGroup, picked)
+            if IsAlive(picked) and IsUnitEnemy(picked, Player(11)) and IsPlayerInForce(GetOwningPlayer(picked), udg_PlayerGroup) then
+                set target = picked
+                call GroupClear(WorkGroup)
+                set picked = null
+                return target
+            endif
+        endloop
+        call GroupClear(WorkGroup)
+        set picked = null
+        return null
+    endfunction
+
     private function ActivateFight takes nothing returns nothing
         local unit boss = Boss_GetUnit(BossId)
+        local unit target = null
 
         if not Boss_IsActive(BossId) or boss == null then
             set boss = null
+            set target = null
             return
         endif
         call PauseUnit(boss, false)
@@ -279,12 +305,18 @@ library BossColossus initializer Init requires Boss, EmberpeakDragonfire, Damage
         call SetUnitTimeScale(boss, 1.00)
         call SetUnitAnimation(boss, "attack spell")
         call QueueUnitAnimation(boss, "stand")
+        call PlaySoundOnUnitBJ(gg_snd_RockGolemYesAttack2, 100.00, boss)
+        set target = GetEncounterTarget()
+        if target != null then
+            call IssueTargetOrder(boss, "attack", target)
+        endif
         call EmberpeakDragonfire_SetMode(EMBERPEAK_DRAGONFIRE_PLAYERS)
         call TimerStart(PhaseTimer, 1.00, true, function CheckPhase)
         call TimerStart(CleaveTimer, 1.00, true, function UpdateCleave)
         call TimerStart(SlamTimer, 40.00, false, function CastSlam)
         call TimerStart(BoulderTimer, GetRandomReal(10.00, 20.00), false, function CastBoulder)
         call TimerStart(GolemTimer, 1.00, true, function GolemTick)
+        set target = null
         set boss = null
     endfunction
 
@@ -293,6 +325,7 @@ library BossColossus initializer Init requires Boss, EmberpeakDragonfire, Damage
         call SetUnitTimeScale(boss, 0.30)
         call SetUnitAnimation(boss, "birth")
         call PlaySoundOnUnitBJ(gg_snd_ColossusReady, 100.00, boss)
+        call PlaySoundOnUnitBJ(gg_snd_RockGolemPissed2, 100.00, boss)
         call TimerStart(StartTimer, 6.00, false, function ActivateFight)
         set boss = null
     endfunction
@@ -345,6 +378,7 @@ library BossColossus initializer Init requires Boss, EmberpeakDragonfire, Damage
         set boss = null
     endfunction
     private function OnDeath takes nothing returns nothing
+        call PlaySoundOnUnitBJ(gg_snd_ColossusDead, 100.00, Boss_GetUnit(BossId))
         call OnEnd()
         call TimerStart(RespawnTimer, GetRandomReal(240.00, 500.00), false, function Respawn)
     endfunction
@@ -353,13 +387,14 @@ library BossColossus initializer Init requires Boss, EmberpeakDragonfire, Damage
     endfunction
     private function Register takes nothing returns nothing
         local timer initTimer = GetExpiredTimer()
-        local unit whichUnit = Boss_FindUnitByName("Colossus (Level 15)", gg_rct_DragonFireSpam01)
-        if whichUnit == null then
-            set whichUnit = Boss_FindUnitByName("Colossus", gg_rct_DragonFireSpam01)
+        local unit whichUnit = udg_BossColossus
+        if whichUnit == null or GetUnitTypeId(whichUnit) != UNIT_COLOSSUS then
+            set whichUnit = Boss_FindUnitByType(UNIT_COLOSSUS, gg_rct_DragonFireSpam01)
         endif
         if whichUnit != null then
             set udg_BossColossus = whichUnit
             set BossId = Boss_Register(whichUnit, "Colossus")
+            call Boss_SetHome(BossId, GetRectCenterX(gg_rct_ColossusSpot), GetRectCenterY(gg_rct_ColossusSpot), GetUnitFacing(whichUnit))
             call Boss_SetAutoStartOnAttack(BossId, true)
             call Boss_SetCombatArea(BossId, gg_rct_DragonFireSpam01, Player(0), true)
             call Boss_SetPhaseCount(BossId, 3)
@@ -369,8 +404,13 @@ library BossColossus initializer Init requires Boss, EmberpeakDragonfire, Damage
             call Boss_SetEventCallback(BossId, BOSS_EVENT_RESET, function OnEnd)
             call Boss_SetEventCallback(BossId, BOSS_EVENT_DEATH, function OnDeath)
             call RegisterDamageEngine(function OnDamage, "Modifier", 1.00)
+            call SetUnitInvulnerable(whichUnit, false)
+            call SetUnitAnimation(whichUnit, "sleep")
+            call PauseUnit(whichUnit, true)
             call EmberpeakDragonfire_SetBoss(whichUnit)
             call EmberpeakDragonfire_SetMode(EMBERPEAK_DRAGONFIRE_IDLE)
+        else
+            call BJDebugMsg("|cffff8080[BossColossus] ERROR:|r Could not find placed Colossus unit 'n646'.")
         endif
         call DestroyTimer(initTimer)
         set initTimer = null

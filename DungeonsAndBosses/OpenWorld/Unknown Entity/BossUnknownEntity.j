@@ -285,6 +285,7 @@ library BossUnknownEntity initializer Init requires Boss, ExSound, VoicelinesNaz
         set x = GetRectCenterX(gg_rct_UnknownEntitySurface)
         set y = GetRectCenterY(gg_rct_UnknownEntitySurface)
         set UnknownEntityBoss = CreateUnit(Player(PLAYER_NEUTRAL_PASSIVE), UNIT_UNKNOWN_ENTITY, x, y, BOSS_FACING)
+        set udg_BossUnknownEntity = UnknownEntityBoss
         set UnknownEntityBossId = Boss_Register(UnknownEntityBoss, "Unknown Entity")
         if UnknownEntityBossId == 0 then
             call DebugMsg("Failed to register Unknown Entity with Boss.j.")

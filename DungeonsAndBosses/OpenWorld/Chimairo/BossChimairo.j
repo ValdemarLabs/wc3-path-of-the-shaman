@@ -13,6 +13,7 @@
 */
 library BossChimairo initializer Init requires Boss, DamageEngine
     globals
+        private constant integer UNIT_CHIMAIRO = 'e609'
         private integer BossId = 0
         private constant integer BUFF_VENOMOUS_BREATH = 'B029'
         private constant integer BUFF_CORROSIVE_VENOM = 'B028'
@@ -64,9 +65,9 @@ library BossChimairo initializer Init requires Boss, DamageEngine
 
     private function Register takes nothing returns nothing
         local timer initTimer = GetExpiredTimer()
-        local unit whichUnit = Boss_FindUnitByName("Chimairo (Level 20)", null)
-        if whichUnit == null then
-            set whichUnit = Boss_FindUnitByName("Chimairo", null)
+        local unit whichUnit = udg_BossChimairo
+        if whichUnit == null or GetUnitTypeId(whichUnit) != UNIT_CHIMAIRO then
+            set whichUnit = Boss_FindUnitByType(UNIT_CHIMAIRO, null)
         endif
         if whichUnit != null then
             set udg_BossChimairo = whichUnit
@@ -77,6 +78,8 @@ library BossChimairo initializer Init requires Boss, DamageEngine
             call Boss_SetEventCallback(BossId, BOSS_EVENT_RESET, function OnReset)
             call Boss_SetEventCallback(BossId, BOSS_EVENT_DEATH, function OnDeath)
             call RegisterDamageEngine(function OnSpellDamage, "Modifier", 1.00)
+        else
+            call BJDebugMsg("|cffff8080[BossChimairo] ERROR:|r Could not find placed Chimairo unit 'e609'.")
         endif
         call DestroyTimer(initTimer)
         set initTimer = null

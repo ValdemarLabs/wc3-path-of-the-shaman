@@ -33,7 +33,7 @@
     - set dungeonId = Dungeon_Register(zoneId, approachRect, insideRect, delay)
     - call Dungeon_AddArea(dungeonId, containmentRect)
     - set slotId = Dungeon_RegisterUnit(dungeonId, whichUnit, respawnMode, minDelay, maxDelay)
-    - set slotId = Dungeon_RegisterBoss(dungeonId, bossId)
+    - set slotId = Dungeon_RegisterBoss(dungeonId, bossId) // Opts into full respawn
     - call Dungeon_RegisterZoneCreeps(dungeonId, randomRespawnPercent, minDelay, maxDelay)
     - call Dungeon_SetFullRespawnCallback(dungeonId, callback)
     - call Dungeon_ScheduleFullRespawn(dungeonId)

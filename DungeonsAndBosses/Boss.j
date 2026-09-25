@@ -10,8 +10,10 @@
     lifecycle callbacks, supports optional attack-start and combat-area reset,
     and can intercept lethal damage for scripted defeat sequences. Registered
     bosses are removed from ordinary creep respawn so Boss or Dungeon remains
-    the single owner of their lifecycle. Active encounters can also be reset
-    together for global recovery flows.
+    the single owner of their lifecycle. Registration never schedules a
+    respawn: each encounter, dungeon, quest, or world event must explicitly
+    decide whether and when to call Boss_Respawn. Active encounters can also
+    be reset together for global recovery flows.
 
     Encounter libraries can also publish a short overview, phase summary,
     ability summary, and tactics text for quest/UI consumers. Boss_Respawn
@@ -32,6 +34,7 @@
 
     API:
     - set bossId = Boss_Register(whichUnit, displayName)
+    - set whichUnit = Boss_FindUnitByType(unitTypeId, searchRect)
     - set whichUnit = Boss_FindUnitByName(unitName, searchRect)
     - call Boss_Unregister(bossId)
     - call Boss_ReplaceUnit(bossId, newUnit, true)
@@ -368,6 +371,35 @@ library Boss initializer Init requires Table, Events, UnitDeathEvent, DamageEngi
 
     public function IsActive takes integer bossId returns boolean
         return Boss_IsValidId(bossId) and Boss_State[bossId] == BOSS_STATE_ACTIVE
+    endfunction
+
+    public function FindUnitByType takes integer unitTypeId, rect searchRect returns unit
+        local unit pickedUnit = null
+
+        if unitTypeId == 0 then
+            return null
+        endif
+        set Boss_FindResult = null
+        call GroupClear(Boss_FindGroup)
+        if searchRect == null then
+            call GroupEnumUnitsInRect(Boss_FindGroup, bj_mapInitialPlayableArea, null)
+        else
+            call GroupEnumUnitsInRect(Boss_FindGroup, searchRect, null)
+        endif
+        loop
+            set pickedUnit = FirstOfGroup(Boss_FindGroup)
+            exitwhen pickedUnit == null
+            call GroupRemoveUnit(Boss_FindGroup, pickedUnit)
+            if GetUnitTypeId(pickedUnit) == unitTypeId then
+                set Boss_FindResult = pickedUnit
+                call GroupClear(Boss_FindGroup)
+                set pickedUnit = null
+                return Boss_FindResult
+            endif
+        endloop
+        call GroupClear(Boss_FindGroup)
+        set pickedUnit = null
+        return null
     endfunction
 
     public function FindUnitByName takes string unitName, rect searchRect returns unit

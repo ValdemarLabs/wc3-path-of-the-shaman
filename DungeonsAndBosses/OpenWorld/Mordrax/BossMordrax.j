@@ -14,6 +14,7 @@
 */
 library BossMordrax initializer Init requires Boss, BossMordraxDialogue, PatrolSystem, CreepRespawn
     globals
+        private constant integer UNIT_MORDRAX = 'n645'
         private integer BossId = 0
         private timer OrbTimer = null
         private timer ResetTimer = null
@@ -181,11 +182,8 @@ library BossMordrax initializer Init requires Boss, BossMordraxDialogue, PatrolS
     private function Register takes nothing returns nothing
         local timer initTimer = GetExpiredTimer()
         local unit whichUnit = udg_BossMordrax
-        if whichUnit == null then
-            set whichUnit = Boss_FindUnitByName("Mordrax", null)
-        endif
-        if whichUnit == null then
-            set whichUnit = Boss_FindUnitByName("Mordrax the Desolator (Level 15)", null)
+        if whichUnit == null or GetUnitTypeId(whichUnit) != UNIT_MORDRAX then
+            set whichUnit = Boss_FindUnitByType(UNIT_MORDRAX, null)
         endif
         if whichUnit != null then
             set udg_BossMordrax = whichUnit
@@ -200,7 +198,12 @@ library BossMordrax initializer Init requires Boss, BossMordraxDialogue, PatrolS
             call Boss_SetEventCallback(BossId, BOSS_EVENT_DEATH, function OnDeath)
             call BossMordraxDialogue_Bind(whichUnit)
             call BossMordraxDialogue_SetEnabled(false)
+            call UnitAddAbility(whichUnit, 'Amrf')
+            call SetUnitMoveSpeed(whichUnit, 120.00)
+            call SetUnitFlyHeight(whichUnit, 600.00, 5.00)
             call StartPatrol(whichUnit)
+        else
+            call BJDebugMsg("|cffff8080[BossMordrax] ERROR:|r Could not find placed Mordrax unit 'n645'.")
         endif
         call DestroyTimer(initTimer)
         set initTimer = null

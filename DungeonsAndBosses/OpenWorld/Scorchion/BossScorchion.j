@@ -22,6 +22,7 @@
 **/
 library BossScorchion initializer Init requires Boss, DamageEngine, ExSound, CreepRespawn, UnitDeathEvent, AIRegister
     globals
+        private constant integer UNIT_SCORCHION = 'n00E'
         private constant integer UNIT_DARK_SHAMAN = 'n00I'
         private constant integer UNIT_FIRE_ORB = 'n00F'
         private constant integer ABILITY_BLINK = 'A02B'
@@ -54,6 +55,9 @@ library BossScorchion initializer Init requires Boss, DamageEngine, ExSound, Cre
         private timer ShamanLineTimer = null
         private timer TortureTimer = null
         private timer PreFightResetTimer = null
+        private timer ShamanRespawnTimer = null
+        private timer ShamanFacingTimer = null
+        private timer GateStartTimer = null
         private trigger ShamanAttackedTrigger = null
         private group ShamanGroup = null
         private group OrbGroup = null
@@ -64,6 +68,7 @@ library BossScorchion initializer Init requires Boss, DamageEngine, ExSound, Cre
         private integer OrbSpawnCount = 0
         private boolean ShamanEncounterActive = false
         private integer ShamanResetSeconds = 0
+        private effect StartEffect = null
     endglobals
 
     private function IsAlive takes unit whichUnit returns boolean
@@ -101,6 +106,13 @@ library BossScorchion initializer Init requires Boss, DamageEngine, ExSound, Cre
         call CreateShaman(gg_rct_DarkShaman02, 120.00)
         call CreateShaman(gg_rct_DarkShaman03, 160.00)
         call CreateShaman(gg_rct_DarkShaman04, 195.00)
+    endfunction
+
+    private function ClearStartEffect takes nothing returns nothing
+        if StartEffect != null then
+            call DestroyEffect(StartEffect)
+            set StartEffect = null
+        endif
     endfunction
 
     private function RegisterExistingShamans takes nothing returns nothing
@@ -184,32 +196,43 @@ library BossScorchion initializer Init requires Boss, DamageEngine, ExSound, Cre
         set shaman = null
     endfunction
 
-    private function OrderShamansToAttacker takes nothing returns nothing
-        local unit picked = null
-        local unit attacker = GetAttacker()
-        local group copyGroup = CreateGroup()
+    private function UpdateShamanFacing takes nothing returns nothing
+        local unit boss = Boss_GetUnit(BossId)
+        local integer animation
 
-        if IsUnitInGroup(GetTriggerUnit(), ShamanGroup) and IsAlive(attacker) then
-            set ShamanEncounterActive = true
-            set ShamanResetSeconds = 0
-            call PauseTimer(TortureTimer)
-            call BlzGroupAddGroupFast(ShamanGroup, copyGroup)
-            loop
-                set picked = FirstOfGroup(copyGroup)
-                exitwhen picked == null
-                call GroupRemoveUnit(copyGroup, picked)
-                if IsAlive(picked) then
-                    call IssueTargetOrder(picked, "attack", attacker)
-                endif
-            endloop
-            call ExSound_Play("DarkShaman_0001", "How dare you interfere with our plans! The flames shall consume you!")
-            call DisplayTimedTextToForce(bj_FORCE_ALL_PLAYERS, udg_ExSoundDuration, "|cffff6600Dark Shaman:|r How dare you interfere with our plans! The flames shall consume you!")
-            call TimerStart(ShamanLineTimer, GetRandomReal(10.00, 25.00), false, function PlayShamanLine)
+        if BossId > 0 and Boss_GetState(BossId) == BOSS_STATE_IDLE and ShamanEncounterActive and CountLivingGroup(ShamanGroup) > 0 and IsAlive(boss) then
+            call SetUnitFacingTimed(boss, GetRandomReal(0.00, 360.00), 0.20)
+            set animation = GetRandomInt(1, 3)
+            if animation == 1 then
+                call QueueUnitAnimation(boss, "stand 3")
+            elseif animation == 2 then
+                call QueueUnitAnimation(boss, "stand hit large")
+            else
+                call QueueUnitAnimation(boss, "stand hit critical")
+            endif
+            call TimerStart(ShamanFacingTimer, GetRandomReal(0.50, 3.00), false, function UpdateShamanFacing)
         endif
-        call DestroyGroup(copyGroup)
-        set copyGroup = null
-        set attacker = null
-        set picked = null
+        set boss = null
+    endfunction
+
+    private function FinishPreFightReset takes nothing returns nothing
+        call ResetShamans()
+        call TimerStart(TortureTimer, 10.00, false, function TortureScorchion)
+    endfunction
+
+    private function PlayResetLine takes nothing returns nothing
+        local integer line = GetRandomInt(1, 3)
+
+        if line == 1 then
+            call ExSound_Play("DarkShaman_0012", "Run, little coward! The spirits have abandoned you!")
+            call DisplayTimedTextToForce(bj_FORCE_ALL_PLAYERS, udg_ExSoundDuration, "|cffff6600Dark Shaman:|r Run, little coward! The spirits have abandoned you!")
+        elseif line == 2 then
+            call ExSound_Play("DarkShaman_0013", "Flee! You are no match for us!")
+            call DisplayTimedTextToForce(bj_FORCE_ALL_PLAYERS, udg_ExSoundDuration, "|cffff6600Dark Shaman:|r Flee! You are no match for us!")
+        else
+            call ExSound_Play("DarkShaman_0014", "There is nowhere to hide under the burning sky!")
+            call DisplayTimedTextToForce(bj_FORCE_ALL_PLAYERS, udg_ExSoundDuration, "|cffff6600Dark Shaman:|r There is nowhere to hide under the burning sky!")
+        endif
     endfunction
 
     private function PreFightResetTick takes nothing returns nothing
@@ -223,7 +246,7 @@ library BossScorchion initializer Init requires Boss, DamageEngine, ExSound, Cre
                 set picked = FirstOfGroup(WorkGroup)
                 exitwhen picked == null
                 call GroupRemoveUnit(WorkGroup, picked)
-                if IsAlive(picked) and GetOwningPlayer(picked) == Player(0) then
+                if IsAlive(picked) and IsPlayerInForce(GetOwningPlayer(picked), udg_PlayerGroup) then
                     set playerPresent = true
                 endif
             endloop
@@ -232,15 +255,51 @@ library BossScorchion initializer Init requires Boss, DamageEngine, ExSound, Cre
             else
                 set ShamanResetSeconds = ShamanResetSeconds + 2
                 if ShamanResetSeconds >= 30 then
-                    call ResetShamans()
+                    call PlayResetLine()
                     set ShamanEncounterActive = false
                     set ShamanResetSeconds = 0
                     call PauseTimer(ShamanLineTimer)
-                    call TimerStart(TortureTimer, GetRandomReal(1.00, 4.00), false, function TortureScorchion)
+                    call PauseTimer(ShamanFacingTimer)
+                    call PauseTimer(PreFightResetTimer)
+                    call ClearGroupUnits(ShamanGroup)
+                    call ClearStartEffect()
+                    call TimerStart(ShamanRespawnTimer, 5.00, false, function FinishPreFightReset)
                 endif
             endif
         endif
         call GroupClear(WorkGroup)
+        set picked = null
+    endfunction
+
+    private function OrderShamansToAttacker takes nothing returns nothing
+        local unit picked = null
+        local unit attacker = GetAttacker()
+        local group copyGroup = CreateGroup()
+
+        if IsUnitInGroup(GetTriggerUnit(), ShamanGroup) and IsAlive(attacker) and not ShamanEncounterActive then
+            set ShamanEncounterActive = true
+            set ShamanResetSeconds = 0
+            call PauseTimer(TortureTimer)
+            call BlzGroupAddGroupFast(ShamanGroup, copyGroup)
+            loop
+                set picked = FirstOfGroup(copyGroup)
+                exitwhen picked == null
+                call GroupRemoveUnit(copyGroup, picked)
+                if IsAlive(picked) then
+                    call IssueTargetOrder(picked, "attack", attacker)
+                endif
+            endloop
+            call ExSound_Play("DarkShaman_0001", "How dare you interfere with our plans! The flames obey us, they kneel to us... but now, they shall consume you instead!")
+            call DisplayTimedTextToForce(bj_FORCE_ALL_PLAYERS, udg_ExSoundDuration, "|cffff6600Dark Shaman:|r How dare you interfere with our plans! The flames obey us, they kneel to us... but now, they shall consume you instead!")
+            call TimerStart(ShamanLineTimer, GetRandomReal(10.00, 25.00), false, function PlayShamanLine)
+            call TimerStart(ShamanFacingTimer, GetRandomReal(0.50, 2.00), false, function UpdateShamanFacing)
+            call TimerStart(PreFightResetTimer, 2.00, true, function PreFightResetTick)
+            call ClearStartEffect()
+            set StartEffect = AddSpecialEffectTarget("Abilities\\Spells\\Other\\BreathOfFire\\BreathOfFireDamage.mdl", Boss_GetUnit(BossId), "origin")
+        endif
+        call DestroyGroup(copyGroup)
+        set copyGroup = null
+        set attacker = null
         set picked = null
     endfunction
 
@@ -550,6 +609,10 @@ library BossScorchion initializer Init requires Boss, DamageEngine, ExSound, Cre
         set ShamanResetSeconds = 0
         call PauseTimer(ShamanLineTimer)
         call PauseTimer(TortureTimer)
+        call PauseTimer(PreFightResetTimer)
+        call PauseTimer(ShamanFacingTimer)
+        call PauseTimer(ShamanRespawnTimer)
+        call ClearStartEffect()
         call PlaySoundOnUnitBJ(gg_snd_Scorchion05, 100.00, boss)
         call DisplayTimedTextToForce(bj_FORCE_ALL_PLAYERS, 3.50, "|cffffcc00Scorchion:|r Beware, I live...")
         call TimerStart(StartTimer, 5.00, false, function ActivateEncounter)
@@ -563,6 +626,11 @@ library BossScorchion initializer Init requires Boss, DamageEngine, ExSound, Cre
         call PauseTimer(OrbSpawnTimer)
         call PauseTimer(TemporalTimer)
         call PauseTimer(StartTimer)
+        call PauseTimer(GateStartTimer)
+        call PauseTimer(PreFightResetTimer)
+        call PauseTimer(ShamanFacingTimer)
+        call PauseTimer(ShamanRespawnTimer)
+        call ClearStartEffect()
         set TemporalActive = false
         set RitualStage = 0
         loop
@@ -597,7 +665,7 @@ library BossScorchion initializer Init requires Boss, DamageEngine, ExSound, Cre
         set ShamanEncounterActive = false
         set ShamanResetSeconds = 0
         call PauseTimer(ShamanLineTimer)
-        call TimerStart(TortureTimer, GetRandomReal(1.00, 4.00), false, function TortureScorchion)
+        call TimerStart(TortureTimer, 10.00, false, function TortureScorchion)
         set boss = null
     endfunction
 
@@ -618,10 +686,42 @@ library BossScorchion initializer Init requires Boss, DamageEngine, ExSound, Cre
         call TimerStart(RespawnTimer, GetRandomReal(240.00, 500.00), false, function Respawn)
     endfunction
 
+    private function StartAfterGateLine takes nothing returns nothing
+        if BossId > 0 and Boss_GetState(BossId) == BOSS_STATE_IDLE and CountLivingGroup(ShamanGroup) == 0 then
+            call Boss_Start(BossId)
+        endif
+    endfunction
+
+    private function PlayFinalShamanLine takes nothing returns nothing
+        local integer line = GetRandomInt(1, 3)
+        local real delay
+
+        if line == 1 then
+            call ExSound_Play("DarkShaman_0007", "The spirits... never to be... controlled...")
+            call DisplayTimedTextToForce(bj_FORCE_ALL_PLAYERS, udg_ExSoundDuration, "|cffff6600Dark Shaman:|r The spirits... never to be... controlled...")
+        elseif line == 2 then
+            call ExSound_Play("DarkShaman_0008", "The fire... is unbound... It devours... us all...")
+            call DisplayTimedTextToForce(bj_FORCE_ALL_PLAYERS, udg_ExSoundDuration, "|cffff6600Dark Shaman:|r The fire... is unbound... It devours... us all...")
+        else
+            call ExSound_Play("DarkShaman_0009", "...Scorchion will destroy you!")
+            call DisplayTimedTextToForce(bj_FORCE_ALL_PLAYERS, udg_ExSoundDuration, "|cffff6600Dark Shaman:|r ...Scorchion will destroy you!")
+        endif
+        set delay = udg_ExSoundDuration
+        if delay < 0.50 then
+            set delay = 0.50
+        endif
+        call TimerStart(GateStartTimer, delay, false, function StartAfterGateLine)
+    endfunction
+
     private function OnUnitDeath takes nothing returns nothing
         local unit dying = UnitDeathEvent_GetDyingUnit()
-        if BossId > 0 and Boss_GetState(BossId) == BOSS_STATE_IDLE and IsUnitInGroup(dying, ShamanGroup) and CountLivingGroup(ShamanGroup) == 0 then
-            call Boss_Start(BossId)
+        if BossId > 0 and Boss_GetState(BossId) == BOSS_STATE_IDLE and ShamanEncounterActive and IsUnitInGroup(dying, ShamanGroup) and CountLivingGroup(ShamanGroup) == 0 then
+            set ShamanEncounterActive = false
+            call PauseTimer(ShamanLineTimer)
+            call PauseTimer(PreFightResetTimer)
+            call PauseTimer(ShamanFacingTimer)
+            call ClearStartEffect()
+            call PlayFinalShamanLine()
         endif
         set dying = null
     endfunction
@@ -632,13 +732,14 @@ library BossScorchion initializer Init requires Boss, DamageEngine, ExSound, Cre
 
     private function Register takes nothing returns nothing
         local timer initTimer = GetExpiredTimer()
-        local unit boss = Boss_FindUnitByName("Scorchion (Level 20)", gg_rct_BossScorchionArea)
-        if boss == null then
-            set boss = Boss_FindUnitByName("Scorchion", gg_rct_BossScorchionArea)
+        local unit boss = udg_BossScorchion
+        if boss == null or GetUnitTypeId(boss) != UNIT_SCORCHION then
+            set boss = Boss_FindUnitByType(UNIT_SCORCHION, gg_rct_BossScorchionArea)
         endif
         if boss != null then
             set udg_BossScorchion = boss
             set BossId = Boss_Register(boss, "Scorchion")
+            call Boss_SetHome(BossId, GetRectCenterX(gg_rct_BossScorchionUp), GetRectCenterY(gg_rct_BossScorchionUp), 307.00)
             set BaseDamage = BlzGetUnitBaseDamage(boss, 0)
             call Boss_SetCombatArea(BossId, gg_rct_BossScorchionArea, Player(0), true)
             call Boss_SetPhaseCount(BossId, 2)
@@ -647,12 +748,16 @@ library BossScorchion initializer Init requires Boss, DamageEngine, ExSound, Cre
             call Boss_SetEventCallback(BossId, BOSS_EVENT_RESET, function OnReset)
             call Boss_SetEventCallback(BossId, BOSS_EVENT_DEATH, function OnDeath)
             call SetUnitInvulnerable(boss, true)
+            call BlzSetUnitRealField(boss, UNIT_RF_HIT_POINTS_REGENERATION_RATE, 1000.00)
+            call SetUnitPropWindow(boss, 0.00)
             call RegisterExistingShamans()
             if CountLivingGroup(ShamanGroup) != 4 then
                 call ResetShamans()
             endif
             call RegisterDamageEngine(function OnDamage, "Modifier", 1.00)
-            call TimerStart(TortureTimer, GetRandomReal(1.00, 4.00), false, function TortureScorchion)
+            call TimerStart(TortureTimer, 10.00, false, function TortureScorchion)
+        else
+            call BJDebugMsg("|cffff8080[BossScorchion] ERROR:|r Could not find placed Scorchion unit 'n00E'.")
         endif
         call DestroyTimer(initTimer)
         set initTimer = null
@@ -677,13 +782,15 @@ library BossScorchion initializer Init requires Boss, DamageEngine, ExSound, Cre
         set ShamanLineTimer = CreateTimer()
         set TortureTimer = CreateTimer()
         set PreFightResetTimer = CreateTimer()
+        set ShamanRespawnTimer = CreateTimer()
+        set ShamanFacingTimer = CreateTimer()
+        set GateStartTimer = CreateTimer()
         set ShamanGroup = CreateGroup()
         set OrbGroup = CreateGroup()
         set WorkGroup = CreateGroup()
         set ShamanAttackedTrigger = CreateTrigger()
         call TriggerRegisterAnyUnitEventBJ(ShamanAttackedTrigger, EVENT_PLAYER_UNIT_ATTACKED)
         call TriggerAddAction(ShamanAttackedTrigger, function OrderShamansToAttacker)
-        call TimerStart(PreFightResetTimer, 2.00, true, function PreFightResetTick)
         call UnitDeathEvent_Register(function OnUnitDeath)
         call TimerStart(initTimer, 0.00, false, function Register)
         set initTimer = null
