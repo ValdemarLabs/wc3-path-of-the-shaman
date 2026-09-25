@@ -1,5 +1,7 @@
 `VendorCatalogs.j` and `VendorBags.j` register these canonical names by unit rawcode, so vendor dialogue and quest-giver headings do not depend on Object Editor names. The `Name`, `Editor Suffix`, and `Gender` fields may still mirror this roster for clearer Object Editor entries. `Yes` in the quest-giver column means a matching `qXXX.j` library exists; the parenthesized classification shows whether it registers daily, normal, or both quest types.
 
+`VendorDialogs.j` passes the selected placed vendor unit to `DialogSystem` as the line speaker, sequence default speaker, and active NPC context. If a transmission shows the correct vendor name and text but no portrait, verify the vendor's Object Editor model and imported portrait assets. Imported models need either a working embedded portrait camera/animations or their matching portrait model at the expected import path; an in-world model alone does not guarantee a cinematic portrait. Test affected models in both SD and HD graphics modes.
+
 Shared catalog definitions in `VendorCatalogs.j` must pass `0` as their initial unit type. Concrete canonical rawcodes are registered afterward by the matching faction library; do not use unrelated or legacy Object Editor units as `CreateCatalog` defaults.
 
 `Intended zone` is map-placement guidance derived from the regional assignments in the vendor faction libraries. It does not place or restrict the unit at runtime. A slash-separated value permits any of the listed zones, while `unspecified` means that no exact settlement or arena has been selected yet.
