@@ -2,7 +2,7 @@
     CameraUI
     
     Author: [Valdemar]
-    Version: 1.1.0
+    Version: 1.1.1
 
     Description: Provides a panel for switching camera modes and adjusting camera and mouse-orbit settings.
 
@@ -186,6 +186,7 @@ private function CUI_HideInternal takes nothing returns nothing
     if CUI_Parent != null then
         if BlzFrameIsVisible(CUI_Parent) then
             call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_CLOSE, Player(0))
+            call CameraControl_SetMouseOrbitBlockReason(GetLocalPlayer(), CameraControl_MOUSE_ORBIT_BLOCK_MASTER_UI, false)
         endif
         call BlzFrameSetVisible(CUI_Parent, false)
     endif
@@ -470,6 +471,7 @@ public function Show takes nothing returns nothing
             call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_OPEN, Player(0))
         endif
         call BlzFrameSetVisible(CUI_Parent, true)
+        call CameraControl_SetMouseOrbitBlockReason(GetLocalPlayer(), CameraControl_MOUSE_ORBIT_BLOCK_MASTER_UI, true)
     endif
     loop
         exitwhen i > 5
