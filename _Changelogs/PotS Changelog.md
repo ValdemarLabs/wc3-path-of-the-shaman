@@ -22,17 +22,23 @@
 
 ### Player-Facing Updates
 
+- Fixed closing Camera settings leaving middle-mouse orbit permanently blocked until another UI path cleared the stale menu state.
 - Updated the generic vendor escorts so destination NPCs no longer need to own quests or be registered shops. Giznak's `An Edge Worth Selling` now resolves a preplaced Kargun by the configured `o011` unit type, including a final destination rescan when the quest is accepted.
 - Updated the five ambush-enabled escort routes with repeated attack moments: Kargun and Gorthak receive two attacks, Rukgar one to three, Rixit two to four, and Mugrok one to five along their configured outbound or return leg.
 
 ### Technical Updates
 
+- Updated `UI/CameraUI.j` so its visibility explicitly acquires and releases the shared Game-menu mouse-orbit block, including close, return, toggle, and panel-switch paths.
+- Updated `UnitSystems/UnitHider4.j` to restore hidden-by-default map behavior: one complete initial pass hides ordinary population outside tracked-unit range, hidden units are stored in a 64-by-64 spatial grid, and revealer movement checks only nearby cells instead of continuously polling the hidden population. Generic heroes and remote combat/casting units are now distance-hideable; tracked player/AI heroes, companions/pets, explicit references, ignored units, and engine-sensitive exclusions retain their intended behavior. Steady work is bounded to 128 nearby visible units plus a recovery scan of 8 current units and 64 registry slots per tick.
+- Updated `UnitSystems/UnitHider4_Review.md` with the 4.4 hidden-by-default lifecycle, spatial revealing model, narrower exclusion policy, and revised validation requirements.
 - Updated `QuestsAndDialogs/QuestsVendor.j` with NPC, point/radius, rect, and `ZonesCore` zone destinations; NPC-neutral giver naming; destination-target discovery independent of quest ownership; acceptance-time recovery scans; shared one-way/round-trip destination completion; and fixed or randomized one-to-five ambush series with per-wave cleanup.
 - Updated `QuestsAndDialogs/QuestGivers/Vendors/qKargunAshblade.j`, `qRukgarLongroad.j`, `qGorthakJungleBanner.j`, `qRixitRoadcoin.j`, and `qMugrokIronclub.j` with route-specific fixed or randomized ambush counts.
 - Updated `QuestsAndDialogs/QuestGivers/Vendors/README.md` and `_developer/Design Plans/Story and Quest Implementation Ledger.md` with the generalized destination contract, generic non-vendor NPC support, repeated-ambush rules, and current route counts.
 
 ### Actions Remaining
 
+- Reimport `UI/CameraUI.j` after `MasterUI` and `CameraControl`, compile the full map, then open Camera settings from the Game menu and verify orbit is blocked while the panel is visible and restored after Close, Return followed by closing Game, Toggle, Escape, and switching to another panel.
+- Reimport `UnitSystems/UnitHider4.j`, compile through World Editor/JassHelper, and verify that the initial settlement hides all eligible distant ordinary NPCs, generic heroes, and remote combatants from both the world and minimap in one pass. Confirm that only spatial cells around Nazgrek, Zulkis, registered AI heroes, companions, pets, and explicit references reveal; verify the 5,200/5,500 hysteresis, scripted foreign hides, new-unit indexing, zero-revealer behavior, heavy unit create/remove churn, and idle/movement/combat FPS after settlement.
 - Reimport `Zones/ZonesCore.j` before `QuestsAndDialogs/QuestsVendor.j`, then reimport the five changed qVendor libraries and compile through World Editor/JassHelper. Verify Giznak resolves the preplaced `o011` Kargun, all ten one-way/return routes complete correctly, every repeated wave attacks the escort and is cleaned up on abandonment/turn-in, randomized counts remain synchronized in multiplayer, and point/rect/zone test routes work before those destination forms are used by shipped quests.
 
 
