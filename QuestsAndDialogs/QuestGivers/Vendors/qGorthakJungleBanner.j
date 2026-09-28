@@ -2,7 +2,7 @@
     qGorthakJungleBanner
 
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.2.0
 
     Description:
     Vendor quest content for Gorthak Jungle Banner, Orc quartermaster.
@@ -36,7 +36,7 @@ library qGorthakJungleBanner initializer Init requires QuestsVendor, VoicelinesQ
         call QuestsVendor_RegisterEscortHeroProgressVariant(escortDefinitionId, VL_ZULKIS_GENERIC_TYPE, VL_ZULKIS_GENERIC_0049_TEXT, 49)
         call QuestsVendor_RegisterEscortHeroProgressVariant(escortDefinitionId, VL_ZULKIS_GENERIC_TYPE, VL_ZULKIS_GENERIC_0050_TEXT, 50)
         call QuestsVendor_SetEscortRoundTrip(escortDefinitionId, "Gorthak's command post", VL_VENDORQUEST_ORC_0071, 1071)
-        call QuestsVendor_RegisterEscortAmbush(escortDefinitionId, QuestsVendor_ESCORT_LEG_OUTBOUND, 0.55, 'nsat', 5, 450.00, VL_VENDORQUEST_ORC_0072, 1072)
+        call QuestsVendor_RegisterEscortAmbushes(escortDefinitionId, QuestsVendor_ESCORT_LEG_OUTBOUND, 0.55, 2, 2, 'nsat', 5, 450.00, VL_VENDORQUEST_ORC_0072, 1072)
         call QuestsVendor_SetFactionReward(escortDefinitionId, "Horde", 30, false)
     endfunction
 endlibrary
