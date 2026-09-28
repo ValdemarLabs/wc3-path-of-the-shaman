@@ -2,7 +2,7 @@
     qRukgarLongroad
 
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.2.0
 
     Description:
     Daily and normal vendor quest content for Rukgar Longroad.
@@ -40,7 +40,7 @@ library qRukgarLongroad initializer Init requires QuestsVendor, VoicelinesQuests
         call QuestsVendor_RegisterEscortHeroProgressVariant(escortDefinitionId, VL_ZULKIS_GENERIC_TYPE, VL_ZULKIS_GENERIC_0046_TEXT, 46)
         call QuestsVendor_RegisterEscortHeroProgressVariant(escortDefinitionId, VL_ZULKIS_GENERIC_TYPE, VL_ZULKIS_GENERIC_0047_TEXT, 47)
         call QuestsVendor_SetEscortRoundTrip(escortDefinitionId, "Rukgar's caravan route", VL_VENDORQUEST_ORC_0061, 1061)
-        call QuestsVendor_RegisterEscortAmbush(escortDefinitionId, QuestsVendor_ESCORT_LEG_OUTBOUND, 0.45, 'ngno', 5, 425.00, VL_VENDORQUEST_ORC_0062, 1062)
+        call QuestsVendor_RegisterEscortAmbushes(escortDefinitionId, QuestsVendor_ESCORT_LEG_OUTBOUND, 0.45, 1, 3, 'ngno', 5, 425.00, VL_VENDORQUEST_ORC_0062, 1062)
         call QuestsVendor_SetFactionReward(escortDefinitionId, "Horde", 25, false)
     endfunction
 endlibrary
