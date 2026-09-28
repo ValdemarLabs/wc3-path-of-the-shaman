@@ -2,7 +2,7 @@
     qMugrokIronclub
 
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.2.0
 
     Description:
     Daily and normal vendor quest content for Mugrok Ironclub.
@@ -38,7 +38,7 @@ library qMugrokIronclub initializer Init requires QuestsVendor, VoicelinesQuests
         call QuestsVendor_RegisterEscortHeroProgressVariant(escortDefinitionId, VL_ZULKIS_GENERIC_TYPE, VL_ZULKIS_GENERIC_0058_TEXT, 58)
         call QuestsVendor_RegisterEscortHeroProgressVariant(escortDefinitionId, VL_ZULKIS_GENERIC_TYPE, VL_ZULKIS_GENERIC_0059_TEXT, 59)
         call QuestsVendor_SetEscortRoundTrip(escortDefinitionId, "Mugrok's weapon cart", VL_VENDORQUEST_BONECRUSHER_0034, 1034)
-        call QuestsVendor_RegisterEscortAmbush(escortDefinitionId, QuestsVendor_ESCORT_LEG_OUTBOUND, 0.50, 'nsth', 4, 425.00, VL_VENDORQUEST_BONECRUSHER_0035, 1035)
+        call QuestsVendor_RegisterEscortAmbushes(escortDefinitionId, QuestsVendor_ESCORT_LEG_OUTBOUND, 0.50, 1, 5, 'nsth', 4, 425.00, VL_VENDORQUEST_BONECRUSHER_0035, 1035)
         call QuestsVendor_SetFactionReward(escortDefinitionId, "Bonecrusher Clan", 25, false)
     endfunction
 endlibrary
