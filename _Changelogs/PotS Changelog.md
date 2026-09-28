@@ -18,6 +18,25 @@
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
 
+## [29.9.2026]
+
+### Player-Facing Updates
+
+- Fixed failed vendor escort destination checks leaving the player in cinematic mode. The warning now names the missing configured destination before returning control.
+- Fixed generic vendor quest effects appearing only after selecting the giver; overhead quest markers now receive a post-initialization rebuild while their existing minimap status remains intact.
+
+### Technical Updates
+
+- Updated `Vendors/VendorDialogs.j` to cancel failed quest actions and defer cinematic cleanup until after the dialog-button event returns.
+- Updated `QuestsAndDialogs/QuestsGeneric.j` so instantiated template owners use the full idempotent `QuestGiver` registration path and refresh availability on repeated discovery.
+- Updated `QuestsAndDialogs/QuestMaster.j` with a one-shot delayed availability and overhead-effect rebuild for all registered quest givers.
+- Updated `QuestsAndDialogs/QuestsVendor.j`, `QuestsAndDialogs/QuestGivers/Vendors/README.md`, and `_developer/Design Plans/Story and Quest Implementation Ledger.md` with destination-specific failure reporting and the explicit Kargun `o011` to Ghorak `o00A` route contract for `Steel for the Ring`.
+
+### Actions Remaining
+
+- Reimport `QuestMaster.j`, `QuestGiver.j`, `QuestsGeneric.j`, `QuestsVendor.j`, and `VendorDialogs.j` in dependency order, compile through World Editor/JassHelper, and verify overhead markers are visible before selecting multiple vendor quest givers. Test `Steel for the Ring` once with live Ghorak `o00A` present and once with him absent; the first must play acceptance and start following, while the second must name Ghorak's post and return control without accepting.
+
+
 ## [28.9.2026]
 
 ### Player-Facing Updates
