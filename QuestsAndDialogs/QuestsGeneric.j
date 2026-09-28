@@ -2,7 +2,7 @@
     QuestsGeneric
 
     Author: Valdemar
-    Version: 1.4.0
+    Version: 1.4.1
 
     Description:
     Reusable kill, fetch, talk, purchase, and escort quest templates built on
@@ -398,8 +398,15 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
             set giver = null
             return
         endif
+        if not HasDefinitionForUnitType(GetUnitTypeId(giver)) then
+            set giver = null
+            return
+        endif
         set handleId = GetHandleId(giver)
         set instantiated = QG_InstantiatedByUnit.link(handleId)
+        if not QuestMaster_IsRegisteredGiver(giver) then
+            call QuestGiver_Register(giver)
+        endif
         loop
             exitwhen definitionId > QG_DefinitionCount
             if QG_GiverUnitType[definitionId] == GetUnitTypeId(giver) and not instantiated.boolean[definitionId] then
@@ -408,6 +415,7 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
             endif
             set definitionId = definitionId + 1
         endloop
+        call QuestMaster_RefreshAvailabilityForGiver(giver)
         set giver = null
     endfunction
 
