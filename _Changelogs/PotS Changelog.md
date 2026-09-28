@@ -18,6 +18,24 @@
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
 
+## [28.9.2026]
+
+### Player-Facing Updates
+
+- Updated the generic vendor escorts so destination NPCs no longer need to own quests or be registered shops. Giznak's `An Edge Worth Selling` now resolves a preplaced Kargun by the configured `o011` unit type, including a final destination rescan when the quest is accepted.
+- Updated the five ambush-enabled escort routes with repeated attack moments: Kargun and Gorthak receive two attacks, Rukgar one to three, Rixit two to four, and Mugrok one to five along their configured outbound or return leg.
+
+### Technical Updates
+
+- Updated `QuestsAndDialogs/QuestsVendor.j` with NPC, point/radius, rect, and `ZonesCore` zone destinations; NPC-neutral giver naming; destination-target discovery independent of quest ownership; acceptance-time recovery scans; shared one-way/round-trip destination completion; and fixed or randomized one-to-five ambush series with per-wave cleanup.
+- Updated `QuestsAndDialogs/QuestGivers/Vendors/qKargunAshblade.j`, `qRukgarLongroad.j`, `qGorthakJungleBanner.j`, `qRixitRoadcoin.j`, and `qMugrokIronclub.j` with route-specific fixed or randomized ambush counts.
+- Updated `QuestsAndDialogs/QuestGivers/Vendors/README.md` and `_developer/Design Plans/Story and Quest Implementation Ledger.md` with the generalized destination contract, generic non-vendor NPC support, repeated-ambush rules, and current route counts.
+
+### Actions Remaining
+
+- Reimport `Zones/ZonesCore.j` before `QuestsAndDialogs/QuestsVendor.j`, then reimport the five changed qVendor libraries and compile through World Editor/JassHelper. Verify Giznak resolves the preplaced `o011` Kargun, all ten one-way/return routes complete correctly, every repeated wave attacks the escort and is cleaned up on abandonment/turn-in, randomized counts remain synchronized in multiplayer, and point/rect/zone test routes work before those destination forms are used by shipped quests.
+
+
 ## [25.9.2026]
 
 ### Player-Facing Updates
