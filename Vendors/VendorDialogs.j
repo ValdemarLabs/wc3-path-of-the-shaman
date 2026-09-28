@@ -2,7 +2,7 @@
     VendorDialogs
 
     Author: Valdemar
-    Version:
+    Version: 1.0.1
 
     Description:
     Selectable-NPC dialogue entry for PotS shop vendors. Registered vendor
@@ -64,6 +64,8 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
         private unit VDI_SelectedVendor = null
         private unit VDI_SelectedHero = null
         private boolean VDI_NightQuestPending = false
+        private timer VDI_DeferredEndTimer = null
+        private boolean VDI_DeferredEndStartCooldown = false
     endglobals
 
     private function VDI_IsSelectedContextValid takes nothing returns boolean
@@ -179,6 +181,21 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
         set VDI_SelectedVendor = null
         set VDI_SelectedHero = null
         set hero = null
+    endfunction
+
+    private function VDI_EndDialogDeferred takes nothing returns nothing
+        if VDI_SelectedVendor != null or VDI_SelectedHero != null then
+            call VDI_EndDialog(VDI_DeferredEndStartCooldown)
+        endif
+        set VDI_DeferredEndStartCooldown = false
+    endfunction
+
+    private function VDI_QueueEndDialog takes boolean startCooldown returns nothing
+        if VDI_DeferredEndTimer == null then
+            set VDI_DeferredEndTimer = CreateTimer()
+        endif
+        set VDI_DeferredEndStartCooldown = startCooldown
+        call TimerStart(VDI_DeferredEndTimer, 0.01, false, function VDI_EndDialogDeferred)
     endfunction
 
     private function VDI_OnTrade takes nothing returns nothing
@@ -319,7 +336,11 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
             call DialogSystem_SetSequenceCallbacks(seq, null, function VDI_OnQuestSequenceEnd)
             call DialogSystem_PlaySequence(seq, Player(0), VDI_SelectedVendor)
         else
-            call VDI_EndDialog(true)
+            static if LIBRARY_QuestsVendor then
+                call QuestsVendor_CancelPendingAction()
+            endif
+            // Leave the dialog event stack before restoring cinematic input.
+            call VDI_QueueEndDialog(true)
         endif
     endfunction
 
@@ -588,6 +609,7 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
         local timer initTimer
 
         set VDI_DialogCooldown = CreateTimer()
+        set VDI_DeferredEndTimer = CreateTimer()
         set VDI_RegisteredVendor = Table.create()
         set VDI_CustomDialogVendor = Table.create()
         set VDI_CustomReturnHandler = Table.create()
