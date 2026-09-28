@@ -2,7 +2,7 @@
     qRixitRoadcoin
 
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.2.0
 
     Description:
     Daily and normal vendor quest content for Rixit Roadcoin.
@@ -39,7 +39,7 @@ library qRixitRoadcoin initializer Init requires QuestsVendor, VoicelinesQuests,
         call QuestsVendor_RegisterEscortHeroProgressVariant(escortDefinitionId, VL_ZULKIS_GENERIC_TYPE, VL_ZULKIS_GENERIC_0055_TEXT, 55)
         call QuestsVendor_RegisterEscortHeroProgressVariant(escortDefinitionId, VL_ZULKIS_GENERIC_TYPE, VL_ZULKIS_GENERIC_0056_TEXT, 56)
         call QuestsVendor_SetEscortRoundTrip(escortDefinitionId, "Rixit's cart route", VL_VENDORQUEST_GOBLIN_0052, 1052)
-        call QuestsVendor_RegisterEscortAmbush(escortDefinitionId, QuestsVendor_ESCORT_LEG_RETURN, 0.40, 'nsty', 4, 400.00, VL_VENDORQUEST_GOBLIN_0053, 1053)
+        call QuestsVendor_RegisterEscortAmbushes(escortDefinitionId, QuestsVendor_ESCORT_LEG_RETURN, 0.40, 2, 4, 'nsty', 4, 400.00, VL_VENDORQUEST_GOBLIN_0053, 1053)
         call QuestsVendor_SetFactionReward(escortDefinitionId, "Goblins", 25, false)
     endfunction
 endlibrary
