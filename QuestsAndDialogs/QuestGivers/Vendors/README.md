@@ -2,7 +2,7 @@
 
 Import in this order: `QuestsGeneric.j`, `Voicelines_Quests.j`,
 `Voicelines_Nazgrek.j`, `Voicelines_Zulkis.j`,
-`FollowSystem.j`, `UnitSpawn.j`, `Companions.j`, `AI.j`, `QuestsVendor.j`, the desired
+`FollowSystem.j`, `UnitSpawn.j`, `ZonesCore.j`, `Companions.j`, `AI.j`, `QuestsVendor.j`, the desired
 `qVendorName.j` libraries, `VendorCatalogs.j`,
 all `VendorFactions/Vendor*.j` libraries, `VendorBags.j`, and `VendorDialogs.j`.
 `VendorDialogs.j` discovers placed vendor units and instantiates every quest
@@ -25,9 +25,11 @@ quest-specific lines. A vendor kill quest must never target the giver's own
 faction, even when the target unit is normally hostile in the map.
 
 `QuestsGeneric.j` has no Shop or Vendor dependency. Non-vendor NPCs can use its
-kill, fetch, and talk registration APIs directly, then supply an explicit
-display name when registering a placed unit. `QuestsVendor.j` only adds the
-shop-specific handoff and purchase flows.
+kill, fetch, talk, and escort definitions directly, then supply an explicit
+display name when registering a placed unit. Despite its legacy adapter name,
+the escort runtime in `QuestsVendor.j` accepts non-shop quest givers and
+destination NPCs through `QuestsVendor_RegisterUnit`; Shop-specific behavior is
+limited to supply/purchase interactions and optional trade locks.
 
 Cross-vendor supply objectives are resolved through a quest-specific choice in
 the target vendor's normal dialog; selecting that vendor alone does not advance
@@ -36,21 +38,30 @@ that choice into trade and require the requested catalog item to be purchased
 and returned. Other supply quests use a dialogue handoff and can replace their
 quest item through the same choice if it was lost before turn-in.
 
-Vendor escorts are always one-time Normal quests. The escorted merchant follows
-the accepting hero through `FollowSystem`; the destination is a 425-range area
-centered on an existing destination-vendor unit, so the quest does not depend on
-an invented rect. A route may finish there or begin a second leg back to the
-merchant's recorded start. The merchant is temporarily invulnerable while
-following and returns to the unit's prior invulnerability state on safe arrival,
-abandonment, or another state exit. Abandoning an active route also returns the
-merchant to the route's recorded start.
+Vendor escorts are always one-time Normal quests. The escorted giver follows the
+accepting hero through `FollowSystem`. A destination may be an NPC unit type, a
+point and radius, an existing rect, or a `ZonesCore` zone; towns and settlements
+should normally use a rect or zone instead of inventing a destination NPC. Unit
+destinations are discovered independently of quest ownership or Shop status and
+are rescanned once on acceptance before an unavailable warning is shown. A
+specific preplaced NPC may instead be bound directly with
+`QuestsVendor_SetEscortDestinationUnit`; rawcode-based routes may be changed with
+`QuestsVendor_SetEscortDestinationUnitType`. A route
+may finish at its destination or begin a second leg back to the giver's recorded
+start. The giver is temporarily invulnerable while following and returns to the
+unit's prior invulnerability state on safe arrival, abandonment, or another
+state exit. Abandoning an active route also returns the giver to its recorded
+start.
 
 Nara Stormhoof, Cedran Pike, Kargun Ashblade, Giznak Edgeprice, and Torren
 Deepsteel keep Trade locked until their escort is turned in. The other escorted
 vendors remain willing to trade during their routes. Five configured escorts
-spawn one hostile group at a specified percentage of the outbound or return leg;
-the enemies are tracked, ordered to attack the escorted merchant, and removed if
-the quest exits with survivors. On acceptance, each merchant has a route-specific
+spawn fixed or randomized series of one to five hostile groups beginning at a
+specified percentage of the outbound or return leg and spreading toward 90% of
+that leg. Kargun and Gorthak use two attacks; Rukgar uses one to three, Rixit two
+to four, and Mugrok one to five. Every group is tracked, ordered to attack the
+escorted giver, and removed if the quest exits with survivors. On acceptance,
+each merchant has a route-specific
 field line and may receive a short answer from one nearby active AI hero
 companion. Each escort also has three vendor-specific progress lines and three
 matching progress replies apiece for Nazgrek and Zul'kis.
@@ -161,7 +172,9 @@ Nargash `o00C`, Giznak → Kargun `o011`, Rixit → Snikka `n047`, Mugrok → Gr
 walkable return paths to their exact starting coordinates. If giver and
 destination begin within 425 range, a route leg resolves immediately. Confirm
 every route is a meaningful distance, remains ground-walkable, and does not
-cross a portal or transport boundary. Rixit and Snikka are currently documented
+cross a portal or transport boundary. A unit destination only requires a live
+unit with the configured rawcode; it does not need to be a vendor or own another
+quest. Rixit and Snikka are currently documented
 as unplaced, so `Terms and Conditions` cannot be accepted until both units are
 placed and registered.
 
