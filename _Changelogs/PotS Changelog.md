@@ -32,6 +32,318 @@
 - Updated `QuestsAndDialogs/QuestMaster.j` with a one-shot delayed availability and overhead-effect rebuild for all registered quest givers.
 - Updated `QuestsAndDialogs/QuestsVendor.j`, `QuestsAndDialogs/QuestGivers/Vendors/README.md`, and `_developer/Design Plans/Story and Quest Implementation Ledger.md` with destination-specific failure reporting and the explicit Kargun `o011` to Ghorak `o00A` route contract for `Steel for the Ring`.
 
+### Imports
+Ingots updated (28 Sep, 2026) models by Ziadoma:
+GoldIngotPyramid3.mdx
+GoldIngotPyramid3Rotating.mdx
+GoldIngotPyramid6.mdx
+GoldIngotPyramid6Rotating.mdx
+GoldIngotRotating.mdx
+IronIngotPyramid3.mdx
+IronIngotPyramid3Rotating.mdx
+IronIngotPyramid6.mdx
+IronIngotPyramid6Rotating.mdx
+IronIngotRotating.mdx
+MithrilIngotPyramid3.mdx
+MithrilIngotPyramid3Rotating.mdx
+MithrilIngotPyramid6.mdx
+MithrilIngotPyramid6Rotating.mdx
+MithrilIngotRotating.mdx
+SteelIngotPyramid3.mdx
+SteelIngotPyramid3Rotating.mdx
+SteelIngotPyramid6.mdx
+SteelIngotPyramid6Rotating.mdx
+SteelIngotRotating.mdx
+
+WoW icons (that were "missing") - credits Mezzer on W3C & Blizzard Entertainment:
+- `BTNArcane\_ConjureManaJewel.blp`
+- `BTNArcane\_MageArmor.blp`
+- `BTNArcane\_PortalDarnassus.blp`
+- `BTNArcane\_PortalIronForge.blp`
+- `BTNArcane\_PortalOrgrimmar.blp`
+- `BTNArcane\_PortalStormWind.blp`
+- `BTNArcane\_PortalThunderBluff.blp`
+- `BTNArcane\_PortalUnderCity.blp`
+- `BTNArcane\_TeleportDarnassus.blp`
+- `BTNArcane\_TeleportIronForge.blp`
+- `BTNArcane\_TeleportMoonglade.blp`
+- `BTNArcane\_TeleportOrgrimmar.blp`
+- `BTNArcane\_TeleportStormWind.blp`
+- `BTNArcane\_TeleportThunderBluff.blp`
+- `BTNArcane\_TeleportUnderCity.blp`
+- `BTNAxe\_03.blp`
+- `BTNBow\_02.blp`
+- `BTNBow\_03.blp`
+- `BTNBow\_04.blp`
+- `BTNBow\_05.blp`
+- `BTNBow\_06.blp`
+- `BTNBow\_07.blp`
+- `BTNBow\_08.blp`
+- `BTNBow\_09.blp`
+- `BTNBow\_10.blp`
+- `BTNBow\_11.blp`
+- `BTNBow\_12.blp`
+- `BTNCrossbow\_01.blp`
+- `BTNCrossbow\_02.blp`
+- `BTNCrossbow\_03.blp`
+- `BTNCrossbow\_04.blp`
+- `BTNCrossbow\_05.blp`
+- `BTNCrossbow\_06.blp`
+- `BTNCrossbow\_07.blp`
+- `BTNCrossbow\_08.blp`
+- `BTNCrossbow\_09.blp`
+- `BTNCrown\_01.blp`
+- `BTNFire\_EnchantWeapon.blp`
+- `BTNFire\_Fire.blp`
+- `BTNFire\_FireArmor.blp`
+- `BTNFire\_Fireball.blp`
+- `BTNFire\_Fireball02.blp`
+- `BTNFire\_FireBolt.blp`
+- `BTNFire\_FireBolt02.blp`
+- `BTNFire\_FlameBolt.blp`
+- `BTNFire\_FlameShock.blp`
+- `BTNFire\_FlameTounge.blp`
+- `BTNFire\_FrostResistanceTotem.blp`
+- `BTNFire\_LavaSpawn.blp`
+- `BTNFire\_SunKey.blp`
+- `BTNFire\_WindsofWoe.blp`
+- `BTNFireResistanceTotem\_01.blp`
+- `BTNFrost\_ChainsOfIce.blp`
+- `BTNFrost\_ChillingArmor.blp`
+- `BTNFrost\_ChillingBlast.blp`
+- `BTNFrost\_ChillingBolt.blp`
+- `BTNFrost\_FireResistanceTotem.blp`
+- `BTNFrost\_Frost.blp`
+- `BTNFrost\_FrostArmor02.blp`
+- `BTNFrost\_FrostBlast.blp`
+- `BTNFrost\_Frostbolt.blp`
+- `BTNFrost\_FrostBolt02.blp`
+- `BTNFrost\_FrostBrand.blp`
+- `BTNFrost\_FrostShock.blp`
+- `BTNFrost\_FrostWard.blp`
+- `BTNFrost\_IceClaw.blp`
+- `BTNFrost\_IceShard.blp`
+- `BTNFrost\_IceShock.blp`
+- `BTNFrost\_IceStorm.blp`
+- `BTNFrost\_ManaRecharge.blp`
+- `BTNFrost\_Wisp.blp`
+- `BTNFrost\_WizardMark.blp`
+- `BTNFrostResistanceTotem\_01.blp`
+- `BTNHalbard\_01.blp`
+- `BTNHelmet\_03.blp`
+- `BTNHelmet\_04.blp`
+- `BTNHelmet\_07.blp`
+- `BTNHoly\_ArcaneIntellect.blp`
+- `BTNHoly\_AshesToAshes.blp`
+- `BTNHoly\_AuraOfLight.blp`
+- `BTNHoly\_BlessingOfAgility.blp`
+- `BTNHoly\_BlessingOfProtection.blp`
+- `BTNHoly\_BlessingOfStamina.blp`
+- `BTNHoly\_Devotion.blp`
+- `BTNHoly\_DevotionAura.blp`
+- `BTNHoly\_FlashHeal.blp`
+- `BTNHoly\_GreaterHeal.blp`
+- `BTNHoly\_HealingAura.blp`
+- `BTNHoly\_LayOnHands.blp`
+- `BTNHoly\_LesserHeal.blp`
+- `BTNHoly\_LesserHeal02.blp`
+- `BTNHoly\_MindSooth.blp`
+- `BTNHoly\_MindVision.blp`
+- `BTNHoly\_NullifyDisease.blp`
+- `BTNHoly\_PowerWordShield.blp`
+- `BTNHoly\_PrayerOfFortitude.blp`
+- `BTNHoly\_PrayerOfHealing.blp`
+- `BTNHoly\_PrayerOfHealing02.blp`
+- `BTNHoly\_Purify.blp`
+- `BTNHoly\_Redemption.blp`
+- `BTNHoly\_RemoveCurse.blp`
+- `BTNHoly\_Renew.blp`
+- `BTNHoly\_Restoration.blp`
+- `BTNHoly\_Resurrection.blp`
+- `BTNHoly\_Retribution.blp`
+- `BTNHoly\_RetributionAura.blp`
+- `BTNHoly\_RighteousFury.blp`
+- `BTNHoly\_RighteousnessAura.blp`
+- `BTNHoly\_SealOfFury.blp`
+- `BTNHoly\_SealOfMight.blp`
+- `BTNHoly\_SealOfProtection.blp`
+- `BTNHoly\_SealOfRighteousness.blp`
+- `BTNHoly\_SealOfSacrifice.blp`
+- `BTNHoly\_SealOfSalvation.blp`
+- `BTNHoly\_SealOfValor.blp`
+- `BTNHoly\_SealOfWisdom.blp`
+- `BTNHoly\_SealOfWrath.blp`
+- `BTNHoly\_SearingLight.blp`
+- `BTNHoly\_SenseUndead.blp`
+- `BTNHoly\_TurnUndead.blp`
+- `BTNHoly\_WordFortitude.blp`
+- `BTNIce\_Lament.blp`
+- `BTNIce\_MagicDamage.blp`
+- `BTNMusket\_04.blp`
+- `BTNNature\_Brilliance.blp`
+- `BTNNature\_CorrosiveBreath.blp`
+- `BTNNature\_CrystalBall.blp`
+- `BTNNature\_Drowsy.blp`
+- `BTNNature\_DryadDispelMagic.blp`
+- `BTNNature\_Polymorph.blp`
+- `BTNNature\_StarFall.blp`
+- `BTNNature\_Swiftness.blp`
+- `BTNNature\_Tranquility.blp`
+- `BTNNature\_WispHeal.blp`
+- `BTNPants\_01.blp`
+- `BTNPants\_02.blp`
+- `BTNPants\_03.blp`
+- `BTNPants\_04.blp`
+- `BTNPants\_05.blp`
+- `BTNPants\_06.blp`
+- `BTNPants\_07.blp`
+- `BTNPants\_08.blp`
+- `BTNPants\_09.blp`
+- `BTNPants\_10.blp`
+- `BTNPants\_11.blp`
+- `BTNPants\_12.blp`
+- `BTNPants\_13.blp`
+- `BTNPants\_14.blp`
+- `BTNPants\_Cloth\_01.blp`
+- `BTNPants\_Cloth\_02.blp`
+- `BTNPants\_Cloth\_03.blp`
+- `BTNPants\_Cloth\_04.blp`
+- `BTNPants\_Cloth\_05.blp`
+- `BTNPants\_Cloth\_06.blp`
+- `BTNPants\_Cloth\_07.blp`
+- `BTNPants\_Cloth\_08.blp`
+- `BTNPants\_Cloth\_09.blp`
+- `BTNPants\_Cloth\_10.blp`
+- `BTNPants\_Cloth\_11.blp`
+- `BTNPants\_Cloth\_12.blp`
+- `BTNPants\_Cloth\_13.blp`
+- `BTNPants\_Cloth\_14.blp`
+- `BTNPants\_Cloth\_15.blp`
+- `BTNPants\_Cloth\_16.blp`
+- `BTNPants\_Cloth\_17.blp`
+- `BTNPants\_Cloth\_18.blp`
+- `BTNPants\_Cloth\_19.blp`
+- `BTNPants\_Cloth\_20.blp`
+- `BTNPants\_Leather\_01.blp`
+- `BTNPants\_Leather\_02.blp`
+- `BTNPants\_Leather\_03.blp`
+- `BTNPants\_Leather\_04.blp`
+- `BTNPants\_Leather\_05.blp`
+- `BTNPants\_Leather\_06.blp`
+- `BTNPants\_Leather\_07.blp`
+- `BTNPants\_Leather\_08.blp`
+- `BTNPants\_Leather\_09.blp`
+- `BTNPants\_Leather\_10.blp`
+- `BTNPants\_Leather\_11.blp`
+- `BTNPants\_Leather\_12.blp`
+- `BTNPants\_Leather\_13.blp`
+- `BTNPants\_Leather\_14.blp`
+- `BTNPants\_Leather\_15.blp`
+- `BTNPants\_Leather\_16.blp`
+- `BTNPants\_Leather\_17.blp`
+- `BTNPants\_Leather\_18.blp`
+- `BTNPants\_Leather\_19.blp`
+- `BTNPants\_Leather\_20.blp`
+- `BTNPants\_Leather\_21.blp`
+- `BTNPants\_Mail\_01.blp`
+- `BTNPants\_Mail\_02.blp`
+- `BTNPants\_Mail\_03.blp`
+- `BTNPants\_Mail\_04.blp`
+- `BTNPants\_Mail\_05.blp`
+- `BTNPants\_Mail\_06.blp`
+- `BTNPants\_Mail\_07.blp`
+- `BTNPants\_Mail\_08.blp`
+- `BTNPants\_Mail\_09.blp`
+- `BTNPants\_Mail\_10.blp`
+- `BTNPants\_Mail\_11.blp`
+- `BTNPants\_Mail\_12.blp`
+- `BTNPants\_Mail\_13.blp`
+- `BTNPants\_Mail\_14.blp`
+- `BTNPants\_Mail\_15.blp`
+- `BTNPants\_Mail\_16.blp`
+- `BTNPants\_Mail\_17.blp`
+- `BTNPants\_Mail\_18.blp`
+- `BTNPants\_Mail\_19.blp`
+- `BTNPants\_Mail\_20.blp`
+- `BTNPants\_Mail\_21.blp`
+- `BTNPants\_Plate\_01.blp`
+- `BTNPants\_Plate\_02.blp`
+- `BTNPants\_Plate\_03.blp`
+- `BTNPants\_Plate\_04.blp`
+- `BTNPants\_Plate\_05.blp`
+- `BTNPants\_Plate\_06.blp`
+- `BTNPants\_Plate\_07.blp`
+- `BTNPants\_Plate\_08.blp`
+- `BTNPants\_Plate\_09.blp`
+- `BTNPants\_Plate\_10.blp`
+- `BTNPants\_Plate\_11.blp`
+- `BTNPants\_Plate\_12.blp`
+- `BTNPants\_Plate\_13.blp`
+- `BTNPants\_Plate\_14.blp`
+- `BTNPants\_Plate\_15.blp`
+- `BTNPants\_Plate\_16.blp`
+- `BTNPants\_Plate\_17.blp`
+- `BTNPants\_Plate\_18.blp`
+- `BTNPants\_Plate\_19.blp`
+- `BTNPants\_Plate\_20.blp`
+- `BTNPants\_Plate\_21.blp`
+- `BTNPants\_Wolf.blp`
+- `BTNRifle\_01.blp`
+- `BTNRifle\_02.blp`
+- `BTNRifle\_03.blp`
+- `BTNRifle\_04.blp`
+- `BTNRifle\_05.blp`
+- `BTNRifle\_06.blp`
+- `BTNRifle\_07.blp`
+- `BTNRifle\_08.blp`
+- `BTNRifle\_09.blp`
+- `BTNShadow\_AbominationExplosion.blp`
+- `BTNShadow\_CallofBone.blp`
+- `BTNShadow\_ChillTouch.blp`
+- `BTNShadow\_CurseOfAchimonde.blp`
+- `BTNShadow\_CurseOfMannoroth.blp`
+- `BTNShadow\_CurseOfSargeras.blp`
+- `BTNShadow\_CurseOfTounges.blp`
+- `BTNShadow\_DemonBreath.blp`
+- `BTNShadow\_DetectInvisibility.blp`
+- `BTNShadow\_DetectLesserInvisibility.blp`
+- `BTNShadow\_FingerOfDeath.blp`
+- `BTNShadow\_Fumble.blp`
+- `BTNShadow\_GatherShadows.blp`
+- `BTNShadow\_GhostKey.blp`
+- `BTNShadow\_GrimWard.blp`
+- `BTNShadow\_Haunting.blp`
+- `BTNShadow\_ImpPhaseShift.blp`
+- `BTNShadow\_LifeDrain.blp`
+- `BTNShadow\_MindBomb.blp`
+- `BTNShadow\_MindRot.blp`
+- `BTNShadow\_MindSteal.blp`
+- `BTNShadow\_PsychicScream.blp`
+- `BTNShadow\_SacrificialShield.blp`
+- `BTNShadow\_SealOfKings.blp`
+- `BTNShadow\_ShadeTrueSight.blp`
+- `BTNShadow\_ShadowWordDominate.blp`
+- `BTNShadow\_ShadowWordPain.blp`
+- `BTNShadow\_SoothingKiss.blp`
+- `BTNShadow\_SpectralSight.blp`
+- `BTNSpear\_01.blp`
+- `BTNSpear\_03.blp`
+- `BTNSpear\_04.blp`
+- `BTNSpear\_05.blp`
+- `BTNSpear\_06.blp`
+- `BTNSpear\_07.blp`
+- `BTNSpear\_08.blp`
+- `BTNSword\_01.blp`
+- `BTNSword\_03.blp`
+- `BTNThrowingKnife\_01.blp`
+- `BTNThrowingKnife\_02.blp`
+- `BTNThrowingKnife\_03.blp`
+- `BTNThrowingKnife\_04.blp`
+- `BTNThrowingKnife\_05.blp`
+
+### Tool Updates
+- `WC3Manager` updated custom assets to include the recently added addtional WoW icons.
+
 ### Actions Remaining
 
 - Reimport `QuestMaster.j`, `QuestGiver.j`, `QuestsGeneric.j`, `QuestsVendor.j`, and `VendorDialogs.j` in dependency order, compile through World Editor/JassHelper, and verify overhead markers are visible before selecting multiple vendor quest givers. Test `Steel for the Ring` once with live Ghorak `o00A` present and once with him absent; the first must play acceptance and start following, while the second must name Ghorak's post and return control without accepting.
