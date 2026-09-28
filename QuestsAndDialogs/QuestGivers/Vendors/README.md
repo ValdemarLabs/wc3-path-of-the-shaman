@@ -43,7 +43,10 @@ accepting hero through `FollowSystem`. A destination may be an NPC unit type, a
 point and radius, an existing rect, or a `ZonesCore` zone; towns and settlements
 should normally use a rect or zone instead of inventing a destination NPC. Unit
 destinations are discovered independently of quest ownership or Shop status and
-are rescanned once on acceptance before an unavailable warning is shown. A
+are rescanned once on acceptance before a destination-specific unavailable
+warning is shown. A failed destination check closes the vendor conversation
+after the dialog-button event completes, so it cannot leave player input in
+cinematic mode. A
 specific preplaced NPC may instead be bound directly with
 `QuestsVendor_SetEscortDestinationUnit`; rawcode-based routes may be changed with
 `QuestsVendor_SetEscortDestinationUnitType`. A route
@@ -65,6 +68,13 @@ each merchant has a route-specific
 field line and may receive a short answer from one nearby active AI hero
 companion. Each escort also has three vendor-specific progress lines and three
 matching progress replies apiece for Nazgrek and Zul'kis.
+
+Generic giver units are registered through `QuestGiver` as soon as their
+templates are instantiated, matching named quest givers such as Ragno and
+Aradion. Availability is refreshed immediately, and the shared quest system
+rebuilds overhead quest effects once after map initialization so the world-space
+marker is present before the unit is selected; minimap marker behavior is
+unchanged.
 
 The canonical vendor names below come from `VendorCatalogs.j` and match the
 quest-library filenames and library identifiers. Object Editor names may remain
@@ -177,6 +187,10 @@ unit with the configured rawcode; it does not need to be a vendor or own another
 quest. Rixit and Snikka are currently documented
 as unplaced, so `Terms and Conditions` cannot be accepted until both units are
 placed and registered.
+
+For `Steel for the Ring`, Kargun `o011` is the giver and escorted unit; the
+required destination is the live Ghorak Bloodmark `o00A` unit. Kargun being
+preplaced does not by itself satisfy that destination check.
 
 Approve the complete quest dialogue in context before generating Fish Audio.
 When an existing text constant changes, its old recording is stale and must stay
