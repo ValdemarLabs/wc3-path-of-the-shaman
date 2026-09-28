@@ -28,7 +28,7 @@ correct and performant enough for permanent use.
 | `UnitHider.j` (1.0) | Simple two-phase ownership: check owned hidden units for showing, then visible units for hiding. It was the known working fallback. | Enumerates the full map every 0.5 seconds; creates and destroys a reference group for every proximity test; uses `SquareRoot`; leaks a newly created work group on every disabled timer tick; does not recognize the `UnitHider_ReferenceUnits` registrations used by current AI, companions, and pets. |
 | `UnitHider2.j` | Reuses work groups, filters invalid units, compares squared distances, and keeps the reliable two-phase flow. | Still enumerates nearly every eligible map unit every 0.5 seconds and copies the full reference group for every proximity test. `Table` state duplicates the authoritative hidden group without improving behavior. The archived runtime result was slow hiding and severe lag. |
 | `UnitHider3_Optimized.j` | Caches reference positions, uses squared distances, reuses main work groups, and retains the reliable two-phase flow. The archive says it worked. | Still performs a full-world enumeration every 0.5 seconds; creates a temporary reference group each cycle; limits references to 20; aborts with zero references without restoring already hidden units; does not consume current array registrations; and can show units another system intentionally hid because visibility ownership is not transferred on foreign `ShowUnit` calls. |
-| `UnitHider4.j` | Uses Unit Event's active linked registry in fixed batches; caches reference positions; preserves foreign visibility ownership; has hide/show hysteresis; treats player-controlled and registered AI heroes plus registered companions/pets as revealers; protects combat/casting units without turning every combatant into a revealer; honors explicit API references and ignored units; suspends mutation during cinematics. | Requires full-map runtime validation because hiding units changes simulation behavior by design. Version 4.2 processes 64 active indexed units plus up to 256 already-hidden units per 0.10-second tick, a 5500 hide radius, and a 5200 show radius. |
+| `UnitHider4.j` | Settles the full indexed map once, spatially buckets hidden units, checks only nearby buckets for revealing, preserves foreign visibility ownership, and retains hide/show hysteresis. Player-controlled and registered AI heroes plus registered companions/pets are revealers; explicit references and ignored units remain supported. | Requires full-map runtime validation because hiding units changes simulation behavior by design. Version 4.4 performs one complete initial settlement, then checks at most 128 managed visible units and 8 recovery units per 0.10-second tick. Hidden units outside revealer cells receive no continuous per-unit polling. |
 
 Some older UnitHider Markdown files describe an earlier proposed "smart filter"
 and quote estimated operation reductions. The final `UnitHider3_Optimized.j`
@@ -38,16 +38,16 @@ Treat those estimates as historical planning notes rather than measured results.
 
 ## PotS integration in UnitHider4
 
-- Every hero is protected from hiding. Player-controlled heroes and heroes
-  registered by the AI system act as revealers. AI identity comes from the AI
-  registry rather than owner slots, which are not stable in that system; static
-  hero-type NPCs outside the AI registry do not keep their areas populated.
+- Player-controlled heroes and heroes registered by the AI system act as
+  revealers and remain shown. AI identity comes from the AI registry rather
+  than owner slots, which are not stable in that system. Generic or static
+  hero-type NPCs outside the tracked hero set are hideable like ordinary units.
 - Current companion and pet registration is recognized through
   `udg_UnitHider_ReferenceUnits` together with `udg_Companion_Group` and
   `udg_TamedUnits`.
-- Units marked by GCSM as in combat, or by the casting system as casting, are
-  protected from hiding but do not reveal unrelated nearby map populations.
-  This prevents large or remote combats from multiplying every proximity scan.
+- Combat or casting state does not exempt a unit from distance hiding. Combat
+  occurring around a tracked revealer remains visible normally; remote combat
+  cannot keep otherwise inactive map population active.
 - Ordinary nonhero vendors and quest givers remain eligible for distance
   hiding. Their `AI_REGISTER_ROLE_VENDOR` or `AI_REGISTER_ROLE_SCRIPTED`
   registration does not make them revealers; only companion/pet membership or
@@ -62,14 +62,16 @@ Treat those estimates as historical planning notes rather than measured results.
 - A `ShowUnit` hook removes foreign visibility changes from UnitHider4's owned
   hidden set. Consequently, disabling or proximity showing affects only units
   whose hidden state UnitHider4 still owns.
-- If the reference cache becomes empty, UnitHider4 fails open and restores the
-  units it hid.
-- A separate bounded pass revisits already-hidden units before the normal
-  indexed scan, keeping reveal response bounded even when Unit Event's maximum
-  allocated index has grown after many temporary units. The indexed pass skips
-  those hidden units, so one timer tick cannot process the same unit twice.
-- Re-enabling the system rebuilds the automatic revealer set once before hiding
-  resumes, so references created while disabled are not missed.
+- With zero valid revealers, ordinary eligible units remain hidden by default.
+  Creating or restoring a tracked revealer exposes its nearby spatial cells on
+  the next timer update.
+- Hidden units are stored in a 64-by-64 world grid. Each update visits only the
+  cells intersecting a revealer's 5,200 range instead of polling the complete
+  hidden population. Units still visible around revealers are kept in a much
+  smaller managed-visible group and hide after leaving the 5,500 range.
+- New Unit Event registrations are classified immediately. A low 8-unit,
+  64-slot recovery scan repairs foreign visibility changes and changing
+  exclusions without making the hidden population part of continuous work.
 
 ## 20 September 2026 performance correction
 
@@ -104,6 +106,48 @@ to 256 per tick to reduce delayed pop-in while moving; the total scheduled
 ceiling is 3,200 unit passes per second, still about 74% below the original 4.0
 ceiling.
 
+## 28 September 2026 registry correction
+
+Runtime testing showed that Unit Event's compatibility `udg_UDexNext` list was
+not a reliable complete unit inventory in the live map. Version 4.2 could
+therefore miss most units and, when it also missed the player hero, remain in
+the zero-reference fail-open state that intentionally performs no hiding.
+
+Version 4.3 scans the authoritative `udg_UDexUnits` registry numerically again,
+but no longer allows historical recycled holes to consume an unbounded sweep.
+Each tick inspects at most 512 array slots and performs the normal visibility
+work for at most 64 current nonhidden units. This keeps registry recovery
+bounded while ensuring all indexed units and automatic hero revealers are
+eventually discovered. The already-hidden pass remains separately bounded at
+256 units per tick.
+
+Version 4.3.1 adds a two-sweep catch-up phase at startup, after re-enabling,
+and after `UnitHider_Refresh`. Catch-up may inspect 2,048 slots and process 256
+current nonhidden units per tick. The first sweep discovers automatic hero
+revealers even when their indexes occur late in the registry; the second
+quickly applies hiding to units visited before that reference was cached. The
+system then returns automatically to the 512-slot and 64-unit steady budget.
+
+## 28 September 2026 hidden-by-default correction
+
+Runtime testing of 4.3.1 showed that bounded hiding still exposed the map in
+visible waves and that revisiting 256 hidden units every 0.10 seconds consumed
+work after the map had settled. Broad protection for every hero and every
+combat/casting unit also contradicted the original UnitHider principle by
+leaving remote population active without a tracked revealer.
+
+Version 4.4 performs one complete initial settlement after Unit Event has
+indexed the map. Ordinary eligible units outside reveal range are hidden in
+that pass, including generic hero-type NPCs and remote combatants. Only tracked
+heroes, companions/pets, explicit references, ignored units, Locust units,
+loaded units, and nonliving units bypass normal distance hiding.
+
+Hidden units are assigned to a 64-by-64 spatial grid. Revealer movement checks
+only intersecting cells and exact distance, while departure checks operate on
+the comparatively small managed-visible group. No full or fixed-size hidden
+population pass remains in steady state. This restores the intended scaling:
+the inactive world stays hidden and ongoing work follows the active areas.
+
 ## Full-map validation
 
 1. Import UnitHider4 after Unit Event and `FallenHeroState`; disable or remove
@@ -119,11 +163,11 @@ ceiling.
 6. Exercise travel, dialog cinematics, scripted quest hides, hero death/revive,
    transports, and enable/disable cycles. No foreign-hidden unit should be
    force-shown.
-7. Test with zero valid revealers. UnitHider-owned units should be restored and
-   no new unit should hide.
-8. Enable debug temporarily and compare complete-sweep counts and frame pacing
-   during a long session. Tune `UnitHider4_UNITS_PER_TICK` only from measured
-   full-map results.
+7. Test with zero valid revealers. Ordinary eligible units should remain hidden;
+   creating or reviving a tracked hero should reveal only its nearby area.
+8. Enable debug temporarily and compare initial settlement and steady frame
+   pacing during a long session. Tune recovery or visible-unit budgets only
+   from measured full-map results.
 9. Temporarily place ordinary vendors, quest givers, and dummies in the legacy
    reference group. They should remain hideable and must not reveal nearby
    populations; an intentional nonhero registered through the API should still
