@@ -2,7 +2,7 @@
     QuestMaster
 
     Author: Valdemar
-    Version: 1.3.9
+    Version: 1.3.10
 
     Description:
     Owns PotS quest data, state transitions, rewards, availability, custom
@@ -89,6 +89,7 @@ globals
 	// Availability evaluation
 	private constant real QUEST_EVAL_BATCH_INTERVAL = 0.25
 	private constant integer QUEST_EVAL_BATCH_COUNT = 20
+	private constant real QUEST_INITIAL_ICON_REFRESH_DELAY = 1.00
 	private timer QuestEvalTimer = null
 	private integer QuestEvalBatchIndex = 0
 	private trigger QuestLevelRefreshTrigger = null
@@ -3441,6 +3442,30 @@ public function RefreshAvailability takes nothing returns nothing
 	endloop
 endfunction
 
+private function RefreshInitialGiverIcons takes nothing returns nothing
+	local timer expiredTimer = GetExpiredTimer()
+	local integer i = 1
+	local unit u
+
+	// Recreate attachments after placed unit models and hero availability have
+	// settled. Effects created during library initialization can remain hidden
+	// even though their matching minimap marker is already active.
+	loop
+		exitwhen i > QuestGiverCount
+		set u = QuestGiverList[i]
+		if u != null and GetUnitTypeId(u) != 0 then
+			call RefreshAvailabilityForGiver(u)
+			call RemoveOldEffect(u)
+			call IconUpdateForNPC(u)
+		endif
+		set i = i + 1
+	endloop
+
+	call DestroyTimer(expiredTimer)
+	set expiredTimer = null
+	set u = null
+endfunction
+
 private function EvalTimerTick takes nothing returns nothing
 	local integer i = QuestEvalBatchIndex + 1
 	local unit u
@@ -3464,6 +3489,8 @@ endfunction
 // Init
 //===========================================================================
 private function Init takes nothing returns nothing
+	local timer initialIconTimer
+
 	set QuestById = Table.create()
 	set QuestByNameGiver = Table.create()
 	set QuestByHandle = Table.create()
@@ -3480,12 +3507,15 @@ private function Init takes nothing returns nothing
 	set QuestMaster_OnDailyReset = CreateTrigger()
 	set QuestEvalTimer = CreateTimer()
 	call TimerStart(QuestEvalTimer, QUEST_EVAL_BATCH_INTERVAL, true, function EvalTimerTick)
+	set initialIconTimer = CreateTimer()
+	call TimerStart(initialIconTimer, QUEST_INITIAL_ICON_REFRESH_DELAY, false, function RefreshInitialGiverIcons)
 	set QuestLevelRefreshTrigger = CreateTrigger()
 	call TriggerRegisterPlayerUnitEvent(QuestLevelRefreshTrigger, Player(0), EVENT_PLAYER_HERO_LEVEL, null)
 	call TriggerAddAction(QuestLevelRefreshTrigger, function OnHeroLevel)
 	set QuestDailyResetTrigger = CreateTrigger()
 	call TriggerRegisterVariableEvent(QuestDailyResetTrigger, "udg_DNE_DayNightEvent", EQUAL, 1.00)
 	call TriggerAddAction(QuestDailyResetTrigger, function OnNewDay)
+	set initialIconTimer = null
 endfunction
 
 endlibrary
