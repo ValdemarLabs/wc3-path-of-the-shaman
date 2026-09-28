@@ -2,7 +2,7 @@
     QuestsVendor
 
     Author: Valdemar
-    Version: 1.7.0
+    Version: 1.7.1
 
     Description:
     Shop-vendor adapter for QuestsGeneric. Generic giver quests are delegated
@@ -1268,7 +1268,7 @@ library QuestsVendor initializer Init requires QuestsGeneric, VoicelinesQuests, 
                 call QuestsVendor_RegisterExistingQuestGivers()
             endif
             if q != 0 and q.state == QUEST_STATE_AVAILABLE and escortIndex > 0 and not QV_IsEscortDestinationAvailable(escortIndex) then
-                call DisplayTimedTextToPlayer(Player(0), 0.00, 0.00, 5.00, "|cffff8040This escort destination is not available.|r")
+                call DisplayTimedTextToPlayer(Player(0), 0.00, 0.00, 7.00, "|cffff8040Escort destination unavailable: " + QV_EscortDestinationName[escortIndex] + ". Check that its configured NPC, rect, point, or zone exists.|r")
                 call QuestsGeneric_CancelPendingAction()
                 set vendor = null
                 set hero = null
