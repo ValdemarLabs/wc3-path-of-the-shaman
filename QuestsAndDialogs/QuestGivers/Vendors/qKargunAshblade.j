@@ -2,7 +2,7 @@
     qKargunAshblade
 
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.2.0
 
     Description:
     Daily and normal vendor quest content for Kargun Ashblade.
@@ -38,7 +38,7 @@ library qKargunAshblade initializer Init requires QuestsVendor, VoicelinesQuests
         call QuestsVendor_RegisterEscortHeroProgressVariant(escortDefinitionId, VL_ZULKIS_GENERIC_TYPE, VL_ZULKIS_GENERIC_0042_TEXT, 42)
         call QuestsVendor_RegisterEscortHeroProgressVariant(escortDefinitionId, VL_ZULKIS_GENERIC_TYPE, VL_ZULKIS_GENERIC_0043_TEXT, 43)
         call QuestsVendor_RegisterEscortHeroProgressVariant(escortDefinitionId, VL_ZULKIS_GENERIC_TYPE, VL_ZULKIS_GENERIC_0044_TEXT, 44)
-        call QuestsVendor_RegisterEscortAmbush(escortDefinitionId, QuestsVendor_ESCORT_LEG_OUTBOUND, 0.55, 'ndqt', 4, 400.00, VL_VENDORQUEST_ORC_0052, 1052)
+        call QuestsVendor_RegisterEscortAmbushes(escortDefinitionId, QuestsVendor_ESCORT_LEG_OUTBOUND, 0.55, 2, 2, 'ndqt', 4, 400.00, VL_VENDORQUEST_ORC_0052, 1052)
         call QuestsVendor_SetEscortTradeLocked(escortDefinitionId, true)
         call QuestsVendor_SetFactionReward(escortDefinitionId, "Horde", 30, false)
     endfunction
