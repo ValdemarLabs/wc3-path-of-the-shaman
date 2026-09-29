@@ -32,6 +32,12 @@
 - Updated `QuestsAndDialogs/QuestMaster.j` with a one-shot delayed availability and overhead-effect rebuild for all registered quest givers.
 - Updated `QuestsAndDialogs/QuestsVendor.j`, `QuestsAndDialogs/QuestGivers/Vendors/README.md`, and `_developer/Design Plans/Story and Quest Implementation Ledger.md` with destination-specific failure reporting and the explicit Kargun `o011` to Ghorak `o00A` route contract for `Steel for the Ring`.
 
+### Tool Updates
+
+- Added `ShadowMapTool/`, a C++23 command-line foundation for generating and previewing deterministic SHD validation patterns, inspecting Warcraft III map archives, and safely replacing `war3map.shd` through validated map copies.
+- Updated `ShadowMapTool/` with a modern native Windows interface featuring high-DPI Direct2D rendering, drag-and-drop map loading, live pattern previews, SHD/PNG export, keyboard navigation, Unicode paths, and guarded copy or backed-up in-place output workflows.
+- Updated `ShadowMapTool/` with an in-app Help overlay, explicit validation-only/full-generation status, clearer pattern-test actions, and UTF-8 source compilation so multiplication signs and status symbols render correctly.
+
 ### Imports
 Ingots updated (28 Sep, 2026) models by Ziadoma:
 GoldIngotPyramid3.mdx
