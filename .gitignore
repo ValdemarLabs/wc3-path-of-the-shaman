@@ -50,6 +50,7 @@ _Roadmap/
 
 # Warcraft 3 generated files
 #*.w3x.autosave
+*.w3x
 
 # Archives
 #*.zip
