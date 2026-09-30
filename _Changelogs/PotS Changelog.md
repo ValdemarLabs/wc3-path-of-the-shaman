@@ -18,6 +18,18 @@
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
 
+## [30.9.2026]
+
+### Tool Updates
+
+- Updated `ShadowMapTool/` to version 1.0 with bounds-checked W3E v11/v12 terrain, DOO placement, W3D/W3B object-data, W3R region, and MDX geoset parsing; map, directory, and optional runtime CASC asset resolution; transformed scene construction; cached BVH geometry; and parallel static-shadow ray casting.
+- Updated `ShadowMapTool/` GUI and CLI to build complete shadowmaps into validated map copies or backed-up in-place outputs, preview calculated results, export SHD/PNG/OBJ diagnostics, honor `IgnoreShadow...` regions, report unresolved assets, and stop before writing when no placed-object model can be resolved.
+- Updated `ShadowMapTool/` tests and documentation for geometry/format parsing, SHD row serialization, archive replacement, ignore-shadow regions, confirmed exact-size border behavior, full-generation usage, asset requirements, and current version-1 compatibility limits.
+- Updated `ShadowMapTool/` with Warcraft III DOO v13 parsing, placed-object roll/pitch transforms, Object Editor Has shadow filtering, terrain/doodad/destructible and IgnoreShadow options, editable light vectors, complete existing/calculated map previews, a dedicated diagnostic Test mode, and the renamed Calculate shadows workflow.
+- Updated `ShadowMapTool/` to bundle pinned CascLib 3.0 builds, resolve current Reforged skin-profile models and version-3 map object/skin overrides, support W3R v7 IgnoreShadow regions, handle numbered model-variation bases, and summarize unresolved object types.
+- Updated `ShadowMapTool/` so Calculate shadows renders a complete non-destructive preview first and the separate Save to map action writes only an inspected, current calculation. The 480 x 480 Epic Quests validation resolved all 50,049 shadow-casting placements and produced 0 unresolved models.
+
+
 ## [29.9.2026]
 
 ### Player-Facing Updates
@@ -37,29 +49,31 @@
 - Added `ShadowMapTool/`, a C++23 command-line foundation for generating and previewing deterministic SHD validation patterns, inspecting Warcraft III map archives, and safely replacing `war3map.shd` through validated map copies.
 - Updated `ShadowMapTool/` with a modern native Windows interface featuring high-DPI Direct2D rendering, drag-and-drop map loading, live pattern previews, SHD/PNG export, keyboard navigation, Unicode paths, and guarded copy or backed-up in-place output workflows.
 - Updated `ShadowMapTool/` with an in-app Help overlay, explicit validation-only/full-generation status, clearer pattern-test actions, and UTF-8 source compilation so multiplication signs and status symbols render correctly.
+- Updated `ShadowMapTool/` with empirically confirmed Warcraft III SHD semantics: `0x00` is lit, `0xFF` is shadowed, X remains left-to-right, and file rows run bottom-to-top. Generated SHD now reverses rows while live and PNG previews remain top-down.
+- Updated `WC3Manager` custom assets to include the recently added addtional WoW icons.
 
 ### Imports
 Ingots updated (28 Sep, 2026) models by Ziadoma:
-GoldIngotPyramid3.mdx
-GoldIngotPyramid3Rotating.mdx
-GoldIngotPyramid6.mdx
-GoldIngotPyramid6Rotating.mdx
-GoldIngotRotating.mdx
-IronIngotPyramid3.mdx
-IronIngotPyramid3Rotating.mdx
-IronIngotPyramid6.mdx
-IronIngotPyramid6Rotating.mdx
-IronIngotRotating.mdx
-MithrilIngotPyramid3.mdx
-MithrilIngotPyramid3Rotating.mdx
-MithrilIngotPyramid6.mdx
-MithrilIngotPyramid6Rotating.mdx
-MithrilIngotRotating.mdx
-SteelIngotPyramid3.mdx
-SteelIngotPyramid3Rotating.mdx
-SteelIngotPyramid6.mdx
-SteelIngotPyramid6Rotating.mdx
-SteelIngotRotating.mdx
+- `GoldIngotPyramid3.mdx`
+- `GoldIngotPyramid3Rotating.mdx`
+- `GoldIngotPyramid6.mdx`
+- `GoldIngotPyramid6Rotating.mdx`
+- `GoldIngotRotating.mdx`
+- `IronIngotPyramid3.mdx`
+- `IronIngotPyramid3Rotating.mdx`
+- `IronIngotPyramid6.mdx`
+- `IronIngotPyramid6Rotating.mdx`
+- `IronIngotRotating.mdx`
+- `MithrilIngotPyramid3.mdx`
+- `MithrilIngotPyramid3Rotating.mdx`
+- `MithrilIngotPyramid6.mdx`
+- `MithrilIngotPyramid6Rotating.mdx`
+- `MithrilIngotRotating.mdx`
+- `SteelIngotPyramid3.mdx`
+- `SteelIngotPyramid3Rotating.mdx`
+- `SteelIngotPyramid6.mdx`
+- `SteelIngotPyramid6Rotating.mdx`
+- `SteelIngotRotating.mdx`
 
 WoW icons (that were "missing") - credits Mezzer on W3C & Blizzard Entertainment:
 - `BTNArcane\_ConjureManaJewel.blp`
@@ -346,9 +360,6 @@ WoW icons (that were "missing") - credits Mezzer on W3C & Blizzard Entertainment
 - `BTNThrowingKnife\_03.blp`
 - `BTNThrowingKnife\_04.blp`
 - `BTNThrowingKnife\_05.blp`
-
-### Tool Updates
-- `WC3Manager` updated custom assets to include the recently added addtional WoW icons.
 
 ### Actions Remaining
 
