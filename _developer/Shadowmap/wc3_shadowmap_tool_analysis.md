@@ -19,6 +19,12 @@ The preferred implementation should avoid process injection, memory modification
 
 The design should be modular enough that Warcraft III asset loading can evolve independently from the shadow-generation algorithm.
 
+## Implementation status — 30 September 2026
+
+`ShadowMapTool/` now implements the version-1 MVP pipeline: W3E v11/v12 terrain, DOO placements, stock/custom object-data resolution, map/directory/runtime-CASC assets, MDX bind-pose geometry, world transforms, BVH-accelerated parallel ray casting, W3R `IgnoreShadow...` clearing, SHD/PNG/OBJ diagnostics, guarded archive output, and a native Windows GUI.
+
+The confirmed SHD writer contract is closed. Remaining TODOs in section 57 concern exact World Editor/historical-calculator compatibility rules, not the ability to construct and write a complete static shadowmap. Current deliberate limits are recorded in `ShadowMapTool/README.md`.
+
 ---
 
 # 2. Core Technical Finding
@@ -402,9 +408,7 @@ Example:
 3,686,400 bytes
 ```
 
-The exact orientation and row-major order must be verified against actual WC3 test maps.
-
-This must not be assumed without testing.
+In-game testing on 29 September 2026 confirmed that X is stored left-to-right and SHD rows are stored bottom-to-top. Tool previews use conventional top-to-bottom screen order, so the file writer reverses rows during serialization and the reader reverses them during preview decoding.
 
 ---
 
@@ -424,14 +428,14 @@ public:
 };
 ```
 
-Initial representation:
+Confirmed current-client representation (29 September 2026):
 
 ```text
 lit      = 0x00
 shadowed = 0xFF
 ```
 
-Do not hard-code semantics until validated in test maps.
+These values were validated in a controlled quadrant-pattern test map.
 
 Tests must verify:
 
@@ -2138,14 +2142,16 @@ These require empirical validation.
 Mark them explicitly as TODOs.
 
 ```text
-TODO-SHD-001
-Which byte represents shadow vs no shadow in current WC3?
+RESOLVED-SHD-001 (29 September 2026)
+0x00 is lit and 0xFF is fully shadowed in the current Warcraft III client.
 
-TODO-SHD-002
-What is exact SHD X/Y orientation?
+RESOLVED-SHD-002 (29 September 2026)
+X is stored left-to-right. The first stored SHD row appears at the bottom of the map,
+so file rows are bottom-to-top relative to conventional screen previews.
 
-TODO-SHD-003
-Does SHD contain padding or borders?
+RESOLVED-SHD-003 (29 September 2026)
+Square and rectangular in-game tests confirmed exactly width * height * 16 bytes.
+All tested borders aligned with no header, offset, or padding.
 
 TODO-GEO-001
 Does terrain cast static shadow onto itself?
@@ -2159,8 +2165,9 @@ Which animation pose is used?
 TODO-MDX-003
 Are transparent geosets ignored?
 
-TODO-OBJ-001
-Which object data field controls static-shadow behavior?
+RESOLVED-OBJ-001 (30 September 2026)
+The stock `shadow` column and map override fields `dshd`/`bshd` control static-shadow
+participation. Empty string values represent Has shadow: False and are excluded.
 
 TODO-OBJ-002
 How are doodad variations mapped to model files?
@@ -2255,50 +2262,19 @@ At minimum:
 
 ---
 
-# 60. Immediate Recommended Next Step
+# 60. Completed Foundation and Recommended Follow-Up
 
-The next implementation should be deliberately small.
+The original `pattern`, `inspect`, and `replace-shd` validation step is complete, including current-client byte meaning, row orientation, exact size, and border behavior. The full `generate` pipeline is implemented in `ShadowMapTool/`.
 
-Create:
+The 30 September 2026 compatibility pass added current Warcraft III DOO version 13
+records (group/color fields, roll/pitch, and embedded lights), Object Editor shadow
+filtering, editable light vectors, independent terrain/doodad/destructible options,
+full-map existing/calculated previews, and an explicit Test mode for diagnostic patterns.
+Automatic alpha-tile exclusion remains pending because it requires terrain rawcode-to-BLP
+resolution and reliable alpha/variation inspection; the UI and README document the
+temporary-replacement and IgnoreShadow-region workflows without claiming automatic support.
 
-```text
-w3shadow
-```
-
-with only:
-
-```text
-pattern
-inspect
-replace-shd
-```
-
-commands.
-
-Example:
-
-```text
-w3shadow pattern \
-    --map-width 128 \
-    --map-height 128 \
-    --pattern quadrants \
-    --output generated.shd
-
-w3shadow replace-shd \
-    TestMap.w3x \
-    generated.shd \
-    --output TestMap_shadowtest.w3x
-```
-
-Then load:
-
-```text
-TestMap_shadowtest.w3x
-```
-
-in current Warcraft III.
-
-That experiment validates the lowest layer of the complete design and should be completed before any serious MDX/CASC work.
+The next work is empirical compatibility validation with controlled maps from section 42: compare terrain self-shadowing, stock and custom model variations, default pose/geoset visibility, transparent materials, cliff faces, `IgnoreShadow...` naming, alpha tiles, the default light vector, ray offset, and any World Editor filtering/dilation. Record each result against the remaining section 57 TODO rather than changing rules by guesswork.
 
 ---
 
