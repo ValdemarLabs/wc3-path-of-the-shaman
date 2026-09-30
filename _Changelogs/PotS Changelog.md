@@ -35,6 +35,7 @@
 - Updated `ShadowMapTool/` to embed the supplied favicon as its executable, window, taskbar, and in-app header logo.
 - Updated `ShadowMapTool/` with bounds-checked special DOO cliff-doodad parsing, inspect diagnostics, and automated World Editor/tool reference-pair validation; documented that the supplied 64 x 64 native SHD is correctly oriented but substantially more compact than the current opaque-triangle result, and kept one-map light/filter tuning out of production.
 - Updated `ShadowMapTool/` to version 1.2 with Fast 1x, Smooth 2x, and default Ultra 4x strict-majority shadow-edge supersampling in the GUI and CLI, producing cleaner binary SHD boundaries without changing Warcraft's fixed shadowmap dimensions.
+- Updated `ShadowMapTool/` to version 1.3 with direct classic MPQ asset loading and compact DOO v7 parsing validated against Warcraft III 1.27b maps, CASC/MPQ-aware asset selection, timestamped per-session success/warning/failure logs and a Logs-folder button, plus an expandable About panel covering purpose, origin, compatibility, limitations, and credits.
 
 
 ## [29.9.2026]
