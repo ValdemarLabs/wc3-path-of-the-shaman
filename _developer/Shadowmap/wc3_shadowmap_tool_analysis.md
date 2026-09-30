@@ -2306,6 +2306,29 @@ changing the default light vector or adding a hard-coded erosion pass. Isolated 
 pairs for flat terrain, one cliff, one opaque doodad, and one alpha-tested tree are the
 next minimum fixtures needed to separate those effects.
 
+## 60.2 Binary edge supersampling
+
+Version 1.2 separates terrain reconstruction from final SHD edge quality. Each fixed
+32-world-unit SHD cell can now cast a regular 1 x 1, 2 x 2, or 4 x 4 subpixel ray grid.
+A cell becomes shadowed only when more than half of its rays are occluded. The output
+remains the confirmed Warcraft-compatible binary 0x00/0xFF format at four cells per
+terrain tile; supersampling improves the binary coverage decision rather than claiming
+unsupported grayscale or a higher-resolution SHD.
+
+The GUI names the modes Fast 1x, Smooth 2x, and Ultra 4x and defaults to Ultra.
+The CLI exposes the same setting as `--edge-samples 1|2|4`. Fast 1x retains the
+version-1/version-2 single-center-ray result. On the 64 x 64 reference scene, 1x, 2x,
+and 4x perform 65,536, 262,144, and 1,048,576 rays respectively; local ray-stage
+measurements were 0.003, 0.006, and 0.019 seconds. Large production maps should expect
+the ray-stage cost to scale approximately with those sample counts.
+
+The 480 x 480 PotS validation map also completed successfully in Ultra mode: 50,049
+resolved shadow-casting placements, 5,335,128 triangles, and 58,982,400 rays took
+17.334 seconds total on the development machine. Fast 1x took 13.317 seconds because
+BVH construction dominates both runs. Ultra changed 68,088 of 3,686,400 output cells
+(1.85%) and reduced horizontal/vertical light-shadow boundary transitions from 646,831
+to 522,441, a 19.2% reduction in binary edge noise.
+
 ---
 
 # 61. Proposed Codex Instruction
