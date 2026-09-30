@@ -32,6 +32,7 @@
 - Updated `ShadowMapTool/` with first-start Warcraft III and CascLib auto-detection, persistent per-user asset paths, and an Assets panel for manually choosing or re-detecting both locations.
 - Updated `ShadowMapTool/` GUI to remove the obsolete Full Generator badge and the internal SHD row-orientation caption from the preview.
 - Fixed `ShadowMapTool/` Assets panel descriptions wrapping incorrectly at narrower window sizes and higher display scaling.
+- Updated `ShadowMapTool/` to embed the supplied favicon as its executable, window, taskbar, and in-app header logo.
 
 
 ## [29.9.2026]
