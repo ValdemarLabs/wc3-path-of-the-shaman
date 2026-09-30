@@ -34,6 +34,7 @@
 - Fixed `ShadowMapTool/` Assets panel descriptions wrapping incorrectly at narrower window sizes and higher display scaling.
 - Updated `ShadowMapTool/` to embed the supplied favicon as its executable, window, taskbar, and in-app header logo.
 - Updated `ShadowMapTool/` with bounds-checked special DOO cliff-doodad parsing, inspect diagnostics, and automated World Editor/tool reference-pair validation; documented that the supplied 64 x 64 native SHD is correctly oriented but substantially more compact than the current opaque-triangle result, and kept one-map light/filter tuning out of production.
+- Updated `ShadowMapTool/` to version 1.2 with Fast 1x, Smooth 2x, and default Ultra 4x strict-majority shadow-edge supersampling in the GUI and CLI, producing cleaner binary SHD boundaries without changing Warcraft's fixed shadowmap dimensions.
 
 
 ## [29.9.2026]
