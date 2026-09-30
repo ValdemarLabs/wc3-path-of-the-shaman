@@ -52,6 +52,8 @@ _Roadmap/
 # Warcraft 3 generated files
 #*.w3x.autosave
 *.w3x
+!_developer/Shadowmap/shadowmap maps/shadowmaptest_native.w3x
+!_developer/Shadowmap/shadowmap maps/shadowmaptest.shadowed_v2.w3x
 
 # Archives
 #*.zip
