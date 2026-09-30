@@ -18,6 +18,13 @@
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
 
+## [1.10.2026]
+
+### Tool Updates
+
+- Prepared `ShadowMapTool/` for its standalone public repository with self-contained analysis and World Editor reference fixtures, `main`/`dev` branch CI, automated tagged GitHub releases, and a curated Windows release package that excludes compiler, test, and session-log artifacts.
+
+
 ## [30.9.2026]
 
 ### Tool Updates
