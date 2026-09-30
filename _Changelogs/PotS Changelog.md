@@ -28,6 +28,10 @@
 - Updated `ShadowMapTool/` with Warcraft III DOO v13 parsing, placed-object roll/pitch transforms, Object Editor Has shadow filtering, terrain/doodad/destructible and IgnoreShadow options, editable light vectors, complete existing/calculated map previews, a dedicated diagnostic Test mode, and the renamed Calculate shadows workflow.
 - Updated `ShadowMapTool/` to bundle pinned CascLib 3.0 builds, resolve current Reforged skin-profile models and version-3 map object/skin overrides, support W3R v7 IgnoreShadow regions, handle numbered model-variation bases, and summarize unresolved object types.
 - Updated `ShadowMapTool/` so Calculate shadows renders a complete non-destructive preview first and the separate Save to map action writes only an inspected, current calculation. The 480 x 480 Epic Quests validation resolved all 50,049 shadow-casting placements and produced 0 unresolved models.
+- Updated `ShadowMapTool/` to version 1.1 with an improved default Smooth sub-tile terrain mode and a selectable Classic triangles mode for version-1-compatible terrain geometry.
+- Updated `ShadowMapTool/` with first-start Warcraft III and CascLib auto-detection, persistent per-user asset paths, and an Assets panel for manually choosing or re-detecting both locations.
+- Updated `ShadowMapTool/` GUI to remove the obsolete Full Generator badge and the internal SHD row-orientation caption from the preview.
+- Fixed `ShadowMapTool/` Assets panel descriptions wrapping incorrectly at narrower window sizes and higher display scaling.
 
 
 ## [29.9.2026]
