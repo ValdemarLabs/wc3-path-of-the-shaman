@@ -2276,6 +2276,36 @@ temporary-replacement and IgnoreShadow-region workflows without claiming automat
 
 The next work is empirical compatibility validation with controlled maps from section 42: compare terrain self-shadowing, stock and custom model variations, default pose/geoset visibility, transparent materials, cliff faces, `IgnoreShadow...` naming, alpha tiles, the default light vector, ray offset, and any World Editor filtering/dilation. Record each result against the remaining section 57 TODO rather than changing rules by guesswork.
 
+## 60.1 First paired World Editor comparison
+
+The 64 x 64 maps `shadowmaptest_native.w3x` and
+`shadowmaptest.shadowed_v2.w3x` provide the first controlled mixed-scene pair.
+Their W3E terrain and DOO placement payloads are byte-identical. Both use W3E v12,
+DOO v13.11, 50 regular placements, no special cliff-doodad records, and a 256 x 256
+SHD. Regenerating the native map with the version-2 Smooth sub-tile settings
+reproduces the tool fixture exactly.
+
+Measured binary-mask results:
+
+- World Editor: 2,050 shadowed samples.
+- Smooth sub-tile, vector `(1, 1, -1)`: 4,631 samples; 29.4% intersection-over-union.
+- Classic triangles, vector `(1, 1, -1)`: 4,238 samples; 33.0% intersection-over-union.
+- Smooth terrain alone produces 1,891 samples; placed objects alone produce 2,998.
+- The best tested raw candidate was Classic triangles with `Z = -0.75`: 5,173
+  samples and 35.4% intersection-over-union.
+- A one-sample full-neighborhood erosion of that candidate reaches 43.1%, but still
+  has 2,657 samples and is not close enough to identify a general World Editor rule.
+- Flips and 90/180-degree rotations all score substantially worse than the unmodified
+  orientation. The discrepancy is therefore geometry/filtering, not SHD orientation.
+
+This pair disproves the assumption that Smooth sub-tile is more World Editor-compatible;
+it remains useful specifically for reducing diagonal terrain facets. The evidence is
+consistent with missing posed/geoset visibility and texture-alpha/material handling for
+MDX models plus different cliff-surface reconstruction. It does not justify silently
+changing the default light vector or adding a hard-coded erosion pass. Isolated reference
+pairs for flat terrain, one cliff, one opaque doodad, and one alpha-tested tree are the
+next minimum fixtures needed to separate those effects.
+
 ---
 
 # 61. Proposed Codex Instruction
