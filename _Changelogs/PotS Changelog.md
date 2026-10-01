@@ -22,7 +22,7 @@
 
 ### Tool Updates
 
-- Prepared `ShadowMapTool/` for its standalone public repository with self-contained analysis and World Editor reference fixtures, `main`/`dev` branch CI, automated tagged GitHub releases, and a curated Windows release package that excludes compiler, test, and session-log artifacts.
+- Moved `ShadowMapTool/` and its development references to the standalone public `ValdemarLabs/ShadowMapTool` repository with preserved tool history, stable `main` and integration `dev` branches, tagged-release automation, and a curated Windows package that excludes compiler, test, and session-log artifacts; removed the embedded tool tree from PotS.
 
 
 ## [30.9.2026]
