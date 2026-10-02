@@ -809,6 +809,7 @@ namespace WC3ItemManager
                     conn.Open();
                     EnsurePowerUpAutoUseIntegrity(conn);
                     EnsureLootLevelColumn(conn);
+                    EnsureStackModelRangesColumn(conn);
                     EnsureRequiredItemClasses(conn);
                     EnsureItemClassColors(conn);
                     LoadClassFilter(conn);
@@ -918,6 +919,18 @@ namespace WC3ItemManager
             using (var indexCmd = new NpgsqlCommand(indexQuery, conn))
             {
                 indexCmd.ExecuteNonQuery();
+            }
+        }
+
+        private void EnsureStackModelRangesColumn(NpgsqlConnection conn)
+        {
+            const string alterQuery = @"
+                ALTER TABLE items
+                ADD COLUMN IF NOT EXISTS stack_model_ranges JSONB";
+
+            using (var alterCmd = new NpgsqlCommand(alterQuery, conn))
+            {
+                alterCmd.ExecuteNonQuery();
             }
         }
 
@@ -3991,7 +4004,7 @@ namespace WC3ItemManager
                         
                         var lblProgress = new Label
                         {
-                            Text = "Exporting items to JASS library...\nThis may take a moment.",
+                            Text = "Exporting equipment and stack-model definitions...\nThis may take a moment.",
                             AutoSize = false,
                             Width = 460,
                             Height = 60,
@@ -4032,7 +4045,7 @@ namespace WC3ItemManager
                                     $"1. Open Trigger Editor\n" +
                                     $"2. Import → Custom Script\n" +
                                     $"3. Select the exported .j file\n" +
-                                    $"4. Ensure DEquipment library is loaded first",
+                                    $"4. Ensure DEquipment and ItemStackModels are loaded first",
                                     "Export Successful",
                                     MessageBoxButtons.OK,
                                     MessageBoxIcon.Information);

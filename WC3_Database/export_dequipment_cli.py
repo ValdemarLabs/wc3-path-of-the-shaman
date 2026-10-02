@@ -280,6 +280,41 @@ def convert_item_code(code):
     return f"'{code}'"
 
 
+def escape_jass_string(value):
+    """Escape database text for a quoted JASS string literal."""
+    return str(value).replace('\\', '\\\\').replace('"', '\\"')
+
+
+def normalize_stack_model_ranges(value, item_name):
+    """Validate and sort one item's optional stack-model JSON definition."""
+    if value is None:
+        return []
+    if isinstance(value, str):
+        value = json.loads(value)
+    if not isinstance(value, list):
+        raise ValueError(f"{item_name}: stack_model_ranges must be a JSON array")
+
+    ranges = []
+    for entry in value:
+        if not isinstance(entry, dict):
+            raise ValueError(f"{item_name}: every stack model range must be an object")
+
+        min_stack = int(entry.get('min', 0))
+        max_stack = int(entry.get('max', 0))
+        model_path = str(entry.get('model_path', '')).strip()
+        if min_stack < 1 or max_stack < min_stack or not model_path:
+            raise ValueError(f"{item_name}: invalid stack model range {entry}")
+        ranges.append((min_stack, max_stack, model_path))
+
+    ranges.sort(key=lambda entry: (entry[0], entry[1]))
+    for previous, current in zip(ranges, ranges[1:]):
+        if current[0] <= previous[1]:
+            raise ValueError(
+                f"{item_name}: overlapping stack model ranges "
+                f"{previous[0]}-{previous[1]} and {current[0]}-{current[1]}")
+    return ranges
+
+
 def get_item_code_aliases(code):
     """Return the DB rawcode plus imported-object aliases with the same case-insensitive code."""
     codes = []
@@ -444,7 +479,9 @@ def export_dequipment_definitions(output_path, library_name='DEquipmentItemDefin
                 i.equipment_slot,
                 c.slot_type,
                 COALESCE(c.class_name, 'MISC') as class_name,
-                COALESCE(r.rarity_name, 'Common') as rarity
+                COALESCE(r.rarity_name, 'Common') as rarity,
+                i.model_path,
+                i.stack_model_ranges
             FROM items i
             LEFT JOIN item_classes c ON i.class_id = c.id
             LEFT JOIN item_rarities r ON i.rarity_id = r.id
@@ -481,13 +518,13 @@ def export_dequipment_definitions(output_path, library_name='DEquipmentItemDefin
         lines.append("    - WC3ItemManager database export")
         lines.append("")
         lines.append("    How to install:")
-        lines.append("    Import after DEquipment and regenerate after equipment database changes.")
+        lines.append("    Import after DEquipment and ItemStackModels, then regenerate after item database changes.")
         lines.append("")
         lines.append("    API:")
-        lines.append("    - Registers exported item definitions during map initialization.")
+        lines.append("    - Registers exported equipment and optional stack-model definitions during map initialization.")
         lines.append("")
         lines.append("**/")
-        lines.append(f"library {library_name} initializer Init requires DEquipment")
+        lines.append(f"library {library_name} initializer Init requires DEquipment, ItemStackModels")
         lines.append("")
         lines.append("function DEqPreDefineItemsHere takes nothing returns nothing")
         lines.append("    // Auto-generated from WC3 Item Database")
@@ -500,7 +537,7 @@ def export_dequipment_definitions(output_path, library_name='DEquipmentItemDefin
         unsupported_stats = set()
         
         for item in items:
-            item_id, code, name, base_id, gold_cost, abilities, equipment_slot, slot_type, class_name, rarity = item
+            item_id, code, name, base_id, gold_cost, abilities, equipment_slot, slot_type, class_name, rarity, model_path, stack_model_ranges = item
             
             # Skip items without proper code
             if not code or len(code) != 4:
@@ -516,6 +553,19 @@ def export_dequipment_definitions(output_path, library_name='DEquipmentItemDefin
             lines.append(f"    // Base: {base_id}, Class: {class_name}")
             if len(code_strings) > 1:
                 lines.append(f"    // Rawcode aliases: {', '.join(code_strings)}")
+
+            model_ranges = normalize_stack_model_ranges(stack_model_ranges, name)
+            if model_ranges:
+                if not model_path or not model_path.strip():
+                    raise ValueError(f"{name}: stack model ranges require a standard model path")
+
+                default_model = escape_jass_string(model_path.strip())
+                for code_str in code_strings:
+                    lines.append(f"    call ISM_DefineItemType({code_str}, \"{default_model}\")")
+                    for min_stack, max_stack, range_model_path in model_ranges:
+                        escaped_model = escape_jass_string(range_model_path)
+                        lines.append(
+                            f"    call ISM_DefineStackModel({code_str}, {min_stack}, {max_stack}, \"{escaped_model}\")")
             
             # Define equipment slot
             slots = get_item_slots(class_name, slot_type, equipment_slot)

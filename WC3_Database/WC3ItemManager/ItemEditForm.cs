@@ -4,6 +4,7 @@ using System.Data;
 using System.Drawing;
 using System.Linq;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Windows.Forms;
 using Npgsql;
 using NpgsqlTypes;
@@ -23,6 +24,19 @@ namespace WC3ItemManager
         public string TooltipNormal { get; set; }
         public string TooltipExtended { get; set; }
     }
+
+    public class StackModelRangeData
+    {
+        [JsonPropertyName("min")]
+        public int Min { get; set; }
+
+        [JsonPropertyName("max")]
+        public int Max { get; set; }
+
+        [JsonPropertyName("model_path")]
+        public string ModelPath { get; set; }
+    }
+
     public partial class ItemEditForm : Form
     {
         private int? itemId;
@@ -67,6 +81,7 @@ namespace WC3ItemManager
         private TextBox txtHotkey;
         private TextBox txtIconPath;
         private TextBox txtModelPath;
+        private DataGridView dgvStackModelRanges;
         private TextBox txtAbilities; // Combined abilities field (saved to wc3_abilities)
         private TextBox txtAbilitiesStats; // UI-only: Auto-generated stat abilities (read-only)
         private TextBox txtAbilitiesAttachments; // Model attachment abilities (hidden from players, saved separately)
@@ -162,6 +177,7 @@ namespace WC3ItemManager
             // Ensure database has required columns and seed data before loading UI values.
             EnsureManualAbilitiesColumn();
             EnsureLootLevelColumn();
+            EnsureStackModelRangesColumn();
             EnsureItemCooldownFields();
             EnsureAbilityLookupColumns();
             EnsurePowerUpAutoUseIntegrity();
@@ -404,6 +420,29 @@ namespace WC3ItemManager
             }
         }
 
+        private void EnsureStackModelRangesColumn()
+        {
+            try
+            {
+                using (var conn = new NpgsqlConnection(connectionString))
+                {
+                    conn.Open();
+                    const string alterQuery = @"
+                        ALTER TABLE items
+                        ADD COLUMN IF NOT EXISTS stack_model_ranges JSONB";
+
+                    using (var cmd = new NpgsqlCommand(alterQuery, conn))
+                    {
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[EnsureStackModelRangesColumn] Error: {ex.Message}");
+            }
+        }
+
         private void SetupUI()
         {
             Rectangle workingArea = Screen.PrimaryScreen?.WorkingArea ?? new Rectangle(0, 0, 1100, 1350);
@@ -490,6 +529,11 @@ namespace WC3ItemManager
             SetupWC3Tab(tabWC3);
             tabControl.TabPages.Add(tabWC3);
 
+            // Stack Models Tab
+            TabPage tabStackModels = new TabPage("Stack Models");
+            SetupStackModelsTab(tabStackModels);
+            tabControl.TabPages.Add(tabStackModels);
+
             // Drop Sources Tab - shows which units drop this item
             TabPage tabDropSources = new TabPage("Drop Sources");
             tabDropSources.AutoScroll = true;
@@ -499,6 +543,83 @@ namespace WC3ItemManager
             // Add controls in correct docking order: Bottom, then Fill
             this.Controls.Add(buttonPanel);
             this.Controls.Add(tabControl);
+        }
+
+        private void SetupStackModelsTab(TabPage tab)
+        {
+            var description = new Label
+            {
+                Text = "Optional ground models selected by item stack size. Empty means the standard Model Path is always used.",
+                Location = new Point(20, 20),
+                AutoSize = true
+            };
+            tab.Controls.Add(description);
+
+            var fallback = new Label
+            {
+                Text = "Stacks outside every configured range fall back to the standard Model Path on the WC3 Properties tab.",
+                Location = new Point(20, 45),
+                AutoSize = true,
+                ForeColor = Color.Gray
+            };
+            tab.Controls.Add(fallback);
+
+            dgvStackModelRanges = new DataGridView
+            {
+                Location = new Point(20, 80),
+                Size = new Size(880, 560),
+                Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
+                AllowUserToAddRows = true,
+                AllowUserToDeleteRows = true,
+                AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.None,
+                RowHeadersVisible = false,
+                SelectionMode = DataGridViewSelectionMode.FullRowSelect,
+                MultiSelect = true
+            };
+
+            dgvStackModelRanges.Columns.Add(new DataGridViewTextBoxColumn
+            {
+                Name = "MinStack",
+                HeaderText = "Min Stack",
+                Width = 100
+            });
+            dgvStackModelRanges.Columns.Add(new DataGridViewTextBoxColumn
+            {
+                Name = "MaxStack",
+                HeaderText = "Max Stack",
+                Width = 100
+            });
+            dgvStackModelRanges.Columns.Add(new DataGridViewTextBoxColumn
+            {
+                Name = "StackModelPath",
+                HeaderText = "Model Path",
+                Width = 630,
+                AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill
+            });
+            tab.Controls.Add(dgvStackModelRanges);
+
+            var removeButton = new Button
+            {
+                Text = "Remove Selected",
+                Location = new Point(20, 650),
+                Width = 140,
+                Height = 30,
+                Anchor = AnchorStyles.Bottom | AnchorStyles.Left
+            };
+            removeButton.Click += (s, e) =>
+            {
+                var selectedRows = dgvStackModelRanges.SelectedRows
+                    .Cast<DataGridViewRow>()
+                    .Where(row => !row.IsNewRow)
+                    .OrderByDescending(row => row.Index)
+                    .ToList();
+
+                foreach (DataGridViewRow row in selectedRows)
+                {
+                    dgvStackModelRanges.Rows.RemoveAt(row.Index);
+                }
+            };
+            tab.Controls.Add(removeButton);
         }
 
         private void SetupBasicTab(TabPage tab)
@@ -2728,6 +2849,7 @@ namespace WC3ItemManager
                                 // Load model path - for existing items, load from DB (even if empty)
                                 // Don't use default when loading - only when creating new items
                                 txtModelPath.Text = reader["model_path"]?.ToString() ?? "";
+                                LoadStackModelRanges(reader["stack_model_ranges"]?.ToString());
                                 
                                 // Store abilities temporarily - will split them after loading stats
                                 existingAbilitiesFromDb = reader["wc3_abilities"]?.ToString() ?? "";
@@ -2915,6 +3037,97 @@ namespace WC3ItemManager
             }
         }
 
+        private void LoadStackModelRanges(string json)
+        {
+            if (dgvStackModelRanges == null)
+                return;
+
+            dgvStackModelRanges.Rows.Clear();
+            if (string.IsNullOrWhiteSpace(json))
+                return;
+
+            try
+            {
+                var ranges = JsonSerializer.Deserialize<List<StackModelRangeData>>(json)
+                    ?? new List<StackModelRangeData>();
+
+                foreach (var range in ranges.OrderBy(range => range.Min).ThenBy(range => range.Max))
+                {
+                    dgvStackModelRanges.Rows.Add(range.Min, range.Max, range.ModelPath ?? "");
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[LoadStackModelRanges] Error: {ex.Message}");
+                MessageBox.Show(
+                    "This item's stack model ranges could not be read. The stored JSON should be repaired before saving the item.",
+                    "Stack Model Range Warning",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+            }
+        }
+
+        private bool TryGetStackModelRanges(out List<StackModelRangeData> ranges, out string error)
+        {
+            ranges = new List<StackModelRangeData>();
+            error = null;
+
+            if (dgvStackModelRanges == null)
+                return true;
+
+            dgvStackModelRanges.EndEdit();
+
+            foreach (DataGridViewRow row in dgvStackModelRanges.Rows)
+            {
+                if (row.IsNewRow)
+                    continue;
+
+                string minText = row.Cells["MinStack"].Value?.ToString()?.Trim() ?? "";
+                string maxText = row.Cells["MaxStack"].Value?.ToString()?.Trim() ?? "";
+                string modelPath = row.Cells["StackModelPath"].Value?.ToString()?.Trim() ?? "";
+
+                if (string.IsNullOrEmpty(minText) && string.IsNullOrEmpty(maxText) && string.IsNullOrEmpty(modelPath))
+                    continue;
+
+                if (!int.TryParse(minText, out int minStack) || minStack < 1)
+                {
+                    error = "Every stack model range needs a minimum stack of at least 1.";
+                    return false;
+                }
+
+                if (!int.TryParse(maxText, out int maxStack) || maxStack < minStack)
+                {
+                    error = $"The range starting at {minStack} needs a maximum stack greater than or equal to its minimum.";
+                    return false;
+                }
+
+                if (string.IsNullOrWhiteSpace(modelPath))
+                {
+                    error = $"The {minStack}-{maxStack} stack range needs a model path.";
+                    return false;
+                }
+
+                ranges.Add(new StackModelRangeData
+                {
+                    Min = minStack,
+                    Max = maxStack,
+                    ModelPath = modelPath
+                });
+            }
+
+            ranges = ranges.OrderBy(range => range.Min).ThenBy(range => range.Max).ToList();
+            for (int i = 1; i < ranges.Count; i++)
+            {
+                if (ranges[i].Min <= ranges[i - 1].Max)
+                {
+                    error = $"Stack model ranges {ranges[i - 1].Min}-{ranges[i - 1].Max} and {ranges[i].Min}-{ranges[i].Max} overlap.";
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         private List<string> ParseAbilityCodes(string abilitiesText)
         {
             if (string.IsNullOrWhiteSpace(abilitiesText))
@@ -2962,6 +3175,22 @@ namespace WC3ItemManager
             if (string.IsNullOrWhiteSpace(txtItemName.Text))
             {
                 MessageBox.Show("Item name is required.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (!TryGetStackModelRanges(out var stackModelRanges, out string stackModelError))
+            {
+                MessageBox.Show(stackModelError, "Stack Model Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (stackModelRanges.Count > 0 && string.IsNullOrWhiteSpace(txtModelPath.Text))
+            {
+                MessageBox.Show(
+                    "Stack model ranges require a standard Model Path for stacks outside the configured ranges.",
+                    "Stack Model Validation",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
                 return;
             }
 
@@ -3029,6 +3258,7 @@ namespace WC3ItemManager
                                 hotkey = @hotkey,
                                 icon_path = @icon_path,
                                 model_path = @model_path,
+                                stack_model_ranges = @stack_model_ranges,
                                 wc3_abilities = @wc3_abilities,
                                 wc3_abilities_attachments = @wc3_abilities_attachments,
                                 manual_abilities_data = @manual_abilities_data,
@@ -3060,14 +3290,14 @@ namespace WC3ItemManager
                                 item_code, item_name, base_id, cooldown_group, ignore_cooldown, rarity_id, class_id, type_id,
                                 item_level, item_level_unclassified, gold_cost, lumber_cost, max_charges, max_stack, stock_max, stock_replenish,
                                 tooltip, tooltip_extended, description, hotkey,
-                                icon_path, model_path, wc3_abilities, wc3_abilities_attachments, manual_abilities_data, wc3_classification,
+                                icon_path, model_path, stack_model_ranges, wc3_abilities, wc3_abilities_attachments, manual_abilities_data, wc3_classification,
                                 is_powerup, use_automatically,
                                 is_droppable, is_sellable, is_pawnable, actively_used, is_perishable, dropped_on_death, specific_drop_only
                             ) VALUES (
                                 @item_code, @item_name, @base_id, @cooldown_group, @ignore_cooldown, @rarity_id, @class_id, @type_id,
                                 @item_level, @item_level_unclassified, @gold_cost, @lumber_cost, @max_charges, @max_stack, @stock_max, @stock_replenish,
                                 @tooltip, @tooltip_extended, @description, @hotkey,
-                                @icon_path, @model_path, @wc3_abilities, @wc3_abilities_attachments, @manual_abilities_data, @wc3_classification,
+                                @icon_path, @model_path, @stack_model_ranges, @wc3_abilities, @wc3_abilities_attachments, @manual_abilities_data, @wc3_classification,
                                 @is_powerup, @use_automatically,
                                 @is_droppable, @is_sellable, @is_pawnable, @actively_used, @is_perishable, @dropped_on_death, @specific_drop_only
                             ) RETURNING id";
@@ -3185,6 +3415,22 @@ namespace WC3ItemManager
                 cmd.Parameters.AddWithValue("hotkey", string.IsNullOrWhiteSpace(txtHotkey.Text) ? DBNull.Value : (object)txtHotkey.Text.Trim());
                 cmd.Parameters.AddWithValue("icon_path", txtIconPath.Text);
                 cmd.Parameters.AddWithValue("model_path", txtModelPath.Text);
+
+                TryGetStackModelRanges(out var stackModelRanges, out _);
+                if (stackModelRanges.Count > 0)
+                {
+                    cmd.Parameters.Add(new NpgsqlParameter("stack_model_ranges", NpgsqlDbType.Jsonb)
+                    {
+                        Value = JsonSerializer.Serialize(stackModelRanges)
+                    });
+                }
+                else
+                {
+                    cmd.Parameters.Add(new NpgsqlParameter("stack_model_ranges", NpgsqlDbType.Jsonb)
+                    {
+                        Value = DBNull.Value
+                    });
+                }
                 
                 // Ensure combined abilities field is up-to-date before saving
                 UpdateCombinedAbilitiesField();

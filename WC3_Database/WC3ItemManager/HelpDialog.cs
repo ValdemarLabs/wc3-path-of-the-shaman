@@ -447,6 +447,8 @@ namespace WC3ItemManager
             AppendText(rtb, "Menu → Export → Export DEquipment");
             AppendSpacer(rtb);
             AppendText(rtb, "Creates item registration code compatible with the DEquipment system.");
+            AppendText(rtb, "Items with Stack Models rows also export ItemStackModels registrations. Import ItemSystems/ItemStackModels.j before the generated library.");
+            AppendText(rtb, "Leave the Stack Models grid empty to keep the item's standard model without runtime model checks.");
             AppendSpacer(rtb);
             
             AppendWarning(rtb, "After exporting JASS files, remember to include them in your map's trigger scripts!");

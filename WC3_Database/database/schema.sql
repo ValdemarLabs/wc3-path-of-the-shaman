@@ -143,6 +143,7 @@ CREATE TABLE items (
     -- Visual Properties
     icon_path VARCHAR(255),
     model_path VARCHAR(255),
+    stack_model_ranges JSONB,
     tint_red INTEGER DEFAULT 255,
     tint_green INTEGER DEFAULT 255,
     tint_blue INTEGER DEFAULT 255,
