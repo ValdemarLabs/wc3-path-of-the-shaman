@@ -18,6 +18,27 @@
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
 
+## [3.10.2026]
+
+### Player-Facing Updates
+
+- Updated Copper, Tin, Silver, Bronze, Iron, Steel, Gold, Mithril, Arcanite, and Thorium Bar ground visuals so stacks of 1-5 use one rotating ingot, 6-10 use a rotating three-ingot pile, and 11-20 use a rotating six-ingot pile in the closest available metal color.
+
+### Technical Updates
+
+- Added `ItemSystems/ItemStackModels.j` to refresh visible ground-item models after creation, unit-death drops, inventory drops, and stack-size changes; unconfigured item types skip model queries, and configured items skip field writes when the desired model is already active.
+- Added `WC3_Export/DEquipmentItemDefinitions/DEquipmentItemDefinitions_20261003-0053.j` with generated stack-model registrations for all ten metal bars.
+
+### Tool Updates
+
+- Updated `WC3_Database/WC3ItemManager/ItemEditForm.cs`, `MainForm.cs`, and `HelpDialog.cs` with an arbitrary stack-range model editor, JSONB persistence, overlap validation, schema setup, and export guidance.
+- Updated `WC3_Database/export_dequipment_cli.py`, `database/schema.sql`, and `migrations/010_add_item_stack_model_ranges.sql` to validate/export stack-model definitions and seed the current metal-bar mappings.
+
+### Actions Remaining
+
+- In World Editor, import `ItemSystems/ItemStackModels.j` before the newly generated `DEquipmentItemDefinitions` library, replace the older generated definitions, compile a focused test map and the full map, and verify stacks crossing 1/6/11 charges through loot drops, death drops, inventory drops, splitting, and merging.
+
+
 ## [1.10.2026]
 
 ### Tool Updates
