@@ -28,6 +28,7 @@
 
 - Added `ItemSystems/ItemStackModels.j` to refresh visible ground-item models after creation, unit-death drops, inventory drops, and stack-size changes; unconfigured item types skip model queries, and configured items skip field writes when the desired model is already active.
 - Added `WC3_Export/DEquipmentItemDefinitions/DEquipmentItemDefinitions_20261003-0053.j` with generated stack-model registrations for all ten metal bars.
+- Added `_WC3Rebirth/Assets/PotS_DE/` with a reproducible Warcraft III 3.0.0.24268 Rebirth DE compatibility overlay, CASC inventories, current-schema cliff/destructible data handling, MDX texture-path diagnostics and repairs, validation reports, and SHA-256 manifest generation.
 
 ### Tool Updates
 
@@ -37,6 +38,7 @@
 ### Actions Remaining
 
 - In World Editor, import `ItemSystems/ItemStackModels.j` before the newly generated `DEquipmentItemDefinitions` library, replace the older generated definitions, compile a focused test map and the full map, and verify stacks crossing 1/6/11 charges through loot drops, death drops, inventory drops, splitting, and merging.
+- Install the generated Rebirth DE overlay into a backed-up Warcraft III test copy, validate representative assets and PotS in Definitive Edition mode, and defer main-installer integration until scale, materials, terrain/cliffs, shadows, water, animations, portraits, attachments, sounds, and multiplayer behavior pass.
 
 
 ## [1.10.2026]
