@@ -22,6 +22,9 @@
 # SQL Server related
 /WC3_Database/SQL_Database/
 
+# WC3 Rebirth Mod - Large Assets
+/_WC3Rebirth/Assets/
+
 # Dynamic Minimap
 /DynamicMinimap/war3mapBLP/
 /DynamicMinimap/war3mapImported_256x256/
