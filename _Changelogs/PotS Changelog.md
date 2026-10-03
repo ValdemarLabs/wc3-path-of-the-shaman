@@ -29,6 +29,7 @@
 - Added `ItemSystems/ItemStackModels.j` to refresh visible ground-item models after creation, unit-death drops, inventory drops, and stack-size changes; unconfigured item types skip model queries, and configured items skip field writes when the desired model is already active.
 - Added `WC3_Export/DEquipmentItemDefinitions/DEquipmentItemDefinitions_20261003-0053.j` with generated stack-model registrations for all ten metal bars.
 - Added `_WC3Rebirth/Assets/PotS_DE/` with a reproducible Warcraft III 3.0.0.24268 Rebirth DE compatibility overlay, CASC inventories, current-schema cliff/destructible data handling, MDX texture-path diagnostics and repairs, validation reports, and SHA-256 manifest generation.
+- Corrected `_WC3Rebirth/Assets/PotS_DE/` terrain packaging after World Editor testing exposed DE terrain fallback: 148 Rebirth ground/blight and 32 cliff images now convert to current DE diffuse DDS paths while retaining DE normal/ORM materials and the unmodified current cliff table.
 
 ### Tool Updates
 
