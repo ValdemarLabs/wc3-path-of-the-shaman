@@ -254,6 +254,13 @@ private function IsUnitTypeExcluded takes integer unitTypeId returns boolean
     return false
 endfunction
 
+private function IsPresentationHeroEligible takes unit whichUnit returns boolean
+    if whichUnit == null then
+        return false
+    endif
+    return IsUnitType(whichUnit, UNIT_TYPE_HERO) and IsPlayerInForce(GetOwningPlayer(whichUnit), udg_PlayerGroup) and not IsUnitTypeExcluded(GetUnitTypeId(whichUnit))
+endfunction
+
 private function ClearAmbientSounds takes nothing returns nothing
     local integer i = 1
     loop
@@ -839,7 +846,7 @@ private function MoveOut takes nothing returns nothing
     if outsideZoneId > 0 and outsideZoneId != zoneId then
         call NotifyUnitZoneEnter(outsideZoneId, GetTriggerUnit())
     endif
-    if activePresentationHero == null then
+    if not IsPresentationHeroEligible(activePresentationHero) then
         set activePresentationHero = GetTriggerUnit()
     endif
     if activePresentationHero == GetTriggerUnit() then
@@ -929,7 +936,7 @@ private function OnRegisteredTransition takes nothing returns nothing
     else
         call NotifyUnitZoneEnter(zoneId, enteringUnit)
     endif
-    if activePresentationHero == null then
+    if not IsPresentationHeroEligible(activePresentationHero) then
         set activePresentationHero = enteringUnit
     endif
     if activePresentationHero == enteringUnit then
@@ -1017,7 +1024,7 @@ private function HandleZoneEnter takes integer newZoneId, unit triggeringUnit, b
         return
     endif
     call NotifyUnitZoneEnter(newZoneId, triggeringUnit)
-    if activePresentationHero == null then
+    if not IsPresentationHeroEligible(activePresentationHero) then
         set activePresentationHero = triggeringUnit
     endif
     if triggeringUnit != activePresentationHero then
