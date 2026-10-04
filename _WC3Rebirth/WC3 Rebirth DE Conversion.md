@@ -18,13 +18,13 @@ Current generated package:
 
 | Property | Result |
 |---|---:|
-| Package files | 5,427 |
-| Package size | 4,172,179,741 bytes |
+| Package files | 5,719 |
+| Package size | 4,825,839,069 bytes |
 | MDX models | 1,521 |
 | Target Warcraft build | 3.0.0.24268 |
 | Root layout | Direct `_retail_` loose-file paths |
 
-All package-layer, critical-table, MDX-header, layout, and SHA-256 manifest checks pass. Runtime testing has confirmed that Rebirth units load in DE, Ashenvale Grass and Lumpy Grass use the intended Rebirth art, cliffs use the correct tileset art without the camera-angle white-face defect, and Sunken Ruins Sand blends without the earlier repeated seams.
+All package-layer, critical-table, MDX-header, layout, and SHA-256 manifest checks pass. Runtime testing has confirmed that Rebirth units load in DE, Ashenvale Grass and Lumpy Grass use the intended Rebirth art, cliffs use the correct tileset art without the camera-angle white-face defect, and Sunken Ruins Sand blends without the earlier repeated seams. The subsequent 296-file ground-material neutralization passes static validation but still needs a World Editor retest across representative tilesets.
 
 ## Clean installation
 
@@ -60,9 +60,9 @@ The package builder applies three layers in this exact order:
 |---:|---|---:|---|
 | 1 | Rebirth 9th Release runtime | 5,112 | Original models, textures, terrain sources, and legacy runtime data |
 | 2 | `FixesLast2023` runtime | 8 | Final original-Rebirth corrections |
-| 3 | PotS DE compatibility overlay | 1,632 | DE path conversions, current data tables, model fixes, and selected community Reforged edits |
+| 3 | PotS DE compatibility overlay | 1,924 | DE path conversions, neutral terrain materials, current data tables, model fixes, and selected community Reforged edits |
 
-The DE overlay overwrites 1,325 paths from earlier layers. The final package has 5,427 unique files rather than the sum of all three input counts.
+The DE overlay overwrites 1,325 paths from earlier layers. The final package has 5,719 unique files rather than the sum of all three input counts.
 
 The original extracted 9th Release has 5,141 files. The clean package excludes 29 non-runtime files, including MPQ metadata, nested RAR archives, PSD working files, terrain-source PNGs, desktop INIs, and MDL source files. Runtime `MDX`, `BLP`, `TGA`, `DDS`, and `SLK` assets remain. DE overlay audio files are retained as well.
 
@@ -111,6 +111,8 @@ The conversion therefore includes:
 - two neutral DXT5 ORM maps.
 
 This removes DE-specific flowers, stones, tufts, rings, and embossed surface detail while preserving DE lighting and shadows.
+
+The same material policy now applies to all 148 converted Rebirth ground/blight textures: 148 native-profile flat ATI2 normal maps plus 148 neutral opaque DXT5 ORM maps. The neutral ORM values are unoccluded, maximally rough, and non-metallic, eliminating the native DE angle-dependent shine while diffuse alpha continues to control terrain transitions. This new all-terrain material pass requires World Editor confirmation.
 
 ### Cliffs
 
