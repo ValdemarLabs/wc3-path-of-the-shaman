@@ -2,7 +2,7 @@
     ThreatSystem
 
     Author: Valdemar
-    Version: 1.3.0
+    Version: 1.3.1
 
     Description:
     Automatic PvE threat and aggro management for computer-controlled enemies.
@@ -78,7 +78,7 @@ globals
     private unit array Threat_EntrySource
     private real array Threat_EntryValue
     private timer array Threat_ResetTimer
-    private boolean Threat_AggroTextVisible = true
+    private boolean Threat_AggroTextVisible = false
 
     private trigger Threat_HealTrigger = null
 endglobals
