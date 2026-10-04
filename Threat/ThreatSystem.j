@@ -2,7 +2,7 @@
     ThreatSystem
 
     Author: Valdemar
-    Version: 1.3.1
+    Version: 1.4.0
 
     Description:
     Automatic PvE threat and aggro management for computer-controlled enemies.
@@ -37,8 +37,12 @@
     - set active = ThreatSystem_HasThreat(threatUnit)
     - set source = ThreatSystem_GetRankedUnit(threatUnit, rank)
     - set value = ThreatSystem_GetRankedThreat(threatUnit, rank)
-    - call ThreatSystem_SetAggroTextVisible(visible) // Local UI setting
-    - set visible = ThreatSystem_IsAggroTextVisible()
+    - call ThreatSystem_SetInitialAggroTextVisible(visible) // Local UI setting
+    - set visible = ThreatSystem_IsInitialAggroTextVisible()
+    - call ThreatSystem_SetAggroChangeTextVisible(visible)  // Local UI setting
+    - set visible = ThreatSystem_IsAggroChangeTextVisible()
+    - call ThreatSystem_SetAggroTextVisible(visible)        // Sets both alerts
+    - set visible = ThreatSystem_IsAggroTextVisible()       // Both are visible
 
 **/
 library ThreatSystem initializer Init requires Table, Events, UnitDeathEvent, DamageEngine, HealEngine
@@ -72,13 +76,16 @@ globals
     private integer array Threat_ActiveTableId
     private integer array Threat_ActivePosition
     private boolean array Threat_TableActive
+    // Keeps replacement targets classified as changes even after aggro becomes null.
+    private boolean array Threat_HadAggro
     private integer array Threat_EntryCount
     private unit array Threat_Target
     private unit array Threat_AggroTarget
     private unit array Threat_EntrySource
     private real array Threat_EntryValue
     private timer array Threat_ResetTimer
-    private boolean Threat_AggroTextVisible = false
+    private boolean Threat_InitialAggroTextVisible = false
+    private boolean Threat_AggroChangeTextVisible = true
 
     private trigger Threat_HealTrigger = null
 endglobals
@@ -230,6 +237,7 @@ private function Threat_AllocateTable takes unit threatUnit returns integer
     endif
 
     set Threat_TableActive[tableId] = true
+    set Threat_HadAggro[tableId] = false
     set Threat_Target[tableId] = threatUnit
     set Threat_AggroTarget[tableId] = null
     set Threat_EntryCount[tableId] = 0
@@ -275,6 +283,7 @@ private function Threat_ReleaseTable takes integer tableId returns nothing
     endloop
 
     set Threat_TableActive[tableId] = false
+    set Threat_HadAggro[tableId] = false
     call PauseTimer(Threat_ResetTimer[tableId])
     set Threat_Target[tableId] = null
     set Threat_AggroTarget[tableId] = null
@@ -343,8 +352,9 @@ private function Threat_RemoveEntry takes integer tableId, integer position retu
     set removedSource = null
 endfunction
 
-private function Threat_ShowAggroChange takes unit threatUnit, unit newTarget returns nothing
+private function Threat_ShowAggroNotice takes unit threatUnit, unit newTarget, boolean initialAggro returns nothing
     local texttag tag = null
+    local boolean visible
 
     if threatUnit == null or newTarget == null then
         return
@@ -358,21 +368,31 @@ private function Threat_ShowAggroChange takes unit threatUnit, unit newTarget re
     call SetTextTagPermanent(tag, false)
     call SetTextTagFadepoint(tag, 1.20)
     call SetTextTagLifespan(tag, 2.00)
-    call SetTextTagVisibility(tag, Threat_AggroTextVisible)
+    if initialAggro then
+        set visible = Threat_InitialAggroTextVisible
+    else
+        set visible = Threat_AggroChangeTextVisible
+    endif
+    call SetTextTagVisibility(tag, visible)
     set tag = null
 endfunction
 
 private function Threat_SetAggroTarget takes integer tableId, unit newTarget returns nothing
     local unit threatUnit = null
+    local boolean initialAggro = false
 
     if not Threat_TableActive[tableId] or Threat_AggroTarget[tableId] == newTarget then
         return
     endif
 
     set threatUnit = Threat_Target[tableId]
+    if newTarget != null then
+        set initialAggro = not Threat_HadAggro[tableId]
+        set Threat_HadAggro[tableId] = true
+    endif
     set Threat_AggroTarget[tableId] = newTarget
     if newTarget != null and Threat_IsAlive(threatUnit) then
-        call Threat_ShowAggroChange(threatUnit, newTarget)
+        call Threat_ShowAggroNotice(threatUnit, newTarget, initialAggro)
         call IssueTargetOrderById(threatUnit, THREAT_ATTACK_ORDER_ID, newTarget)
     endif
     set threatUnit = null
@@ -721,11 +741,28 @@ public function GetCombatTarget takes unit source returns unit
 endfunction
 
 public function SetAggroTextVisible takes boolean visible returns nothing
-    set Threat_AggroTextVisible = visible
+    set Threat_InitialAggroTextVisible = visible
+    set Threat_AggroChangeTextVisible = visible
 endfunction
 
 public function IsAggroTextVisible takes nothing returns boolean
-    return Threat_AggroTextVisible
+    return Threat_InitialAggroTextVisible and Threat_AggroChangeTextVisible
+endfunction
+
+public function SetInitialAggroTextVisible takes boolean visible returns nothing
+    set Threat_InitialAggroTextVisible = visible
+endfunction
+
+public function IsInitialAggroTextVisible takes nothing returns boolean
+    return Threat_InitialAggroTextVisible
+endfunction
+
+public function SetAggroChangeTextVisible takes boolean visible returns nothing
+    set Threat_AggroChangeTextVisible = visible
+endfunction
+
+public function IsAggroChangeTextVisible takes nothing returns boolean
+    return Threat_AggroChangeTextVisible
 endfunction
 
 public function HasThreat takes unit threatUnit returns boolean

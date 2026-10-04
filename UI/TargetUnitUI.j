@@ -2,7 +2,7 @@
     TargetUnitUI
 
     Author: Valdemar
-    Version: 1.2.0
+    Version: 1.3.0
 
     Description:
     Compact upper-left target and threat frame for active boss encounters,
@@ -40,7 +40,7 @@ globals
     private constant real TUI_PANEL_TOP_OFFSET = -0.045
     private constant real TUI_PANEL_WIDTH = 0.275
     private constant real TUI_PANEL_HEIGHT = 0.128
-    private constant real TUI_PANEL_CONFIG_HEIGHT = 0.132
+    private constant real TUI_PANEL_CONFIG_HEIGHT = 0.157
     private constant real TUI_PANEL_MINIMIZED_HEIGHT = 0.034
     private constant real TUI_BAR_WIDTH = 0.245
     private constant real TUI_BAR_HEIGHT = 0.009
@@ -54,7 +54,8 @@ globals
     private constant integer TUI_ACTION_PLAYER_COMBAT = 12
     private constant integer TUI_ACTION_PARTY_COMBAT = 13
     private constant integer TUI_ACTION_SHOW_MANA = 14
-    private constant integer TUI_ACTION_AGGRO_TEXT = 15
+    private constant integer TUI_ACTION_INITIAL_AGGRO_TEXT = 15
+    private constant integer TUI_ACTION_AGGRO_CHANGE_TEXT = 16
 
     private constant string TUI_EMPTY_BAR_TEXTURE = "UI\\Widgets\\EscMenu\\Human\\blank-background.blp"
     private constant string TUI_HEALTH_TEXTURE = "ReplaceableTextures\\TeamColor\\TeamColor06.blp"
@@ -327,7 +328,8 @@ private function TUI_UpdateConfig takes nothing returns nothing
     call BlzFrameSetText(TUI_ConfigToggleButton[3], "Player combat: " + TUI_OnOff(TUI_OpenPlayerCombat))
     call BlzFrameSetText(TUI_ConfigToggleButton[4], "Comp/Pet: " + TUI_OnOff(TUI_OpenPartyCombat))
     call BlzFrameSetText(TUI_ConfigToggleButton[5], "Mana: " + TUI_OnOff(TUI_ShowMana))
-    call BlzFrameSetText(TUI_ConfigToggleButton[6], "Aggro text: " + TUI_OnOff(ThreatSystem_IsAggroTextVisible()))
+    call BlzFrameSetText(TUI_ConfigToggleButton[6], "Initial aggro: " + TUI_OnOff(ThreatSystem_IsInitialAggroTextVisible()))
+    call BlzFrameSetText(TUI_ConfigToggleButton[7], "Aggro changes: " + TUI_OnOff(ThreatSystem_IsAggroChangeTextVisible()))
 endfunction
 
 private function TUI_FormatThreatRow takes unit threatUnit, unit source, integer rank, real topThreat returns string
@@ -550,8 +552,11 @@ private function TUI_ButtonClickAction takes nothing returns nothing
         elseif actionId == TUI_ACTION_SHOW_MANA then
             set TUI_ShowMana = not TUI_ShowMana
             call TUI_Update()
-        elseif actionId == TUI_ACTION_AGGRO_TEXT then
-            call ThreatSystem_SetAggroTextVisible(not ThreatSystem_IsAggroTextVisible())
+        elseif actionId == TUI_ACTION_INITIAL_AGGRO_TEXT then
+            call ThreatSystem_SetInitialAggroTextVisible(not ThreatSystem_IsInitialAggroTextVisible())
+            call TUI_Update()
+        elseif actionId == TUI_ACTION_AGGRO_CHANGE_TEXT then
+            call ThreatSystem_SetAggroChangeTextVisible(not ThreatSystem_IsAggroChangeTextVisible())
             call TUI_Update()
         endif
     endif
@@ -762,7 +767,8 @@ private function TUI_CreateFrames takes nothing returns nothing
     call TUI_CreateConfigButton(3, "Player combat", TUI_ACTION_PLAYER_COMBAT, 0.010, -0.047)
     call TUI_CreateConfigButton(4, "Comp/Pet", TUI_ACTION_PARTY_COMBAT, 0.130, -0.047)
     call TUI_CreateConfigButton(5, "Mana", TUI_ACTION_SHOW_MANA, 0.010, -0.072)
-    call TUI_CreateConfigButton(6, "Aggro text", TUI_ACTION_AGGRO_TEXT, 0.130, -0.072)
+    call TUI_CreateConfigButton(6, "Initial aggro", TUI_ACTION_INITIAL_AGGRO_TEXT, 0.130, -0.072)
+    call TUI_CreateConfigButton(7, "Aggro changes", TUI_ACTION_AGGRO_CHANGE_TEXT, 0.010, -0.097)
 
     call BlzFrameSetVisible(TUI_ConfigPane, false)
     call BlzFrameSetVisible(TUI_Parent, false)
