@@ -18,6 +18,14 @@
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
 
+## [4.10.2026]
+
+### Technical Updates
+
+- Corrected `_WC3Rebirth/Assets/PotS_DE/` terrain generation after World Editor tests exposed purple textures, broken alpha atlases, native DE grass material detail, DE foliage obscuring Rebirth grass, and corrupted cliff colors: 180 Rebirth conversions now preserve source color aspect, use native DE DXT5 transition-alpha blocks and explicitly select the 1024×512 Sunken Ruins Sand release TGA instead of its seam-producing 512×512 BLP sibling, and contain complete DDS payloads; added a DE-formatted fully transparent Winter Rough Dirt override, transparent Ashenvale Grass/Lumpy Grass foliage, flat ATI2 grass normals, fully neutral DXT5 grass ORM maps, explicit selection of the release Ashenvale grass TGAs, a valid BC1/DXT1 cliff color-block conversion path, 64 flat-normal/neutral-ORM companions for all 32 converted cliffs, and a current-schema `CliffTypes.slk` merge that redirects all 36 shared DE `overrideTexture` cells to current material bases containing the converted Rebirth diffuse plus neutral normal/ORM channels, correcting wrong cliff tops without bypassing DE material companions.
+- Added `_WC3Rebirth/WC3 Rebirth DE Conversion.md` and `_WC3Rebirth/Assets/PotS_DE/WC3Rebirth_DE/`: documented the conversion and remaining unit-model work, added a reproducible clean-package builder, and composed the original Rebirth runtime, final 2023 fixes, and DE overlay into one validated 5,427-file package that can be copied directly into Warcraft III's `_retail_` directory.
+- Confirmed in World Editor that the corrected Ashenvale grass tiles, cliff tops and side materials, and Sunken Ruins Sand atlas now render as intended in DE mode.
+
 ## [3.10.2026]
 
 ### Player-Facing Updates
@@ -29,7 +37,7 @@
 - Added `ItemSystems/ItemStackModels.j` to refresh visible ground-item models after creation, unit-death drops, inventory drops, and stack-size changes; unconfigured item types skip model queries, and configured items skip field writes when the desired model is already active.
 - Added `WC3_Export/DEquipmentItemDefinitions/DEquipmentItemDefinitions_20261003-0053.j` with generated stack-model registrations for all ten metal bars.
 - Added `_WC3Rebirth/Assets/PotS_DE/` with a reproducible Warcraft III 3.0.0.24268 Rebirth DE compatibility overlay, CASC inventories, current-schema cliff/destructible data handling, MDX texture-path diagnostics and repairs, validation reports, and SHA-256 manifest generation.
-- Corrected `_WC3Rebirth/Assets/PotS_DE/` terrain packaging after World Editor testing exposed DE terrain fallback: 148 Rebirth ground/blight and 32 cliff images now convert to current DE diffuse DDS paths while retaining DE normal/ORM materials and the unmodified current cliff table.
+- Corrected `_WC3Rebirth/Assets/PotS_DE/` packaging after World Editor tests exposed DE terrain fallback: selected Rebirth assets and 180 converted ground/blight/cliff diffuse DDS files now install at Warcraft's resolved root loose-file paths instead of the ignored `_DE.w3mod` disk folder, while retaining the current cliff-table schema and DE normal/ORM material support.
 
 ### Tool Updates
 
