@@ -24,7 +24,7 @@ Current generated package:
 | Target Warcraft build | 3.0.0.24268 |
 | Root layout | Direct `_retail_` loose-file paths |
 
-All package-layer, critical-table, MDX-header, layout, and SHA-256 manifest checks pass. Runtime testing has confirmed that Rebirth units load in DE, Ashenvale Grass and Lumpy Grass use the intended Rebirth art, cliffs use the correct tileset art without the camera-angle white-face defect, and Sunken Ruins Sand blends without the earlier repeated seams. The subsequent 296-file ground-material neutralization passes static validation but still needs a World Editor retest across representative tilesets.
+All package-layer, critical-table, MDX-header, layout, and SHA-256 manifest checks pass. Runtime testing has confirmed that Rebirth units load in DE, Ashenvale Grass and Lumpy Grass use the intended Rebirth art, cliffs use the correct tileset art without the camera-angle white-face defect, and Sunken Ruins Sand blends without the earlier repeated seams. The subsequent 296-file ground-material neutralization passes static validation but still needs a World Editor retest across representative tilesets. Five diffuse-atlas corrections for Dalaran Ruins Black Marble, Dungeon Square Tiles, Sunken Ruins Rough Dirt, Cityscape White Marble, and Cityscape Brick Tiles also pass static validation and need the same runtime retest.
 
 ## Clean installation
 
@@ -92,10 +92,11 @@ The converter now:
 
 - matches DE dimensions, DXT compression, mip counts, flags, and container metadata;
 - completes every compressed mip payload, avoiding purple missing-texture output;
+- fills RGB beneath non-opaque legacy pixels from the nearest opaque terrain color before scaling, preventing DE transition masks from exposing green or contrasting SD matte colors;
 - preserves Rebirth color aspect and tiles legacy 2:1 atlases instead of stretching them into square targets;
 - copies DE transition-alpha blocks for DXT5 terrain while retaining Rebirth color;
 - rebuilds DXT1 color blocks through a valid DXT5 intermediate because BLP Laboratory's direct 24-bit DXT1 route corrupted cliff colors;
-- explicitly selects the release `Ashen_Grass.tga`, `Ashen_GrassLumpy.tga`, and `Ruins_Sand.tga` files where same-stem BLP siblings contain different art or incorrect atlas layouts.
+- explicitly selects the release `Ashen_Grass.tga`, `Ashen_GrassLumpy.tga`, `Ruins_Sand.tga`, and `Ruins_DirtRough.tga` files where same-stem BLP siblings contain different art, incorrect atlas layouts, or insufficient alpha information for safe matte removal.
 
 Sunken Ruins Sand is an important special source-selection case. Its BLP sibling is 512×512, but the intended release TGA is 1024×512. Converting the square BLP produced repeated internal seams even when its alpha was changed. The working DE texture uses the 2:1 TGA, tiles it vertically into the 1024×1024 DE target, and retains the native DE transition mask.
 

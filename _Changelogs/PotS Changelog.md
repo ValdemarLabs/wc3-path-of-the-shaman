@@ -27,6 +27,7 @@
 - Added `_WC3Rebirth/WC3 Rebirth DE Conversion.md` and `_WC3Rebirth/Assets/PotS_DE/WC3Rebirth_DE/`: documented the conversion and remaining unit-model work, added a reproducible clean-package builder, and composed the original Rebirth runtime, final 2023 fixes, and DE overlay into one validated 5,719-file package that can be copied directly into Warcraft III's `_retail_` directory.
 - Confirmed in World Editor that the corrected Ashenvale grass tiles, cliff tops and side materials, and Sunken Ruins Sand atlas now render as intended in DE mode.
 - Added 296 DE terrain material companions for all 148 converted Rebirth ground/blight tiles: native-profile flat ATI2 normals and fully rough, non-metallic DXT5 ORM maps now replace mismatched native DE relief and reflectivity that caused angle-dependent shine; rebuilt and validated the 5,719-file `WC3Rebirth_DE` package.
+- Corrected Dalaran Ruins Black Marble, Dungeon Square Tiles, Sunken Ruins Rough Dirt, Cityscape White Marble, and Cityscape Brick Tiles by bleeding valid terrain color beneath legacy transparent pixels before applying DE transition alpha, preventing hidden SD matte colors from becoming green cutouts or hard borders; Rough Dirt now uses its alpha-bearing release TGA for this sanitation pass.
 
 ### Actions Remaining
 
