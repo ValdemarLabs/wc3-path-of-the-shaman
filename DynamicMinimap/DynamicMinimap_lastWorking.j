@@ -2,7 +2,7 @@
     DynamicMinimap
 
     Author: Valdemar
-    Version: 1.7.1
+    Version: 1.7.2
 
     Description:
         Supports imported 256-coordinate minimap chunks or Warcraft III 3.0
@@ -11,9 +11,10 @@
         Map-size, authored camera, and entire-world bounds are captured separately
         so chunk math, gameplay restoration, and full-map icon placement retain
         their correct coordinate transforms.
-        Approaching chunk borders can request a gentle safe-angle correction
-        from CameraControl. Cinematic suspension cancels all pending chunk work
-        and restores the full-map presentation.
+        Bounds updates at unsafe camera angles request a brief safe-angle detour
+        from CameraControl. The player's stored rotation is restored immediately
+        afterward. Cinematic suspension cancels all pending chunk work and
+        restores the full-map presentation.
 
     Credits:
         FeelsGoodMan for the dynamic minimap texture/camera-bounds approach.
@@ -126,8 +127,6 @@ globals
     private constant real SAFE_ROTATION_BELOW = 218.0
     private constant real SAFE_ROTATION_ABOVE = 322.0
     private constant real SAFE_ROTATION_SETTLE_TOLERANCE = 0.50
-    private constant real ROTATION_LOOKAHEAD_DISTANCE = 1152.0
-    private constant real CAMERA_MOVEMENT_EPSILON = 1.0
     private constant integer CAMERA_RESUME_SETTLE_TICKS = 2
     
     // Texture cache - format: minimap_X_Y_ZOOM.blp
@@ -168,9 +167,6 @@ globals
     private boolean cameraResumeRefreshPending = false
     private boolean safeRotationRequested = false
     private real safeRotationTarget = SAFE_ROTATION_BELOW
-    private boolean cameraTargetSampled = false
-    private real previousCameraTargetX = 0.0
-    private real previousCameraTargetY = 0.0
 
     // Deferred texture/bounds transaction while the current rotation is unsafe.
     private boolean pendingMapUpdate = false
@@ -411,28 +407,6 @@ private function GetChunkCoordinate takes real worldValue, real worldMin, real w
     return chunkCoord
 endfunction
 
-private function IsApproachingChunkBorder takes real cameraX, real cameraY, integer chunkX, integer chunkY returns boolean
-    local real lookaheadX = cameraX
-    local real lookaheadY = cameraY
-
-    if not cameraTargetSampled then
-        return false
-    endif
-
-    if cameraX > previousCameraTargetX + CAMERA_MOVEMENT_EPSILON then
-        set lookaheadX = cameraX + ROTATION_LOOKAHEAD_DISTANCE
-    elseif cameraX < previousCameraTargetX - CAMERA_MOVEMENT_EPSILON then
-        set lookaheadX = cameraX - ROTATION_LOOKAHEAD_DISTANCE
-    endif
-    if cameraY > previousCameraTargetY + CAMERA_MOVEMENT_EPSILON then
-        set lookaheadY = cameraY + ROTATION_LOOKAHEAD_DISTANCE
-    elseif cameraY < previousCameraTargetY - CAMERA_MOVEMENT_EPSILON then
-        set lookaheadY = cameraY - ROTATION_LOOKAHEAD_DISTANCE
-    endif
-
-    return GetChunkCoordinate(lookaheadX, mapWorldMinX, mapWorldMaxX, MINIMAP_ART_OFFSET_X) != chunkX or GetChunkCoordinate(lookaheadY, mapWorldMinY, mapWorldMaxY, MINIMAP_ART_OFFSET_Y) != chunkY
-endfunction
-
 //===========================================================================
 // Periodic Update
 //===========================================================================
@@ -441,7 +415,6 @@ private function PeriodicUpdate takes nothing returns nothing
     local real unitY
     local integer chunkCoordX
     local integer chunkCoordY
-    local boolean approachingBorder
 
     // No texture or bounds operation may occur while a cinematic owns the camera.
     if scriptedCameraSuspendDepth > 0 then
@@ -479,20 +452,6 @@ private function PeriodicUpdate takes nothing returns nothing
     
     set chunkCoordX = GetChunkCoordinate(unitX, mapWorldMinX, mapWorldMaxX, MINIMAP_ART_OFFSET_X)
     set chunkCoordY = GetChunkCoordinate(unitY, mapWorldMinY, mapWorldMaxY, MINIMAP_ART_OFFSET_Y)
-    set approachingBorder = IsApproachingChunkBorder(unitX, unitY, chunkCoordX, chunkCoordY)
-    set previousCameraTargetX = unitX
-    set previousCameraTargetY = unitY
-    set cameraTargetSampled = true
-
-    if approachingBorder or chunkCoordX != lastTileX or chunkCoordY != lastTileY then
-        if not IsCameraRotationSafe() then
-            call RequestSafeRotation()
-        elseif safeRotationRequested and IsSafeRotationTargetReached() then
-            call CancelSafeRotationRequest()
-        endif
-    elseif not pendingMapUpdate then
-        call CancelSafeRotationRequest()
-    endif
     
     call UpdateMinimapAndBounds(chunkCoordX, chunkCoordY)
 endfunction
@@ -521,7 +480,6 @@ function DynamicMinimap_SetRenderSource takes integer source returns boolean
     set renderSource = source
     set lastTileX = -1
     set lastTileY = -1
-    set cameraTargetSampled = false
     call CancelSafeRotationRequest()
     call CancelPendingMapUpdate()
 
@@ -608,7 +566,6 @@ function DynamicMinimap_SuspendForScriptedCamera takes nothing returns nothing
         set enabled = false
         set cameraResumeSettleTicks = 0
         set cameraResumeRefreshPending = false
-        set cameraTargetSampled = false
         set lastTileX = -1
         set lastTileY = -1
         call CancelSafeRotationRequest()
@@ -643,7 +600,6 @@ function DynamicMinimap_ResumeAfterScriptedCamera takes nothing returns nothing
     endif
 
     set enabled = scriptedCameraWasEnabled
-    set cameraTargetSampled = false
     set cameraResumeSettleTicks = CAMERA_RESUME_SETTLE_TICKS
     set cameraResumeRefreshPending = enabled
 endfunction

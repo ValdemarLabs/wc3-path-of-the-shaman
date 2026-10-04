@@ -96,8 +96,9 @@ globals
     private constant boolean CAMERA_MOUSE_ORBIT_HORIZONTAL_INVERTED_BY_DEFAULT = false
     private constant boolean CAMERA_MOUSE_ORBIT_VERTICAL_INVERTED_BY_DEFAULT = false
     private constant real CAMERA_DRIFT_CHECK_INTERVAL = 0.03
-    private constant real CAMERA_MINIMAP_SAFE_ROTATION_SPEED = 24.00
-    private constant real CAMERA_MINIMAP_SAFE_ROTATION_DURATION = 0.12
+    private constant real CAMERA_MINIMAP_SAFE_ROTATION_SPEED = 180.00
+    private constant real CAMERA_MINIMAP_SAFE_ROTATION_DURATION = 0.06
+    private constant real CAMERA_MINIMAP_ROTATION_RESTORE_DURATION = 0.18
     private constant integer CAMERA_MINIMAP_INPUT_GRACE_TICKS = 10
     private constant real CAMERA_FIELD_TOLERANCE = 0.75
     private constant real CAMERA_NORMAL_TRACE_ACCURACY = 50.00
@@ -130,6 +131,7 @@ globals
     private boolean CC_Initialized = false
     private boolean CC_UpdateLoopActive = false
     private integer CC_MinimapRotationInputGraceTicks = 0
+    private boolean CC_MinimapRotationActive = false
 
     private integer array CC_Mode
     private integer array CC_SpecialMode
@@ -1427,8 +1429,8 @@ private function CC_RegisterBuiltInSpecialCameraRects takes nothing returns noth
     // - Leaving the rect automatically restores the previously resolved camera mode.
 endfunction
 
-// DynamicMinimap only requests a destination. CameraControl owns the gentle
-// transition and yields immediately to player rotation or scripted camera input.
+// DynamicMinimap only requests a destination. CameraControl makes a temporary
+// local detour without replacing the player's stored rotation, then restores it.
 private function CC_UpdateDynamicMinimapSafeRotation takes nothing returns nothing
     local integer pid = 0
     local real targetRotation
@@ -1439,6 +1441,15 @@ private function CC_UpdateDynamicMinimapSafeRotation takes nothing returns nothi
     static if LIBRARY_DynamicMinimap then
         if not DynamicMinimap_HasSafeRotationRequest() then
             set CC_MinimapRotationInputGraceTicks = 0
+            if CC_MinimapRotationActive then
+                set CC_MinimapRotationActive = false
+                call CC_InvalidateNormalTraceCache(pid)
+                if not CC_Suspended[pid] and not CC_ResumePending[pid] and not CC_HasSpecialMode(pid) then
+                    if GetLocalPlayer() == Player(pid) then
+                        call SetCameraField(CAMERA_FIELD_ROTATION, CC_Rotation[pid], CAMERA_MINIMAP_ROTATION_RESTORE_DURATION)
+                    endif
+                endif
+            endif
             return
         endif
         if CC_Suspended[pid] or CC_ResumePending[pid] or CC_HasSpecialMode(pid) then
@@ -1453,8 +1464,9 @@ private function CC_UpdateDynamicMinimapSafeRotation takes nothing returns nothi
             return
         endif
 
+        set CC_MinimapRotationActive = true
         set targetRotation = DynamicMinimap_GetSafeRotationTarget()
-        set currentRotation = CC_NormalizeAngle(CC_Rotation[pid])
+        set currentRotation = CC_NormalizeAngle(GetCameraField(CAMERA_FIELD_ROTATION) * bj_RADTODEG)
         set delta = targetRotation - currentRotation
         if delta > 180.00 then
             set delta = delta - 360.00
@@ -1470,7 +1482,6 @@ private function CC_UpdateDynamicMinimapSafeRotation takes nothing returns nothi
             set currentRotation = currentRotation - step
         endif
         set currentRotation = CC_NormalizeAngle(currentRotation)
-        set CC_Rotation[pid] = currentRotation
         call CC_InvalidateNormalTraceCache(pid)
 
         if GetLocalPlayer() == Player(pid) then
