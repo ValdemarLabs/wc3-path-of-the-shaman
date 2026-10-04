@@ -20,8 +20,16 @@
 
 ## [4.10.2026]
 
+### Player-Facing Updates
+
+- Dynamic minimap camera safety turns now happen only when a chunk-bounds update actually needs one, use a much shorter turn, and automatically return to the player's chosen camera rotation afterward.
+- Updated `Threat/ThreatSystem.j` and `UI/TargetUnitUI.j` so initial aggro notices are disabled by default while later aggro changes remain visible; separate configuration options can enable initial notices or disable all later change notices.
+- Fixed zone discovery and entered notifications not appearing while playing as Zul'kis after control transferred away from Nazgrek.
+
 ### Technical Updates
 
+- Updated `DynamicMinimap/DynamicMinimap_lastWorking.j` and `UI/CameraControl.j` so unsafe `SetCameraBounds` work uses a temporary nearest-safe-angle detour without overwriting the stored camera rotation; removed early border-lookahead turns and accelerated the safety transition while retaining player-input yielding.
+- Updated `Zones/ZoneEvent.j` to replace an inactive presentation hero with the player-controlled hero that enters a zone.
 - **Critical map-development direction under active testing:** PotS is now intended to target Warcraft III Definitive Edition (DE) instead of Standard Definition (SD). This direction remains under development and depends on completing the WC3 Rebirth DE conversion; terrain and cliff conversion is partly complete, while unit-model conversion remains outstanding.
 - Corrected `_WC3Rebirth/Assets/PotS_DE/` terrain generation after World Editor tests exposed purple textures, broken alpha atlases, native DE grass material detail, DE foliage obscuring Rebirth grass, and corrupted cliff colors: 180 Rebirth conversions now preserve source color aspect, use native DE DXT5 transition-alpha blocks and explicitly select the 1024×512 Sunken Ruins Sand release TGA instead of its seam-producing 512×512 BLP sibling, and contain complete DDS payloads; added a DE-formatted fully transparent Winter Rough Dirt override, transparent Ashenvale Grass/Lumpy Grass foliage, flat ATI2 grass normals, fully neutral DXT5 grass ORM maps, explicit selection of the release Ashenvale grass TGAs, a valid BC1/DXT1 cliff color-block conversion path, 64 flat-normal/neutral-ORM companions for all 32 converted cliffs, and a current-schema `CliffTypes.slk` merge that redirects all 36 shared DE `overrideTexture` cells to current material bases containing the converted Rebirth diffuse plus neutral normal/ORM channels, correcting wrong cliff tops without bypassing DE material companions.
 - Added `_WC3Rebirth/WC3 Rebirth DE Conversion.md` and `_WC3Rebirth/Assets/PotS_DE/WC3Rebirth_DE/`: documented the conversion and remaining unit-model work, added a reproducible clean-package builder, and composed the original Rebirth runtime, final 2023 fixes, and DE overlay into one validated 5,719-file package that can be copied directly into Warcraft III's `_retail_` directory.
