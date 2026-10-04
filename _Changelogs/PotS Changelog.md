@@ -22,9 +22,16 @@
 
 ### Technical Updates
 
+- **Critical map-development direction under active testing:** PotS is now intended to target Warcraft III Definitive Edition (DE) instead of Standard Definition (SD). This direction remains under development and depends on completing the WC3 Rebirth DE conversion; terrain and cliff conversion is partly complete, while unit-model conversion remains outstanding.
 - Corrected `_WC3Rebirth/Assets/PotS_DE/` terrain generation after World Editor tests exposed purple textures, broken alpha atlases, native DE grass material detail, DE foliage obscuring Rebirth grass, and corrupted cliff colors: 180 Rebirth conversions now preserve source color aspect, use native DE DXT5 transition-alpha blocks and explicitly select the 1024×512 Sunken Ruins Sand release TGA instead of its seam-producing 512×512 BLP sibling, and contain complete DDS payloads; added a DE-formatted fully transparent Winter Rough Dirt override, transparent Ashenvale Grass/Lumpy Grass foliage, flat ATI2 grass normals, fully neutral DXT5 grass ORM maps, explicit selection of the release Ashenvale grass TGAs, a valid BC1/DXT1 cliff color-block conversion path, 64 flat-normal/neutral-ORM companions for all 32 converted cliffs, and a current-schema `CliffTypes.slk` merge that redirects all 36 shared DE `overrideTexture` cells to current material bases containing the converted Rebirth diffuse plus neutral normal/ORM channels, correcting wrong cliff tops without bypassing DE material companions.
 - Added `_WC3Rebirth/WC3 Rebirth DE Conversion.md` and `_WC3Rebirth/Assets/PotS_DE/WC3Rebirth_DE/`: documented the conversion and remaining unit-model work, added a reproducible clean-package builder, and composed the original Rebirth runtime, final 2023 fixes, and DE overlay into one validated 5,427-file package that can be copied directly into Warcraft III's `_retail_` directory.
 - Confirmed in World Editor that the corrected Ashenvale grass tiles, cliff tops and side materials, and Sunken Ruins Sand atlas now render as intended in DE mode.
+
+### Actions Remaining
+
+- Convert the remaining WC3 Rebirth units and PotS imported models for Definitive Edition, then assess the resulting size increase and map-distribution impact.
+- Study whether most imported map assets, or a limited subset such as textures, can be installed externally under a dedicated Warcraft III `_retail_` `pots` folder without compromising reliability, portability, multiplayer compatibility, or update handling.
+- Revisit the PotS map installer package after the DE conversion and external-asset strategy have been validated, and add the required Definitive Edition installation and update handling.
 
 ## [3.10.2026]
 
