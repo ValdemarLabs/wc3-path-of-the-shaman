@@ -18,6 +18,30 @@
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
 
+## [5.10.2026]
+
+### Technical Updates
+
+- Added `Camera/FreeCamera.j` as a development-only local fly camera using the Warcraft III 3.0 scripted camera type, absolute camera height, and direct local keyboard/mouse input queries. The camera supports WASD movement, Q/E vertical movement, right-mouse look, Shift slow movement, and restores the previous `CameraControl` mode and engine input ownership when disabled.
+- Updated `UI/CameraUI.j` with a Free Camera toggle and expanded the panel to fit the new development control.
+- Updated `_WC3Rebirth/WC3 Rebirth DE Conversion.md` and `Installer/README.md` with the work-in-progress PotS DE installation architecture: the installer will manage the map, WC3 Rebirth DE, and PotS external assets as independently maintainable components, preserve exact map-import-relative paths beneath `_retail_`, and use owned-file manifests for safe repair, complete removal, and partial component removal.
+- Documented the structurally validated 1,521-model WC3 Rebirth SD-to-HD/DE staging conversion and clarified that the converted Rebirth models still need in-game promotion testing, while PotS-specific imported SD models remain a later conversion and externalization task.
+- Added `_WC3Rebirth/Assets/PotS_DE/WC3Rebirth_DE_Full` as the combined DE test-install tree: the 5,719-file baseline is applied first, then 1,521 converted MDX files and 10,958 generated TIF resources are overlaid while conversion reports remain outside the runtime package; generated an external SHA-256 ownership manifest and build summary for all 16,677 runtime files.
+- `Water` update:
+  - removed all large doodad water as deprecate replaced by the more modern DE version HD water.
+  - Riverbane river still has old river doodads that should either be replaced, deleted, or adjusted because they are under the water making them visually look bad.
+
+### Actions Remaining
+
+- Import `Camera/FreeCamera.j` after `UI/CameraControl.j` and before `UI/CameraUI.j`, then compile a focused test map and the full map in the Warcraft III 3.0.0 World Editor/JassHelper workflow.
+- In-game, verify free-camera activation/deactivation from `CameraUI`, all movement/look controls, camera restoration from Normal/Advanced/Developer modes, focus-loss cursor recovery, SD/HD/DE rendering, and two-client local-only behavior before relying on it for development capture work.
+- Remove or disable the Free Camera UI entry before the map reaches a release stage where development camera access should no longer be exposed.
+- Implement and test the installer component manifests, collision backups, maintenance UI, and user-friendly install/update/repair/complete-removal/partial-removal flows without broad deletion under Warcraft III's `_retail_` directory.
+- Inventory PotS imported assets, preserve each exact import-relative path for external installation, convert applicable SD models to HD/DE, include their dependencies, and validate them before moving them out of the map.
+- Test `WC3Rebirth_DE_Full` from a clean or deliberately cleaned `_retail_` installation across representative units, heroes, buildings, portraits, attachments, effects, terrain, lighting, shadows, and animations before promoting it into the installer payload.
+- Riverbane river terraining adjustments.
+
+
 ## [4.10.2026]
 
 ### Player-Facing Updates
