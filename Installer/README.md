@@ -4,7 +4,56 @@ This folder contains the Windows installer project for player-facing Path of the
 
 The installer source is kept in git. The actual release payload is not kept in git.
 
-## Payload Location
+## Planned DE external-asset architecture
+
+> **Work in progress:** This section defines the intended installer architecture. The current installer behavior documented later in this file still uses the older payload layout and does not yet implement manifest-based component removal.
+
+The installer will own and manage three separately selectable release components:
+
+1. **PotS map**: the `.w3x` installed under the player's Warcraft III maps directory.
+2. **WC3 Rebirth DE**: the validated Rebirth DE compatibility package installed as loose files under Warcraft III's `_retail_` directory. The current converted-model staging candidate is `_WC3Rebirth\Assets\PotS_DE\WC3Rebirth_DE_Full\`.
+3. **PotS external assets**: selected models, textures, sounds, and supporting files moved out of the map and installed as loose files under `_retail_`.
+
+PotS external assets must keep the exact relative path used by the map import. For example:
+
+```text
+Map import path:
+war3mapImported\Units\Nazgrek.mdx
+
+Installed external path:
+<Warcraft III>\_retail_\war3mapImported\Units\Nazgrek.mdx
+```
+
+Externalizing an asset must not require changing its map reference merely because it moved out of the map. The staged installer payload must reproduce the complete import-relative directory tree beneath `_retail_`, including the exact filename. Dependencies such as textures, portrait models, attachment models, sounds, and FaceFX files must be included at their own resolved paths.
+
+Many existing PotS imports are expected to move into this external layout later. Before an imported SD model is externalized, it still needs dependency inventory, SD-to-HD/DE conversion where applicable, and in-game validation. Moving assets out of the map and converting them for DE are related but separate release gates.
+
+### Required maintenance experience
+
+The finished installer must provide a user-friendly maintenance flow after installation. It must detect the current installation and offer clear actions for:
+
+- installing, updating, or repairing all supported components;
+- adding or removing WC3 Rebirth DE without forcing removal of the PotS map or PotS external assets;
+- adding or removing PotS external assets without broadly deleting other `_retail_` content;
+- removing the map while retaining selected external components;
+- removing the complete PotS installation;
+- previewing and confirming which components and files will be installed or removed.
+
+Each component must have its own version and installed-file manifest. Installation, update, repair, and removal must use those manifests instead of directory-wide deletion. Removal may delete only files owned by the selected component and may prune only directories left empty by that operation. It must never delete Warcraft III's `_retail_` directory, shared game data, or files owned by unrelated mods.
+
+If a package path collides with a pre-existing file not owned by the same PotS component, the installer must either back up and later restore that file or stop and present a clear collision choice. Uninstall and partial removal must not silently destroy files that existed before PotS was installed.
+
+The component manifests should record at least:
+
+- component identifier and version;
+- destination path relative to the selected Warcraft III or maps root;
+- installed file size and checksum;
+- whether an older file was backed up and where that backup is owned;
+- enough state to distinguish install, update, repair, partial removal, and complete removal.
+
+Until this architecture is implemented and tested, the current installer and manual Rebirth DE copy workflow remain development-only paths rather than the final player-facing DE installation flow.
+
+## Current Payload Location
 
 Put the latest files here before building:
 
@@ -28,10 +77,11 @@ Put the latest files here before building:
   - Put `9thRelease.rar` and `FixesLast2023.rar` here.
   - `9thRelease.rar` is unpacked to temp, then only the contents of its `9thRelease` folder are copied into `Warcraft III\_retail_`.
   - `FixesLast2023.rar` is unpacked to temp, then only the contents of `FixesLast2023\FixesLast2023\FixHighElfBarracksCentaurKhanWarlock` are copied into `Warcraft III\_retail_`.
+  - This is the current legacy Rebirth payload path, not the final WC3 Rebirth DE component design described above.
 
 `Installer/payload/` and `Installer/output/` are ignored by git. Only the folder placeholders are tracked.
 
-## Updating a Release
+## Updating the Current Installer Release
 
 1. Replace the payload files in `Installer/payload/`.
 2. Edit `Installer/release-manifest.json`.
@@ -46,7 +96,7 @@ powershell -ExecutionPolicy Bypass -File .\Installer\build-installer.ps1
 
 The setup executable is written to `Installer/output/`.
 
-## Installer Behavior
+## Current Installer Behavior
 
 The installer has three sections:
 
