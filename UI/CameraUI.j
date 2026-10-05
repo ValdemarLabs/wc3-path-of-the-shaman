@@ -2,14 +2,14 @@
     CameraUI
     
     Author: [Valdemar]
-    Version: 1.1.1
+    Version: 1.2.0
 
     Description: Provides a panel for switching camera modes and adjusting camera and mouse-orbit settings.
 
     Credits: Tasyen (TasQuestBox as inspiration)
 
     How to install:
-    Import after Table, MasterUI, CameraControl, and Interface.
+    Import after Table, MasterUI, CameraControl, FreeCamera, and Interface.
 
     API:
     call CameraUI_Show()
@@ -18,7 +18,7 @@
     call CameraUI_IsVisible() returns boolean
 
 **/
-library CameraUI initializer AutoInit requires Table, MasterUI, CameraControl, Interface
+library CameraUI initializer AutoInit requires Table, MasterUI, CameraControl, FreeCamera, Interface
 
 globals
     private constant string CUI_TOC_PATH = "war3mapimported\\templates.toc"
@@ -35,6 +35,7 @@ globals
     private constant integer CUI_ACTION_MOUSE_ORBIT = 4
     private constant integer CUI_ACTION_MOUSE_HORIZONTAL = 5
     private constant integer CUI_ACTION_MOUSE_VERTICAL = 6
+    private constant integer CUI_ACTION_FREE_CAMERA = 7
 
     private boolean CUI_Initialized = false
     private boolean CUI_Syncing = false
@@ -134,7 +135,13 @@ private function CUI_RefreshFields takes player whichPlayer returns nothing
     endif
     if GetLocalPlayer() == whichPlayer then
         call BlzFrameSetText(CUI_TargetValue, CameraControl_GetTargetName(whichPlayer))
-        call BlzFrameSetText(CUI_ModeValue, CameraControl_GetModeName(whichPlayer))
+        if FreeCamera_IsEnabled(whichPlayer) then
+            call BlzFrameSetText(CUI_ModeValue, "Free Camera")
+            call BlzFrameSetText(CUI_ActionButton[7], "Free Camera: On")
+        else
+            call BlzFrameSetText(CUI_ModeValue, CameraControl_GetModeName(whichPlayer))
+            call BlzFrameSetText(CUI_ActionButton[7], "Free Camera: Off")
+        endif
         call BlzFrameSetText(CUI_ResetButton, "Defaults")
         if CameraControl_IsMouseOrbitEnabled(whichPlayer) then
             call BlzFrameSetText(CUI_ActionButton[4], "Orbit: On")
@@ -232,10 +239,13 @@ private function CUI_ActionAction takes nothing returns nothing
     local player whichPlayer = GetTriggerPlayer()
     if CUI_ButtonAction.has(handleId) then
         if CUI_ButtonAction.integer[handleId] == CUI_ACTION_NORMAL then
+            call FreeCamera_Disable(whichPlayer)
             call CameraControl_SetModeNormal(whichPlayer)
         elseif CUI_ButtonAction.integer[handleId] == CUI_ACTION_ADVANCED then
+            call FreeCamera_Disable(whichPlayer)
             call CameraControl_SetModeAdvanced(whichPlayer)
         elseif CUI_ButtonAction.integer[handleId] == CUI_ACTION_DEVELOPER then
+            call FreeCamera_Disable(whichPlayer)
             call CameraControl_SetModeDeveloper(whichPlayer)
         elseif CUI_ButtonAction.integer[handleId] == CUI_ACTION_MOUSE_ORBIT then
             call CameraControl_SetMouseOrbitEnabled(whichPlayer, not CameraControl_IsMouseOrbitEnabled(whichPlayer))
@@ -243,6 +253,8 @@ private function CUI_ActionAction takes nothing returns nothing
             call CameraControl_SetMouseOrbitHorizontalInverted(whichPlayer, not CameraControl_IsMouseOrbitHorizontalInverted(whichPlayer))
         elseif CUI_ButtonAction.integer[handleId] == CUI_ACTION_MOUSE_VERTICAL then
             call CameraControl_SetMouseOrbitVerticalInverted(whichPlayer, not CameraControl_IsMouseOrbitVerticalInverted(whichPlayer))
+        elseif CUI_ButtonAction.integer[handleId] == CUI_ACTION_FREE_CAMERA then
+            call FreeCamera_Toggle(whichPlayer)
         endif
         call CUI_RefreshFields(whichPlayer)
     endif
@@ -314,7 +326,7 @@ endfunction
 private function CUI_CreateFrames takes nothing returns nothing
     set CUI_Parent = BlzCreateFrameByType("BACKDROP", "CameraUIPanel", BlzGetOriginFrame(ORIGIN_FRAME_GAME_UI, 0), "EscMenuBackdrop", 0)
     call BlzFrameSetAbsPoint(CUI_Parent, FRAMEPOINT_TOPLEFT, 0.11, 0.55)
-    call BlzFrameSetAbsPoint(CUI_Parent, FRAMEPOINT_BOTTOMRIGHT, 0.61, 0.18)
+    call BlzFrameSetAbsPoint(CUI_Parent, FRAMEPOINT_BOTTOMRIGHT, 0.61, 0.13)
 
     set CUI_Title = BlzCreateFrameByType("TEXT", "CameraUITitle", CUI_Parent, "", 0)
     call BlzFrameSetPoint(CUI_Title, FRAMEPOINT_TOPLEFT, CUI_Parent, FRAMEPOINT_TOPLEFT, 0.018, -0.018)
@@ -377,6 +389,7 @@ private function CUI_CreateFrames takes nothing returns nothing
     call CUI_CreateActionButton(1, "Normal", CUI_ACTION_NORMAL, -0.166)
     call CUI_CreateActionButton(2, "Advanced", CUI_ACTION_ADVANCED, -0.206)
     call CUI_CreateActionButton(3, "Developer", CUI_ACTION_DEVELOPER, -0.246)
+    call CUI_CreateActionButton(7, "Free Camera: Off", CUI_ACTION_FREE_CAMERA, -0.286)
 
     call CUI_CreateSliderRow(1, "Distance", CUI_SLIDER_DISTANCE, -0.030)
     call CUI_CreateSliderRow(2, "Far Z", CUI_SLIDER_FARZ, -0.062)
