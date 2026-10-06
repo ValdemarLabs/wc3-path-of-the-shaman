@@ -41,6 +41,9 @@ _Drafts/
 # Roadmap
 _Roadmap/
 
+# Developer related
+/_developer/Tests/
+
 # Cache/temp
 /temp/
 /cache/
