@@ -25,10 +25,12 @@
 - Updated `tools/war3-retro-hd-converter/` and `tools/PyMdlxConverter/` with fail-closed MDX parsing, TXAN and legacy-string repairs, strict source/output structure checks, legacy glow/effect material preservation, neutral generated normal maps, and source-geometry preservation.
 - Added `_WC3Rebirth/Assets/PotS_DE/WC3Rebirth_DEModels_v2` as an isolated corrected staging tree: all 1,521 models converted and reparsed as MDX version 1000 with zero failures or geometry losses; 6,341 surface materials were converted and 1,902 special/effect materials were preserved.
 - Verified by SHA-256 that all 5,719 files in the read-only `_WC3Rebirth/Assets/PotS_DE/WC3Rebirth_DE` source tree remained unchanged.
+- Updated `Camera/FreeCamera.j` after in-game testing: Q/E now change world altitude directly, vertical mouse look is inverted, camera stepping uses smoothing, and activation temporarily forces DynamicMinimap into suspended fixed full-map mode. The tracked player hero is now deselected, stopped, paused, made invulnerable, and transferred to neutral passive ownership through synchronized state changes, with its prior owner, pause state, and invulnerability restored on exit.
 
 ### Actions Remaining
 
 - Test representative v2 heroes, glow-heavy units, mounted and morphing units, buildings on uneven terrain, portraits, effects, shading, death animations, and all models previously missing in the current Warcraft III DE client before composing a replacement full package or installer payload.
+- Re-test FreeCamera movement and capture smoothness, Q/E altitude control, inverted vertical look, fixed full-map DynamicMinimap behavior, and exact player-hero ownership/pause/invulnerability restoration after exiting.
 
 
 ## [5.10.2026]
