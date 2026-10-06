@@ -18,6 +18,19 @@
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
 
+## [6.10.2026]
+
+### Technical Updates
+
+- Updated `tools/war3-retro-hd-converter/` and `tools/PyMdlxConverter/` with fail-closed MDX parsing, TXAN and legacy-string repairs, strict source/output structure checks, legacy glow/effect material preservation, neutral generated normal maps, and source-geometry preservation.
+- Added `_WC3Rebirth/Assets/PotS_DE/WC3Rebirth_DEModels_v2` as an isolated corrected staging tree: all 1,521 models converted and reparsed as MDX version 1000 with zero failures or geometry losses; 6,341 surface materials were converted and 1,902 special/effect materials were preserved.
+- Verified by SHA-256 that all 5,719 files in the read-only `_WC3Rebirth/Assets/PotS_DE/WC3Rebirth_DE` source tree remained unchanged.
+
+### Actions Remaining
+
+- Test representative v2 heroes, glow-heavy units, mounted and morphing units, buildings on uneven terrain, portraits, effects, shading, death animations, and all models previously missing in the current Warcraft III DE client before composing a replacement full package or installer payload.
+
+
 ## [5.10.2026]
 
 ### Technical Updates

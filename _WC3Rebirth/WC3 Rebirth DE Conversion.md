@@ -6,16 +6,29 @@ This project ports WC3 Rebirth to Warcraft III Definitive Edition (DE) without d
 
 > **Work-in-progress status:** The DE conversion and its installation architecture are under active development. The generated packages are suitable for controlled testing, but the final installer-managed distribution, runtime validation, and conversion of PotS-imported SD models are not complete.
 
-The project currently produces two copy-ready runtime trees:
+> **Corrected-model warning (6 October 2026):** Do not install or promote the original `WC3Rebirth_DEModels` layer or the current `WC3Rebirth_DE_Full`; the first conversion mishandles glow/effect materials and contains silently truncated models. The corrected staging layer is `WC3Rebirth_DEModels_v2` and still requires in-game approval before a new full package is composed.
+
+Corrected staging paths:
 
 ```text
-_WC3Rebirth\Assets\PotS_DE\WC3Rebirth_DE\       Baseline package with SD-origin models
-_WC3Rebirth\Assets\PotS_DE\WC3Rebirth_DE_Full\  Combined package with converted HD/DE models
+Read-only source: Assets\PotS_DE\WC3Rebirth_DE\
+Corrected output: Assets\PotS_DE\WC3Rebirth_DEModels_v2\
 ```
 
-Use `WC3Rebirth_DE_Full` when testing or installing WC3 Rebirth DE with the converted models. Copy the **contents** of that directory into Warcraft III's `_retail_` directory; do not copy `WC3Rebirth_DE_Full` itself as an extra nested folder.
+The v2 run converted and strictly reparsed all 1,521 models as MDX version 1000 with zero failures and zero raw geometry losses. It converted 6,341 opaque/cutout surface materials while preserving 1,902 glow, additive/modulate, animated, replaceable-only, and other special materials in their legacy form. All 5,719 source files matched their pre-conversion SHA-256 hashes afterward. Evidence is stored under `WC3Rebirth_DEModels_v2\_reports\`; runtime checks for glow, shading, animation, morphs, mounted units, buildings on uneven terrain, and portraits remain mandatory.
 
-`WC3Rebirth_DE` remains the self-contained baseline and the read-only input to the model conversion. `WC3Rebirth_DE_Full` applies `WC3Rebirth_DEModels` over that baseline so all 1,521 MDX collisions resolve to the converted version and all generated TIF material resources are included. Neither package requires a separate Rebirth installation first.
+The project currently has one copy-ready baseline, one obsolete combined test tree, and one corrected model staging tree:
+
+```text
+_WC3Rebirth\Assets\PotS_DE\WC3Rebirth_DE\           Copy-ready baseline with SD-origin models
+_WC3Rebirth\Assets\PotS_DE\WC3Rebirth_DE_Full\      Obsolete v1 combined test package; do not install
+_WC3Rebirth\Assets\PotS_DE\WC3Rebirth_DEModels_v2\  Corrected model staging; not yet a complete install
+```
+
+Use `WC3Rebirth_DE` for the current safe baseline. Do not use `WC3Rebirth_DE_Full` for clean testing because it overlays the defective v1 model conversion.
+
+`WC3Rebirth_DE` remains the self-contained, read-only model-conversion input. After v2 passes in-game validation, a new full package must be composed by applying `WC3Rebirth_DEModels_v2` over that baseline while excluding `_reports`; that replacement package has not been built yet.
+
 
 Current generated baseline package:
 
