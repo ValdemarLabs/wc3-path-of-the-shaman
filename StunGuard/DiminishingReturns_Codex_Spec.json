@@ -1,0 +1,376 @@
+{
+  "schema_version": "1.0.0",
+  "specification_id": "pots.global-diminishing-returns",
+  "task": {
+    "type": "implement_library",
+    "title": "Implement global World of Warcraft-inspired crowd-control diminishing returns for Path of the Shaman",
+    "instruction": "Implement the working JASS/vJASS library, not merely a design proposal. Inspect the project and reference implementations first, then create the requested library with minimal integration burden.",
+    "priority": "correctness_then_coverage_then_performance",
+    "status": "ready_for_codex"
+  },
+  "project": {
+    "name": "Path of the Shaman",
+    "repository": "https://github.com/ValdemarLabs/wc3-path-of-the-shaman",
+    "reference_branch": "dev",
+    "working_directory": "H:/Pelit/PotS_JASS/StunGuard/",
+    "target_file": "H:/Pelit/PotS_JASS/StunGuard/DiminishingReturns.j",
+    "language": "vJASS/JASS",
+    "target_runtime": "Warcraft III version used by the existing PotS project; verify before selecting patch-specific natives",
+    "read_first": [
+      {
+        "path": "H:/Pelit/PotS_JASS/StunGuard/StunGuard.j",
+        "purpose": "Understand current stun prevention, event interception, targeted/AoE/passive handling, dummy stuns, and restoration semantics; use as reference, not a scope limit."
+      },
+      {
+        "path": "H:/Pelit/PotS_JASS/StunGuard/_drafts/DiminishingReturns_draft.j",
+        "purpose": "Reuse safe ideas for per-target category stages, reset windows, buff checks, and event handling; critically review all assumptions and known limitations."
+      },
+      {
+        "path": "H:/Pelit/PotS_JASS/",
+        "purpose": "Inspect nearby PotS libraries, import/build conventions, reusable utility libraries, and any available object-data or custom-ability sources."
+      }
+    ]
+  },
+  "scope_and_constraints": {
+    "create_target_file": true,
+    "modify_existing_files": false,
+    "do_not_modify": [
+      "StunGuard.j",
+      "_drafts/DiminishingReturns_draft.j",
+      "other gameplay libraries",
+      "map object data",
+      "unrelated triggers, systems, and resources"
+    ],
+    "preserve_existing_functionality": true,
+    "replace_or_integrate_stunguard_implicitly": false,
+    "dependency_policy": "Prefer existing project-compatible dependencies. Do not introduce a new required third-party dependency without necessity and documentation.",
+    "manual_per_ability_registration": "not acceptable as the primary integration mechanism",
+    "compilation": "Must compile under the actual PotS JASS/vJASS toolchain; do not assume that a different compiler or language is available.",
+    "external_generated_metadata": "May be proposed as an optional future solution, but do not write new companion files unless essential and explicitly justified in the final report.",
+    "read_only_investigation_allowed": true
+  },
+  "functional_requirements": {
+    "global_operation": {
+      "enabled_by_default": true,
+      "goal": "Automatically apply category-shared diminishing returns to as many real crowd-control effects in the map as the engine can reliably observe and modify, including standard and custom abilities.",
+      "no_mandatory_runtime_registration_calls": true,
+      "no_per_ability_manual_configuration_for_common_cases": true,
+      "coverage_requirement": "Do not stop at the two abilities handled by the existing StunGuard or the small manual registry in the draft."
+    },
+    "categories": [
+      {
+        "id": "ROOTS",
+        "numeric_id": 1,
+        "label": "Roots",
+        "examples": [
+          "Entangling Roots",
+          "Frost Nova (only if its actual effect is a root)",
+          "Ice Trap (only if its implementation applies a root)"
+        ]
+      },
+      {
+        "id": "STUNS",
+        "numeric_id": 2,
+        "label": "Stuns",
+        "examples": [
+          "Bash",
+          "Storm Bolt",
+          "Kidney Shot",
+          "Cheap Shot",
+          "War Stomp"
+        ]
+      },
+      {
+        "id": "INCAPACITATES",
+        "numeric_id": 3,
+        "label": "Incapacitates",
+        "examples": [
+          "Hex",
+          "Polymorph",
+          "Banish"
+        ]
+      },
+      {
+        "id": "DISORIENTS",
+        "numeric_id": 4,
+        "label": "Disorients",
+        "examples": [
+          "Fear",
+          "Blind",
+          "Cyclone",
+          "Seduction"
+        ]
+      },
+      {
+        "id": "SILENCES",
+        "numeric_id": 5,
+        "label": "Silences",
+        "examples": [
+          "Silence"
+        ]
+      }
+    ],
+    "classification_rules": [
+      "All abilities and effects assigned to the same category share one diminishing-returns state for each target.",
+      "Each category maintains its own independent state for each target.",
+      "Categorize the actual crowd-control effect, not the display name of the ability.",
+      "The examples are semantic guidance, not proof that the PotS map contains these abilities or that they have the stated effect.",
+      "For abilities applying multiple distinct crowd-control effects, classify and handle each qualifying effect separately when technically possible.",
+      "Do not apply DR to ordinary slows, damage-over-time, utility debuffs, or unrelated buffs.",
+      "Do not add knockback, disarm, or taunt categories unless explicitly requested later."
+    ],
+    "dr_model": {
+      "design_reference": "World of Warcraft-style crowd-control diminishing returns, adapted for PotS",
+      "duration_multipliers_by_successful_application_index": [
+        1.0,
+        0.5,
+        0.25,
+        0.0
+      ],
+      "stage_after_third_success": "Immune to further effects in the same category until the reset window expires.",
+      "reset_window_seconds": 18.0,
+      "window_anchor": "Actual end of the last successfully applied qualifying crowd-control effect, not its cast start.",
+      "reset_rule": "After an uninterrupted 18-second period with no active successful crowd-control effect from that category on the target, the next successful application starts at 100% duration.",
+      "immune_attempts_advance_stage": false,
+      "immune_attempts_refresh_reset_window": false,
+      "failed_missed_resisted_or_invalid_attempts_advance_stage": false,
+      "natural_expiry_and_early_removal": "Track effect ending as accurately as feasible; dispel, cancellation, death, or premature expiry must not leave an incorrect persistent stage or timer.",
+      "overlap_and_refresh_semantics": "Define deterministic handling of overlapping or refreshed effects. Avoid allowing a reduced cast to extend an existing effect contrary to DR, or a later cast to change the recorded expiration incorrectly.",
+      "base_duration": "Use the ability's effective applicable duration before DR, taking ability level and target-specific hero/normal/resistant duration rules into account.",
+      "damage_and_other_spell_effects": "Preserve non-CC spell behavior, including damage, costs, cooldowns, visuals, and unrelated secondary effects unless the selected enforcement approach makes this impossible; clearly document any such limitation.",
+      "scope": "Apply to all relevant targets that can receive these effects in PotS unless an existing design constraint requires an explicit exclusion; do not assume WoW's PvP-only scope applies to PotS."
+    },
+    "ability_delivery_modes": [
+      "single-target active spells",
+      "area-of-effect active spells",
+      "passive attack-proc stuns or other passive crowd control",
+      "triggered or dummy-unit abilities where safely detectable",
+      "custom Object Editor abilities based on standard templates",
+      "multi-target effects where different victims have different current DR stages"
+    ],
+    "automatic_detection": {
+      "preferred_strategy": [
+        "Inspect the map's accessible object data and ability definitions to infer which abilities apply which buff/effect and its category, without asking the map author to write RegisterAbility calls.",
+        "Use reliable native spell/unit events for candidate application events and targeted follow-up checks only when necessary.",
+        "Use known Warcraft III buff rawcodes, actual applied buff presence, ability effects, and existing PotS mechanisms where they provide trustworthy classification and confirmation.",
+        "Keep lookup metadata inside DiminishingReturns.j if automatic source analysis can generate it without requiring ongoing manual registration.",
+        "For effects with no cast event (for example passive procs), seek an existing proc/damage integration point or another reliable narrow observation method; count the stage only when an effect truly lands."
+      ],
+      "buff_preference": "Lean heavily on buff/effect evidence when it improves correctness, including distinguishing cast attempts from successful applications.",
+      "critical_engine_limitation": "Standard Warcraft III JASS does not provide a universal native callback enumerating every arbitrary buff addition together with its category, original duration, and caster. Do not claim magical discovery of all unknown custom buffs or arbitrary triggered effects.",
+      "fallback_policy": "If full zero-configuration global coverage is impossible, implement the widest provably correct automatic subset and explicitly report uncovered ability families, reasons, and the smallest optional integration seam needed for full coverage.",
+      "false_positive_policy": "Do not guess a crowd-control category or advance DR from an attack, a cast start, or an unknown buff alone."
+    },
+    "application_engine": {
+      "correct_timing": "Apply DR before the engine creates the final CC duration, or use a validated mechanism that adjusts the actual resulting CC without side effects. Simple post-cast stage bookkeeping without real duration enforcement is insufficient.",
+      "native_duration_fields": [
+        "ABILITY_RLF_DURATION_NORMAL",
+        "ABILITY_RLF_DURATION_HERO"
+      ],
+      "field_mutation_safety": "If changing per-unit ability instance level fields via BlzSetAbilityRealLevelField, snapshot exact original values and restore on all exit paths; verify compatibility and isolate concurrent casts from the same caster.",
+      "area_of_effect_safety": "Per-target stages may differ in one AoE cast; never shorten or suppress an entire AoE solely because one target has a higher DR stage. Use a verified per-target mechanism or explicitly document the unavoidable limitation.",
+      "passive_proc_safety": "Do not count a normal attack as a successful Bash proc; only a confirmed applied stun should alter state.",
+      "no_unwanted_zero_duration_interrupts": "Check project game constants such as CanInterruptByZeroDurationBuffs when using suppression or dummy techniques.",
+      "legacy_interactions": "Examine StunGuard's separate stun suppression and dummy replacement. Avoid double-processing if both libraries are installed. Do not silently change StunGuard's existing behavior or remove it.",
+      "engine_compatibility": "Validate natives, dummy rawcodes, special buff handling, spell event timing, and integer level indexing against the project's Warcraft III version."
+    },
+    "public_api": {
+      "namespace": "DR",
+      "library_name": "DiminishingReturns",
+      "minimal_optional_functions": [
+        "query target/category current stage",
+        "query target/category reset status or remaining window",
+        "reset target/category state",
+        "enable or disable library for debugging/testing"
+      ],
+      "design_rule": "Expose a small stable API if useful, but normal gameplay must not require any per-ability registration calls. Use the project's naming and encapsulation conventions."
+    }
+  },
+  "nonfunctional_requirements": {
+    "performance": {
+      "goal": "No perceptible gameplay lag, including dense combat and large AoE encounters.",
+      "event_driven_first": true,
+      "avoid": [
+        "global per-frame scanning of all units and all possible buffs",
+        "creating one persistent timer or trigger per unit per category without a justified bound",
+        "large repeated enumerations of the entire map",
+        "repeated object-data lookups or buff scans for irrelevant events",
+        "unbounded hashtable growth",
+        "unnecessary dummy creation in hot paths"
+      ],
+      "prefer": [
+        "O(1) per-target per-category state lookups",
+        "single shared clock or bounded sparse scheduling",
+        "lazy expiration where correctness permits",
+        "early filtering and cached static metadata",
+        "reuse and cleanup of temporary groups, timers, and handles",
+        "checking only units plausibly affected by a triggering spell or proc"
+      ],
+      "proof": "Measure or at least instrument typical combat and stress cases; do not simply assert the implementation is lag-free."
+    },
+    "memory_and_lifecycle": {
+      "no_handle_leaks": true,
+      "clear_stale_entries": true,
+      "avoid_stale_state_on_unit_death_or_removal": true,
+      "avoid_handle_id_reuse_bugs": true,
+      "restoration_on_cancel_or_interrupt": true,
+      "clean_local_handle_references": true
+    },
+    "quality": [
+      "Follow established PotS JASS/vJASS structure, naming, formatting, and initialization patterns.",
+      "Keep algorithms deterministic, easy to audit, and independent of frame-rate fluctuations where possible.",
+      "Do not use deprecated or unverified functions where a supported equivalent exists.",
+      "Document any assumptions about buffs, disabled abilities, immunity, targets, and available object data directly in the library.",
+      "Prefer maintainable code over clever heuristics that can break unrelated abilities."
+    ]
+  },
+  "implementation_workflow": [
+    {
+      "step": 1,
+      "name": "Audit existing PotS behavior",
+      "required_actions": [
+        "Inspect both referenced JASS implementations and the build/import conventions.",
+        "Identify legacy StunGuard interactions and likely shared stun buffs or dummy abilities."
+      ]
+    },
+    {
+      "step": 2,
+      "name": "Determine provable automatic coverage",
+      "required_actions": [
+        "Inspect available ability and buff object data and locate reusable event/proc systems.",
+        "Build an internal classification approach that does not impose manual calls at each spell site.",
+        "Distinguish what can be detected from what requires explicit instrumentation."
+      ]
+    },
+    {
+      "step": 3,
+      "name": "Implement global DR engine",
+      "required_actions": [
+        "Implement separate target-category stages and accurate reset windows.",
+        "Implement real duration reduction or immunity enforcement for supported effects.",
+        "Handle targeted, AoE, passive, and triggered effects to the extent proven safe.",
+        "Minimize work and allocations in combat hot paths."
+      ]
+    },
+    {
+      "step": 4,
+      "name": "Verify behavior and integration",
+      "required_actions": [
+        "Run JASS/vJASS compilation with the project's actual toolchain where accessible.",
+        "Run focused tests and regression checks; if in-game tests cannot be run, identify them as unverified instead of claiming success.",
+        "Review leaks, early dispels, unit reuse, AoE stage differences, and interaction with StunGuard."
+      ]
+    },
+    {
+      "step": 5,
+      "name": "Report implementation honestly",
+      "required_actions": [
+        "Report created file, integration requirement, and tests performed.",
+        "List automatically supported CC families and any unsupported cases, with precise reasons.",
+        "Describe any conflict with StunGuard and how to avoid loading both handlers concurrently.",
+        "Do not modify unrelated project files to conceal limitations."
+      ]
+    }
+  ],
+  "acceptance_tests": [
+    {
+      "id": "DR-001",
+      "description": "First confirmed root on a fresh target lasts 100% of its actual base duration."
+    },
+    {
+      "id": "DR-002",
+      "description": "Second confirmed root from a different root ability inside the active window lasts 50%."
+    },
+    {
+      "id": "DR-003",
+      "description": "Third confirmed root lasts 25%; fourth and later attempts have 0% root duration until reset."
+    },
+    {
+      "id": "DR-004",
+      "description": "Stun, root, incapacitate, disorient, and silence stages remain independent for the same target."
+    },
+    {
+      "id": "DR-005",
+      "description": "Two targets hit by one AoE receive durations according to their respective stage; immune targets do not suppress the effect on eligible targets."
+    },
+    {
+      "id": "DR-006",
+      "description": "Reset occurs 18 seconds after the last successful CC ends; a cast that fails, misses, or is resisted does not advance the stage."
+    },
+    {
+      "id": "DR-007",
+      "description": "An immune attempt neither advances DR nor shifts the reset time."
+    },
+    {
+      "id": "DR-008",
+      "description": "Early dispel or cancellation, overlapping effects, and refreshes do not corrupt active duration or reset timing."
+    },
+    {
+      "id": "DR-009",
+      "description": "Passive Bash only counts on a successful stun proc, not on every attack or damage event."
+    },
+    {
+      "id": "DR-010",
+      "description": "Storm Bolt maintains its damage and visuals while its stun is diminished."
+    },
+    {
+      "id": "DR-011",
+      "description": "The AoE and dummy implementation does not modify other units' ability fields or leave modified ability duration fields behind after interruption."
+    },
+    {
+      "id": "DR-012",
+      "description": "No duplicate DR processing or hidden conflict occurs when evaluating compatibility with the existing StunGuard; explicitly require disabling one handler if coexistence is unsafe."
+    },
+    {
+      "id": "DR-013",
+      "description": "Library compiles with the actual PotS toolchain and uses valid target-version JASS natives."
+    },
+    {
+      "id": "DR-014",
+      "description": "Repeated combat, many targets, and long play sessions do not cause runaway handles, timers, retained state, or perceptible frame drops."
+    },
+    {
+      "id": "DR-015",
+      "description": "The coverage report distinguishes native, custom, and non-observable triggered CC; no undocumented assumption of universal coverage."
+    }
+  ],
+  "deliverables": {
+    "required_file": "H:/Pelit/PotS_JASS/StunGuard/DiminishingReturns.j",
+    "required_final_report": [
+      "Summary of implementation and key architectural decisions",
+      "How the new library is initialized or loaded using existing project workflow",
+      "Which CC types and ability-delivery modes are automatically covered",
+      "Exact limitations and any minimal integration actions still needed",
+      "Compatibility and conflict assessment with StunGuard.j",
+      "Compilation and runtime test results, with failures or unavailable tests clearly identified"
+    ],
+    "do_not_just_produce": [
+      "a pseudocode implementation",
+      "a design-only explanation",
+      "a manually curated RegisterAbility list presented as universal automatic detection",
+      "a system that tracks stage but does not actually reduce or prevent CC duration"
+    ]
+  },
+  "references": [
+    {
+      "url": "https://warcraft.wiki.gg/wiki/Diminishing_returns",
+      "topic": "WoW DR stages, reset timing, category behavior"
+    },
+    {
+      "url": "https://wowpedia.fandom.com/wiki/Diminishing_returns#Abilities_list",
+      "topic": "User-specified categories and example ability lists; historical examples, not a required exact expansion snapshot"
+    },
+    {
+      "url": "https://www.hiveworkshop.com/threads/buff-system.288640/",
+      "topic": "Buff-system architecture patterns and explicit buff event abstraction"
+    },
+    {
+      "url": "https://lep.duckdns.org/jassbot/doc/BlzSetAbilityRealLevelField",
+      "topic": "Warcraft III native for changing ability duration fields and compatibility cautions"
+    },
+    {
+      "url": "https://github.com/ValdemarLabs/wc3-path-of-the-shaman/tree/dev/StunGuard",
+      "topic": "PotS reference implementations and local project conventions"
+    }
+  ]
+}
