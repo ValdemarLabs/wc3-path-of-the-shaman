@@ -18,6 +18,28 @@
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
 
+## [7.10.2026]
+
+### Player-Facing Updates
+
+- Fixed distant map units remaining visible and disappearing in slow waves after the intro cinematic.
+- Fixed Zul'kis's arrival ship being hidden during the camera handoff; the ship now reveals itself and nearby units before the first arrival shot.
+
+### Technical Updates
+
+- Updated `UnitSystems/UnitHider4.j` so foreign-shown units are reclassified together on the next active update, while explicit reference registration immediately reveals nearby managed cells.
+- Updated `QuestsAndDialogs/QuestGivers/Player/qZulkis.j` so the temporary intro ship registers and unregisters as a UnitHider reference around its lifetime.
+- Updated `tools/war3-retro-hd-converter/` with an internal BLP1 alpha decoder, matte black HD reflection slots, and lossless classic-to-HD `SKIN`/`TANG` generation; all 45 converter tests pass.
+- Rebuilt `_WC3Rebirth/Assets/PotS_DE/WC3Rebirth_DEModels_v2`: all 1,521 models reparse as MDX version 1000, 6,341 surface materials were converted, 1,214 models / 9,953 geosets received lossless HD skinning, 1,113 generated alpha textures retain transparency, and the integrity audit reports zero failures. All 5,719 source files remained byte-identical by SHA-256.
+- Retained the superseded defective output as `_WC3Rebirth/Assets/PotS_DE/WC3Rebirth_DEModels_v2_broken_20261006` for recoverable rollback; it must not be installed.
+
+### Actions Remaining
+
+- Compile the full map and runtime-test the initial intro teardown plus Zul'kis's normal and skipped ship-arrival paths, confirming no distant visibility wave and no ship-area pop-in.
+- With Warcraft III and World Editor closed, refresh the `_retail_` test installation from the clean `WC3Rebirth_DE` baseline and overlay the corrected `WC3Rebirth_DEModels_v2` runtime files while excluding `_reports`.
+- In-game, verify the Knight's head/neck animation, representative flower and grass cutouts, unit edge sheen, hero glow, elevated buildings, and the previously missing models before composing a replacement full package.
+
+
 ## [6.10.2026]
 
 ### Technical Updates
