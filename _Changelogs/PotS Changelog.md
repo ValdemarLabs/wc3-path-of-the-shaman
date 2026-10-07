@@ -18,6 +18,29 @@
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
 
+## [8.10.2026]
+
+### Technical Updates
+
+- Removed unsafe synthetic `SKIN`/`TANG` generation from `tools/war3-retro-hd-converter/` after in-game tests showed widespread model parts stretching toward the origin. The converter now preserves classic `GNDX`/`MTGC`/`MATS` skinning and treats existing `SKIN`/`TANG` lengths as immutable validation data; all 44 converter tests pass.
+- Rebuilt `_WC3Rebirth/Assets/PotS_DE/WC3Rebirth_DEModels_v2` from the read-only source: all 1,521 models reparse as MDX version 1000, all 11,672 geosets retain exact classic skinning and geometry, 6,341 converted material reflection slots use the matte texture, 1,113 alpha textures retain transparency, and the audit reports zero failures. All 5,719 source files remained byte-identical by SHA-256.
+- Retained the superseded synthetic-skin output as `_WC3Rebirth/Assets/PotS_DE/WC3Rebirth_DEModels_v2_broken_skinning_20261008` for diagnosis; it must not be installed.
+
+### Resolved Issues
+
+- Fixed the converter-side cause of the latest widespread unit, building, and doodad stretching regression by removing runtime-invalid synthesized HD skinning from the corrected v2 staging output.
+
+### Known Issues
+
+- The Knight's earlier head/neck deformation remains a separate model-specific problem. The no-skinning rebuild restores the safer baseline behavior but does not claim to repair that original defect.
+
+### Actions Remaining
+
+- With Warcraft III and World Editor closed, refresh the `_retail_` test installation from the clean `WC3Rebirth_DE` baseline and overlay the corrected `WC3Rebirth_DEModels_v2` runtime files while excluding `_reports`; do not copy either broken v2 backup.
+- In-game, validate a broad sample of units, heroes, buildings, doodads, portraits, attachments, morphs, and death animations, confirming that no geometry stretches toward the origin before composing a replacement full package.
+- Investigate the Knight head/neck deformation as an isolated model repair without globally replacing classic skinning.
+
+
 ## [7.10.2026]
 
 ### Player-Facing Updates
@@ -29,8 +52,8 @@
 
 - Updated `UnitSystems/UnitHider4.j` so foreign-shown units are reclassified together on the next active update, while explicit reference registration immediately reveals nearby managed cells.
 - Updated `QuestsAndDialogs/QuestGivers/Player/qZulkis.j` so the temporary intro ship registers and unregisters as a UnitHider reference around its lifetime.
-- Updated `tools/war3-retro-hd-converter/` with an internal BLP1 alpha decoder, matte black HD reflection slots, and lossless classic-to-HD `SKIN`/`TANG` generation; all 45 converter tests pass.
-- Rebuilt `_WC3Rebirth/Assets/PotS_DE/WC3Rebirth_DEModels_v2`: all 1,521 models reparse as MDX version 1000, 6,341 surface materials were converted, 1,214 models / 9,953 geosets received lossless HD skinning, 1,113 generated alpha textures retain transparency, and the integrity audit reports zero failures. All 5,719 source files remained byte-identical by SHA-256.
+- Updated `tools/war3-retro-hd-converter/` with an internal BLP1 alpha decoder, matte black HD reflection slots, and an experimental classic-to-HD `SKIN`/`TANG` conversion. The skinning experiment was superseded on 8.10.2026 after runtime testing exposed an origin-stretching regression.
+- Rebuilt `_WC3Rebirth/Assets/PotS_DE/WC3Rebirth_DEModels_v2` with the experimental HD skinning. Although all 1,521 models passed the then-current structural audit, runtime testing invalidated that build; it was quarantined and replaced on 8.10.2026.
 - Retained the superseded defective output as `_WC3Rebirth/Assets/PotS_DE/WC3Rebirth_DEModels_v2_broken_20261006` for recoverable rollback; it must not be installed.
 
 ### Actions Remaining
