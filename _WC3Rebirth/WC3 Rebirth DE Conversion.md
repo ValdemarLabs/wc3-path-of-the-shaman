@@ -6,7 +6,7 @@ This project ports WC3 Rebirth to Warcraft III Definitive Edition (DE) without d
 
 > **Work-in-progress status:** The DE conversion and its installation architecture are under active development. The generated packages are suitable for controlled testing, but the final installer-managed distribution, runtime validation, and conversion of PotS-imported SD models are not complete.
 
-> **Corrected-model warning (6 October 2026):** Do not install or promote the original `WC3Rebirth_DEModels` layer or the current `WC3Rebirth_DE_Full`; the first conversion mishandles glow/effect materials and contains silently truncated models. The corrected staging layer is `WC3Rebirth_DEModels_v2` and still requires in-game approval before a new full package is composed.
+> **Corrected-model status (7 October 2026):** Do not install or promote the original `WC3Rebirth_DEModels` layer or `WC3Rebirth_DE_Full`; the first conversion mishandles glow/effect materials and contains silently truncated models. `WC3Rebirth_DEModels_v2` has been rebuilt with BLP1 alpha preservation, matte reflection slots, and lossless HD skinning where representable. It passes static validation but still requires focused in-game approval before a new full package is composed.
 
 Corrected staging paths:
 
@@ -15,14 +15,15 @@ Read-only source: Assets\PotS_DE\WC3Rebirth_DE\
 Corrected output: Assets\PotS_DE\WC3Rebirth_DEModels_v2\
 ```
 
-The v2 run converted and strictly reparsed all 1,521 models as MDX version 1000 with zero failures and zero raw geometry losses. It converted 6,341 opaque/cutout surface materials while preserving 1,902 glow, additive/modulate, animated, replaceable-only, and other special materials in their legacy form. All 5,719 source files matched their pre-conversion SHA-256 hashes afterward. Evidence is stored under `WC3Rebirth_DEModels_v2\_reports\`; runtime checks for glow, shading, animation, morphs, mounted units, buildings on uneven terrain, and portraits remain mandatory.
+The rebuilt v2 run converted and strictly reparsed all 1,521 models as MDX version 1000 with zero failures and zero source geometry, UV, classic group, or object-count losses. It converted 6,341 surface materials while preserving 1,902 glow, additive/modulate, animated, replaceable-only, and other special materials in their legacy form. The internal BLP1 decoder preserved alpha in 1,113 generated cutout textures, removing the opaque black vegetation cards. Matte black reflection slots replace the stock environment map to suppress the unwanted grazing-angle sheen. Lossless HD `SKIN` and `TANG` data was added to 1,214 models / 9,953 geosets; 307 models retain classic groups, including 32 whose group data cannot fit the four-influence/byte-index HD representation without approximation. All 5,719 source files matched their original SHA-256 snapshot afterward. Evidence is stored under `WC3Rebirth_DEModels_v2\_reports\`; focused in-game checks remain mandatory.
 
 The project currently has one copy-ready baseline, one obsolete combined test tree, and one corrected model staging tree:
 
 ```text
 _WC3Rebirth\Assets\PotS_DE\WC3Rebirth_DE\           Copy-ready baseline with SD-origin models
 _WC3Rebirth\Assets\PotS_DE\WC3Rebirth_DE_Full\      Obsolete v1 combined test package; do not install
-_WC3Rebirth\Assets\PotS_DE\WC3Rebirth_DEModels_v2\  Corrected model staging; not yet a complete install
+_WC3Rebirth\Assets\PotS_DE\WC3Rebirth_DEModels_v2\  Rebuilt corrected model staging; not yet a complete install
+_WC3Rebirth\Assets\PotS_DE\WC3Rebirth_DEModels_v2_broken_20261006\  Recoverable pre-fix v2 backup; do not install
 ```
 
 Use `WC3Rebirth_DE` for the current safe baseline. Do not use `WC3Rebirth_DE_Full` for clean testing because it overlays the defective v1 model conversion.
@@ -40,7 +41,7 @@ Current generated baseline package:
 | Target Warcraft build | 3.0.0.24268 |
 | Root layout | Direct `_retail_` loose-file paths |
 
-Current generated full package:
+Obsolete v1 combined package (do not install):
 
 | Property | Result |
 |---|---:|
@@ -62,11 +63,14 @@ The manual copy workflow below remains the development and validation path. The 
 3. Close World Editor and Warcraft III completely.
 4. Back up the existing `_retail_` directory's loose mod files.
 5. For the cleanest validation, use a fresh Warcraft III installation. If SD Rebirth is already installed, move or remove only known Rebirth-owned loose files before installing the full package. Do **not** delete the entire `_retail_` directory: it also contains Warcraft executables, game data, and potentially unrelated mods. Copying the full package will replace all 1,521 known Rebirth model paths, but it cannot remove unknown stale files from an older or modified installation.
-6. Copy everything inside:
+6. For current corrected-model testing, copy the contents of the baseline first, then overlay the rebuilt v2 model layer:
 
    ```text
-   H:\Pelit\PotS_JASS\_WC3Rebirth\Assets\PotS_DE\WC3Rebirth_DE_Full
+   H:\Pelit\PotS_JASS\_WC3Rebirth\Assets\PotS_DE\WC3Rebirth_DE
+   H:\Pelit\PotS_JASS\_WC3Rebirth\Assets\PotS_DE\WC3Rebirth_DEModels_v2
    ```
+
+   Exclude `WC3Rebirth_DEModels_v2\_reports` from the runtime copy. Do not use `WC3Rebirth_DE_Full`; it still contains the defective first conversion.
 
    into:
 
@@ -188,7 +192,7 @@ A full staging conversion has been completed using [Zorrot's War3 Retro HD Conve
 
 ```text
 Source: Assets\PotS_DE\WC3Rebirth_DE\
-Output: Assets\PotS_DE\WC3Rebirth_DEModels\
+Output: Assets\PotS_DE\WC3Rebirth_DEModels_v2\
 ```
 
 The converter changes SD MDX models to version 1000 HD-material models, builds `Shader_HD_DefaultUnit` materials, and generates diffuse, alpha, team-color, normal, ORM, and team-ORM resources while preserving the original geometry, UVs, animations, and Warcraft-managed replaceable resources. It is a material converter, not a remesher or texture upscaler: it does not add polygons or increase the original diffuse resolution.
@@ -203,18 +207,22 @@ Current staging result:
 | Converted successfully | 1,521 |
 | Failed | 0 |
 | Output MDX version | 1000 |
-| Generated TIF resources | 10,958 |
-| Total output files | 12,482 |
-| Total output size | 6,352,506,241 bytes |
-| MDX load failures | 0 |
-| MDX chunk-framing failures | 0 |
-| Pivot mismatches | 0 |
+| Generated TIF resources | 10,376 |
+| Runtime output files | 11,897 |
+| Runtime output size | 5,200,180,810 bytes |
+| Converted surface materials | 6,341 |
+| Preserved special/effect materials | 1,902 |
+| Models with lossless HD skinning | 1,214 |
+| HD-skinned geosets | 9,953 |
+| Alpha-diffuse textures with transparency | 1,113 |
+| MDX load or integrity failures | 0 |
+| Source SHA-256 mismatches | 0 |
 
-The batch reports are stored under `Assets\PotS_DE\WC3Rebirth_DEModels\_reports\` as `conversion_report.json`, `source_texture_audit.json`, and `strict_validation.json`.
+The batch reports are stored under `Assets\PotS_DE\WC3Rebirth_DEModels_v2\_reports\` as `conversion_report.json`, `integrity_audit.json`, `source_snapshot_before.json`, and `source_immutability_verification.json`.
 
 The local conversion toolchain is kept under `tools\war3-retro-hd-converter\`, `tools\PyMdlxConverter\`, and `tools\War3RetroHD-v0.1.0\`.
 
-The local PyMdlxConverter checkout currently contains four required parser/serializer corrections for integer animation values, light type serialization, unknown-chunk version handling, and event-track byte lengths. These changes must be retained, upstreamed, or captured as a reproducible patch before rebuilding the model layer on another machine.
+The local PyMdlxConverter checkout contains required parser/serializer corrections for strict failure handling, texture-animation sizing, fixed-width legacy strings, dynamic chunk bounds, integer animation values, light type serialization, unknown-chunk version handling, and event-track byte lengths. These changes must be retained or upstreamed before rebuilding the model layer on another machine.
 
 This is a structurally validated staging result, not yet the installer-ready model layer. It still needs representative in-game testing for units, heroes, buildings, portraits, attachments, morphs, team color and glow, alpha blending, death/dissipate animations, sounds, scale, selection circles, and shadows. Only validated converted models should be promoted into the final package.
 
@@ -231,7 +239,7 @@ Promotion and validation plan:
 7. Convert and validate the separate PotS imported-model set using the same staged process.
 8. Add only validated converted packages as new deterministic layers in the package builder and installer payload.
 
-The converter currently does not automatically collect external submodels, sounds, or FaceFX assets, so the Rebirth dependency/package audit remains necessary after conversion. Generated automatic normal and ORM maps are compatibility-oriented and should be replaced with authored maps where physically accurate materials are important.
+The converter currently does not automatically collect external submodels, sounds, or FaceFX assets, so the Rebirth dependency/package audit remains necessary after conversion. Generated automatic normal and ORM maps are compatibility-oriented and should be replaced with authored maps where physically accurate materials are important. Static validation cannot prove Warcraft renderer behavior; test the rebuilt v2 in-game before composing or installing a replacement full package.
 
 ## Installer-managed DE architecture (work in progress)
 
@@ -339,3 +347,4 @@ Terrain, grass, cliffs, and Sunken Ruins Sand have received focused World Editor
 - representative runtime testing and promotion of the staged Zorrot SD-to-HD/DE model layer;
 - conversion and validation of PotS-specific imported SD models;
 - installer-managed installation, update, repair, complete removal, and per-component removal for WC3 Rebirth DE and PotS external assets.
+
