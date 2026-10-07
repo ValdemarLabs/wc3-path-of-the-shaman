@@ -2,7 +2,7 @@
     qZulkis
 
     Author: Valdemar
-    Version: 1.6.1
+    Version: 1.6.2
 
     Description:
 
@@ -35,7 +35,7 @@
     qZulkis_IsPrologueCompleted() gates Call of the Horde convergence.
 
 **/
-library qZulkis initializer Init requires QuestGiver, QuestMaster, DialogInteraction, DialogSystem, CameraControl, Companions, Death, Revival, HintsUI, DInventory, DEquipment, Start, VoicelinesNarrator, VoicelinesNazgrek, VoicelinesZulkis, VoicelinesThork, VoicelinesZulkarak, VoicelinesGenericTroll, VoicelinesOrcGrunt, optional Pet
+library qZulkis initializer Init requires QuestGiver, QuestMaster, DialogInteraction, DialogSystem, CameraControl, UnitHider4, Companions, Death, Revival, HintsUI, DInventory, DEquipment, Start, VoicelinesNarrator, VoicelinesNazgrek, VoicelinesZulkis, VoicelinesThork, VoicelinesZulkarak, VoicelinesGenericTroll, VoicelinesOrcGrunt, optional Pet
     globals
         // Quest and staging configuration
         public constant string QUEST_MEET_CHIEFTAIN_THORK = "Meet with Chieftain Thork"
@@ -478,6 +478,7 @@ endfunction
 
 private function RemoveIntroShip takes nothing returns nothing
     if IntroShip != null then
+        call UnitHider_UnregisterReference(IntroShip)
         call RemoveUnit(IntroShip)
         set IntroShip = null
     endif
@@ -1282,6 +1283,7 @@ private function StartShipArrival takes nothing returns nothing
     call StageProloguePlayerHandoff()
     call RemoveIntroShip()
     set IntroShip = CreateUnit(Player(DARKSPEAR_PLAYER_ID), UNIT_INTRO_SHIP, GetRectCenterX(gg_rct_ZulkisShipWP1), GetRectCenterY(gg_rct_ZulkisShipWP1), bj_UNIT_FACING)
+    call UnitHider_RegisterReference(IntroShip)
     call IssuePointOrder(IntroShip, "move", GetRectCenterX(gg_rct_ZulkisShipWP2), GetRectCenterY(gg_rct_ZulkisShipWP2))
     call CameraSetupApplyForPlayer(true, gg_cam_IntroZulkisCam2, Player(0), 0.00)
     call CameraSetupApplyForPlayer(true, gg_cam_IntroZulkisCam1, Player(0), SHIP_CAMERA_FIRST_PAN_DURATION)
