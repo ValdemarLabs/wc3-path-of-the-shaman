@@ -684,8 +684,8 @@ globals
 
     // Memory cleanup vars
     boolean            bj_wantDestroyGroup         = false
-	effect 			   bj_destroyOrRemoveEffectAsyncEffect = null
-	real 			   bj_destroyOrRemoveEffectAsyncTime   = 0
+	effect 			   bj_destroyEffectAsyncEffect = null
+	real 			   bj_destroyEffectAsyncTime   = 0
 
     // Instanced Operation Results
     boolean            bj_lastInstObjFuncSuccessful = true
@@ -1409,11 +1409,6 @@ function SetCameraTargetControllerNoZForPlayer takes player whichPlayer, unit wh
     if (GetLocalPlayer() == whichPlayer) then
         // Use only local code (no net traffic) within this block to avoid desyncs.
         call SetCameraTargetController(whichUnit, xoffset, yoffset, inheritOrientation)
-        if (whichUnit == null) then
-            call BlzSetCameraAllowsHotkeyTargetLock(true)
-        else
-            call BlzSetCameraAllowsHotkeyTargetLock(false)
-        endif
     endif
 endfunction
 
@@ -1515,7 +1510,6 @@ function ResetToGameCameraForPlayer takes player whichPlayer, real duration retu
     if (GetLocalPlayer() == whichPlayer) then
         // Use only local code (no net traffic) within this block to avoid desyncs.
         call ResetToGameCamera(duration)
-        call BlzSetCameraAllowsHotkeyTargetLock(true)
     endif
 endfunction
 
@@ -1684,11 +1678,6 @@ function SetCameraOrientControllerForPlayerBJ takes player whichPlayer, unit whi
     if (GetLocalPlayer() == whichPlayer) then
         // Use only local code (no net traffic) within this block to avoid desyncs.
         call SetCameraOrientController(whichUnit, xoffset, yoffset)
-        if (whichUnit == null) then
-            call BlzSetCameraAllowsHotkeyTargetLock(true)
-        else
-            call BlzSetCameraAllowsHotkeyTargetLock(false)
-        endif
     endif
 endfunction
 
@@ -2323,8 +2312,8 @@ function SetTerrainFogExVBJ takes integer style, real zstart, real zend, real de
 endfunction
 
 //===========================================================================
-function BlzSetTerrainFogStyleBJ takes integer style returns nothing
-    call BlzSetTerrainFogStyle(ConvertFogStyle(style))
+function BlzSetTerrainFogStyleBJ takes fogstyle style returns nothing
+    call BlzSetTerrainFogStyle(style)
 endfunction
 
 //===========================================================================
@@ -3051,11 +3040,6 @@ function DestroyEffectBJ takes effect whichEffect returns nothing
 endfunction
 
 //===========================================================================
-function RemoveEffectBJ takes effect whichEffect returns nothing
-    call BlzRemoveEffect(whichEffect)
-endfunction
-
-//===========================================================================
 function GetLastCreatedEffectBJ takes nothing returns effect
     return bj_lastCreatedEffect
 endfunction
@@ -3063,8 +3047,8 @@ endfunction
 //===========================================================================
 // Note: this function should be used in conjunction with the one below, which is the only one that is really exposed in GUI
 function DestroyEffectAsyncBJ takes nothing returns nothing
-	local effect localEffect = bj_destroyOrRemoveEffectAsyncEffect
-	local real localTime = bj_destroyOrRemoveEffectAsyncTime
+	local effect localEffect = bj_destroyEffectAsyncEffect
+	local real localTime = bj_destroyEffectAsyncTime
 	
 	call TriggerSleepAction(localTime)
 	call DestroyEffect(localEffect)
@@ -3072,30 +3056,11 @@ endfunction
 
 function DestroyEffectAfterTimeBJ takes effect whichEffect, real time returns nothing
 	// Save arguments to globals
-	set bj_destroyOrRemoveEffectAsyncEffect = whichEffect
-	set bj_destroyOrRemoveEffectAsyncTime = time
+	set bj_destroyEffectAsyncEffect = whichEffect
+	set bj_destroyEffectAsyncTime = time
 	
 	// Externalize to an async thread
 	call ExecuteFunc("DestroyEffectAsyncBJ")
-endfunction
-
-//===========================================================================
-// Note: this function should be used in conjunction with the one below, which is the only one that is really exposed in GUI
-function RemoveEffectAsyncBJ takes nothing returns nothing
-	local effect localEffect = bj_destroyOrRemoveEffectAsyncEffect
-	local real localTime = bj_destroyOrRemoveEffectAsyncTime
-	
-	call TriggerSleepAction(localTime)
-	call BlzRemoveEffect(localEffect)
-endfunction
-
-function RemoveEffectAfterTimeBJ takes effect whichEffect, real time returns nothing
-	// Save arguments to globals
-	set bj_destroyOrRemoveEffectAsyncEffect = whichEffect
-	set bj_destroyOrRemoveEffectAsyncTime = time
-	
-	// Externalize to an async thread
-	call ExecuteFunc("RemoveEffectAsyncBJ")
 endfunction
 
 
@@ -3252,7 +3217,7 @@ endfunction
 
 //===========================================================================
 function UnitEquipItemSwapped takes item whichItem, unit whichHero returns boolean
-    local boolean success = BlzUnitEquipItem(whichHero, whichItem)
+    local boolean success = UnitEquipItem(whichHero, whichItem)
     if (success) then
         set bj_lastEquippedItem = whichItem
     endif
@@ -3268,7 +3233,7 @@ function UnitEquipItemByIdSwapped takes integer itemId, unit whichHero returns i
     local boolean success
     
     set bj_lastCreatedItem = CreateItem(itemId, GetUnitX(whichHero), GetUnitY(whichHero))
-    set success = BlzUnitEquipItem(whichHero, bj_lastCreatedItem)
+    set success = UnitEquipItem(whichHero, bj_lastCreatedItem)
     
     if (success) then
         set bj_lastEquippedItem = bj_lastCreatedItem
@@ -3287,11 +3252,11 @@ endfunction
 
 function UnitUnequipItemSwapped takes unit whichHero, item whichItem returns nothing
     set bj_lastUnequippedItem = whichItem
-    call BlzUnitUnequipItem(whichHero, whichItem)
+    call UnitUnequipItem(whichHero, whichItem)
 endfunction
 
 function UnitUnequipItemFromSlotSwapped takes unit whichHero, loadoutslot slot returns item
-    set bj_lastUnequippedItem = BlzUnitUnequipItemFromSlot(whichHero, slot)
+    set bj_lastUnequippedItem = UnitUnequipItemFromSlot(whichHero, slot)
     return bj_lastUnequippedItem
 endfunction
 
@@ -3476,11 +3441,11 @@ function UnitItemInSlotBJ takes unit whichUnit, integer itemSlot returns item
 endfunction
 
 function UnitItemInBagSlotBJ takes unit whichUnit, integer itemSlot returns item
-    return BlzUnitItemInBagSlot(whichUnit, itemSlot-1)
+    return UnitItemInBagSlot(whichUnit, itemSlot-1)
 endfunction
 
 function UnitItemInEquipmentSlotBJ takes unit whichUnit, loadoutslot slot returns item
-    return BlzUnitItemInEquipmentSlot(whichUnit, slot)
+    return UnitItemInEquipmentSlot(whichUnit, slot)
 endfunction
 
 //===========================================================================
@@ -3526,7 +3491,7 @@ function GetInventoryBagIndexOfItemTypeBJ takes unit whichUnit, integer itemId r
 
     set index = 0
     loop
-        set indexItem = BlzUnitItemInBagSlot(whichUnit, index)
+        set indexItem = UnitItemInBagSlot(whichUnit, index)
         if (indexItem != null) and (GetItemTypeId(indexItem) == itemId) then
             return index + 1
         endif
@@ -3544,7 +3509,7 @@ function GetItemOfTypeFromUnitBagBJ takes unit whichUnit, integer itemId returns
     if (index == 0) then
         return null
     else
-        return BlzUnitItemInBagSlot(whichUnit, index - 1)
+        return UnitItemInBagSlot(whichUnit, index - 1)
     endif
 endfunction
 
@@ -3560,8 +3525,8 @@ function GetInventoryBagIndexOfEquipmentTypeBJ takes unit whichUnit, equipmentTy
 
     set index = 0
     loop
-        set indexItem = BlzUnitItemInBagSlot(whichUnit, index)
-        if (indexItem != null) and (BlzGetItemEquipmentType(indexItem) == whichEquipmentType) then
+        set indexItem = UnitItemInBagSlot(whichUnit, index)
+        if (indexItem != null) and (GetItemEquipmentType(indexItem) == whichEquipmentType) then
             return index + 1
         endif
 
@@ -3578,7 +3543,7 @@ function GetItemOfEquipmentTypeFromUnitBagBJ takes unit whichUnit, equipmentType
     if (index == 0) then
         return null
     else
-        return BlzUnitItemInBagSlot(whichUnit, index - 1)
+        return UnitItemInBagSlot(whichUnit, index - 1)
     endif
 endfunction
 
@@ -3589,7 +3554,7 @@ function GetEquipmentInventoryIndexOfItemTypeBJ takes unit whichUnit, integer it
 
     set index = 0
     loop
-        set indexItem = BlzUnitItemInEquipmentSlot(whichUnit, ConvertLoadoutSlot(index))
+        set indexItem = UnitItemInEquipmentSlot(whichUnit, ConvertLoadoutSlot(index))
         if (indexItem != null) and (GetItemTypeId(indexItem) == itemId) then
             return index + 1
         endif
@@ -3607,8 +3572,8 @@ function GetEquipmentInventoryIndexOfEquipmentTypeBJ takes unit whichUnit, equip
 
     set index = 0
     loop
-        set indexItem = BlzUnitItemInEquipmentSlot(whichUnit, ConvertLoadoutSlot(index))
-        if (indexItem != null) and (BlzGetItemEquipmentType(indexItem) == whichEquipmentType) then
+        set indexItem = UnitItemInEquipmentSlot(whichUnit, ConvertLoadoutSlot(index))
+        if (indexItem != null) and (GetItemEquipmentType(indexItem) == whichEquipmentType) then
             return index + 1
         endif
 
@@ -3625,7 +3590,7 @@ function GetItemEquippedByHeroOfTypeBJ takes unit whichUnit, integer itemId retu
     if (index == 0) then
         return null
     else
-        return BlzUnitItemInEquipmentSlot(whichUnit, ConvertLoadoutSlot(index - 1))
+        return UnitItemInEquipmentSlot(whichUnit, ConvertLoadoutSlot(index - 1))
     endif
 endfunction
 
@@ -3636,7 +3601,7 @@ function GetItemEquippedByHeroOfEquipmentTypeBJ takes unit whichUnit, equipmentT
     if (index == 0) then
         return null
     else
-        return BlzUnitItemInEquipmentSlot(whichUnit, ConvertLoadoutSlot(index - 1))
+        return UnitItemInEquipmentSlot(whichUnit, ConvertLoadoutSlot(index - 1))
     endif
 endfunction
 
@@ -3673,7 +3638,7 @@ function UnitExtendedInventoryCount takes unit whichUnit returns integer
     local integer count = 0
 
     loop
-        if (BlzUnitItemInBagSlot(whichUnit, index) != null) then
+        if (UnitItemInBagSlot(whichUnit, index) != null) then
             set count = count + 1
         endif
 
@@ -3686,7 +3651,7 @@ endfunction
 
 //===========================================================================
 function UnitExtendedInventorySizeBJ takes unit whichUnit returns integer
-    return BlzUnitExtendedInventorySize(whichUnit)
+    return UnitExtendedInventorySize(whichUnit)
 endfunction
 
 //===========================================================================
@@ -3695,7 +3660,7 @@ function UnitEquipmentCount takes unit whichUnit returns integer
     local integer count = 0
 
     loop
-        if (BlzUnitItemInEquipmentSlot(whichUnit, ConvertLoadoutSlot(index)) != null) then
+        if (UnitItemInEquipmentSlot(whichUnit, ConvertLoadoutSlot(index)) != null) then
             set count = count + 1
         endif
 
@@ -3749,11 +3714,6 @@ endfunction
 //===========================================================================
 function ChooseRandomItemExWithFilterBJ takes integer level, itemtype whichType, equipmentType whichEquipmentType, itemTag whichTag returns integer
     return ChooseRandomItemExWithFilter(whichType, level, whichEquipmentType, whichTag)
-endfunction
-
-//===========================================================================
-function ChooseRandomItemExWithFilterAndIncludesBJ takes integer level, itemtype whichType, equipmentType whichEquipmentType, itemTag whichTag, boolean includeInvalidMorphs, boolean includeNonPickRandom returns integer
-    return ChooseRandomItemExWithFilterAndIncludes(whichType, level, whichEquipmentType, whichTag, includeInvalidMorphs, includeNonPickRandom)
 endfunction
 
 //===========================================================================
@@ -4754,15 +4714,7 @@ function UnitDamageTargetBJ takes unit whichUnit, unit target, real amount, atta
     return UnitDamageTarget(whichUnit, target, amount, true, false, whichAttack, whichDamage, WEAPON_TYPE_WHOKNOWS)
 endfunction
 
-//===========================================================================
-function UnitHealBJ takes unit whichUnit, real life returns real
-    return BlzUnitHeal(whichUnit, whichUnit, life, false, true)
-endfunction
 
-//===========================================================================
-function UnitHealFromOtherBJ takes unit whichUnit, unit source, real life returns real
-    return BlzUnitHeal(whichUnit, source, life, false, true)
-endfunction
 
 //***************************************************************************
 //*
