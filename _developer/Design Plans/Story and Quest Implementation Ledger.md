@@ -174,6 +174,10 @@ This section records current qXXX content at the time this plan was created. Upd
 
 ### Main and character quest libraries
 
+`qZulkis.j` now requires `UnitHider4`: the temporary arrival ship registers as
+an explicit reference before the first ship camera is applied, immediately
+reveals its surrounding managed cells, and unregisters before removal.
+
 | Library / giver | Current quests | Status and important dependencies |
 |---|---|---|
 | `qNazgrek.j` | Wolf Hunt I; Nazgrek's Flask | **Partial prologue JASS; opening ambush update planned.** Two self-discovered Normal + Story quests in Sereneglade `2`. The intro must return control with Wolf Hunt I still unavailable and undiscovered. Its shared normal/ESC completion path then calls `qNazgrek_StartIntroQuestChain()`, whose revised contract stages the opening event: create exactly two hostile Timber Wolves `nwlt` at `gg_rct_WolfAttack`, order both to attack `udg_Nazgrek`, and only then accept/discover Wolf Hunt I. The ambush makes the wolves' strange aggression the cause of the quest instead of presenting a journal objective without an inciting event. Both spawned wolves count toward the existing six wolf kills; confirm their Wolf Skin `I61F` drop path during implementation. Six kills and six Wolf Skin still auto-complete the hunt and start the converted legacy flask quest. The flask retains its existing ingredient and delayed Empty Flask requirements. Wolf Hunt II–III remain planned until their unique trophy and Shamanic Cowl objects/recipe are defined. |
