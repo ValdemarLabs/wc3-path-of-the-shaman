@@ -2,7 +2,7 @@
     UnitHider4
 
     Author: Valdemar
-    Version: 4.4.0
+    Version: 4.4.1
 
     Description:
     Hides the ordinary map population outside tracked-unit reveal ranges.
@@ -31,7 +31,7 @@
     - UnitHider_SetDebugEnabled(enable)
     - UnitHider_SetHidingDistance(distance)
     - UnitHider_SetUnhidingDistance(distance)
-    - UnitHider_RegisterReference(whichUnit)
+    - UnitHider_RegisterReference(whichUnit) immediately reveals its area
     - UnitHider_UnregisterReference(whichUnit)
     - UnitHider_SetUnitIgnored(whichUnit, ignored)
     - UnitHider_IsUnitHiddenBySystem(whichUnit) -> boolean
@@ -56,6 +56,7 @@ globals
     private group array UnitHider4_HiddenCells
     private integer array UnitHider4_HiddenCellByUnit
     private group UnitHider4_VisibleUnits = CreateGroup()
+    private group UnitHider4_PendingShownUnits = CreateGroup()
     private group UnitHider4_AutomaticReferences = CreateGroup()
     private group UnitHider4_RegisteredReferences = CreateGroup()
     private group UnitHider4_ReferenceCacheGroup = CreateGroup()
@@ -394,6 +395,19 @@ private function UnitHider4_ProcessUnit takes unit whichUnit returns nothing
     endif
 endfunction
 
+private function UnitHider4_ProcessPendingShownUnits takes nothing returns nothing
+    local unit whichUnit
+
+    loop
+        set whichUnit = FirstOfGroup(UnitHider4_PendingShownUnits)
+        exitwhen whichUnit == null
+        call GroupRemoveUnit(UnitHider4_PendingShownUnits, whichUnit)
+        call UnitHider4_ProcessUnit(whichUnit)
+    endloop
+
+    set whichUnit = null
+endfunction
+
 private function UnitHider4_FinishSweep takes nothing returns nothing
     // Include revealers discovered late in this sweep before the next begins.
     call UnitHider4_UpdateReferenceCache()
@@ -535,6 +549,7 @@ private function UnitHider4_SettleMap takes nothing returns boolean
         set index = index + 1
     endloop
     set UnitHider4_Initialized = true
+    call GroupClear(UnitHider4_PendingShownUnits)
     call UnitHider4_FinishSweep()
     call UnitHider4_ResetIndexedScan()
     set whichUnit = null
@@ -562,6 +577,9 @@ private function UnitHider4_ProcessBatch takes nothing returns nothing
         return
     endif
 
+    // Foreign ShowUnit calls leave the fast visible set. Reclassify every unit
+    // affected since the previous update instead of waiting for recovery scans.
+    call UnitHider4_ProcessPendingShownUnits()
     call UnitHider4_UpdateReferenceCache()
     call UnitHider4_RevealNearReferences()
     call UnitHider4_ProcessVisibleBatch()
@@ -596,6 +614,7 @@ private function UnitHider4_UnhideAllManaged takes nothing returns nothing
         call UnitHider4_ShowOwned(whichUnit, true)
     endloop
     call GroupClear(UnitHider4_VisibleUnits)
+    call GroupClear(UnitHider4_PendingShownUnits)
     set UnitHider4_VisibleScanIndex = 0
 
     set whichUnit = null
@@ -653,6 +672,11 @@ function UnitHider_RegisterReference takes unit whichUnit returns nothing
             call UnitHider4_ShowManaged(whichUnit, false)
         endif
         call UnitHider4_UpdateReferenceCache()
+        if UnitHider4_Enabled then
+            // Explicit references take effect before the next timer update so
+            // scripted camera cuts cannot expose an unrevealed area.
+            call UnitHider4_RevealNearReferences()
+        endif
     endif
 endfunction
 
@@ -696,11 +720,17 @@ function UnitHider_StartHideUnitsSystem takes nothing returns nothing
     call UnitHider_SetSystemEnabled(true)
 endfunction
 
-// Any foreign ShowUnit call transfers visibility ownership away from UnitHider4.
+// Foreign ShowUnit calls release owned tracking; shown units are reclassified
+// together on the next active update.
 private function UnitHider4_OnShowUnit takes unit whichUnit, boolean show returns nothing
     if not UnitHider4_InternalShow and whichUnit != null then
         call UnitHider4_RemoveHiddenTracking(whichUnit)
         call GroupRemoveUnit(UnitHider4_VisibleUnits, whichUnit)
+        if show and UnitHider4_Enabled then
+            call GroupAddUnit(UnitHider4_PendingShownUnits, whichUnit)
+        else
+            call GroupRemoveUnit(UnitHider4_PendingShownUnits, whichUnit)
+        endif
     endif
 endfunction
 hook ShowUnit UnitHider4_OnShowUnit
@@ -719,6 +749,7 @@ private function UnitHider4_OnUnitDeindex takes nothing returns nothing
 
     call UnitHider4_RemoveHiddenTracking(whichUnit)
     call GroupRemoveUnit(UnitHider4_VisibleUnits, whichUnit)
+    call GroupRemoveUnit(UnitHider4_PendingShownUnits, whichUnit)
     call GroupRemoveUnit(UnitHider4_AutomaticReferences, whichUnit)
     call GroupRemoveUnit(UnitHider4_RegisteredReferences, whichUnit)
     set whichUnit = null

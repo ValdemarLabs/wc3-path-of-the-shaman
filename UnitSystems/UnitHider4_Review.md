@@ -57,8 +57,11 @@ Treat those estimates as historical planning notes rather than measured results.
   area; intentional nonhero revealers must use the public register API.
 - `udg_UnitHider_IgnoredUnits`, Locust units, loaded units, dead units, and
   retained fallen-hero bodies are never newly hidden.
-- While `udg_InCinematic` is true, no visibility mutation occurs. The scan and
-  reference positions refresh when the cinematic ends.
+- While `udg_InCinematic` is true, the timer performs no automatic visibility
+  mutation. Foreign `ShowUnit(..., true)` calls are queued and the map is
+  settled or those units
+  are reclassified immediately after the cinematic instead of relying on the
+  low-budget recovery scan.
 - A `ShowUnit` hook removes foreign visibility changes from UnitHider4's owned
   hidden set. Consequently, disabling or proximity showing affects only units
   whose hidden state UnitHider4 still owns.
@@ -69,9 +72,23 @@ Treat those estimates as historical planning notes rather than measured results.
   cells intersecting a revealer's 5,200 range instead of polling the complete
   hidden population. Units still visible around revealers are kept in a much
   smaller managed-visible group and hide after leaving the 5,500 range.
-- New Unit Event registrations are classified immediately. A low 8-unit,
-  64-slot recovery scan repairs foreign visibility changes and changing
-  exclusions without making the hidden population part of continuous work.
+- New Unit Event registrations are classified immediately. Foreign-show units
+  use a dedicated next-update queue, while a low 8-unit, 64-slot recovery scan
+  repairs other changing exclusions without making the hidden population part
+  of continuous work.
+
+## 7 October 2026 cinematic visibility correction
+
+Version 4.4.1 queues units affected by foreign `ShowUnit(..., true)` calls and
+reclassifies the complete queue on the next active update. This prevents an
+intro or cinematic teardown from exposing distant population in visible waves
+while the eight-unit recovery scan eventually finds it.
+
+Registering an explicit reference now also reveals the already-managed hidden
+cells around it immediately. Scripted scenes can therefore register a moving
+camera anchor before applying the camera without waiting for the periodic
+timer. Zul'kis's temporary arrival ship uses this contract and unregisters
+before removal.
 
 ## 20 September 2026 performance correction
 
