@@ -6,7 +6,7 @@ This project ports WC3 Rebirth to Warcraft III Definitive Edition (DE) without d
 
 > **Work-in-progress status:** The DE conversion and its installation architecture are under active development. The generated packages are suitable for controlled testing, but the final installer-managed distribution, runtime validation, and conversion of PotS-imported SD models are not complete.
 
-> **Corrected-model status (7 October 2026):** Do not install or promote the original `WC3Rebirth_DEModels` layer or `WC3Rebirth_DE_Full`; the first conversion mishandles glow/effect materials and contains silently truncated models. `WC3Rebirth_DEModels_v2` has been rebuilt with BLP1 alpha preservation, matte reflection slots, and lossless HD skinning where representable. It passes static validation but still requires focused in-game approval before a new full package is composed.
+> **Corrected-model status (8 October 2026):** Do not install or promote the original `WC3Rebirth_DEModels` layer, `WC3Rebirth_DE_Full`, or either explicitly named broken v2 backup. The attempted synthetic HD `SKIN`/`TANG` conversion was structurally valid but caused widespread runtime stretching toward the model/world origin because the SD sources do not contain the HD bind-pose semantics required by that representation. The current `WC3Rebirth_DEModels_v2` has been rebuilt without synthetic HD skinning; it preserves the original classic skinning byte-for-byte while retaining the BLP1 alpha and matte-reflection fixes. It passes static validation but still requires focused in-game approval before a new full package is composed.
 
 Corrected staging paths:
 
@@ -15,15 +15,16 @@ Read-only source: Assets\PotS_DE\WC3Rebirth_DE\
 Corrected output: Assets\PotS_DE\WC3Rebirth_DEModels_v2\
 ```
 
-The rebuilt v2 run converted and strictly reparsed all 1,521 models as MDX version 1000 with zero failures and zero source geometry, UV, classic group, or object-count losses. It converted 6,341 surface materials while preserving 1,902 glow, additive/modulate, animated, replaceable-only, and other special materials in their legacy form. The internal BLP1 decoder preserved alpha in 1,113 generated cutout textures, removing the opaque black vegetation cards. Matte black reflection slots replace the stock environment map to suppress the unwanted grazing-angle sheen. Lossless HD `SKIN` and `TANG` data was added to 1,214 models / 9,953 geosets; 307 models retain classic groups, including 32 whose group data cannot fit the four-influence/byte-index HD representation without approximation. All 5,719 source files matched their original SHA-256 snapshot afterward. Evidence is stored under `WC3Rebirth_DEModels_v2\_reports\`; focused in-game checks remain mandatory.
+The rebuilt v2 run converted and strictly reparsed all 1,521 models as MDX version 1000 with zero failures. An independent audit compared all 11,672 geosets and found zero source geometry, UV, classic skinning-group, or object-count changes. It converted 6,341 surface materials while preserving 1,902 glow, additive/modulate, animated, replaceable-only, and other special materials in their legacy form. The internal BLP1 decoder preserved alpha in 1,113 generated cutout textures, removing the opaque black vegetation cards. Matte black reflection slots replace the stock environment map to suppress the unwanted grazing-angle sheen. The corrected output contains zero generated `SKIN` bytes and zero generated `TANG` values. All 5,719 source files matched their original SHA-256 snapshot afterward. Evidence is stored under `WC3Rebirth_DEModels_v2\_reports\`; focused in-game checks remain mandatory.
 
-The project currently has one copy-ready baseline, one obsolete combined test tree, and one corrected model staging tree:
+The project currently has one copy-ready baseline, one obsolete combined test tree, one corrected model staging tree, and two explicitly quarantined v2 backups:
 
 ```text
 _WC3Rebirth\Assets\PotS_DE\WC3Rebirth_DE\           Copy-ready baseline with SD-origin models
 _WC3Rebirth\Assets\PotS_DE\WC3Rebirth_DE_Full\      Obsolete v1 combined test package; do not install
 _WC3Rebirth\Assets\PotS_DE\WC3Rebirth_DEModels_v2\  Rebuilt corrected model staging; not yet a complete install
 _WC3Rebirth\Assets\PotS_DE\WC3Rebirth_DEModels_v2_broken_20261006\  Recoverable pre-fix v2 backup; do not install
+_WC3Rebirth\Assets\PotS_DE\WC3Rebirth_DEModels_v2_broken_skinning_20261008\  Runtime-stretching synthetic-skin build; do not install
 ```
 
 Use `WC3Rebirth_DE` for the current safe baseline. Do not use `WC3Rebirth_DE_Full` for clean testing because it overlays the defective v1 model conversion.
@@ -195,7 +196,7 @@ Source: Assets\PotS_DE\WC3Rebirth_DE\
 Output: Assets\PotS_DE\WC3Rebirth_DEModels_v2\
 ```
 
-The converter changes SD MDX models to version 1000 HD-material models, builds `Shader_HD_DefaultUnit` materials, and generates diffuse, alpha, team-color, normal, ORM, and team-ORM resources while preserving the original geometry, UVs, animations, and Warcraft-managed replaceable resources. It is a material converter, not a remesher or texture upscaler: it does not add polygons or increase the original diffuse resolution.
+The converter changes SD MDX models to version 1000 HD-material models, builds `Shader_HD_DefaultUnit` materials, and generates diffuse, alpha, team-color, normal, ORM, and team-ORM resources while preserving the original geometry, UVs, animations, classic skinning groups, and Warcraft-managed replaceable resources. It deliberately does not synthesize HD `SKIN`, `TANG`, or `BPOS` data from classic groups. It is a material converter, not a remesher or texture upscaler: it does not add polygons or increase the original diffuse resolution.
 
 That distinction matters for Rebirth. The converted models should improve compatibility with DE lighting and material behavior, but they do not automatically gain higher-detail geometry or artwork.
 
@@ -209,11 +210,12 @@ Current staging result:
 | Output MDX version | 1000 |
 | Generated TIF resources | 10,376 |
 | Runtime output files | 11,897 |
-| Runtime output size | 5,200,180,810 bytes |
+| Runtime output size | 5,018,353,700 bytes |
 | Converted surface materials | 6,341 |
 | Preserved special/effect materials | 1,902 |
-| Models with lossless HD skinning | 1,214 |
-| HD-skinned geosets | 9,953 |
+| Geosets with exact classic-skinning preservation | 11,672 |
+| Generated HD `SKIN` bytes | 0 |
+| Generated `TANG` values | 0 |
 | Alpha-diffuse textures with transparency | 1,113 |
 | MDX load or integrity failures | 0 |
 | Source SHA-256 mismatches | 0 |
@@ -224,7 +226,7 @@ The local conversion toolchain is kept under `tools\war3-retro-hd-converter\`, `
 
 The local PyMdlxConverter checkout contains required parser/serializer corrections for strict failure handling, texture-animation sizing, fixed-width legacy strings, dynamic chunk bounds, integer animation values, light type serialization, unknown-chunk version handling, and event-track byte lengths. These changes must be retained or upstreamed before rebuilding the model layer on another machine.
 
-This is a structurally validated staging result, not yet the installer-ready model layer. It still needs representative in-game testing for units, heroes, buildings, portraits, attachments, morphs, team color and glow, alpha blending, death/dissipate animations, sounds, scale, selection circles, and shadows. Only validated converted models should be promoted into the final package.
+This is a structurally validated staging result, not yet the installer-ready model layer. It still needs representative in-game testing for units, heroes, buildings, doodads, portraits, attachments, morphs, team color and glow, alpha blending, death/dissipate animations, sounds, scale, selection circles, and shadows. The mass origin-stretching regression from synthetic HD skinning should no longer occur, but runtime validation is still required. The Knight's earlier head/neck deformation is a separate model-specific issue and is not claimed fixed by this rollback. Only validated converted models should be promoted into the final package.
 
 PotS-specific imported models are a separate body of work. Many of those imports are still SD-origin assets and must later receive the same SD-to-HD/DE conversion, dependency audit, staging, and in-game validation before they can be externalized safely.
 
