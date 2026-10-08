@@ -1378,27 +1378,39 @@ private function DR_OnDeath takes nothing returns nothing
     local unit target = UnitDeathEvent_GetDyingUnit()
     local integer targetKey
     local integer category = DR_ROOTS
+    local integer passiveAbility
     local DRState state
+    local boolean hadState = false
+    local boolean internalDummy
     if target == null then
         return
     endif
     set targetKey = GetHandleId(target)
-    loop
-        exitwhen category > DR_SILENCES
-        set state = DR_StateIndex.switch(category - DR_ROOTS)[targetKey]
-        if state != 0 and state.target == target then
-            call DR_RemoveState(state)
-        endif
-        set category = category + 1
-    endloop
-    if DR_InternalDummy.unit[targetKey] == target then
+    set passiveAbility = DR_PassiveCache.switch(0)[targetKey]
+    set internalDummy = DR_InternalDummy.unit[targetKey] == target
+    if DR_StateCount > 0 then
+        loop
+            exitwhen category > DR_SILENCES
+            set state = DR_StateIndex.switch(category - DR_ROOTS)[targetKey]
+            if state != 0 and state.target == target then
+                set hadState = true
+                call DR_RemoveState(state)
+            endif
+            set category = category + 1
+        endloop
+    endif
+    if internalDummy then
         call DR_InternalDummy.handle.remove(targetKey)
     endif
     call DR_PassiveCache.switch(0).remove(targetKey)
     call DR_PassiveCache.switch(1).real.remove(targetKey)
     call DR_TrimIndex.remove(targetKey)
     if DR_TestMode then
-        call DR_Test("Cleanup on death: target=" + DR_UnitLabel(target))
+        if internalDummy then
+            call DR_Test("Internal AoE dummy expired: " + DR_UnitLabel(target))
+        elseif hadState or passiveAbility != 0 then
+            call DR_Test("Tracked-unit death cleanup: target=" + DR_UnitLabel(target) + ", hadState=" + DR_BooleanName(hadState) + ", passiveAbility=" + I2S(passiveAbility))
+        endif
     endif
     set target = null
 endfunction
