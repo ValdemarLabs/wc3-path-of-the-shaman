@@ -22,12 +22,17 @@
 
 ### Technical Updates
 
+- Updated `UnitSystems/UnitHider4.j` to build an authoritative direct world-unit inventory, track hidden grid cells by unit handle instead of Unit Event user data, classify both Unit Event creation phases immediately, and perform complete settlements at initial startup and cinematic exit.
+- Updated `UnitSystems/UnitHider4_Review.md` with the UnitHider 4.5 inventory correction and runtime validation counters.
+- Updated `AI/Classes/AI_Warlock.j` so the Undead Warlock profile registers its `HeroUndeadWarlock_` voice-line library and complete standard bark set.
+- Updated `Camera/FreeCamera.j` to enable FullscreenUI while FreeCamera is active, hiding the normal game interface and restoring the prior fullscreen state when FreeCamera exits.
 - Removed unsafe synthetic `SKIN`/`TANG` generation from `tools/war3-retro-hd-converter/` after in-game tests showed widespread model parts stretching toward the origin. The converter now preserves classic `GNDX`/`MTGC`/`MATS` skinning and treats existing `SKIN`/`TANG` lengths as immutable validation data; all 44 converter tests pass.
 - Rebuilt `_WC3Rebirth/Assets/PotS_DE/WC3Rebirth_DEModels_v2` from the read-only source: all 1,521 models reparse as MDX version 1000, all 11,672 geosets retain exact classic skinning and geometry, 6,341 converted material reflection slots use the matte texture, 1,113 alpha textures retain transparency, and the audit reports zero failures. All 5,719 source files remained byte-identical by SHA-256.
 - Retained the superseded synthetic-skin output as `_WC3Rebirth/Assets/PotS_DE/WC3Rebirth_DEModels_v2_broken_skinning_20261008` for diagnosis; it must not be installed.
 
 ### Resolved Issues
 
+- Fixed UnitHider leaving some distant map units visible until its low-budget recovery scan encountered them. Every eligible unit now receives the hidden-by-default decision during the first full settlement, independently of Unit Event indexing timing.
 - Fixed the converter-side cause of the latest widespread unit, building, and doodad stretching regression by removing runtime-invalid synthesized HD skinning from the corrected v2 staging output.
 
 ### Known Issues
@@ -36,6 +41,8 @@
 
 ### Actions Remaining
 
+- Compile the full map and runtime-test initial loading, intro completion, newly created units, distant vendors/quest givers/hostiles, UnitHider disable/re-enable, and tracked-unit movement. With debug enabled, confirm `Known` matches expected live population and distant eligible units are already in `Managed hidden` before a revealer approaches.
+- Compile and enter/exit FreeCamera through CameraUI in-game, confirming the normal interface hides on activation and returns on exit without disturbing an already-active FullscreenUI owner.
 - With Warcraft III and World Editor closed, refresh the `_retail_` test installation from the clean `WC3Rebirth_DE` baseline and overlay the corrected `WC3Rebirth_DEModels_v2` runtime files while excluding `_reports`; do not copy either broken v2 backup.
 - In-game, validate a broad sample of units, heroes, buildings, doodads, portraits, attachments, morphs, and death animations, confirming that no geometry stretches toward the origin before composing a replacement full package.
 - Investigate the Knight head/neck deformation as an isolated model repair without globally replacing classic skinning.
