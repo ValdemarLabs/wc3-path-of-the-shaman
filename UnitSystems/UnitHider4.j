@@ -2,7 +2,7 @@
     UnitHider4
 
     Author: Valdemar
-    Version: 4.6.0
+    Version: 4.6.1
 
     Description:
     Hides the ordinary map population outside tracked-unit reveal ranges.
@@ -39,6 +39,8 @@
     - UnitHider_SetUnitIgnored(whichUnit, ignored)
     - UnitHider_IsUnitHiddenBySystem(whichUnit) -> boolean
     - UnitHider_Refresh()
+    - UnitHider_DebugHideAllExceptTracked() -> newly hidden count
+    - UnitHider_DebugUnhideAllExceptTracked() -> newly shown count
 
 **/
 library UnitHider4 initializer Init requires FallenHeroState, Events, optional AI
@@ -268,8 +270,12 @@ private function UnitHider4_IsNearReference takes unit whichUnit, real distanceS
     return false
 endfunction
 
+private function UnitHider4_IsTrackedReference takes unit whichUnit, boolean isAutomaticReference returns boolean
+    return isAutomaticReference or IsUnitInGroup(whichUnit, UnitHider4_RegisteredReferences) or UnitHider4_IsAllowedLegacyReference(whichUnit)
+endfunction
+
 private function UnitHider4_IsProtected takes unit whichUnit, boolean isAutomaticReference returns boolean
-    return isAutomaticReference or IsUnitInGroup(whichUnit, UnitHider4_RegisteredReferences) or UnitHider4_IsAllowedLegacyReference(whichUnit) or IsUnitInGroup(whichUnit, udg_UnitHider_IgnoredUnits) or GetUnitAbilityLevel(whichUnit, 'Aloc') > 0
+    return UnitHider4_IsTrackedReference(whichUnit, isAutomaticReference) or IsUnitInGroup(whichUnit, udg_UnitHider_IgnoredUnits) or GetUnitAbilityLevel(whichUnit, 'Aloc') > 0
 endfunction
 
 private function UnitHider4_GetGridX takes real x returns integer
@@ -639,6 +645,56 @@ private function UnitHider4_UnhideAllManaged takes nothing returns nothing
     set UnitHider4_VisibleScanIndex = 0
 
     set whichUnit = null
+endfunction
+
+function UnitHider_DebugHideAllExceptTracked takes nothing returns integer
+    local integer hiddenCount = 0
+    local unit whichUnit
+    local boolean isAlive
+    local boolean isLoaded
+    local boolean isAutomaticReference
+    local boolean wasManaged
+
+    call GroupClear(UnitHider4_WorldScanUnits)
+    call GroupEnumUnitsInRect(UnitHider4_WorldScanUnits, UnitHider4_WorldBounds, null)
+    call GroupAddGroup(UnitHider4_KnownUnits, UnitHider4_WorldScanUnits)
+    call GroupAddGroup(UnitHider4_WorldScanUnits, UnitHider4_KnownUnits)
+    call UnitHider4_RebuildAutomaticReferences()
+
+    loop
+        set whichUnit = FirstOfGroup(UnitHider4_WorldScanUnits)
+        exitwhen whichUnit == null
+        call GroupRemoveUnit(UnitHider4_WorldScanUnits, whichUnit)
+        if GetUnitTypeId(whichUnit) != 0 then
+            set isAlive = FallenHeroState_IsAlive(whichUnit)
+            set isLoaded = IsUnitLoaded(whichUnit)
+            set isAutomaticReference = UnitHider4_UpdateAutomaticReference(whichUnit, isAlive, isLoaded)
+            set wasManaged = IsUnitInGroup(whichUnit, UnitHider4_HiddenUnits)
+            call GroupRemoveUnit(UnitHider4_PendingUnits, whichUnit)
+            if UnitHider4_IsTrackedReference(whichUnit, isAutomaticReference) then
+                if wasManaged then
+                    call UnitHider4_ShowManaged(whichUnit, false)
+                endif
+            elseif isAlive and not isLoaded and not wasManaged and not IsUnitHidden(whichUnit) and not IsUnitInGroup(whichUnit, udg_UnitHider_IgnoredUnits) and GetUnitAbilityLevel(whichUnit, 'Aloc') == 0 then
+                call UnitHider4_HideManaged(whichUnit)
+                set hiddenCount = hiddenCount + 1
+            endif
+        endif
+    endloop
+
+    call UnitHider4_UpdateReferenceCache()
+    call UnitHider4_ResetKnownUnitScan()
+    set UnitHider4_VisibleScanIndex = 0
+    set whichUnit = null
+    return hiddenCount
+endfunction
+
+function UnitHider_DebugUnhideAllExceptTracked takes nothing returns integer
+    local integer shownCount = BlzGroupGetSize(UnitHider4_HiddenUnits)
+
+    call UnitHider4_UnhideAllManaged()
+    call UnitHider4_ResetKnownUnitScan()
+    return shownCount
 endfunction
 
 function UnitHider_SetHidingDistance takes real newDistance returns nothing

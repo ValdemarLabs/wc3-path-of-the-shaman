@@ -28,7 +28,7 @@ correct and performant enough for permanent use.
 | `UnitHider.j` (1.0) | Simple two-phase ownership: check owned hidden units for showing, then visible units for hiding. It was the known working fallback. | Enumerates the full map every 0.5 seconds; creates and destroys a reference group for every proximity test; uses `SquareRoot`; leaks a newly created work group on every disabled timer tick; does not recognize the `UnitHider_ReferenceUnits` registrations used by current AI, companions, and pets. |
 | `UnitHider2.j` | Reuses work groups, filters invalid units, compares squared distances, and keeps the reliable two-phase flow. | Still enumerates nearly every eligible map unit every 0.5 seconds and copies the full reference group for every proximity test. `Table` state duplicates the authoritative hidden group without improving behavior. The archived runtime result was slow hiding and severe lag. |
 | `UnitHider3_Optimized.j` | Caches reference positions, uses squared distances, reuses main work groups, and retains the reliable two-phase flow. The archive says it worked. | Still performs a full-world enumeration every 0.5 seconds; creates a temporary reference group each cycle; limits references to 20; aborts with zero references without restoring already hidden units; does not consume current array registrations; and can show units another system intentionally hid because visibility ownership is not transferred on foreign `ShowUnit` calls. |
-| `UnitHider4.j` | Drains a fresh world snapshot for every complete settlement using the known-working UnitHider 1.0 traversal, spatially buckets hidden units, checks only nearby buckets for revealing, preserves foreign visibility ownership, and retains hide/show hysteresis. Player-controlled and registered AI heroes plus registered companions/pets are revealers; explicit references and ignored units remain supported. | Requires full-map runtime validation because hiding units changes simulation behavior by design. Version 4.6 performs complete direct-world settlements and consumes `Events` world-enter notifications, then checks at most 128 managed visible units and 8 recovery units per 0.10-second tick. Hidden units outside revealer cells receive no continuous per-unit polling. |
+| `UnitHider4.j` | Drains a fresh world snapshot for every complete settlement using the known-working UnitHider 1.0 traversal, spatially buckets hidden units, checks only nearby buckets for revealing, preserves foreign visibility ownership, and retains hide/show hysteresis. Player-controlled and registered AI heroes plus registered companions/pets are revealers; explicit references and ignored units remain supported. | Requires full-map runtime validation because hiding units changes simulation behavior by design. Version 4.6.1 performs complete direct-world settlements and consumes `Events` world-enter notifications, then checks at most 128 managed visible units and 8 recovery units per 0.10-second tick. Hidden units outside revealer cells receive no continuous per-unit polling. |
 
 Some older UnitHider Markdown files describe an earlier proposed "smart filter"
 and quote estimated operation reductions. The final `UnitHider3_Optimized.j`
@@ -83,6 +83,10 @@ Treat those estimates as historical planning notes rather than measured results.
   reference arrays. Foreign-show units use the same next-update queue, while a
   low 8-unit, 64-slot recovery scan over known units repairs other changing
   exclusions without making the hidden population part of continuous work.
+- Debug APIs can force-hide every eligible non-tracked unit or unhide every
+  UnitHider-owned unit without changing the enabled state. Foreign-hidden,
+  ignored, Locust, loaded, and dead units retain their existing ownership or
+  engine-sensitive state.
 
 ## 8 October 2026 authoritative inventory correction
 
