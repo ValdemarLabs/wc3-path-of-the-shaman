@@ -2,7 +2,7 @@
     DebugCommands
 
     Author: Valdemar
-    Version: 1.7.0
+    Version: 1.8.0
 
     Description:
     Chat-driven debug commands for Path of the Shaman testing. Commands are
@@ -28,10 +28,14 @@
     - /debug drunk
     - /debug unstuck
     - /debug creeprespawn dungeon respawn [zoneId]
+    - /debug unithider hide all
+    - /debug unithider unhide all
+    - /debug unithider enable
+    - /debug unithider disable
     - /debug wc3 help
 
 **/
-library DebugCommands initializer Init requires DebugObjectRegistry, Ascii, GatherNodeUnits, GatherNodeSkills, ZonesCore, Dungeon, Drunk, PlayerHome, Warcraft300TestHarness, Warcraft300P2TestHarness
+library DebugCommands initializer Init requires DebugObjectRegistry, Ascii, GatherNodeUnits, GatherNodeSkills, ZonesCore, Dungeon, Drunk, PlayerHome, UnitHider4, Warcraft300TestHarness, Warcraft300P2TestHarness
     globals
         private constant string DBG_ROOT = "/debug"
         private constant string DBG_PREFIX = "/debug "
@@ -690,6 +694,27 @@ library DebugCommands initializer Init requires DebugObjectRegistry, Ascii, Gath
         set target = null
     endfunction
 
+    private function DBG_UnitHiderHideAll takes player whichPlayer returns nothing
+        local integer hiddenCount = UnitHider_DebugHideAllExceptTracked()
+
+        call DBG_Message(whichPlayer, "UnitHider hid " + I2S(hiddenCount) + " eligible non-tracked units. Enabled state unchanged.")
+    endfunction
+
+    private function DBG_UnitHiderUnhideAll takes player whichPlayer returns nothing
+        local integer shownCount = UnitHider_DebugUnhideAllExceptTracked()
+
+        call DBG_Message(whichPlayer, "UnitHider unhid " + I2S(shownCount) + " managed non-tracked units. Enabled state unchanged.")
+    endfunction
+
+    private function DBG_UnitHiderSetEnabled takes player whichPlayer, boolean enabled returns nothing
+        call UnitHider_SetSystemEnabled(enabled)
+        if enabled then
+            call DBG_Message(whichPlayer, "UnitHider enabled; a full settlement will run on the next system tick.")
+        else
+            call DBG_Message(whichPlayer, "UnitHider disabled and all UnitHider-managed units were unhidden.")
+        endif
+    endfunction
+
     private function DBG_ShowHelp takes player whichPlayer returns nothing
         call DBG_Message(whichPlayer, "Commands:")
         call DBG_Message(whichPlayer, "/debug item create '<rawcode-or-name>'")
@@ -702,6 +727,10 @@ library DebugCommands initializer Init requires DebugObjectRegistry, Ascii, Gath
         call DBG_Message(whichPlayer, "/debug drunk")
         call DBG_Message(whichPlayer, "/debug unstuck (bypasses the 5-minute cooldown)")
         call DBG_Message(whichPlayer, "/debug creeprespawn dungeon respawn [zoneId]")
+        call DBG_Message(whichPlayer, "/debug unithider hide all")
+        call DBG_Message(whichPlayer, "/debug unithider unhide all")
+        call DBG_Message(whichPlayer, "/debug unithider enable")
+        call DBG_Message(whichPlayer, "/debug unithider disable")
         call DBG_Message(whichPlayer, "/debug wc3 help (baseline, camera, fog, and doodad probes)")
         call DBG_Message(whichPlayer, "/debug wc3 effects help (P2 special-effect animation probes)")
         call DBG_Message(whichPlayer, "/debug wc3 minimap help (P2 native/imported minimap probes)")
@@ -767,6 +796,14 @@ library DebugCommands initializer Init requires DebugObjectRegistry, Ascii, Gath
         elseif DBG_StartsWith(lowerCommand, "dungeon respawn ") then
             set argument = SubString(trimmed, StringLength("dungeon respawn "), StringLength(trimmed))
             call DBG_RespawnDungeonUnits(whichPlayer, argument)
+        elseif lowerCommand == "unithider hide all" or lowerCommand == "unithider hide" or lowerCommand == "unit hider hide all" then
+            call DBG_UnitHiderHideAll(whichPlayer)
+        elseif lowerCommand == "unithider unhide all" or lowerCommand == "unithider unhide" or lowerCommand == "unit hider unhide all" then
+            call DBG_UnitHiderUnhideAll(whichPlayer)
+        elseif lowerCommand == "unithider enable" or lowerCommand == "unit hider enable" then
+            call DBG_UnitHiderSetEnabled(whichPlayer, true)
+        elseif lowerCommand == "unithider disable" or lowerCommand == "unit hider disable" then
+            call DBG_UnitHiderSetEnabled(whichPlayer, false)
         else
             call DBG_Message(whichPlayer, "Unknown command. Use /debug help.")
         endif
