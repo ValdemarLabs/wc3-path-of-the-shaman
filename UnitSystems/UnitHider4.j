@@ -2,26 +2,27 @@
     UnitHider4
 
     Author: Valdemar
-    Version: 4.5.0
+    Version: 4.6.0
 
     Description:
     Hides the ordinary map population outside tracked-unit reveal ranges.
     Player-controlled and registered AI heroes, registered companions and pets,
     and explicit reference units reveal nearby units. Generic heroes, remote
     combatants, vendors, and quest givers remain hideable; only explicit
-    exclusions and revealers bypass distance hiding. A direct world inventory
-    guarantees that the initial settlement does not depend on Unit Event index
-    timing. Hidden units are indexed spatially so continuous work scales with
-    nearby visible population rather than every hidden unit. The system only
-    shows units that it hid.
+    exclusions and revealers bypass distance hiding. Complete settlements drain
+    a direct world snapshot using the proven UnitHider 1.0 traversal, while
+    Events supplies incremental world-enter notifications. Hidden units are
+    indexed spatially so continuous work scales with nearby visible population
+    rather than every hidden unit. The system only shows units that it hid.
 
     Credits:
     - UnitHider 1.0 for the reliable owned-hidden-unit model
     - UnitHider3 for cached positions and squared-distance comparisons
-    - Bribe's Unit Event 2.5.3.2 for incremental create/remove notifications
+    - Events for incremental world-enter notifications
+    - Bribe's Unit Event 2.5.3.2 for removal and legacy index compatibility
 
     How to install:
-    Import after Unit Event and FallenHeroState. Keep the GUI variables
+    Import after Events, Unit Event, and FallenHeroState. Keep the GUI variables
     UnitHider_ReferenceGroup, UnitHider_IgnoredUnits, UnitHider_ReferenceUnits,
     UnitHider_SetSystem, and UnitHider_debug. Replace earlier UnitHider versions
     and disable their GUI timers/toggles. Change state through this library's API;
@@ -40,7 +41,7 @@
     - UnitHider_Refresh()
 
 **/
-library UnitHider4 initializer Init requires FallenHeroState, optional AI
+library UnitHider4 initializer Init requires FallenHeroState, Events, optional AI
 
 globals
     // Configuration
@@ -59,7 +60,7 @@ globals
     private group array UnitHider4_HiddenCells
     private hashtable UnitHider4_HiddenCellByHandle = InitHashtable()
     private group UnitHider4_VisibleUnits = CreateGroup()
-    private group UnitHider4_PendingShownUnits = CreateGroup()
+    private group UnitHider4_PendingUnits = CreateGroup()
     private group UnitHider4_KnownUnits = CreateGroup()
     private group UnitHider4_WorldScanUnits = CreateGroup()
     private group UnitHider4_AutomaticReferences = CreateGroup()
@@ -399,13 +400,13 @@ private function UnitHider4_ProcessUnit takes unit whichUnit returns nothing
     endif
 endfunction
 
-private function UnitHider4_ProcessPendingShownUnits takes nothing returns nothing
+private function UnitHider4_ProcessPendingUnits takes nothing returns nothing
     local unit whichUnit
 
     loop
-        set whichUnit = FirstOfGroup(UnitHider4_PendingShownUnits)
+        set whichUnit = FirstOfGroup(UnitHider4_PendingUnits)
         exitwhen whichUnit == null
-        call GroupRemoveUnit(UnitHider4_PendingShownUnits, whichUnit)
+        call GroupRemoveUnit(UnitHider4_PendingUnits, whichUnit)
         call UnitHider4_ProcessUnit(whichUnit)
     endloop
 
@@ -537,28 +538,30 @@ private function UnitHider4_ProcessVisibleBatch takes nothing returns nothing
 endfunction
 
 private function UnitHider4_SettleMap takes nothing returns boolean
-    local integer index = 0
-    local integer count
     local unit whichUnit
 
+    // Restore the proven v1/v3 settlement contract: take a fresh world
+    // snapshot, merge already-known units, then remove each snapshot member
+    // before changing its visibility. The persistent group is never used as
+    // the mutable traversal source for the authoritative pass.
     call GroupClear(UnitHider4_WorldScanUnits)
     call GroupEnumUnitsInRect(UnitHider4_WorldScanUnits, UnitHider4_WorldBounds, null)
+    call GroupAddGroup(UnitHider4_KnownUnits, UnitHider4_WorldScanUnits)
     call GroupAddGroup(UnitHider4_WorldScanUnits, UnitHider4_KnownUnits)
-    set count = BlzGroupGetSize(UnitHider4_KnownUnits)
-    if count <= 0 then
+    set whichUnit = FirstOfGroup(UnitHider4_WorldScanUnits)
+    if whichUnit == null then
         return false
     endif
     call UnitHider4_RebuildAutomaticReferences()
     loop
-        exitwhen index >= count
-        set whichUnit = BlzGroupUnitAt(UnitHider4_KnownUnits, index)
-        if whichUnit != null then
-            call UnitHider4_ProcessUnit(whichUnit)
-        endif
-        set index = index + 1
+        exitwhen whichUnit == null
+        call GroupRemoveUnit(UnitHider4_WorldScanUnits, whichUnit)
+        call UnitHider4_ProcessUnit(whichUnit)
+        call GroupAddUnit(UnitHider4_KnownUnits, whichUnit)
+        set whichUnit = FirstOfGroup(UnitHider4_WorldScanUnits)
     endloop
     set UnitHider4_Initialized = true
-    call GroupClear(UnitHider4_PendingShownUnits)
+    call GroupClear(UnitHider4_PendingUnits)
     call UnitHider4_FinishSweep()
     call UnitHider4_ResetKnownUnitScan()
     set whichUnit = null
@@ -594,9 +597,9 @@ private function UnitHider4_ProcessBatch takes nothing returns nothing
         return
     endif
 
-    // Foreign ShowUnit calls leave the fast visible set. Reclassify every unit
-    // affected since the previous update instead of waiting for recovery scans.
-    call UnitHider4_ProcessPendingShownUnits()
+    // Reclassify new entrants after other creation callbacks have completed,
+    // and foreign-shown units without waiting for the recovery scan.
+    call UnitHider4_ProcessPendingUnits()
     call UnitHider4_UpdateReferenceCache()
     call UnitHider4_RevealNearReferences()
     call UnitHider4_ProcessVisibleBatch()
@@ -632,7 +635,7 @@ private function UnitHider4_UnhideAllManaged takes nothing returns nothing
         call UnitHider4_ShowOwned(whichUnit, true)
     endloop
     call GroupClear(UnitHider4_VisibleUnits)
-    call GroupClear(UnitHider4_PendingShownUnits)
+    call GroupClear(UnitHider4_PendingUnits)
     set UnitHider4_VisibleScanIndex = 0
 
     set whichUnit = null
@@ -748,19 +751,22 @@ private function UnitHider4_OnShowUnit takes unit whichUnit, boolean show return
         call UnitHider4_RemoveHiddenTracking(whichUnit)
         call GroupRemoveUnit(UnitHider4_VisibleUnits, whichUnit)
         if show and UnitHider4_Enabled then
-            call GroupAddUnit(UnitHider4_PendingShownUnits, whichUnit)
+            call GroupAddUnit(UnitHider4_PendingUnits, whichUnit)
         else
-            call GroupRemoveUnit(UnitHider4_PendingShownUnits, whichUnit)
+            call GroupRemoveUnit(UnitHider4_PendingUnits, whichUnit)
         endif
     endif
 endfunction
 hook ShowUnit UnitHider4_OnShowUnit
 
-private function UnitHider4_OnUnitIndex takes nothing returns nothing
-    local unit whichUnit = udg_UDexUnits[udg_UDex]
+private function UnitHider4_OnUnitEnter takes nothing returns nothing
+    local unit whichUnit = GetTriggerUnit()
 
     if whichUnit != null then
         call GroupAddUnit(UnitHider4_KnownUnits, whichUnit)
+        // Events may run before Unit Event and AI/companion registration.
+        // Recheck on the next UnitHider tick after those callbacks settle.
+        call GroupAddUnit(UnitHider4_PendingUnits, whichUnit)
     endif
     if UnitHider4_Initialized and UnitHider4_Enabled and not udg_InCinematic then
         call UnitHider4_ProcessUnit(whichUnit)
@@ -774,7 +780,7 @@ private function UnitHider4_OnUnitDeindex takes nothing returns nothing
     call UnitHider4_RemoveHiddenTracking(whichUnit)
     call GroupRemoveUnit(UnitHider4_KnownUnits, whichUnit)
     call GroupRemoveUnit(UnitHider4_VisibleUnits, whichUnit)
-    call GroupRemoveUnit(UnitHider4_PendingShownUnits, whichUnit)
+    call GroupRemoveUnit(UnitHider4_PendingUnits, whichUnit)
     call GroupRemoveUnit(UnitHider4_AutomaticReferences, whichUnit)
     call GroupRemoveUnit(UnitHider4_RegisteredReferences, whichUnit)
     set whichUnit = null
@@ -782,8 +788,6 @@ endfunction
 
 private function Init takes nothing returns nothing
     local rect worldBounds = GetWorldBounds()
-    local trigger indexStartTrigger = CreateTrigger()
-    local trigger indexTrigger = CreateTrigger()
     local trigger deindexTrigger = CreateTrigger()
 
     if udg_UnitHider_ReferenceGroup == null then
@@ -799,17 +803,12 @@ private function Init takes nothing returns nothing
     set UnitHider4_WorldMinY = GetRectMinY(worldBounds)
     set UnitHider4_CellWidth = (GetRectMaxX(worldBounds) - UnitHider4_WorldMinX) / I2R(UnitHider4_GRID_AXIS)
     set UnitHider4_CellHeight = (GetRectMaxY(worldBounds) - UnitHider4_WorldMinY) / I2R(UnitHider4_GRID_AXIS)
-    call TriggerRegisterVariableEvent(indexTrigger, "udg_UnitIndexEvent", EQUAL, 1.50)
-    call TriggerRegisterVariableEvent(indexStartTrigger, "udg_UnitIndexEvent", EQUAL, 1.00)
-    call TriggerAddAction(indexStartTrigger, function UnitHider4_OnUnitIndex)
-    call TriggerAddAction(indexTrigger, function UnitHider4_OnUnitIndex)
+    call Events_RegisterUnitEnter(function UnitHider4_OnUnitEnter)
     call TriggerRegisterVariableEvent(deindexTrigger, "udg_UnitIndexEvent", EQUAL, 2.00)
     call TriggerAddAction(deindexTrigger, function UnitHider4_OnUnitDeindex)
     call UnitHider4_ResetKnownUnitScan()
     call TimerStart(UnitHider4_Timer, UnitHider4_TICK_INTERVAL, true, function UnitHider4_ProcessBatch)
     set worldBounds = null
-    set indexStartTrigger = null
-    set indexTrigger = null
     set deindexTrigger = null
 endfunction
 
