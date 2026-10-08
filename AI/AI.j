@@ -108,6 +108,8 @@
     call AI_ReviveAt(whichUnit, x, y, showEffects) returns boolean
     call AI_ArePartyMembers(firstUnit, secondUnit) returns boolean
     call AI_GetFactionInfoText(whichUnit) returns string
+    call AI_SetSystemEnabled(enabled)
+    call AI_IsSystemEnabled() returns boolean
     call AI_SetDebugMode(enabled)
 
 **/
@@ -471,6 +473,7 @@ globals
     private group TempGroup = null
     private rect TempRect = null
     private boolean DebugMode = DEBUG_DEFAULT
+    private boolean SystemEnabled = true
     private boolean RandomSpawnEnabled = true
     private boolean RandomSpawnFirstProfileDone = false
     private boolean RandomTravelEnabled = true
@@ -4885,6 +4888,14 @@ public function IsDebugMode takes nothing returns boolean
     return DebugMode
 endfunction
 
+public function SetSystemEnabled takes boolean enabled returns nothing
+    set SystemEnabled = enabled
+endfunction
+
+public function IsSystemEnabled takes nothing returns boolean
+    return SystemEnabled
+endfunction
+
 private function ClearSocialState takes integer instanceId returns nothing
     if instanceId <= 0 then
         return
@@ -5130,7 +5141,7 @@ endfunction
 private function RandomSpawnTimerAction takes nothing returns nothing
     local unit spawned = null
     local boolean maintained = false
-    if RandomSpawnEnabled then
+    if SystemEnabled and RandomSpawnEnabled then
         set maintained = MaintainRandomActiveMinimum(false)
         if not maintained then
             set spawned = AI_SpawnRandomHero(false)
@@ -5143,7 +5154,7 @@ endfunction
 private function RandomTravelTimerAction takes nothing returns nothing
     local integer instanceId
     local boolean started = false
-    if RandomTravelEnabled then
+    if SystemEnabled and RandomTravelEnabled then
         set started = TryUnhideRandomManaged(false)
         if GetRandomInt(1, 2) == 1 then
             set instanceId = GetRandomTravelInstance()
@@ -7081,6 +7092,9 @@ endfunction
 private function Think takes nothing returns nothing
     local integer i = 1
     local real now = GetNow()
+    if not SystemEnabled then
+        return
+    endif
     loop
         exitwhen i > HeavyCount
         call ProcessInstance(HeavyInstances[i], now)

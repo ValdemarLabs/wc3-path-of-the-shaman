@@ -2,7 +2,7 @@
     UnitHider4
 
     Author: Valdemar
-    Version: 4.6.1
+    Version: 4.6.2
 
     Description:
     Hides the ordinary map population outside tracked-unit reveal ranges.
@@ -31,6 +31,7 @@
     API:
     - UnitHider_StartHideUnitsSystem()
     - UnitHider_SetSystemEnabled(enable)
+    - UnitHider_IsSystemEnabled() -> boolean
     - UnitHider_SetDebugEnabled(enable)
     - UnitHider_SetHidingDistance(distance)
     - UnitHider_SetUnhidingDistance(distance)
@@ -740,6 +741,10 @@ function UnitHider_SetSystemEnabled takes boolean enable returns nothing
             call BJDebugMsg("[UnitHider4] System disabled")
         endif
     endif
+endfunction
+
+function UnitHider_IsSystemEnabled takes nothing returns boolean
+    return UnitHider4_Enabled
 endfunction
 
 function UnitHider_RegisterReference takes unit whichUnit returns nothing
