@@ -2,21 +2,23 @@
     UnitHider4
 
     Author: Valdemar
-    Version: 4.4.1
+    Version: 4.5.0
 
     Description:
     Hides the ordinary map population outside tracked-unit reveal ranges.
     Player-controlled and registered AI heroes, registered companions and pets,
     and explicit reference units reveal nearby units. Generic heroes, remote
     combatants, vendors, and quest givers remain hideable; only explicit
-    exclusions and revealers bypass distance hiding. Hidden units are indexed
-    spatially so continuous work scales with nearby visible population rather
-    than every hidden unit. The system only shows units that it hid.
+    exclusions and revealers bypass distance hiding. A direct world inventory
+    guarantees that the initial settlement does not depend on Unit Event index
+    timing. Hidden units are indexed spatially so continuous work scales with
+    nearby visible population rather than every hidden unit. The system only
+    shows units that it hid.
 
     Credits:
     - UnitHider 1.0 for the reliable owned-hidden-unit model
     - UnitHider3 for cached positions and squared-distance comparisons
-    - Bribe's Unit Event 2.5.3.2 for the indexed unit registry
+    - Bribe's Unit Event 2.5.3.2 for incremental create/remove notifications
 
     How to install:
     Import after Unit Event and FallenHeroState. Keep the GUI variables
@@ -44,19 +46,22 @@ globals
     // Configuration
     private constant real UnitHider4_TICK_INTERVAL = 0.10
     private constant integer UnitHider4_RECOVERY_UNITS_PER_TICK = 8
-    private constant integer UnitHider4_RECOVERY_INDEX_SLOTS_PER_TICK = 64
+    private constant integer UnitHider4_RECOVERY_GROUP_SLOTS_PER_TICK = 64
     private constant integer UnitHider4_VISIBLE_UNITS_PER_TICK = 128
     private constant integer UnitHider4_GRID_AXIS = 64
     private constant integer UnitHider4_MAX_REFERENCES = 8190
+    private constant integer UnitHider4_CELL_CHILD_KEY = 0
     private constant real UnitHider4_DEFAULT_HIDE_DISTANCE = 5500.00
     private constant real UnitHider4_DEFAULT_SHOW_DISTANCE = 5200.00
 
     // Visibility owned by UnitHider4. Foreign hidden units are never added here.
     private group UnitHider4_HiddenUnits = CreateGroup()
     private group array UnitHider4_HiddenCells
-    private integer array UnitHider4_HiddenCellByUnit
+    private hashtable UnitHider4_HiddenCellByHandle = InitHashtable()
     private group UnitHider4_VisibleUnits = CreateGroup()
     private group UnitHider4_PendingShownUnits = CreateGroup()
+    private group UnitHider4_KnownUnits = CreateGroup()
+    private group UnitHider4_WorldScanUnits = CreateGroup()
     private group UnitHider4_AutomaticReferences = CreateGroup()
     private group UnitHider4_RegisteredReferences = CreateGroup()
     private group UnitHider4_ReferenceCacheGroup = CreateGroup()
@@ -70,8 +75,9 @@ globals
     private boolean UnitHider4_InternalShow = false
     private boolean UnitHider4_WasInCinematic = false
     private boolean UnitHider4_Initialized = false
-    private integer UnitHider4_ScanIndex = 1
+    private integer UnitHider4_ScanIndex = 0
     private integer UnitHider4_VisibleScanIndex = 0
+    private rect UnitHider4_WorldBounds = null
     private real UnitHider4_WorldMinX = 0.00
     private real UnitHider4_WorldMinY = 0.00
     private real UnitHider4_CellWidth = 1.00
@@ -81,7 +87,7 @@ globals
     private real UnitHider4_ShowDistance = UnitHider4_DEFAULT_SHOW_DISTANCE
     private real UnitHider4_ShowDistanceSq = UnitHider4_DEFAULT_SHOW_DISTANCE * UnitHider4_DEFAULT_SHOW_DISTANCE
 
-    // Statistics for debug summaries, reset after each complete indexed sweep.
+    // Statistics for debug summaries, reset after each complete known-unit sweep.
     private integer UnitHider4_Checked = 0
     private integer UnitHider4_Hidden = 0
     private integer UnitHider4_Shown = 0
@@ -219,15 +225,16 @@ private function UnitHider4_UpdateReferenceCache takes nothing returns nothing
 endfunction
 
 private function UnitHider4_RebuildAutomaticReferences takes nothing returns nothing
-    local integer index = 1
+    local integer index = 0
+    local integer count = BlzGroupGetSize(UnitHider4_KnownUnits)
     local unit whichUnit
     local boolean isAlive
     local boolean isLoaded
 
     call GroupClear(UnitHider4_AutomaticReferences)
     loop
-        exitwhen index > udg_UDexMax
-        set whichUnit = udg_UDexUnits[index]
+        exitwhen index >= count
+        set whichUnit = BlzGroupUnitAt(UnitHider4_KnownUnits, index)
         if whichUnit != null and GetUnitTypeId(whichUnit) != 0 then
             set isAlive = FallenHeroState_IsAlive(whichUnit)
             set isLoaded = IsUnitLoaded(whichUnit)
@@ -291,28 +298,25 @@ private function UnitHider4_GetCellId takes unit whichUnit returns integer
 endfunction
 
 private function UnitHider4_RemoveHiddenTracking takes unit whichUnit returns nothing
-    local integer unitId
+    local integer handleId
     local integer encodedCell
 
     if whichUnit == null then
         return
     endif
-    set unitId = GetUnitUserData(whichUnit)
-    if unitId > 0 then
-        set encodedCell = UnitHider4_HiddenCellByUnit[unitId]
-        if encodedCell > 0 and UnitHider4_HiddenCells[encodedCell - 1] != null then
-            call GroupRemoveUnit(UnitHider4_HiddenCells[encodedCell - 1], whichUnit)
-        endif
-        set UnitHider4_HiddenCellByUnit[unitId] = 0
+    set handleId = GetHandleId(whichUnit)
+    set encodedCell = LoadInteger(UnitHider4_HiddenCellByHandle, handleId, UnitHider4_CELL_CHILD_KEY)
+    if encodedCell > 0 and UnitHider4_HiddenCells[encodedCell - 1] != null then
+        call GroupRemoveUnit(UnitHider4_HiddenCells[encodedCell - 1], whichUnit)
     endif
+    call RemoveSavedInteger(UnitHider4_HiddenCellByHandle, handleId, UnitHider4_CELL_CHILD_KEY)
     call GroupRemoveUnit(UnitHider4_HiddenUnits, whichUnit)
 endfunction
 
 private function UnitHider4_AddHiddenTracking takes unit whichUnit returns nothing
-    local integer unitId = GetUnitUserData(whichUnit)
     local integer cellId
 
-    if unitId <= 0 then
+    if whichUnit == null then
         return
     endif
     call UnitHider4_RemoveHiddenTracking(whichUnit)
@@ -322,7 +326,7 @@ private function UnitHider4_AddHiddenTracking takes unit whichUnit returns nothi
     endif
     call GroupAddUnit(UnitHider4_HiddenUnits, whichUnit)
     call GroupAddUnit(UnitHider4_HiddenCells[cellId], whichUnit)
-    set UnitHider4_HiddenCellByUnit[unitId] = cellId + 1
+    call SaveInteger(UnitHider4_HiddenCellByHandle, GetHandleId(whichUnit), UnitHider4_CELL_CHILD_KEY, cellId + 1)
 endfunction
 
 private function UnitHider4_ShowOwned takes unit whichUnit, boolean show returns nothing
@@ -412,15 +416,15 @@ private function UnitHider4_FinishSweep takes nothing returns nothing
     // Include revealers discovered late in this sweep before the next begins.
     call UnitHider4_UpdateReferenceCache()
     if UnitHider4_Debug then
-        call BJDebugMsg("[UnitHider4] Checked: " + I2S(UnitHider4_Checked) + " | Hidden: " + I2S(UnitHider4_Hidden) + " | Shown: " + I2S(UnitHider4_Shown) + " | Managed hidden: " + I2S(BlzGroupGetSize(UnitHider4_HiddenUnits)) + " | References: " + I2S(UnitHider4_ReferenceCount))
+        call BJDebugMsg("[UnitHider4] Known: " + I2S(BlzGroupGetSize(UnitHider4_KnownUnits)) + " | Checked: " + I2S(UnitHider4_Checked) + " | Hidden: " + I2S(UnitHider4_Hidden) + " | Shown: " + I2S(UnitHider4_Shown) + " | Managed hidden: " + I2S(BlzGroupGetSize(UnitHider4_HiddenUnits)) + " | References: " + I2S(UnitHider4_ReferenceCount))
     endif
     set UnitHider4_Checked = 0
     set UnitHider4_Hidden = 0
     set UnitHider4_Shown = 0
 endfunction
 
-private function UnitHider4_ResetIndexedScan takes nothing returns nothing
-    set UnitHider4_ScanIndex = 1
+private function UnitHider4_ResetKnownUnitScan takes nothing returns nothing
+    set UnitHider4_ScanIndex = 0
 endfunction
 
 private function UnitHider4_RevealCell takes integer cellId, real referenceX, real referenceY returns nothing
@@ -533,16 +537,21 @@ private function UnitHider4_ProcessVisibleBatch takes nothing returns nothing
 endfunction
 
 private function UnitHider4_SettleMap takes nothing returns boolean
-    local integer index = 1
+    local integer index = 0
+    local integer count
     local unit whichUnit
 
-    if udg_UDexMax <= 0 then
+    call GroupClear(UnitHider4_WorldScanUnits)
+    call GroupEnumUnitsInRect(UnitHider4_WorldScanUnits, UnitHider4_WorldBounds, null)
+    call GroupAddGroup(UnitHider4_WorldScanUnits, UnitHider4_KnownUnits)
+    set count = BlzGroupGetSize(UnitHider4_KnownUnits)
+    if count <= 0 then
         return false
     endif
     call UnitHider4_RebuildAutomaticReferences()
     loop
-        exitwhen index > udg_UDexMax
-        set whichUnit = udg_UDexUnits[index]
+        exitwhen index >= count
+        set whichUnit = BlzGroupUnitAt(UnitHider4_KnownUnits, index)
         if whichUnit != null then
             call UnitHider4_ProcessUnit(whichUnit)
         endif
@@ -551,7 +560,7 @@ private function UnitHider4_SettleMap takes nothing returns boolean
     set UnitHider4_Initialized = true
     call GroupClear(UnitHider4_PendingShownUnits)
     call UnitHider4_FinishSweep()
-    call UnitHider4_ResetIndexedScan()
+    call UnitHider4_ResetKnownUnitScan()
     set whichUnit = null
     return true
 endfunction
@@ -559,8 +568,21 @@ endfunction
 private function UnitHider4_ProcessBatch takes nothing returns nothing
     local integer processed = 0
     local integer inspected = 0
+    local integer count
     local unit whichUnit
 
+    if not UnitHider4_Enabled then
+        return
+    endif
+    // The first full settlement must happen even during the opening cinematic.
+    // Later cinematic ticks pause mutation until the exit settlement.
+    if not UnitHider4_Initialized then
+        call UnitHider4_SettleMap()
+        if udg_InCinematic then
+            set UnitHider4_WasInCinematic = true
+        endif
+        return
+    endif
     if udg_InCinematic then
         set UnitHider4_WasInCinematic = true
         return
@@ -568,11 +590,6 @@ private function UnitHider4_ProcessBatch takes nothing returns nothing
     if UnitHider4_WasInCinematic then
         set UnitHider4_WasInCinematic = false
         set UnitHider4_Initialized = false
-    endif
-    if not UnitHider4_Enabled then
-        return
-    endif
-    if not UnitHider4_Initialized then
         call UnitHider4_SettleMap()
         return
     endif
@@ -585,16 +602,17 @@ private function UnitHider4_ProcessBatch takes nothing returns nothing
     call UnitHider4_ProcessVisibleBatch()
 
     loop
-        exitwhen processed >= UnitHider4_RECOVERY_UNITS_PER_TICK or inspected >= UnitHider4_RECOVERY_INDEX_SLOTS_PER_TICK
-        if UnitHider4_ScanIndex > udg_UDexMax then
+        exitwhen processed >= UnitHider4_RECOVERY_UNITS_PER_TICK or inspected >= UnitHider4_RECOVERY_GROUP_SLOTS_PER_TICK
+        set count = BlzGroupGetSize(UnitHider4_KnownUnits)
+        if UnitHider4_ScanIndex >= count then
             call UnitHider4_FinishSweep()
-            call UnitHider4_ResetIndexedScan()
-            set inspected = UnitHider4_RECOVERY_INDEX_SLOTS_PER_TICK
+            call UnitHider4_ResetKnownUnitScan()
+            set inspected = UnitHider4_RECOVERY_GROUP_SLOTS_PER_TICK
         else
-            set whichUnit = udg_UDexUnits[UnitHider4_ScanIndex]
+            set whichUnit = BlzGroupUnitAt(UnitHider4_KnownUnits, UnitHider4_ScanIndex)
             set UnitHider4_ScanIndex = UnitHider4_ScanIndex + 1
             set inspected = inspected + 1
-            if whichUnit != null and not IsUnitInGroup(whichUnit, UnitHider4_HiddenUnits) then
+            if whichUnit != null and GetUnitTypeId(whichUnit) != 0 and not IsUnitInGroup(whichUnit, UnitHider4_HiddenUnits) then
                 call UnitHider4_ProcessUnit(whichUnit)
                 set processed = processed + 1
             endif
@@ -649,7 +667,7 @@ function UnitHider_SetSystemEnabled takes boolean enable returns nothing
     set UnitHider4_Enabled = enable
     set udg_UnitHider_SetSystem = enable
     if enable then
-        call UnitHider4_ResetIndexedScan()
+        call UnitHider4_ResetKnownUnitScan()
         set UnitHider4_VisibleScanIndex = 0
         set UnitHider4_Initialized = false
     else
@@ -667,6 +685,7 @@ endfunction
 
 function UnitHider_RegisterReference takes unit whichUnit returns nothing
     if whichUnit != null then
+        call GroupAddUnit(UnitHider4_KnownUnits, whichUnit)
         call GroupAddUnit(UnitHider4_RegisteredReferences, whichUnit)
         if IsUnitInGroup(whichUnit, UnitHider4_HiddenUnits) then
             call UnitHider4_ShowManaged(whichUnit, false)
@@ -692,6 +711,7 @@ function UnitHider_SetUnitIgnored takes unit whichUnit, boolean ignored returns 
     if whichUnit == null then
         return
     endif
+    call GroupAddUnit(UnitHider4_KnownUnits, whichUnit)
     if ignored then
         call GroupAddUnit(udg_UnitHider_IgnoredUnits, whichUnit)
         if IsUnitInGroup(whichUnit, UnitHider4_HiddenUnits) then
@@ -710,7 +730,7 @@ function UnitHider_IsUnitHiddenBySystem takes unit whichUnit returns boolean
 endfunction
 
 function UnitHider_Refresh takes nothing returns nothing
-    call UnitHider4_ResetIndexedScan()
+    call UnitHider4_ResetKnownUnitScan()
     set UnitHider4_VisibleScanIndex = 0
     set UnitHider4_Initialized = false
 endfunction
@@ -724,6 +744,7 @@ endfunction
 // together on the next active update.
 private function UnitHider4_OnShowUnit takes unit whichUnit, boolean show returns nothing
     if not UnitHider4_InternalShow and whichUnit != null then
+        call GroupAddUnit(UnitHider4_KnownUnits, whichUnit)
         call UnitHider4_RemoveHiddenTracking(whichUnit)
         call GroupRemoveUnit(UnitHider4_VisibleUnits, whichUnit)
         if show and UnitHider4_Enabled then
@@ -738,6 +759,9 @@ hook ShowUnit UnitHider4_OnShowUnit
 private function UnitHider4_OnUnitIndex takes nothing returns nothing
     local unit whichUnit = udg_UDexUnits[udg_UDex]
 
+    if whichUnit != null then
+        call GroupAddUnit(UnitHider4_KnownUnits, whichUnit)
+    endif
     if UnitHider4_Initialized and UnitHider4_Enabled and not udg_InCinematic then
         call UnitHider4_ProcessUnit(whichUnit)
     endif
@@ -748,6 +772,7 @@ private function UnitHider4_OnUnitDeindex takes nothing returns nothing
     local unit whichUnit = udg_UDexUnits[udg_UDex]
 
     call UnitHider4_RemoveHiddenTracking(whichUnit)
+    call GroupRemoveUnit(UnitHider4_KnownUnits, whichUnit)
     call GroupRemoveUnit(UnitHider4_VisibleUnits, whichUnit)
     call GroupRemoveUnit(UnitHider4_PendingShownUnits, whichUnit)
     call GroupRemoveUnit(UnitHider4_AutomaticReferences, whichUnit)
@@ -757,6 +782,7 @@ endfunction
 
 private function Init takes nothing returns nothing
     local rect worldBounds = GetWorldBounds()
+    local trigger indexStartTrigger = CreateTrigger()
     local trigger indexTrigger = CreateTrigger()
     local trigger deindexTrigger = CreateTrigger()
 
@@ -768,18 +794,21 @@ private function Init takes nothing returns nothing
     endif
     set udg_UnitHider_SetSystem = true
     set udg_UnitHider_debug = false
+    set UnitHider4_WorldBounds = worldBounds
     set UnitHider4_WorldMinX = GetRectMinX(worldBounds)
     set UnitHider4_WorldMinY = GetRectMinY(worldBounds)
     set UnitHider4_CellWidth = (GetRectMaxX(worldBounds) - UnitHider4_WorldMinX) / I2R(UnitHider4_GRID_AXIS)
     set UnitHider4_CellHeight = (GetRectMaxY(worldBounds) - UnitHider4_WorldMinY) / I2R(UnitHider4_GRID_AXIS)
-    call RemoveRect(worldBounds)
     call TriggerRegisterVariableEvent(indexTrigger, "udg_UnitIndexEvent", EQUAL, 1.50)
+    call TriggerRegisterVariableEvent(indexStartTrigger, "udg_UnitIndexEvent", EQUAL, 1.00)
+    call TriggerAddAction(indexStartTrigger, function UnitHider4_OnUnitIndex)
     call TriggerAddAction(indexTrigger, function UnitHider4_OnUnitIndex)
     call TriggerRegisterVariableEvent(deindexTrigger, "udg_UnitIndexEvent", EQUAL, 2.00)
     call TriggerAddAction(deindexTrigger, function UnitHider4_OnUnitDeindex)
-    call UnitHider4_ResetIndexedScan()
+    call UnitHider4_ResetKnownUnitScan()
     call TimerStart(UnitHider4_Timer, UnitHider4_TICK_INTERVAL, true, function UnitHider4_ProcessBatch)
     set worldBounds = null
+    set indexStartTrigger = null
     set indexTrigger = null
     set deindexTrigger = null
 endfunction
