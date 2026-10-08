@@ -2,7 +2,7 @@
     DoodadManager
 
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.2.0
 
     Description:
         Provides the map-specific doodad rawcodes and render distances consumed
@@ -21,6 +21,7 @@
         DoodadManager_GetTypeCount() -> integer
         DoodadManager_GetTypeId(integer index) -> integer
         DoodadManager_GetDrawDistance(integer index) -> real
+        DoodadManager_SetAllDrawDistances(real drawDistance) -> boolean
 
 **/
 library DoodadManager initializer Init
@@ -58,6 +59,20 @@ library DoodadManager initializer Init
             return 0.00
         endif
         return typeDrawDistance[index]
+    endfunction
+
+    public function SetAllDrawDistances takes real drawDistance returns boolean
+        local integer index = 1
+
+        if drawDistance < 0.00 then
+            return false
+        endif
+        loop
+            exitwhen index > typeCount
+            set typeDrawDistance[index] = drawDistance
+            set index = index + 1
+        endloop
+        return true
     endfunction
 
     private function Init takes nothing returns nothing

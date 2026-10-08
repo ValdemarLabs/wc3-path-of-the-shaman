@@ -2,7 +2,7 @@
     DebugCommands
 
     Author: Valdemar
-    Version: 1.8.0
+    Version: 1.9.0
 
     Description:
     Chat-driven debug commands for Path of the Shaman testing. Commands are
@@ -13,8 +13,9 @@
 
     How to install:
     Import DebugObjectRegistry, Warcraft300TestHarness, and
-    Warcraft300P2TestHarness before this library. The registry is generated
-    from the latest checked-in item, unit, and ability object exports.
+    Warcraft300P2TestHarness before this library. Import DoodadRender and
+    DoodadManager before this library. The registry is generated from the
+    latest checked-in item, unit, and ability object exports.
 
     API:
     - /debug help
@@ -32,10 +33,11 @@
     - /debug unithider unhide all
     - /debug unithider enable
     - /debug unithider disable
+    - /debug doodadrender distance <distance>
     - /debug wc3 help
 
 **/
-library DebugCommands initializer Init requires DebugObjectRegistry, Ascii, GatherNodeUnits, GatherNodeSkills, ZonesCore, Dungeon, Drunk, PlayerHome, UnitHider4, Warcraft300TestHarness, Warcraft300P2TestHarness
+library DebugCommands initializer Init requires DebugObjectRegistry, Ascii, GatherNodeUnits, GatherNodeSkills, ZonesCore, Dungeon, Drunk, PlayerHome, UnitHider4, DoodadRender, Warcraft300TestHarness, Warcraft300P2TestHarness
     globals
         private constant string DBG_ROOT = "/debug"
         private constant string DBG_PREFIX = "/debug "
@@ -124,6 +126,38 @@ library DebugCommands initializer Init requires DebugObjectRegistry, Ascii, Gath
         endloop
 
         return -1
+    endfunction
+
+    private function DBG_IsDigit takes string character returns boolean
+        return character == "0" or character == "1" or character == "2" or character == "3" or character == "4" or character == "5" or character == "6" or character == "7" or character == "8" or character == "9"
+    endfunction
+
+    private function DBG_IsNonNegativeReal takes string value returns boolean
+        local integer index = 0
+        local integer length = StringLength(value)
+        local integer decimalCount = 0
+        local integer digitCount = 0
+        local string character
+
+        if length == 0 then
+            return false
+        endif
+        loop
+            exitwhen index >= length
+            set character = SubString(value, index, index + 1)
+            if DBG_IsDigit(character) then
+                set digitCount = digitCount + 1
+            elseif character == "." then
+                set decimalCount = decimalCount + 1
+                if decimalCount > 1 then
+                    return false
+                endif
+            else
+                return false
+            endif
+            set index = index + 1
+        endloop
+        return digitCount > 0
     endfunction
 
     private function DBG_Message takes player whichPlayer, string message returns nothing
@@ -715,6 +749,22 @@ library DebugCommands initializer Init requires DebugObjectRegistry, Ascii, Gath
         endif
     endfunction
 
+    private function DBG_SetDoodadRenderDistance takes player whichPlayer, string argument returns nothing
+        local string trimmed = DBG_Trim(argument)
+        local real drawDistance
+
+        if not DBG_IsNonNegativeReal(trimmed) then
+            call DBG_Message(whichPlayer, "Usage: /debug doodadrender distance <non-negative integer-or-real>")
+            return
+        endif
+        set drawDistance = S2R(trimmed)
+        if DoodadRender_SetAllDrawDistances(drawDistance) then
+            call DBG_Message(whichPlayer, "Set all DoodadRender distances to " + R2S(drawDistance) + ".")
+        else
+            call DBG_Message(whichPlayer, "DoodadRender rejected distance " + trimmed + ".")
+        endif
+    endfunction
+
     private function DBG_ShowHelp takes player whichPlayer returns nothing
         call DBG_Message(whichPlayer, "Commands:")
         call DBG_Message(whichPlayer, "/debug item create '<rawcode-or-name>'")
@@ -731,6 +781,7 @@ library DebugCommands initializer Init requires DebugObjectRegistry, Ascii, Gath
         call DBG_Message(whichPlayer, "/debug unithider unhide all")
         call DBG_Message(whichPlayer, "/debug unithider enable")
         call DBG_Message(whichPlayer, "/debug unithider disable")
+        call DBG_Message(whichPlayer, "/debug doodadrender distance <distance> (sets tiny, short, medium, and long)")
         call DBG_Message(whichPlayer, "/debug wc3 help (baseline, camera, fog, and doodad probes)")
         call DBG_Message(whichPlayer, "/debug wc3 effects help (P2 special-effect animation probes)")
         call DBG_Message(whichPlayer, "/debug wc3 minimap help (P2 native/imported minimap probes)")
@@ -804,6 +855,11 @@ library DebugCommands initializer Init requires DebugObjectRegistry, Ascii, Gath
             call DBG_UnitHiderSetEnabled(whichPlayer, true)
         elseif lowerCommand == "unithider disable" or lowerCommand == "unit hider disable" then
             call DBG_UnitHiderSetEnabled(whichPlayer, false)
+        elseif DBG_StartsWith(lowerCommand, "doodadrender distance ") then
+            set argument = SubString(trimmed, StringLength("doodadrender distance "), StringLength(trimmed))
+            call DBG_SetDoodadRenderDistance(whichPlayer, argument)
+        elseif lowerCommand == "doodadrender distance" then
+            call DBG_SetDoodadRenderDistance(whichPlayer, "")
         else
             call DBG_Message(whichPlayer, "Unknown command. Use /debug help.")
         endif

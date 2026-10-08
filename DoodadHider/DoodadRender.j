@@ -2,7 +2,7 @@
     DoodadRender
 
     Author: Valdemar
-    Version: 1.4.0
+    Version: 1.5.0
 
     Description:
         Reduces rendering load by hiding selected preplaced doodad types outside
@@ -20,6 +20,7 @@
 
     API:
         DoodadRender_RegisterType(integer doodadId, real drawDistance)
+        DoodadRender_SetAllDrawDistances(real drawDistance) -> boolean
         DoodadRender_Enable()
         DoodadRender_Disable()
         DoodadRender_Refresh()
@@ -669,6 +670,25 @@ library DoodadRender initializer Init requires DoodadManager
         if initialized and enabled then
             call RebuildVisibleState()
         endif
+    endfunction
+
+    public function SetAllDrawDistances takes real drawDistance returns boolean
+        local integer index = 1
+        local integer radius
+
+        if not DoodadManager_SetAllDrawDistances(drawDistance) then
+            return false
+        endif
+        set radius = DistanceToRadius(drawDistance)
+        loop
+            exitwhen index > typeCount
+            set typeRadius[index] = radius
+            set index = index + 1
+        endloop
+        if initialized and enabled then
+            call RebuildVisibleState()
+        endif
+        return true
     endfunction
 
     public function SetBackend takes integer value returns boolean
