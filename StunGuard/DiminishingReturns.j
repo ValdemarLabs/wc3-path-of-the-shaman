@@ -65,7 +65,7 @@ globals
     private constant real DR_PASSIVE_CACHE_SECONDS = 2.00
     private constant integer DR_MAX_UNIT_ABILITIES = 64
     private constant integer DR_DUMMY_ID = 'ndum'
-    private constant integer DR_DUMMY_STUN_ID = 'A000'
+    private constant integer DR_DUMMY_STUN_ID = 'A0F8'
 
     private constant integer DR_MODE_AUTO = 0
     private constant integer DR_MODE_STOMP = 1
