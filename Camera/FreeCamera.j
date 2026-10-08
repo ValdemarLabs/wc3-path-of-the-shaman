@@ -2,14 +2,14 @@
     FreeCamera
 
     Author: [Valdemar]
-    Version: 1.2.0
+    Version: 1.3.0
 
     Description: Provides a local development fly camera for screenshots, videos, and world inspection.
 
     Credits: Blizzard Entertainment (Warcraft III 3.0 Editor Camera reference implementation)
 
     How to install:
-    Import after CameraControl and FullscreenUI. Requires Warcraft III 3.0.0 or newer.
+    Import after CameraControl, FullscreenUI, and MasterUI. Requires Warcraft III 3.0.0 or newer.
 
     API:
     call FreeCamera_Enable(whichPlayer)
@@ -18,7 +18,7 @@
     call FreeCamera_IsEnabled(whichPlayer) returns boolean
 
 **/
-library FreeCamera initializer AutoInit requires CameraControl, FullscreenUI, optional DynamicMinimap
+library FreeCamera initializer AutoInit requires CameraControl, FullscreenUI, MasterUI, optional DynamicMinimap
 
 globals
     // Camera type 1 permits the scripted camera fields used by the 3.0 Editor Camera.
@@ -51,9 +51,11 @@ globals
     private boolean array FC_ControlledUnitWasInvulnerable
     private boolean array FC_DynamicMinimapWasFullMap
     private boolean array FC_FullscreenWasEnabled
+    private boolean array FC_MasterGameButtonWasVisible
     private timer FC_UpdateTimer = null
     private trigger FC_UnitSeizeTrigger = null
     private trigger FC_UnitRestoreTrigger = null
+    private trigger FC_EscapeTrigger = null
 endglobals
 
 private function FC_ClampInteger takes integer value, integer minValue, integer maxValue returns integer
@@ -289,6 +291,7 @@ public function Enable takes player whichPlayer returns nothing
     set FC_Angle[pid] = FC_NormalizeAngle(GetCameraField(CAMERA_FIELD_ANGLE_OF_ATTACK) * bj_RADTODEG)
     set FC_Rotation[pid] = FC_NormalizeAngle(GetCameraField(CAMERA_FIELD_ROTATION) * bj_RADTODEG)
     set FC_FullscreenWasEnabled[pid] = FullscreenUI_IsEnabled()
+    set FC_MasterGameButtonWasVisible[pid] = MasterUI_IsGameButtonVisible()
     set FC_Enabled[pid] = true
 
     call CameraControl_SetModeDeveloper(whichPlayer)
@@ -296,6 +299,7 @@ public function Enable takes player whichPlayer returns nothing
         call BlzSendSyncData(FC_SYNC_SEIZE, I2S(GetHandleId(controlledUnit)))
     endif
     call FC_FixDynamicMinimap(pid)
+    call MasterUI_HideGameButton()
     call FullscreenUI_SetEnabled(true)
     if FC_OwnsInputOwnership[pid] then
         call CameraControl_SetExperimentalInputOwnership(whichPlayer, true)
@@ -326,6 +330,13 @@ public function Disable takes player whichPlayer returns nothing
     if not FC_FullscreenWasEnabled[pid] then
         call FullscreenUI_SetEnabled(false)
     endif
+    if FC_MasterGameButtonWasVisible[pid] then
+        call MasterUI_ShowGameButton()
+    endif
+endfunction
+
+private function FC_OnEscape takes nothing returns nothing
+    call Disable(GetTriggerPlayer())
 endfunction
 
 public function Toggle takes player whichPlayer returns nothing
@@ -341,14 +352,17 @@ private function Init takes nothing returns nothing
 
     set FC_UnitSeizeTrigger = CreateTrigger()
     set FC_UnitRestoreTrigger = CreateTrigger()
+    set FC_EscapeTrigger = CreateTrigger()
     loop
         exitwhen i >= bj_MAX_PLAYERS
         call BlzTriggerRegisterPlayerSyncEvent(FC_UnitSeizeTrigger, Player(i), FC_SYNC_SEIZE, false)
         call BlzTriggerRegisterPlayerSyncEvent(FC_UnitRestoreTrigger, Player(i), FC_SYNC_RESTORE, false)
+        call BlzTriggerRegisterPlayerKeyEvent(FC_EscapeTrigger, Player(i), OSKEY_ESCAPE, 0, true)
         set i = i + 1
     endloop
     call TriggerAddAction(FC_UnitSeizeTrigger, function FC_OnUnitSeizeSync)
     call TriggerAddAction(FC_UnitRestoreTrigger, function FC_OnUnitRestoreSync)
+    call TriggerAddAction(FC_EscapeTrigger, function FC_OnEscape)
 
     set FC_UpdateTimer = CreateTimer()
     call TimerStart(FC_UpdateTimer, FC_UPDATE_INTERVAL, true, function FC_Update)
