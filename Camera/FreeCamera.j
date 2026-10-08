@@ -2,14 +2,14 @@
     FreeCamera
 
     Author: [Valdemar]
-    Version: 1.1.0
+    Version: 1.2.0
 
     Description: Provides a local development fly camera for screenshots, videos, and world inspection.
 
     Credits: Blizzard Entertainment (Warcraft III 3.0 Editor Camera reference implementation)
 
     How to install:
-    Import after CameraControl. Requires Warcraft III 3.0.0 or newer.
+    Import after CameraControl and FullscreenUI. Requires Warcraft III 3.0.0 or newer.
 
     API:
     call FreeCamera_Enable(whichPlayer)
@@ -18,7 +18,7 @@
     call FreeCamera_IsEnabled(whichPlayer) returns boolean
 
 **/
-library FreeCamera initializer AutoInit requires CameraControl, optional DynamicMinimap
+library FreeCamera initializer AutoInit requires CameraControl, FullscreenUI, optional DynamicMinimap
 
 globals
     // Camera type 1 permits the scripted camera fields used by the 3.0 Editor Camera.
@@ -50,6 +50,7 @@ globals
     private boolean array FC_ControlledUnitWasPaused
     private boolean array FC_ControlledUnitWasInvulnerable
     private boolean array FC_DynamicMinimapWasFullMap
+    private boolean array FC_FullscreenWasEnabled
     private timer FC_UpdateTimer = null
     private trigger FC_UnitSeizeTrigger = null
     private trigger FC_UnitRestoreTrigger = null
@@ -287,6 +288,7 @@ public function Enable takes player whichPlayer returns nothing
     set FC_TargetZ[pid] = GetCameraEyePositionZ()
     set FC_Angle[pid] = FC_NormalizeAngle(GetCameraField(CAMERA_FIELD_ANGLE_OF_ATTACK) * bj_RADTODEG)
     set FC_Rotation[pid] = FC_NormalizeAngle(GetCameraField(CAMERA_FIELD_ROTATION) * bj_RADTODEG)
+    set FC_FullscreenWasEnabled[pid] = FullscreenUI_IsEnabled()
     set FC_Enabled[pid] = true
 
     call CameraControl_SetModeDeveloper(whichPlayer)
@@ -294,6 +296,7 @@ public function Enable takes player whichPlayer returns nothing
         call BlzSendSyncData(FC_SYNC_SEIZE, I2S(GetHandleId(controlledUnit)))
     endif
     call FC_FixDynamicMinimap(pid)
+    call FullscreenUI_SetEnabled(true)
     if FC_OwnsInputOwnership[pid] then
         call CameraControl_SetExperimentalInputOwnership(whichPlayer, true)
     endif
@@ -320,6 +323,9 @@ public function Disable takes player whichPlayer returns nothing
     endif
     call FC_RestoreMode(whichPlayer, FC_PreviousMode[pid])
     call FC_RestoreDynamicMinimap(pid)
+    if not FC_FullscreenWasEnabled[pid] then
+        call FullscreenUI_SetEnabled(false)
+    endif
 endfunction
 
 public function Toggle takes player whichPlayer returns nothing
