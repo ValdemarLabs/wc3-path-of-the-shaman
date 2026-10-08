@@ -2,7 +2,7 @@
     FreeCamera
 
     Author: [Valdemar]
-    Version: 1.3.0
+    Version: 1.3.1
 
     Description: Provides a local development fly camera for screenshots, videos, and world inspection.
 
@@ -358,6 +358,7 @@ private function Init takes nothing returns nothing
         call BlzTriggerRegisterPlayerSyncEvent(FC_UnitSeizeTrigger, Player(i), FC_SYNC_SEIZE, false)
         call BlzTriggerRegisterPlayerSyncEvent(FC_UnitRestoreTrigger, Player(i), FC_SYNC_RESTORE, false)
         call BlzTriggerRegisterPlayerKeyEvent(FC_EscapeTrigger, Player(i), OSKEY_ESCAPE, 0, true)
+        call TriggerRegisterPlayerEvent(FC_EscapeTrigger, Player(i), EVENT_PLAYER_END_CINEMATIC)
         set i = i + 1
     endloop
     call TriggerAddAction(FC_UnitSeizeTrigger, function FC_OnUnitSeizeSync)
