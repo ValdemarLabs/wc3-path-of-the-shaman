@@ -18,6 +18,25 @@
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
 
+## [10.10.2026]
+
+### Technical Updates
+
+- Updated `AI/AI.j`, the Warrior, Warlock, Restoration Shaman, Rogue, Engineer, and Paladin class libraries, and `UnitSystems/UnitHider4.j` with an explicit profile-level UnitHider revealer contract. Player heroes, both standard Warlocks, Warrior, Restoration Shaman, Rogue, Engineer/Shredder, Paladin, companions, and pets remain automatic revealers, while unrelated AI-registered hero NPCs no longer create 5,500-range reveal bubbles. Removed AI's obsolete broad write to `udg_UnitHider_ReferenceUnits`; current companion/pet systems retain their own compatibility entries, `Events` handles new-unit discovery, and Unit Event indexing is limited to deindex cleanup.
+- Updated `UnitSystems/UnitHider4.j` and `Debug/DebugCommands.j` with `/debug unithider audit`, which classifies the current world population as exempt, UnitHider-owned hidden, foreign-hidden, visible inside reference range, or incorrectly visible outside hide range.
+- Updated `UnitSystems/UnitHider4_Review.md` with the force-hide versus normal-distance diagnosis, the broad AI-reference regression, the narrowed 4.7 revealer contract, and the separation between cinematic staging and UnitHider distance culling.
+
+### Resolved Issues
+
+- Fixed unrelated AI-registered hero NPCs creating overlapping UnitHider reveal bubbles that could leave most of the map population shown, without removing the intended standard AI heroes as reference units.
+- Confirmed the Cinematic ON/OFF UnitHider enable/disable calls must remain disabled: `udg_InCinematic` already suspends UnitHider, while disabling it would immediately unhide every UnitHider-managed unit.
+
+### Actions Remaining
+
+- Reimport `AI/AI.j`, the six changed AI class libraries, `UnitSystems/UnitHider4.j`, and `Debug/DebugCommands.j`; compile the full map through World Editor/JassHelper; then run `/debug unithider audit` after initial settlement and cinematic exit. `Visible outside hide range` should be zero.
+- Runtime-test Warrior, Orc Warlock, Undead Warlock, Restoration Shaman, Rogue, Engineer/Shredder, and Paladin as moving revealers; confirm unrelated AI-registered hero NPCs remain hideable; and retest companions, pets, the Zul'kis arrival ship, and normal/skipped cinematics. Keep Cinematic ON/OFF responsible for staging, pause/ownership, UI, and invisibility logic without calling `UnitHider_SetSystemEnabled`.
+
+
 ## [9.10.2026]
 
 ### Player-Facing Updates
