@@ -2,7 +2,7 @@
     VendorFloatingText
 
     Author: Valdemar
-    Version: 1.2.2
+    Version: 1.2.3
 
     Description:
     Displays a vendor-type label above registered Shop units while they are in
@@ -229,6 +229,12 @@ library VendorFloatingText initializer Init requires Shop, Table, FallenHeroStat
 
     public function SetEnabled takes boolean enabled returns nothing
         set VFT_Enabled = enabled
+        if enabled then
+            call TimerStart(VFT_UpdateTimer, VFT_UPDATE_PERIOD, true, function VFT_Update)
+        else
+            call VFT_RenderVisibleLabels()
+            call PauseTimer(VFT_UpdateTimer)
+        endif
     endfunction
 
     private function VFT_CreateLabelPool takes nothing returns nothing

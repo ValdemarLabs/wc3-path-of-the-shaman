@@ -2,7 +2,7 @@
     DoodadRender
 
     Author: Valdemar
-    Version: 1.5.0
+    Version: 1.5.1
 
     Description:
         Reduces rendering load by hiding selected preplaced doodad types outside
@@ -23,6 +23,7 @@
         DoodadRender_SetAllDrawDistances(real drawDistance) -> boolean
         DoodadRender_Enable()
         DoodadRender_Disable()
+        DoodadRender_DebugPause() preserves current visibility
         DoodadRender_Refresh()
         DoodadRender_SetBackend(integer backend) -> boolean
         DoodadRender_GetBackend() -> integer
@@ -795,6 +796,14 @@ library DoodadRender initializer Init requires DoodadManager
             return
         endif
         call StopRendering()
+    endfunction
+
+    public function DebugPause takes nothing returns nothing
+        set cinematicWasEnabled = false
+        set enabled = false
+        if updateTimer != null then
+            call PauseTimer(updateTimer)
+        endif
     endfunction
 
     public function Refresh takes nothing returns nothing

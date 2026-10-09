@@ -2,7 +2,7 @@
     DebugCommands
 
     Author: Valdemar
-    Version: 1.11.0
+    Version: 1.12.0
 
     Description:
     Chat-driven debug commands for Path of the Shaman testing. Commands are
@@ -36,18 +36,17 @@
     - /debug unithider audit
     - /debug doodadrender distance <distance>
     - /debug performance disable
-    - /debug performance restore
     - /debug wc3 help
 
 **/
-library DebugCommands initializer Init requires DebugObjectRegistry, Ascii, GatherNodes, GatherNodeUnits, GatherNodeSkills, ZonesCore, Dungeon, Drunk, PlayerHome, UnitHider4, DoodadRender, AI, Warcraft300TestHarness, Warcraft300P2TestHarness
+library DebugCommands initializer Init requires DebugObjectRegistry, Ascii, GatherNodes, GatherNodeUnits, GatherNodeSkills, ZonesCore, Dungeon, Drunk, PlayerHome, UnitHider4, DoodadRender, AI, AIRoutines, Companions, TerrainDamage, QuestMaster, WeatherSystem, VendorFloatingText, Warcraft300TestHarness, Warcraft300P2TestHarness
     globals
         private constant string DBG_ROOT = "/debug"
         private constant string DBG_PREFIX = "/debug "
         private constant string DBG_SYNC_PREFIX = "PDBG"
         private constant integer DBG_MAX_LOOKUP_RESULTS = 8
         private constant integer DBG_FISH_POOL_CATEGORY_ID = 9
-        private constant integer DBG_PERFORMANCE_SYSTEM_COUNT = 4
+        private constant integer DBG_PERFORMANCE_SYSTEM_COUNT = 11
         private constant real DBG_PERFORMANCE_STEP_INTERVAL = 5.00
 
         private trigger DBG_ChatTrigger = null
@@ -58,11 +57,6 @@ library DebugCommands initializer Init requires DebugObjectRegistry, Ascii, Gath
         private player DBG_PerformancePlayer = null
         private integer DBG_PerformanceStep = 0
         private boolean DBG_PerformanceActive = false
-        private boolean DBG_PerformanceSnapshotValid = false
-        private boolean DBG_PerformanceAIEnabled = false
-        private boolean DBG_PerformanceUnitHiderEnabled = false
-        private boolean DBG_PerformanceDoodadRenderEnabled = false
-        private boolean DBG_PerformanceGatherNodesEnabled = false
 
         private unit array DBG_SelectedUnit
     endglobals
@@ -786,22 +780,48 @@ library DebugCommands initializer Init requires DebugObjectRegistry, Ascii, Gath
     private function DBG_DisableNextPerformanceSystem takes nothing returns nothing
         set DBG_PerformanceStep = DBG_PerformanceStep + 1
         if DBG_PerformanceStep == 1 then
-            call AI_SetSystemEnabled(false)
-            call DBG_Message(DBG_PerformancePlayer, "Performance step 1/4: disabled AI periodic thinking, random spawning, and random travel.")
+            call AI_DebugPause()
+            call DBG_Message(DBG_PerformancePlayer, "Performance step 1/11: disabled AI periodic thinking, random spawning, and random travel.")
         elseif DBG_PerformanceStep == 2 then
-            call UnitHider_SetSystemEnabled(false)
-            call DBG_Message(DBG_PerformancePlayer, "Performance step 2/4: disabled UnitHider4 and restored its managed units.")
+            call ExecuteFunc("UnitMovementDisable")
+            call DBG_Message(DBG_PerformancePlayer, "Performance step 2/11: disabled the global IsUnitMoving tracker.")
         elseif DBG_PerformanceStep == 3 then
-            call DoodadRender_Disable()
-            call DBG_Message(DBG_PerformancePlayer, "Performance step 3/4: disabled DoodadRender and restored managed doodads.")
+            call TerrainDamage_SetSystemEnabled(false)
+            call DBG_Message(DBG_PerformancePlayer, "Performance step 3/11: disabled TerrainDamage scans and terrain-damage timers.")
         elseif DBG_PerformanceStep == 4 then
+            call QuestMaster_SetEvaluationEnabled(false)
+            call DBG_Message(DBG_PerformancePlayer, "Performance step 4/11: disabled QuestMaster periodic availability evaluation.")
+        elseif DBG_PerformanceStep == 5 then
+            call AIRoutines_SetSystemEnabled(false)
+            call DBG_Message(DBG_PerformancePlayer, "Performance step 5/11: disabled AIRoutines periodic NPC behavior.")
+        elseif DBG_PerformanceStep == 6 then
+            call Companions_SetPeriodicEnabled(false)
+            call DBG_Message(DBG_PerformancePlayer, "Performance step 6/11: disabled Companions idle and order updates.")
+        elseif DBG_PerformanceStep == 7 then
+            call WeatherSystem_SetFPSOptimization(true)
+            call WeatherSystem_SetCloudsEnabled(false)
+            call WeatherSystem_SetRipplesEnabled(false)
+            call WeatherSystem_SetThunderEnabled(false)
+            call WeatherSystem_SetSteamBreathEnabled(false)
+            call WeatherSystem_EnableSeasonalWeather(false)
+            call DBG_Message(DBG_PerformancePlayer, "Performance step 7/11: disabled optional WeatherSystem effects and seasonal checks.")
+        elseif DBG_PerformanceStep == 8 then
+            call VendorFloatingText_SetEnabled(false)
+            call DBG_Message(DBG_PerformancePlayer, "Performance step 8/11: disabled VendorFloatingText updates.")
+        elseif DBG_PerformanceStep == 9 then
             call GN_SetSystemEnabled(false)
-            call DBG_Message(DBG_PerformancePlayer, "Performance step 4/4: disabled GatherNodes periodic spawn and respawn checks.")
+            call DBG_Message(DBG_PerformancePlayer, "Performance step 9/11: disabled GatherNodes spawn, respawn, and lifetime work.")
+        elseif DBG_PerformanceStep == 10 then
+            call UnitHider_DebugPauseProcessing()
+            call DBG_Message(DBG_PerformancePlayer, "Performance step 10/11: paused UnitHider4 processing without unhiding units.")
+        elseif DBG_PerformanceStep == 11 then
+            call DoodadRender_DebugPause()
+            call DBG_Message(DBG_PerformancePlayer, "Performance step 11/11: paused DoodadRender without restoring hidden doodads.")
         endif
         if DBG_PerformanceStep >= DBG_PERFORMANCE_SYSTEM_COUNT then
             set DBG_PerformanceActive = false
             call PauseTimer(DBG_PerformanceTimer)
-            call DBG_Message(DBG_PerformancePlayer, "Performance sequence complete. Use /debug performance restore to restore captured states.")
+            call DBG_Message(DBG_PerformancePlayer, "Performance sequence complete. Systems stay disabled until the map is reloaded.")
             set DBG_PerformancePlayer = null
         else
             call DBG_Message(DBG_PerformancePlayer, "Observe performance; the next system will be disabled in 5 seconds.")
@@ -813,50 +833,16 @@ library DebugCommands initializer Init requires DebugObjectRegistry, Ascii, Gath
     endfunction
 
     private function DBG_StartPerformanceDisable takes player whichPlayer returns nothing
-        if udg_InCinematic then
-            call DBG_Message(whichPlayer, "Run performance isolation outside cinematics so renderer states can be restored exactly.")
-            return
-        endif
         if DBG_PerformanceActive then
             call DBG_Message(whichPlayer, "Performance disable sequence is already running at step " + I2S(DBG_PerformanceStep) + "/" + I2S(DBG_PERFORMANCE_SYSTEM_COUNT) + ".")
             return
         endif
-        if DBG_PerformanceSnapshotValid then
-            call DBG_Message(whichPlayer, "Performance systems still use a prior snapshot. Use /debug performance restore first.")
-            return
-        endif
-        set DBG_PerformanceAIEnabled = AI_IsSystemEnabled()
-        set DBG_PerformanceUnitHiderEnabled = UnitHider_IsSystemEnabled()
-        set DBG_PerformanceDoodadRenderEnabled = DoodadRender_IsEnabled()
-        set DBG_PerformanceGatherNodesEnabled = GN_IsSystemEnabled()
-        set DBG_PerformanceSnapshotValid = true
         set DBG_PerformanceActive = true
         set DBG_PerformancePlayer = whichPlayer
         set DBG_PerformanceStep = 0
-        call DBG_Message(whichPlayer, "Starting cumulative isolation: AI, UnitHider4, DoodadRender, then GatherNodes at 5-second intervals.")
+        call DBG_Message(whichPlayer, "Starting one-way performance isolation for 11 heavy systems at 5-second intervals.")
         call DBG_DisableNextPerformanceSystem()
         call TimerStart(DBG_PerformanceTimer, DBG_PERFORMANCE_STEP_INTERVAL, true, function DBG_PerformanceTimerExpired)
-    endfunction
-
-    private function DBG_RestorePerformanceSystems takes player whichPlayer returns nothing
-        if not DBG_PerformanceSnapshotValid then
-            call DBG_Message(whichPlayer, "No performance snapshot is available to restore.")
-            return
-        endif
-        call PauseTimer(DBG_PerformanceTimer)
-        set DBG_PerformanceActive = false
-        set DBG_PerformancePlayer = null
-        call AI_SetSystemEnabled(DBG_PerformanceAIEnabled)
-        call UnitHider_SetSystemEnabled(DBG_PerformanceUnitHiderEnabled)
-        if DBG_PerformanceDoodadRenderEnabled then
-            call DoodadRender_Enable()
-        else
-            call DoodadRender_Disable()
-        endif
-        call GN_SetSystemEnabled(DBG_PerformanceGatherNodesEnabled)
-        set DBG_PerformanceSnapshotValid = false
-        set DBG_PerformanceStep = 0
-        call DBG_Message(whichPlayer, "Restored AI, UnitHider4, DoodadRender, and GatherNodes to their captured states.")
     endfunction
 
     private function DBG_ShowHelp takes player whichPlayer returns nothing
@@ -877,8 +863,7 @@ library DebugCommands initializer Init requires DebugObjectRegistry, Ascii, Gath
         call DBG_Message(whichPlayer, "/debug unithider disable")
         call DBG_Message(whichPlayer, "/debug unithider audit")
         call DBG_Message(whichPlayer, "/debug doodadrender distance <distance> (sets tiny, short, medium, and long)")
-        call DBG_Message(whichPlayer, "/debug performance disable (disables likely heavy systems every 5 seconds)")
-        call DBG_Message(whichPlayer, "/debug performance restore")
+        call DBG_Message(whichPlayer, "/debug performance disable (one-way; disables 11 heavy systems every 5 seconds)")
         call DBG_Message(whichPlayer, "/debug wc3 help (baseline, camera, fog, and doodad probes)")
         call DBG_Message(whichPlayer, "/debug wc3 effects help (P2 special-effect animation probes)")
         call DBG_Message(whichPlayer, "/debug wc3 minimap help (P2 native/imported minimap probes)")
@@ -961,8 +946,6 @@ library DebugCommands initializer Init requires DebugObjectRegistry, Ascii, Gath
             call DBG_SetDoodadRenderDistance(whichPlayer, "")
         elseif lowerCommand == "performance disable" or lowerCommand == "perf disable" then
             call DBG_StartPerformanceDisable(whichPlayer)
-        elseif lowerCommand == "performance restore" or lowerCommand == "perf restore" then
-            call DBG_RestorePerformanceSystems(whichPlayer)
         else
             call DBG_Message(whichPlayer, "Unknown command. Use /debug help.")
         endif

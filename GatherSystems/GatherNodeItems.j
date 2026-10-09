@@ -566,6 +566,10 @@ private function GNI_CheckExpiredItems takes nothing returns nothing
     local integer handleId
     local real now = GNI_GetNow()
 
+    if not GN_IsSystemEnabled() then
+        return
+    endif
+
     loop
         exitwhen index < 0
         set it = GN_GetActiveItemByIndex(index)
@@ -1149,6 +1153,10 @@ endfunction
 private function GNI_ValidateTrackedItems takes nothing returns nothing
     local integer index = GN_GetActiveItemCount() - 1
     local item it
+
+    if not GN_IsSystemEnabled() then
+        return
+    endif
 
     loop
         exitwhen index < 0

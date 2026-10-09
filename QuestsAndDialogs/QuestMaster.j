@@ -2,7 +2,7 @@
     QuestMaster
 
     Author: Valdemar
-    Version: 1.3.10
+    Version: 1.3.11
 
     Description:
     Owns PotS quest data, state transitions, rewards, availability, custom
@@ -31,6 +31,7 @@
     - QuestMaster_IsRegisteredGiver(unit) reports whether a unit is registered.
     - QuestMaster_AddDailyResetAction(handler) listens for daily resets.
     - QuestMaster_ResetDailyQuests() manually resets completed daily quests.
+    - QuestMaster_SetEvaluationEnabled(enabled) controls periodic availability evaluation.
 
 **/
 library QuestMaster initializer Init requires Table, SpeciFX, Reputation, IconQuery, optional GameMode, optional HintsUI
@@ -3483,6 +3484,14 @@ endfunction
 
 private function OnHeroLevel takes nothing returns nothing
 	call RefreshAvailability()
+endfunction
+
+public function SetEvaluationEnabled takes boolean enabled returns nothing
+	if enabled then
+		call TimerStart(QuestEvalTimer, QUEST_EVAL_BATCH_INTERVAL, true, function EvalTimerTick)
+	else
+		call PauseTimer(QuestEvalTimer)
+	endif
 endfunction
 
 //===========================================================================

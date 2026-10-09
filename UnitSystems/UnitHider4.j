@@ -2,7 +2,7 @@
     UnitHider4
 
     Author: Valdemar
-    Version: 4.7.0
+    Version: 4.7.1
 
     Description:
     Hides the ordinary map population outside tracked-unit reveal ranges.
@@ -31,7 +31,6 @@
     API:
     - UnitHider_StartHideUnitsSystem()
     - UnitHider_SetSystemEnabled(enable)
-    - UnitHider_IsSystemEnabled() -> boolean
     - UnitHider_SetDebugEnabled(enable)
     - UnitHider_SetHidingDistance(distance)
     - UnitHider_SetUnhidingDistance(distance)
@@ -43,6 +42,7 @@
     - UnitHider_DebugHideAllExceptTracked() -> newly hidden count
     - UnitHider_DebugUnhideAllExceptTracked() -> newly shown count
     - UnitHider_DebugAudit(whichPlayer)
+    - UnitHider_DebugPauseProcessing() preserves current visibility
 
 **/
 library UnitHider4 initializer Init requires FallenHeroState, Events, optional AI
@@ -783,6 +783,7 @@ function UnitHider_SetSystemEnabled takes boolean enable returns nothing
     set UnitHider4_Enabled = enable
     set udg_UnitHider_SetSystem = enable
     if enable then
+        call TimerStart(UnitHider4_Timer, UnitHider4_TICK_INTERVAL, true, function UnitHider4_ProcessBatch)
         call UnitHider4_ResetKnownUnitScan()
         set UnitHider4_VisibleScanIndex = 0
         set UnitHider4_Initialized = false
@@ -799,8 +800,10 @@ function UnitHider_SetSystemEnabled takes boolean enable returns nothing
     endif
 endfunction
 
-function UnitHider_IsSystemEnabled takes nothing returns boolean
-    return UnitHider4_Enabled
+function UnitHider_DebugPauseProcessing takes nothing returns nothing
+    set UnitHider4_Enabled = false
+    set udg_UnitHider_SetSystem = false
+    call PauseTimer(UnitHider4_Timer)
 endfunction
 
 function UnitHider_RegisterReference takes unit whichUnit returns nothing

@@ -51,6 +51,7 @@
     call AIRoutines_WakeUnit(whichUnit)
     call AIRoutines_SetZoneActive(zoneId, active)
     set isActive = AIRoutines_IsZoneActive(zoneId)
+    call AIRoutines_SetSystemEnabled(enabled)
     call AIRoutines_CreateManagedUnitGroup(owner, unitTypeId, spawnRect, routineId, count, respawnDelay, facing)
     call AIRoutines_CreateManagedUnitGroupInZone(owner, unitTypeId, spawnRect, routineId, count, respawnDelay, facing, zoneId)
     call AIRoutines_CreateManagedRandomUnitGroup(owner, spawnRect, routineId, count, respawnDelay, facing)
@@ -192,6 +193,7 @@ globals
     private integer AIR_ActiveCount = 0
     private integer AIR_AIClassId = 0
     private boolean AIR_TickRunning = false
+    private boolean AIR_SystemEnabled = true
     private timer AIR_ClockTimer = null
     private timer AIR_TickTimer = null
     private trigger AIR_TickTrigger = null
@@ -351,7 +353,7 @@ private function AIR_RunTickTrigger takes nothing returns nothing
 endfunction
 
 private function AIR_StartTickTimer takes nothing returns nothing
-    if AIR_TickTimer != null and not AIR_TickRunning then
+    if AIR_SystemEnabled and AIR_TickTimer != null and not AIR_TickRunning then
         set AIR_TickRunning = true
         call TimerStart(AIR_TickTimer, AIR_TICK_INTERVAL, true, function AIR_RunTickTrigger)
     endif
@@ -359,6 +361,16 @@ endfunction
 
 private function AIR_StopTickTimer takes nothing returns nothing
     if AIR_TickTimer != null and AIR_TickRunning and AIR_ActiveCount <= 0 then
+        set AIR_TickRunning = false
+        call PauseTimer(AIR_TickTimer)
+    endif
+endfunction
+
+public function SetSystemEnabled takes boolean enabled returns nothing
+    set AIR_SystemEnabled = enabled
+    if enabled then
+        call AIR_StartTickTimer()
+    elseif AIR_TickTimer != null then
         set AIR_TickRunning = false
         call PauseTimer(AIR_TickTimer)
     endif

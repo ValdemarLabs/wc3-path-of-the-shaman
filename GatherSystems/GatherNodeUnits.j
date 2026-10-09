@@ -984,6 +984,10 @@ private function GNU_CheckExpiredUnits takes nothing returns nothing
     local integer handleId
     local real now = GNU_GetNow()
 
+    if not GN_IsSystemEnabled() then
+        return
+    endif
+
     loop
         exitwhen index < 0
         set u = GN_GetActiveUnitByIndex(index)
@@ -1768,6 +1772,10 @@ endfunction
 private function GNU_ValidateTrackedUnits takes nothing returns nothing
     local integer index = GN_GetActiveUnitCount() - 1
     local unit u
+
+    if not GN_IsSystemEnabled() then
+        return
+    endif
 
     loop
         exitwhen index < 0

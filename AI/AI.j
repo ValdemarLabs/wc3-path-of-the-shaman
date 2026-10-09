@@ -111,7 +111,7 @@
     call AI_ArePartyMembers(firstUnit, secondUnit) returns boolean
     call AI_GetFactionInfoText(whichUnit) returns string
     call AI_SetSystemEnabled(enabled)
-    call AI_IsSystemEnabled() returns boolean
+    call AI_DebugPause()
     call AI_SetDebugMode(enabled)
 
 **/
@@ -4910,10 +4910,6 @@ public function SetSystemEnabled takes boolean enabled returns nothing
     set SystemEnabled = enabled
 endfunction
 
-public function IsSystemEnabled takes nothing returns boolean
-    return SystemEnabled
-endfunction
-
 private function ClearSocialState takes integer instanceId returns nothing
     if instanceId <= 0 then
         return
@@ -7120,6 +7116,13 @@ private function Think takes nothing returns nothing
     endloop
     call ProcessLightweightBatch(now)
     call TryOrganizeAiParty(now)
+endfunction
+
+public function DebugPause takes nothing returns nothing
+    set SystemEnabled = false
+    call PauseTimer(ThinkTimer)
+    call PauseTimer(RandomSpawnTimer)
+    call PauseTimer(RandomTravelTimer)
 endfunction
 
 private function RequestCompanionDeathBark takes unit victim returns nothing

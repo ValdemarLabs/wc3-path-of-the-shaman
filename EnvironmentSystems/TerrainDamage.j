@@ -26,6 +26,7 @@ globals
     // === Scanner settings
     private constant boolean DEBUG = false
     private constant boolean DEBUG_BYPASS_SYSTEM = false // Hard debug bypass: skips all TerrainDamage setup and runtime timers
+    private boolean TerrainDamage_SystemEnabled = true
     private constant real SCAN_INTERVAL = 0.40          // How often tracked units are checked for damaging terrain
     private constant real PLAYER_RESYNC_INTERVAL = 10.00 // Slow safety resync for registered players; avoids full player scans every Periodic tick
     private constant real MIN_FIRST_TICK_DELAY = 0.20   // Prevents first damage from firing instantly when desyncing unit timers
@@ -558,6 +559,12 @@ private function TerrainDamage_OnUnitTimer takes nothing returns nothing
     call TerrainUnitTimers.timer.remove(unitId)
     set t = null
 
+    if not TerrainDamage_SystemEnabled then
+        call TerrainDamage_ClearUnitState(unitId)
+        set u = null
+        return
+    endif
+
     if not TerrainDamage_IsUnitValid(u) then
         call DebugMsg("OnUnitTimer abort invalid unit unitId=" + I2S(unitId))
         call TerrainDamage_ClearUnitState(unitId)
@@ -605,6 +612,10 @@ endfunction
 private function TerrainDamage_ArmUnitTimer takes unit u, integer terrainType, real delay, real elapsedTime returns nothing
     local integer unitId = GetUnitUserData(u)
     local timer t
+
+    if not TerrainDamage_SystemEnabled then
+        return
+    endif
 
     if unitId <= 0 then
         call DebugMsg("ArmUnitTimer skipped unitId <= 0 for unit=" + GetUnitName(u))
@@ -1004,6 +1015,10 @@ endfunction
 private function Periodic takes nothing returns nothing
     local integer i = 0
 
+    if not TerrainDamage_SystemEnabled then
+        return
+    endif
+
     call TerrainDamage_RefreshConfiguredSources()
 
     set TerrainDamageScanPass = TerrainDamageScanPass + 1
@@ -1032,6 +1047,10 @@ private function TerrainDamage_PeriodicPlayerResync takes nothing returns nothin
     local integer j = 0
     local unit u
 
+    if not TerrainDamage_SystemEnabled then
+        return
+    endif
+
     if TerrainDamage_UsesPlayerTrackRects() then
         loop
             set u = FirstOfGroup(TerrainPlayerGroup)
@@ -1059,6 +1078,10 @@ private function TerrainDamage_PeriodicPlayerResync takes nothing returns nothin
     endif
 
     set u = null
+endfunction
+
+function TerrainDamage_SetSystemEnabled takes boolean enabled returns nothing
+    set TerrainDamage_SystemEnabled = enabled
 endfunction
 
 //===========================================================================

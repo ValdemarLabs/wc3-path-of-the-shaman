@@ -1,3 +1,13 @@
+globals
+    timer UnitMovementTrackerTimer = null
+endglobals
+
+function UnitMovementDisable takes nothing returns nothing
+    if UnitMovementTrackerTimer != null then
+        call PauseTimer(UnitMovementTrackerTimer)
+    endif
+endfunction
+
 function IsUnitMovementTracked takes integer i returns boolean
     return udg_UMovPrev[i] != 0 or udg_UMovNext[0] == i
 endfunction
@@ -86,5 +96,6 @@ function InitTrig_Is_Unit_Moving takes nothing returns nothing
     else
         call ExecuteFunc("Trig_Is_Unit_Moving_Config_Actions")
     endif
-    call TimerStart(CreateTimer(), udg_UnitMovementInterval, true, function UnitMovementTracker)
+    set UnitMovementTrackerTimer = CreateTimer()
+    call TimerStart(UnitMovementTrackerTimer, udg_UnitMovementInterval, true, function UnitMovementTracker)
 endfunction

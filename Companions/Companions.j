@@ -2,7 +2,7 @@
     Companions
 
     Author: Valdemar
-    Version: 1.2.1
+    Version: 1.2.2
 
     Description:
     Companion party registration, information, idle state, and control-mode
@@ -51,6 +51,7 @@
     call Companions_GetTypeInfoText(unit controlledUnit) returns string
     call Companions_GetFactionInfoText(unit controlledUnit) returns string
     call Companions_GetAbilityInfoText(unit controlledUnit) returns string
+    call Companions_SetPeriodicEnabled(boolean enabled)
     Abilities A0F6 and A0F7 temporarily issue Move and Attack orders to all
     non-Hold controlled units, then restore each unit's saved companion mode.
     They emit COMMAND_MOVE or COMMAND_ATTACK events when an order succeeds.
@@ -3299,6 +3300,16 @@ endfunction
 
 public function GetAbilityInfoText takes unit controlledUnit returns string
     return GetCompanionAbilityInfoTextInternal(controlledUnit)
+endfunction
+
+public function SetPeriodicEnabled takes boolean enabled returns nothing
+    if enabled then
+        call EnableTrigger(IdleTrigger)
+        call EnableTrigger(OrderTrigger)
+    else
+        call DisableTrigger(IdleTrigger)
+        call DisableTrigger(OrderTrigger)
+    endif
 endfunction
 
 private function Init takes nothing returns nothing
