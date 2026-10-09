@@ -18,6 +18,32 @@
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
 
+## [9.10.2026]
+
+### Player-Facing Updates
+
+- Updated the named vendor quest set so quest descriptions, supply targets, and affected voiced lines use the canonical vendor identities from `Vendors/VendorCatalogs.j` instead of older placeholder names.
+- Updated `Voicelines/Voicelines_Quests.j` with less merchant-specific and less caricatured reusable Kill, Fetch, and Talk follow-ups, plus new Human female, Morgrim Dwarf male, Troll male, and Tauren Talk pools.
+- Updated the Bonecrusher quest dialogue with character-specific lines for Mugrok, Grumbar, Bolguk, Kragmog, Grothak, and Gubmog.
+
+### Technical Updates
+
+- Updated `QuestsAndDialogs/QuestsGeneric.j` to retain 512 Daily voice variants instead of silently dropping registrations after 96.
+- Updated `QuestsAndDialogs/QuestsGeneric.j` with explicit, zone-aware random Kill target candidates and a per-quest selected-target query; absent candidates safely fall back to the quest's registered target.
+- Added `QuestsAndDialogs/QuestGivers/README.md` and updated the vendor roster with the named/generic giver classification, voice-reuse rules, current profile coverage, non-vendor integration contract, and random-target safety rules.
+- Updated `_developer/Design Plans/Story and Quest Implementation Ledger.md` with the canonical identity pass, voice inventory correction, remaining profile gaps, and generic giver World Editor boundary.
+
+### Known Issues
+
+- Changed and newly allocated quest voice keys require review and Fish Audio recording before production import; development continues to use ExSound text-duration fallback where files are absent.
+
+### Actions Remaining
+
+- Compile the affected libraries through the current World Editor/JassHelper workflow, then runtime-test Daily variant selection for every supported voice family and zone-aware target choice/fallback.
+- In World Editor, select the exact placed NPC, rawcode, faction, and zone for each new non-vendor generic giver before promoting any planned regional quest to Implemented JASS.
+- Review and re-record the changed quest conversations in context before importing replacement audio.
+
+
 ## [8.10.2026]
 
 ### Technical Updates
