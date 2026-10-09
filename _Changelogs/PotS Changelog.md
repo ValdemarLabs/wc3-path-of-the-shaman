@@ -20,8 +20,20 @@
 
 ## [10.10.2026]
 
+### Player-Facing Updates
+
+- Updated shared escort quests so the escorted NPC walks toward its destination while the hero accompanies it, instead of requiring the player to discover the route by pulling a following NPC behind them.
+- Escort NPCs now stop and mark their position when the accepting hero falls outside the route leash, then resume automatically when the hero returns.
+
 ### Technical Updates
 
+- Added `PatrolFollowSystems/EscortMovement.j` with autonomous pathing, configurable hero range, stopped-route pings and indicators, dynamic destinations, and optional ordered waypoints.
+- Updated `QuestsAndDialogs/QuestsVendor.j` to use autonomous movement for outbound and return legs, reverse configured waypoints on round trips, and recover an active route after quest-state or leader changes.
+- Added `QuestsVendor_SetEscortLeaderRange`, `QuestsVendor_AddEscortWaypoint`, and `QuestsVendor_AddEscortWaypointRect` for route-specific configuration.
+- Updated `QuestsAndDialogs/Plans/ESCORT_QUEST_EXAMPLE.j` to demonstrate an escort leading the hero through `EscortMovement` instead of following the hero through `FollowSystem`.
+- Updated `QuestsAndDialogs/QuestGivers/README.md`, `QuestsAndDialogs/QuestGivers/Vendors/README.md`, and `_developer/Design Plans/Story and Quest Implementation Ledger.md` with the new escort contract and World Editor waypoint boundary.
+- Updated `Debug/DebugCommands.j` so `/debug performance disable` is now a one-way 11-stage diagnostic with no enabled-state snapshots or restore command. It disables AI, the global unit-movement tracker, TerrainDamage, QuestMaster evaluation, AIRoutines, companion updates, optional weather work, vendor floating text, GatherNodes, UnitHider processing, and DoodadRender at five-second intervals.
+- Updated `AI/AI.j`, `AI/AIRoutines.j`, `Companions/Companions.j`, `DoodadHider/DoodadRender.j`, `EnvironmentSystems/TerrainDamage.j`, `GatherSystems/GatherNodeItems.j`, `GatherSystems/GatherNodeUnits.j`, `QuestsAndDialogs/QuestMaster.j`, `UnitSystems/UnitHider4.j`, `Vendors/VendorFloatingText.j`, and `_CoreSystems/Imported/IsUnitMoving.j` with diagnostic timer/trigger gates. UnitHider and DoodadRender preserve their current hidden state instead of revealing the full map.
 - Updated `AI/AI.j`, the Warrior, Warlock, Restoration Shaman, Rogue, Engineer, and Paladin class libraries, and `UnitSystems/UnitHider4.j` with an explicit profile-level UnitHider revealer contract. Player heroes, both standard Warlocks, Warrior, Restoration Shaman, Rogue, Engineer/Shredder, Paladin, companions, and pets remain automatic revealers, while unrelated AI-registered hero NPCs no longer create 5,500-range reveal bubbles. Removed AI's obsolete broad write to `udg_UnitHider_ReferenceUnits`; current companion/pet systems retain their own compatibility entries, `Events` handles new-unit discovery, and Unit Event indexing is limited to deindex cleanup.
 - Updated `UnitSystems/UnitHider4.j` and `Debug/DebugCommands.j` with `/debug unithider audit`, which classifies the current world population as exempt, UnitHider-owned hidden, foreign-hidden, visible inside reference range, or incorrectly visible outside hide range.
 - Updated `UnitSystems/UnitHider4_Review.md` with the force-hide versus normal-distance diagnosis, the broad AI-reference regression, the narrowed 4.7 revealer contract, and the separation between cinematic staging and UnitHider distance culling.
@@ -33,6 +45,9 @@
 
 ### Actions Remaining
 
+- Import `PatrolFollowSystems/EscortMovement.j` before `QuestsAndDialogs/QuestsVendor.j`, compile through the current World Editor/JassHelper workflow, and runtime-test all ten existing escort quests.
+- Add waypoints only to routes that fail ordinary Warcraft pathing, selecting and validating each point in World Editor on both outbound and reversed return legs.
+- Compile the expanded performance-disable dependencies through World Editor/JassHelper, then run `/debug performance disable` outside production play and verify all 11 messages arrive five seconds apart. Confirm the UnitHider and DoodadRender stages do not reveal hidden map content; reload the map after each diagnostic run.
 - Reimport `AI/AI.j`, the six changed AI class libraries, `UnitSystems/UnitHider4.j`, and `Debug/DebugCommands.j`; compile the full map through World Editor/JassHelper; then run `/debug unithider audit` after initial settlement and cinematic exit. `Visible outside hide range` should be zero.
 - Runtime-test Warrior, Orc Warlock, Undead Warlock, Restoration Shaman, Rogue, Engineer/Shredder, and Paladin as moving revealers; confirm unrelated AI-registered hero NPCs remain hideable; and retest companions, pets, the Zul'kis arrival ship, and normal/skipped cinematics. Keep Cinematic ON/OFF responsible for staging, pause/ownership, UI, and invisibility logic without calling `UnitHider_SetSystemEnabled`.
 
