@@ -1,0 +1,68 @@
+Cinematic OFF
+    Events
+    Conditions
+    Actions
+        Set VariableSet InCinematic = False
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                IntroCinematic Equal to False
+            Then - Actions
+                -------- ====================UNIT LOCATIONS - RESTORE --------
+                Custom script:   call CinematicMover_ReturnUnitsFromCinematic(udg_CinematicTriggerUnit)
+            Else - Actions
+        -------- ==== Return gaming mode START ==== --------
+        Cinematic - Enable user control for (All players).
+        -------- Restore units --------
+        Unit Group - Pick every unit in PlayerCinemaGroup and do (Actions).
+            Loop - Actions
+                If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+                    If - Conditions
+                        Or - Any (Conditions) are true
+                            Conditions
+                                (Picked unit) Equal to Nazgrek
+                                (Picked unit) Equal to Zulkis
+                    Then - Actions
+                        Unit - Change ownership of (Picked unit) to Player 1 (Red) and Retain color
+                        Hero - Enable experience gain for (Picked unit).
+                    Else - Actions
+        -------- ==== Return gaming mode END ==== --------
+        Unit Group - Pick every unit in CinematicPauseGroup and do (Actions).
+            Loop - Actions
+                Unit - Unpause (Picked unit)
+        -------- Remove all units from CinematicHideGroup --------
+        Unit Group - Remove all units from CinematicPauseGroup.
+        Unit Group - Remove all units from CinematicUnpauseGroup.
+        Unit Group - Remove all units from PlayerCinemaGroup.
+        -------- ============= OTHER --------
+        -------- Ability related --------
+        Trigger - Run Cinematic Invisibility <gen> (checking conditions)
+        -------- FLOATING TEXTs --------
+        Trigger - Turn on Damage Tag <gen>
+        Custom script:   call EnableTrigger(gg_trg_Floating_Texts_Spell_Event)
+        Custom script:   call EnableTrigger(gg_trg_HealingDisplay)
+        Custom script:   call EnableTrigger(gg_trg_RegenerationDisplay)
+        Custom script:   call EnableTrigger(gg_trg_RegenerationDisplay)
+        -------- =============  --------
+        -------- Cinematic Panels --------
+        Custom script:   call EnableCinematicMode(false)
+        Cinematic - Turn off letterbox mode (show interface) for (All players): fade in over 2.00 seconds
+        Custom script:   call FullscreenUI_SetEnabled(false)
+        -------- CAMERA Z --------
+        Camera - Set Player 1 (Red)'s camera Far Z to 20000.00 over 0.00 seconds
+        -------- ====================UNIT HIDER --------
+        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
+            If - Conditions
+                IntroCinematic Equal to False
+            Then - Actions
+                Custom script:   call UnitHider_SetSystemEnabled(true)
+            Else - Actions
+        -------- ====================---------------- --------
+        -------- DynamicMinimap --------
+        Custom script:   call DynamicMinimap_SetFullMapMode(false)
+        -------- UI --------
+        Custom script:   call MasterUI_ShowGameButton()
+        Custom script:   call StatsLiteUI_ShowAfterCinematic()
+        Custom script:   call TasQuestBox_Unhide()
+        -------- Camera --------
+        Custom script:   call CameraControl_Resume(Player(0))
+        Trigger - Remove (This trigger) from the trigger queue
