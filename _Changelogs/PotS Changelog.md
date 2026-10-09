@@ -28,6 +28,7 @@
 ### Technical Updates
 
 - Added `PatrolFollowSystems/EscortMovement.j` with autonomous pathing, configurable hero range, stopped-route pings and indicators, dynamic destinations, and optional ordered waypoints.
+- Raised escort route capacity to 128 waypoints in `PatrolFollowSystems/EscortMovement.j` and `QuestsAndDialogs/QuestsVendor.j`, supporting long authored routes with tens of points.
 - Updated `QuestsAndDialogs/QuestsVendor.j` to use autonomous movement for outbound and return legs, reverse configured waypoints on round trips, and recover an active route after quest-state or leader changes.
 - Added `QuestsVendor_SetEscortLeaderRange`, `QuestsVendor_AddEscortWaypoint`, and `QuestsVendor_AddEscortWaypointRect` for route-specific configuration.
 - Updated `QuestsAndDialogs/Plans/ESCORT_QUEST_EXAMPLE.j` to demonstrate an escort leading the hero through `EscortMovement` instead of following the hero through `FollowSystem`.
