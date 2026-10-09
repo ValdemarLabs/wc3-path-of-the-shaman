@@ -54,7 +54,8 @@ Cinematic OFF
             If - Conditions
                 IntroCinematic Equal to False
             Then - Actions
-                Custom script:   call UnitHider_SetSystemEnabled(true)
+                // not enabled
+                //Custom script:   call UnitHider_SetSystemEnabled(true)
             Else - Actions
         -------- ====================---------------- --------
         -------- DynamicMinimap --------

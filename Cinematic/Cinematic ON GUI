@@ -27,7 +27,8 @@ Cinematic ON
             If - Conditions
                 IntroCinematic Equal to False
             Then - Actions
-                Custom script:   call UnitHider_SetSystemEnabled(false)
+                // not enabled
+                //Custom script:   call UnitHider_SetSystemEnabled(false)
             Else - Actions
         -------- Pick player units --------
         Set VariableSet PlayerCinemaGroup = (Units owned by Player 1 (Red).)
