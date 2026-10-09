@@ -176,6 +176,7 @@ endfunction
 private function Init takes nothing returns nothing
     set AI_Warrior_ClassId = AI_RegisterClass("Warrior")
     set AI_Warrior_ProfileId = AI_RegisterProfile(AI_Warrior_ClassId, AI_WARRIOR_UNIT_HORDE, "Horde Warrior")
+    call AI_SetProfileUnitHiderRevealer(AI_Warrior_ProfileId, true)
     call StatsLiteUI_RegisterRageResourceClass(AI_Warrior_ClassId)
     call StatsUI_RegisterRageResourceClass(AI_Warrior_ClassId)
     call AI_SetProfileFaction(AI_Warrior_ProfileId, "Horde")

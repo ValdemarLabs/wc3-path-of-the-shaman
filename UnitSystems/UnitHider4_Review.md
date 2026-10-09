@@ -25,10 +25,10 @@ correct and performant enough for permanent use.
 
 | Version | Useful behavior | Main problems |
 |---|---|---|
-| `UnitHider.j` (1.0) | Simple two-phase ownership: check owned hidden units for showing, then visible units for hiding. It was the known working fallback. | Enumerates the full map every 0.5 seconds; creates and destroys a reference group for every proximity test; uses `SquareRoot`; leaks a newly created work group on every disabled timer tick; does not recognize the `UnitHider_ReferenceUnits` registrations used by current AI, companions, and pets. |
+| `UnitHider.j` (1.0) | Simple two-phase ownership: check owned hidden units for showing, then visible units for hiding. It was the known working fallback. | Enumerates the full map every 0.5 seconds; creates and destroys a reference group for every proximity test; uses `SquareRoot`; leaks a newly created work group on every disabled timer tick; and does not recognize current companion/pet registrations. |
 | `UnitHider2.j` | Reuses work groups, filters invalid units, compares squared distances, and keeps the reliable two-phase flow. | Still enumerates nearly every eligible map unit every 0.5 seconds and copies the full reference group for every proximity test. `Table` state duplicates the authoritative hidden group without improving behavior. The archived runtime result was slow hiding and severe lag. |
 | `UnitHider3_Optimized.j` | Caches reference positions, uses squared distances, reuses main work groups, and retains the reliable two-phase flow. The archive says it worked. | Still performs a full-world enumeration every 0.5 seconds; creates a temporary reference group each cycle; limits references to 20; aborts with zero references without restoring already hidden units; does not consume current array registrations; and can show units another system intentionally hid because visibility ownership is not transferred on foreign `ShowUnit` calls. |
-| `UnitHider4.j` | Drains a fresh world snapshot for every complete settlement using the known-working UnitHider 1.0 traversal, spatially buckets hidden units, checks only nearby buckets for revealing, preserves foreign visibility ownership, and retains hide/show hysteresis. Player-controlled and registered AI heroes plus registered companions/pets are revealers; explicit references and ignored units remain supported. | Requires full-map runtime validation because hiding units changes simulation behavior by design. Version 4.6.1 performs complete direct-world settlements and consumes `Events` world-enter notifications, then checks at most 128 managed visible units and 8 recovery units per 0.10-second tick. Hidden units outside revealer cells receive no continuous per-unit polling. |
+| `UnitHider4.j` | Drains a fresh world snapshot for every complete settlement using the known-working UnitHider 1.0 traversal, spatially buckets hidden units, checks only nearby buckets for revealing, preserves foreign visibility ownership, and retains hide/show hysteresis. Player-controlled heroes, configured basic AI heroes, and registered companions/pets are automatic revealers; other intentional revealers use the explicit API. | Requires full-map runtime validation because hiding units changes simulation behavior by design. Version 4.7 performs complete direct-world settlements and consumes `Events` world-enter notifications, then checks at most 128 managed visible units and 8 recovery units per 0.10-second tick. Hidden units outside revealer cells receive no continuous per-unit polling. |
 
 Some older UnitHider Markdown files describe an earlier proposed "smart filter"
 and quote estimated operation reductions. The final `UnitHider3_Optimized.j`
@@ -38,10 +38,11 @@ Treat those estimates as historical planning notes rather than measured results.
 
 ## PotS integration in UnitHider4
 
-- Player-controlled heroes and heroes registered by the AI system act as
-  revealers and remain shown. AI identity comes from the AI registry rather
-  than owner slots, which are not stable in that system. Generic or static
-  hero-type NPCs outside the tracked hero set are hideable like ordinary units.
+- Player-controlled heroes and AI profiles explicitly marked through
+  `AI_SetProfileUnitHiderRevealer` act as automatic revealers and remain
+  shown. Warrior, Orc Warlock, Undead Warlock, Restoration Shaman, Rogue,
+  Engineer/Shredder, and Paladin profiles are marked. Merely having a global AI
+  instance does not make an unrelated hero-type NPC a revealer.
 - Current companion and pet registration is recognized through
   `udg_UnitHider_ReferenceUnits` together with `udg_Companion_Group` and
   `udg_TamedUnits`.
@@ -52,9 +53,10 @@ Treat those estimates as historical planning notes rather than measured results.
   hiding. Their `AI_REGISTER_ROLE_VENDOR` or `AI_REGISTER_ROLE_SCRIPTED`
   registration does not make them revealers; only companion/pet membership or
   an explicit UnitHider registration overrides that behavior.
-- `udg_UnitHider_ReferenceGroup` remains compatible for heroes and registered
-  companions/pets. Obsolete nonhero members no longer reveal or protect an
-  area; intentional nonhero revealers must use the public register API.
+- `udg_UnitHider_ReferenceGroup` remains compatible for player-controlled
+  heroes and registered companions/pets. Remote heroes and obsolete nonhero
+  members no longer reveal or protect an area; intentional remote revealers
+  must use the public register API.
 - `udg_UnitHider_IgnoredUnits`, Locust units, loaded units, dead units, and
   retained fallen-hero bodies are never newly hidden.
 - Initial and cinematic-exit settlements enumerate the world bounds directly,
@@ -87,6 +89,43 @@ Treat those estimates as historical planning notes rather than measured results.
   UnitHider-owned unit without changing the enabled state. Foreign-hidden,
   ignored, Locust, loaded, and dead units retain their existing ownership or
   engine-sensitive state.
+
+## 10 October 2026 revealer-scope correction
+
+The force-hide debug command proved that world enumeration and
+`ShowUnit(false)` were functioning. Its result differed from normal processing
+because it deliberately ignores the 5,500 hide radius, while normal processing
+retains every eligible unit inside any reference bubble.
+
+The global AI system now registers a broad NPC population. Treating every
+registered hero-type NPC as an automatic UnitHider reference allowed unrelated
+hero NPCs to create overlapping reveal bubbles across much of the map. Version
+4.7 replaces that broad test with an explicit AI profile flag. The standard
+Warrior, Orc and Undead Warlock, Restoration Shaman, Rogue, Engineer/Shredder,
+and Paladin profiles retain their required automatic reveal behavior.
+Player-controlled heroes and current companions/pets also remain automatic;
+other intentional remote cases use the explicit UnitHider API.
+
+`AI_RegisterUnit` no longer writes every heavy AI instance into
+`udg_UnitHider_ReferenceUnits`. That index-based legacy array was inconsistent
+(lightweight AI never wrote it) and AI unregister did not clear it. Companion,
+pet, and quest-companion registration still maintain the array where current
+legacy GUI compatibility needs it. `Events` owns new-unit notification for
+UnitHider; `udg_UDexUnits[udg_UDex]` is used only by the Unit Event deindex
+callback to remove a departing unit from UnitHider's cached groups.
+
+`/debug unithider audit` reports reference count, exempt population,
+UnitHider-owned hidden population, foreign-hidden population, visible units
+inside reference range, and visible eligible units outside the hide range.
+After an active settlement, `visible outside hide range` should be zero. A
+large `visible near references` count instead identifies reference coverage,
+not another system showing distant units.
+
+The cinematic GUI must continue to own scene staging, player-unit ownership,
+pause groups, UI state, and temporary invisibility abilities. UnitHider owns
+distance culling only. Cinematic ON/OFF must not disable or enable UnitHider:
+`udg_InCinematic` suspends automatic mutation, and disabling UnitHider would
+immediately unhide all units whose visibility it owns.
 
 ## 8 October 2026 authoritative inventory correction
 
@@ -204,13 +243,15 @@ the inactive world stays hidden and ongoing work follows the active areas.
 
 ## Full-map validation
 
-1. Import UnitHider4 after Unit Event and `FallenHeroState`; disable or remove
-   every earlier UnitHider implementation and its GUI timer/toggle triggers.
-2. Confirm initial hiding around all player and AI heroes, including AI heroes
-   using nonstandard owners, after heavy unit create/remove churn.
-3. Move an AI hero through a populated area and verify units appear before
-   combat acquisition, remain interactive through combat/casting, and hide
-   again after every revealer leaves.
+1. Import UnitHider4 after `Events`, Unit Event, and `FallenHeroState`;
+   disable or remove every earlier UnitHider implementation and its GUI
+   timer/toggle triggers.
+2. Confirm initial hiding around player-controlled heroes after heavy unit
+   create/remove churn, while unrelated AI-registered hero NPCs remain
+   hideable.
+3. Move each standard Warrior, both Warlocks, Restoration Shaman, Rogue,
+   Engineer/Shredder, and Paladin through populated areas. Nearby units must
+   reveal before interaction and hide again after every revealer leaves.
 4. Repeat with normal companions, Shadowclaw, and a tamed pet.
 5. Confirm distant nonhero vendors and quest givers hide, reveal before the
    player reaches interaction range, and still open their normal shop/dialog.
@@ -233,7 +274,9 @@ the inactive world stays hidden and ongoing work follows the active areas.
 Keep the old `UnitHider ReferecedUnits Init` trigger disabled:
 
 - Nazgrek and an owned Zulkis are detected as player-controlled heroes.
-- Registered AI heroes are detected through the AI registry.
+- Standard Warrior, both Warlocks, Restoration Shaman, Rogue,
+  Engineer/Shredder, and Paladin AI profiles are automatic revealers. Other
+  remote AI hero profiles require explicit configuration or registration.
 - Shadowclaw and ordinary pets are detected when `Pet` registers them in the
   pet groups and legacy reference array.
 - Current companions are detected through the companion group and legacy

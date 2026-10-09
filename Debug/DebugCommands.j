@@ -2,7 +2,7 @@
     DebugCommands
 
     Author: Valdemar
-    Version: 1.10.0
+    Version: 1.11.0
 
     Description:
     Chat-driven debug commands for Path of the Shaman testing. Commands are
@@ -33,6 +33,7 @@
     - /debug unithider unhide all
     - /debug unithider enable
     - /debug unithider disable
+    - /debug unithider audit
     - /debug doodadrender distance <distance>
     - /debug performance disable
     - /debug performance restore
@@ -744,7 +745,7 @@ library DebugCommands initializer Init requires DebugObjectRegistry, Ascii, Gath
     private function DBG_UnitHiderHideAll takes player whichPlayer returns nothing
         local integer hiddenCount = UnitHider_DebugHideAllExceptTracked()
 
-        call DBG_Message(whichPlayer, "UnitHider hid " + I2S(hiddenCount) + " eligible non-tracked units. Enabled state unchanged.")
+        call DBG_Message(whichPlayer, "UnitHider force-hid " + I2S(hiddenCount) + " eligible non-tracked units. Normal updates may reveal units inside reference range.")
     endfunction
 
     private function DBG_UnitHiderUnhideAll takes player whichPlayer returns nothing
@@ -760,6 +761,10 @@ library DebugCommands initializer Init requires DebugObjectRegistry, Ascii, Gath
         else
             call DBG_Message(whichPlayer, "UnitHider disabled and all UnitHider-managed units were unhidden.")
         endif
+    endfunction
+
+    private function DBG_UnitHiderAudit takes player whichPlayer returns nothing
+        call UnitHider_DebugAudit(whichPlayer)
     endfunction
 
     private function DBG_SetDoodadRenderDistance takes player whichPlayer, string argument returns nothing
@@ -870,6 +875,7 @@ library DebugCommands initializer Init requires DebugObjectRegistry, Ascii, Gath
         call DBG_Message(whichPlayer, "/debug unithider unhide all")
         call DBG_Message(whichPlayer, "/debug unithider enable")
         call DBG_Message(whichPlayer, "/debug unithider disable")
+        call DBG_Message(whichPlayer, "/debug unithider audit")
         call DBG_Message(whichPlayer, "/debug doodadrender distance <distance> (sets tiny, short, medium, and long)")
         call DBG_Message(whichPlayer, "/debug performance disable (disables likely heavy systems every 5 seconds)")
         call DBG_Message(whichPlayer, "/debug performance restore")
@@ -946,6 +952,8 @@ library DebugCommands initializer Init requires DebugObjectRegistry, Ascii, Gath
             call DBG_UnitHiderSetEnabled(whichPlayer, true)
         elseif lowerCommand == "unithider disable" or lowerCommand == "unit hider disable" then
             call DBG_UnitHiderSetEnabled(whichPlayer, false)
+        elseif lowerCommand == "unithider audit" or lowerCommand == "unit hider audit" then
+            call DBG_UnitHiderAudit(whichPlayer)
         elseif DBG_StartsWith(lowerCommand, "doodadrender distance ") then
             set argument = SubString(trimmed, StringLength("doodadrender distance "), StringLength(trimmed))
             call DBG_SetDoodadRenderDistance(whichPlayer, argument)

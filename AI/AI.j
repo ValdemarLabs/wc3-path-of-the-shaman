@@ -41,6 +41,8 @@
     call AI_SetProfileUsesFakeDeath(profileId, enabled)
     call AI_SetProfileAutomaticRevive(profileId, enabled)
     call AI_SetProfileGlobalNpcOnly(profileId, enabled)
+    call AI_SetProfileUnitHiderRevealer(profileId, enabled)
+    set revealer = AI_IsUnitHiderRevealer(whichUnit)
     call AI_SetProfileLazyActivation(profileId, enabled)
     set lazyActivation = AI_IsProfileLazyActivation(profileId)
     call AI_SetProfileLightweight(profileId, enabled)
@@ -311,6 +313,7 @@ globals
     private Table ProfileUsesFakeDeath = 0
     private Table ProfileAutomaticReviveDisabled = 0
     private Table ProfileGlobalNpcOnly = 0
+    private Table ProfileUnitHiderRevealer = 0
     private Table ProfileLazyActivation = 0
     private Table ProfileLightweight = 0
     private Table ProfileLightweightPeriodic = 0
@@ -554,6 +557,7 @@ private function EnsureState takes nothing returns nothing
         set ProfileUsesFakeDeath = Table.create()
         set ProfileAutomaticReviveDisabled = Table.create()
         set ProfileGlobalNpcOnly = Table.create()
+        set ProfileUnitHiderRevealer = Table.create()
         set ProfileLazyActivation = Table.create()
         set ProfileLightweight = Table.create()
         set ProfileLightweightPeriodic = Table.create()
@@ -2820,6 +2824,18 @@ public function SetProfileGlobalNpcOnly takes integer profileId, boolean enabled
     endif
 endfunction
 
+public function SetProfileUnitHiderRevealer takes integer profileId, boolean enabled returns nothing
+    call EnsureState()
+    if profileId <= 0 then
+        return
+    endif
+    if enabled then
+        set ProfileUnitHiderRevealer.boolean[profileId] = true
+    else
+        call ProfileUnitHiderRevealer.boolean.remove(profileId)
+    endif
+endfunction
+
 public function SetProfileLazyActivation takes integer profileId, boolean enabled returns nothing
     call EnsureState()
     if profileId <= 0 then
@@ -3723,6 +3739,13 @@ public function GetProfileId takes unit whichUnit returns integer
     return InstanceProfile[instanceId]
 endfunction
 
+public function IsUnitHiderRevealer takes unit whichUnit returns boolean
+    local integer profileId = AI_GetProfileId(whichUnit)
+
+    call EnsureState()
+    return profileId > 0 and ProfileUnitHiderRevealer.boolean[profileId]
+endfunction
+
 public function UsesFakeDeath takes unit whichUnit returns boolean
     local integer instanceId = AI_GetInstance(whichUnit)
 
@@ -3858,7 +3881,6 @@ public function RegisterUnit takes unit whichUnit, integer profileId, integer un
     local integer instanceId
     local integer classId
     local integer unitTypeId
-    local integer customValue
     call EnsureState()
     if whichUnit == null or GetUnitTypeId(whichUnit) == 0 or profileId <= 0 then
         return 0
@@ -3961,10 +3983,6 @@ public function RegisterUnit takes unit whichUnit, integer profileId, integer un
         call EnsureDebugIcon(instanceId, whichUnit)
     endif
     call DebugMsg("Registered " + GetDebugInstanceName(instanceId, whichUnit) + " instance=" + I2S(instanceId) + " profile=" + I2S(profileId) + " unitType=" + I2S(unitTypeId) + ".")
-    set customValue = GetUnitUserData(whichUnit)
-    if customValue > 0 then
-        set udg_UnitHider_ReferenceUnits[customValue] = whichUnit
-    endif
     return instanceId
 endfunction
 

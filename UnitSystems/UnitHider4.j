@@ -2,12 +2,12 @@
     UnitHider4
 
     Author: Valdemar
-    Version: 4.6.2
+    Version: 4.7.0
 
     Description:
     Hides the ordinary map population outside tracked-unit reveal ranges.
-    Player-controlled and registered AI heroes, registered companions and pets,
-    and explicit reference units reveal nearby units. Generic heroes, remote
+    Player-controlled heroes, configured basic AI heroes, registered companions
+    and pets, and explicit reference units reveal nearby units. Generic heroes,
     combatants, vendors, and quest givers remain hideable; only explicit
     exclusions and revealers bypass distance hiding. Complete settlements drain
     a direct world snapshot using the proven UnitHider 1.0 traversal, while
@@ -42,6 +42,7 @@
     - UnitHider_Refresh()
     - UnitHider_DebugHideAllExceptTracked() -> newly hidden count
     - UnitHider_DebugUnhideAllExceptTracked() -> newly shown count
+    - UnitHider_DebugAudit(whichPlayer)
 
 **/
 library UnitHider4 initializer Init requires FallenHeroState, Events, optional AI
@@ -114,26 +115,25 @@ private function UnitHider4_IsAllowedLegacyReference takes unit whichUnit return
     if whichUnit == null or not IsUnitInGroup(whichUnit, udg_UnitHider_ReferenceGroup) then
         return false
     endif
-    return IsUnitType(whichUnit, UNIT_TYPE_HERO) or UnitHider4_IsLegacyCompanionReference(whichUnit)
+    if UnitHider4_IsLegacyCompanionReference(whichUnit) then
+        return true
+    endif
+    return IsUnitType(whichUnit, UNIT_TYPE_HERO) and GetPlayerController(GetOwningPlayer(whichUnit)) == MAP_CONTROL_USER
 endfunction
 
-private function UnitHider4_IsTrackedHero takes unit whichUnit returns boolean
-    local integer unitId
-
+private function UnitHider4_IsPlayerControlledHero takes unit whichUnit returns boolean
     if whichUnit == null or not IsUnitType(whichUnit, UNIT_TYPE_HERO) then
         return false
     endif
-    if GetPlayerController(GetOwningPlayer(whichUnit)) == MAP_CONTROL_USER then
-        return true
-    endif
-    set unitId = GetUnitUserData(whichUnit)
-    if unitId > 0 and udg_UnitHider_ReferenceUnits[unitId] == whichUnit then
-        return true
+    return GetPlayerController(GetOwningPlayer(whichUnit)) == MAP_CONTROL_USER
+endfunction
+
+private function UnitHider4_IsConfiguredAIHero takes unit whichUnit returns boolean
+    if whichUnit == null or not IsUnitType(whichUnit, UNIT_TYPE_HERO) then
+        return false
     endif
     static if LIBRARY_AI then
-        if AI_GetInstance(whichUnit) > 0 and AI_IsAlive(whichUnit) then
-            return true
-        endif
+        return AI_IsAlive(whichUnit) and AI_IsUnitHiderRevealer(whichUnit)
     endif
     return false
 endfunction
@@ -142,8 +142,11 @@ private function UnitHider4_IsAutomaticReference takes unit whichUnit, boolean i
     if not isAlive or isLoaded then
         return false
     endif
-    // Combat state and nonhero AI roles do not by themselves create revealers.
-    return UnitHider4_IsTrackedHero(whichUnit) or UnitHider4_IsLegacyCompanionReference(whichUnit)
+    // Only profiles explicitly configured by AI are automatic remote revealers.
+    if UnitHider4_IsPlayerControlledHero(whichUnit) or UnitHider4_IsConfiguredAIHero(whichUnit) then
+        return true
+    endif
+    return UnitHider4_IsLegacyCompanionReference(whichUnit)
 endfunction
 
 private function UnitHider4_UpdateAutomaticReference takes unit whichUnit, boolean isAlive, boolean isLoaded returns boolean
@@ -221,7 +224,7 @@ private function UnitHider4_UpdateReferenceCache takes nothing returns nothing
     call UnitHider4_AddPartyReferences(udg_Companion_Group)
     call UnitHider4_AddPartyReferences(udg_TamedUnits)
     // The legacy group often contains obsolete NPC/dummy entries. Only its
-    // hero and current companion/pet registrations may reveal map population.
+    // player-controlled heroes and current companion/pet registrations reveal.
     call UnitHider4_AddAllowedLegacyReferences()
 
     set UnitHider4_ReferenceCount = 0
@@ -696,6 +699,59 @@ function UnitHider_DebugUnhideAllExceptTracked takes nothing returns integer
     call UnitHider4_UnhideAllManaged()
     call UnitHider4_ResetKnownUnitScan()
     return shownCount
+endfunction
+
+function UnitHider_DebugAudit takes player whichPlayer returns nothing
+    local integer totalCount = 0
+    local integer exemptCount = 0
+    local integer eligibleHiddenCount = 0
+    local integer foreignHiddenCount = 0
+    local integer nearVisibleCount = 0
+    local integer farVisibleCount = 0
+    local unit whichUnit
+    local boolean isAlive
+    local boolean isLoaded
+    local boolean isAutomaticReference
+    local string state = "enabled"
+
+    call GroupClear(UnitHider4_WorldScanUnits)
+    call GroupEnumUnitsInRect(UnitHider4_WorldScanUnits, UnitHider4_WorldBounds, null)
+    call GroupAddGroup(UnitHider4_KnownUnits, UnitHider4_WorldScanUnits)
+    call GroupAddGroup(UnitHider4_WorldScanUnits, UnitHider4_KnownUnits)
+    call UnitHider4_RebuildAutomaticReferences()
+    loop
+        set whichUnit = FirstOfGroup(UnitHider4_WorldScanUnits)
+        exitwhen whichUnit == null
+        call GroupRemoveUnit(UnitHider4_WorldScanUnits, whichUnit)
+        if GetUnitTypeId(whichUnit) != 0 then
+            set totalCount = totalCount + 1
+            set isAlive = FallenHeroState_IsAlive(whichUnit)
+            set isLoaded = IsUnitLoaded(whichUnit)
+            set isAutomaticReference = UnitHider4_IsAutomaticReference(whichUnit, isAlive, isLoaded)
+            if not isAlive or isLoaded or UnitHider4_IsProtected(whichUnit, isAutomaticReference) then
+                set exemptCount = exemptCount + 1
+            elseif IsUnitInGroup(whichUnit, UnitHider4_HiddenUnits) then
+                set eligibleHiddenCount = eligibleHiddenCount + 1
+            elseif IsUnitHidden(whichUnit) then
+                set foreignHiddenCount = foreignHiddenCount + 1
+            elseif UnitHider4_IsNearReference(whichUnit, UnitHider4_HideDistanceSq) then
+                set nearVisibleCount = nearVisibleCount + 1
+            else
+                set farVisibleCount = farVisibleCount + 1
+            endif
+        endif
+    endloop
+    if not UnitHider4_Enabled then
+        set state = "disabled"
+    endif
+    if udg_InCinematic then
+        set state = state + ", cinematic suspended"
+    endif
+    call DisplayTextToPlayer(whichPlayer, 0.00, 0.00, "|cffffcc00[UnitHider4 audit]|r " + state + " | references=" + I2S(UnitHider4_ReferenceCount))
+    call DisplayTextToPlayer(whichPlayer, 0.00, 0.00, "World=" + I2S(totalCount) + " | exempt=" + I2S(exemptCount) + " | managed hidden=" + I2S(eligibleHiddenCount) + " | foreign hidden=" + I2S(foreignHiddenCount))
+    call DisplayTextToPlayer(whichPlayer, 0.00, 0.00, "Visible near references=" + I2S(nearVisibleCount) + " | visible outside hide range=" + I2S(farVisibleCount) + " | pending=" + I2S(BlzGroupGetSize(UnitHider4_PendingUnits)))
+    set whichUnit = null
+    set whichPlayer = null
 endfunction
 
 function UnitHider_SetHidingDistance takes real newDistance returns nothing
