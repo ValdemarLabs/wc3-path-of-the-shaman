@@ -2,21 +2,21 @@
     QuestsVendor
 
     Author: Valdemar
-    Version: 1.7.1
+    Version: 1.8.0
 
     Description:
     Shop-vendor adapter for QuestsGeneric. Generic giver quests are delegated
     to the shared template engine; this library independently instantiates
     placed vendor quest givers and owns cross-vendor handoff and purchase
     interactions, one-time escorts for vendors or generic NPCs, trade-unlock
-    gates, and vendor display-name integration. Escort destinations may be a
-    unit type, point, rect, or registered zone.
+    gates, and vendor display-name integration. Escort NPCs walk autonomously
+    to a unit, point, rect, or zone and wait whenever their leader falls behind.
 
     Credits:
 
     How to install:
     Import after QuestsGeneric, VoicelinesQuests, Shop,
-    FollowSystem, UnitSpawn, ZonesCore, Companions, AI, and Table. VendorDialogs
+    EscortMovement, UnitSpawn, ZonesCore, Companions, AI, and Table. VendorDialogs
     may require this library and register discovered vendors.
 
     API:
@@ -28,6 +28,8 @@
     - QuestsVendor_SetEscortTravelDialogue adds route and companion chatter.
     - QuestsVendor_SetEscortRoundTrip adds a return leg to the start point.
     - QuestsVendor_SetEscortDestinationUnit/UnitType/Point/Rect/Zone selects it.
+    - QuestsVendor_SetEscortLeaderRange configures the wait-for-hero leash.
+    - QuestsVendor_AddEscortWaypoint/Rect adds optional ordered route points.
     - QuestsVendor_RegisterEscortAmbush adds a route-progress enemy attack.
     - QuestsVendor_RegisterEscortAmbushes adds one to five fixed/random attacks.
     - QuestsVendor_RegisterEscortProgressVariant adds giver progress dialogue.
@@ -41,10 +43,11 @@
     - QuestsVendor_IsTradeUnlocked/GetTradeLockText expose escort trade gates.
 
 **/
-library QuestsVendor initializer Init requires QuestsGeneric, VoicelinesQuests, QuestGiver, QuestMaster, DialogSystem, DialogInteraction, HeroItemCheck, Shop, FollowSystem, UnitSpawn, ZonesCore, Companions, AI, Table
+library QuestsVendor initializer Init requires QuestsGeneric, VoicelinesQuests, QuestGiver, QuestMaster, DialogSystem, DialogInteraction, HeroItemCheck, Shop, EscortMovement, UnitSpawn, ZonesCore, Companions, AI, Table
     globals
         private constant integer QV_MAX_SUPPLY_DEFINITIONS = 32
         private constant integer QV_MAX_ESCORT_DEFINITIONS = 16
+        private constant integer QV_MAX_ESCORT_WAYPOINTS = 8
         private constant integer QV_MAX_ESCORT_AMBUSHES = 32
         private constant integer QV_AMBUSH_STATE_KEY_STRIDE = 64
         private constant integer QV_AMBUSH_WAVE_KEY_STRIDE = 512
@@ -53,7 +56,9 @@ library QuestsVendor initializer Init requires QuestsGeneric, VoicelinesQuests, 
         private constant integer QV_TARGET_ACTION_BASE = 20000
         private constant integer QV_PENDING_HANDOFF = 1
         private constant real QV_ESCORT_DESTINATION_RADIUS = 425.00
-        private constant real QV_ESCORT_FOLLOW_MAX_DISTANCE = 2400.00
+        private constant real QV_ESCORT_DEFAULT_LEADER_RANGE = 2400.00
+        private constant real QV_ESCORT_DEFAULT_WAYPOINT_RADIUS = 160.00
+        private constant real QV_ESCORT_AREA_ARRIVAL_RADIUS = 96.00
         private constant real QV_ESCORT_CHECK_INTERVAL = 0.50
 
         public constant integer ESCORT_LEG_OUTBOUND = 1
@@ -95,6 +100,11 @@ library QuestsVendor initializer Init requires QuestsGeneric, VoicelinesQuests, 
         private string array QV_EscortReturnName
         private string array QV_EscortReturnText
         private integer array QV_EscortReturnVoiceIndex
+        private real array QV_EscortLeaderRange
+        private integer array QV_EscortWaypointCount
+        private real array QV_EscortWaypointX
+        private real array QV_EscortWaypointY
+        private real array QV_EscortWaypointRadius
         private Table QV_EscortIndexByDefinition = 0
         private Table QV_EscortLeader = 0
         private Table QV_EscortWasInvulnerable = 0
@@ -158,6 +168,7 @@ library QuestsVendor initializer Init requires QuestsGeneric, VoicelinesQuests, 
         set QV_EscortDestinationUnitType[QV_EscortCount] = destinationUnitTypeId
         set QV_EscortDestinationName[QV_EscortCount] = destinationName
         set QV_EscortDestinationRadius[QV_EscortCount] = QV_ESCORT_DESTINATION_RADIUS
+        set QV_EscortLeaderRange[QV_EscortCount] = QV_ESCORT_DEFAULT_LEADER_RANGE
         set QV_EscortVoiceType[QV_EscortCount] = voiceType
         set QV_EscortIndexByDefinition.integer[definitionId] = QV_EscortCount
         return definitionId
@@ -206,6 +217,48 @@ library QuestsVendor initializer Init requires QuestsGeneric, VoicelinesQuests, 
         if escortIndex > 0 then
             set QV_EscortTradeLocked[escortIndex] = locked
         endif
+    endfunction
+
+    private function QV_GetEscortWaypointSlot takes integer escortIndex, integer waypointIndex returns integer
+        return escortIndex*QV_MAX_ESCORT_WAYPOINTS + waypointIndex
+    endfunction
+
+    public function SetEscortLeaderRange takes integer definitionId, real leaderRange returns nothing
+        local integer escortIndex = QV_EscortIndexByDefinition.integer[definitionId]
+
+        if escortIndex <= 0 then
+            return
+        endif
+        if leaderRange <= 0.00 then
+            set leaderRange = QV_ESCORT_DEFAULT_LEADER_RANGE
+        endif
+        set QV_EscortLeaderRange[escortIndex] = leaderRange
+    endfunction
+
+    public function AddEscortWaypoint takes integer definitionId, real x, real y, real radius returns nothing
+        local integer escortIndex = QV_EscortIndexByDefinition.integer[definitionId]
+        local integer waypointIndex
+
+        if escortIndex <= 0 or QV_EscortWaypointCount[escortIndex] >= QV_MAX_ESCORT_WAYPOINTS then
+            return
+        endif
+        if radius <= 0.00 then
+            set radius = QV_ESCORT_DEFAULT_WAYPOINT_RADIUS
+        endif
+        set waypointIndex = QV_EscortWaypointCount[escortIndex] + 1
+        set QV_EscortWaypointCount[escortIndex] = waypointIndex
+        set QV_EscortWaypointX[QV_GetEscortWaypointSlot(escortIndex, waypointIndex)] = x
+        set QV_EscortWaypointY[QV_GetEscortWaypointSlot(escortIndex, waypointIndex)] = y
+        set QV_EscortWaypointRadius[QV_GetEscortWaypointSlot(escortIndex, waypointIndex)] = radius
+    endfunction
+
+    public function AddEscortWaypointRect takes integer definitionId, rect waypointRect, real radius returns nothing
+        if waypointRect == null then
+            set waypointRect = null
+            return
+        endif
+        call AddEscortWaypoint(definitionId, (GetRectMinX(waypointRect) + GetRectMaxX(waypointRect))*0.50, (GetRectMinY(waypointRect) + GetRectMaxY(waypointRect))*0.50, radius)
+        set waypointRect = null
     endfunction
 
     public function SetEscortTravelDialogue takes integer definitionId, string vendorText, integer vendorVoiceIndex, string companionReply returns nothing
@@ -717,6 +770,93 @@ library QuestsVendor initializer Init requires QuestsGeneric, VoicelinesQuests, 
         set vendor = null
     endfunction
 
+    private function QV_GetEscortArrivalRadius takes integer escortIndex returns real
+        if QV_EscortDestinationType[escortIndex] == ESCORT_DESTINATION_UNIT or QV_EscortDestinationType[escortIndex] == ESCORT_DESTINATION_POINT then
+            return QV_EscortDestinationRadius[escortIndex]
+        endif
+        return QV_ESCORT_AREA_ARRIVAL_RADIUS
+    endfunction
+
+    private function QV_StartEscortMovement takes integer questId, integer escortIndex, unit vendor, unit hero returns nothing
+        local integer leg = QV_EscortLeg.integer[questId]
+        local integer waypointIndex
+        local integer waypointSlot
+        local real destinationX
+        local real destinationY
+        local real arrivalRadius
+
+        if vendor == null or hero == null or leg <= 0 then
+            set vendor = null
+            set hero = null
+            return
+        endif
+        call EscortMovement_Begin(vendor, hero, QV_EscortLeaderRange[escortIndex])
+        if leg == ESCORT_LEG_RETURN then
+            set waypointIndex = QV_EscortWaypointCount[escortIndex]
+            loop
+                exitwhen waypointIndex <= 0
+                set waypointSlot = QV_GetEscortWaypointSlot(escortIndex, waypointIndex)
+                call EscortMovement_AddWaypoint(vendor, QV_EscortWaypointX[waypointSlot], QV_EscortWaypointY[waypointSlot], QV_EscortWaypointRadius[waypointSlot])
+                set waypointIndex = waypointIndex - 1
+            endloop
+            set destinationX = QV_EscortOriginX.real[questId]
+            set destinationY = QV_EscortOriginY.real[questId]
+            set arrivalRadius = QV_ESCORT_DESTINATION_RADIUS
+        else
+            set waypointIndex = 1
+            loop
+                exitwhen waypointIndex > QV_EscortWaypointCount[escortIndex]
+                set waypointSlot = QV_GetEscortWaypointSlot(escortIndex, waypointIndex)
+                call EscortMovement_AddWaypoint(vendor, QV_EscortWaypointX[waypointSlot], QV_EscortWaypointY[waypointSlot], QV_EscortWaypointRadius[waypointSlot])
+                set waypointIndex = waypointIndex + 1
+            endloop
+            set destinationX = QV_GetDestinationX(escortIndex)
+            set destinationY = QV_GetDestinationY(escortIndex)
+            set arrivalRadius = QV_GetEscortArrivalRadius(escortIndex)
+        endif
+        call EscortMovement_Start(vendor, destinationX, destinationY, arrivalRadius)
+        set vendor = null
+        set hero = null
+    endfunction
+
+    private function QV_EnsureEscortMovement takes integer questId, integer escortIndex, unit vendor returns nothing
+        local unit hero
+        local integer leg
+        local boolean leaderChanged = false
+
+        if vendor == null then
+            set vendor = null
+            return
+        endif
+        set hero = QV_EscortLeader.unit[questId]
+        if not DialogInteraction_IsUnitAlive(hero) then
+            set hero = DialogInteraction_GetAvailableHero(vendor, 0.00)
+            set leaderChanged = true
+        endif
+        if hero == null then
+            set vendor = null
+            set hero = null
+            return
+        endif
+        call QV_RecordEscortOrigin(questId, vendor)
+        call QV_ProtectEscort(questId, vendor)
+        set QV_EscortLeader.unit[questId] = hero
+        if not QV_EscortLeg.integer.has(questId) then
+            call QV_PrepareEscortLeg(questId, escortIndex, vendor, ESCORT_LEG_OUTBOUND)
+        endif
+        set leg = QV_EscortLeg.integer[questId]
+        if leaderChanged and EscortMovement_IsActive(vendor) then
+            call EscortMovement_Stop(vendor)
+        endif
+        if not EscortMovement_IsActive(vendor) then
+            call QV_StartEscortMovement(questId, escortIndex, vendor, hero)
+        elseif leg == ESCORT_LEG_OUTBOUND and QV_IsEscortDestinationAvailable(escortIndex) then
+            call EscortMovement_UpdateDestination(vendor, QV_GetDestinationX(escortIndex), QV_GetDestinationY(escortIndex))
+        endif
+        set vendor = null
+        set hero = null
+    endfunction
+
     private function QV_GetEscortLegProgress takes integer questId, integer escortIndex, unit vendor returns real
         local integer leg = QV_EscortLeg.integer[questId]
         local real routeDistance = QV_EscortLegDistance.real[questId]
@@ -810,8 +950,12 @@ library QuestsVendor initializer Init requires QuestsGeneric, VoicelinesQuests, 
 
     private function QV_BeginEscortReturnLeg takes integer questId, integer escortIndex, unit vendor returns nothing
         local string soundKey = ""
+        local unit hero = QV_EscortLeader.unit[questId]
 
         call QV_PrepareEscortLeg(questId, escortIndex, vendor, ESCORT_LEG_RETURN)
+        if hero != null then
+            call QV_StartEscortMovement(questId, escortIndex, vendor, hero)
+        endif
         call QuestGiver_UpdateRequirementText(questId, 1, "Escort " + QV_GetSpeakerName(vendor) + " back to " + QV_EscortReturnName[escortIndex])
         call QuestGiver_SetObjectiveTarget(questId, 1, null)
         if QV_EscortReturnVoiceIndex[escortIndex] > 0 then
@@ -821,6 +965,7 @@ library QuestsVendor initializer Init requires QuestsGeneric, VoicelinesQuests, 
             call DialogSystem_QueueFieldLine(vendor, QV_GetSpeakerName(vendor), soundKey, QV_EscortReturnText[escortIndex])
         endif
         set vendor = null
+        set hero = null
     endfunction
 
     private function QV_CompleteEscort takes integer questId returns nothing
@@ -873,9 +1018,7 @@ library QuestsVendor initializer Init requires QuestsGeneric, VoicelinesQuests, 
             if escortIndex > 0 then
                 set q = QuestMaster_GetById(questId)
                 if q != 0 and q.active and q.state == QUEST_STATE_IN_PROGRESS and DialogInteraction_IsUnitAlive(q.giver) then
-                    if not QV_EscortLeg.integer.has(questId) then
-                        call QV_PrepareEscortLeg(questId, escortIndex, q.giver, ESCORT_LEG_OUTBOUND)
-                    endif
+                    call QV_EnsureEscortMovement(questId, escortIndex, q.giver)
                     call QV_CheckEscortAmbushes(questId, definitionId, escortIndex, q.giver)
                     call QV_CheckEscortProgress(questId, escortIndex, q.giver)
                 endif
@@ -893,18 +1036,18 @@ library QuestsVendor initializer Init requires QuestsGeneric, VoicelinesQuests, 
             return
         endif
         call QV_RecordEscortOrigin(questId, vendor)
-        call QV_PrepareEscortLeg(questId, escortIndex, vendor, ESCORT_LEG_OUTBOUND)
         set QV_EscortLeader.unit[questId] = hero
+        call QV_PrepareEscortLeg(questId, escortIndex, vendor, ESCORT_LEG_OUTBOUND)
         call QV_ProtectEscort(questId, vendor)
-        call FollowSystem_SetFollow(vendor, hero, QV_ESCORT_FOLLOW_MAX_DISTANCE, true, 5.00, FOLLOW_STYLE_PASSIVE, true, true)
+        call QV_StartEscortMovement(questId, escortIndex, vendor, hero)
         call QV_QueueEscortTravelDialogue(escortIndex, vendor, hero)
         set vendor = null
         set hero = null
     endfunction
 
     private function QV_StopEscort takes integer questId, unit vendor returns nothing
-        if vendor != null and FollowSystem_IsFollowing(vendor) then
-            call FollowSystem_RemoveUnit(vendor)
+        if vendor != null and EscortMovement_IsActive(vendor) then
+            call EscortMovement_Stop(vendor)
         endif
         if vendor != null and QV_EscortWasInvulnerable.boolean.has(questId) then
             call SetUnitInvulnerable(vendor, QV_EscortWasInvulnerable.boolean[questId])
@@ -949,7 +1092,6 @@ library QuestsVendor initializer Init requires QuestsGeneric, VoicelinesQuests, 
         local integer escortIndex
         local integer questId
         local QuestData q
-        local unit hero
 
         loop
             exitwhen index > QuestsGeneric_GetQuestCount()
@@ -964,23 +1106,13 @@ library QuestsVendor initializer Init requires QuestsGeneric, VoicelinesQuests, 
                 set q = QuestMaster_GetById(questId)
                 if q != 0 and not q.completed and q.state != QUEST_STATE_COMPLETE then
                     call QV_RefreshEscortObjective(questId, escortIndex, q.giver)
-                    if q.active and q.state == QUEST_STATE_IN_PROGRESS and not FollowSystem_IsFollowing(q.giver) then
-                        set hero = QV_EscortLeader.unit[questId]
-                        if hero == null then
-                            set hero = DialogInteraction_GetAvailableHero(q.giver, 0.00)
-                        endif
-                        if hero != null then
-                            call QV_RecordEscortOrigin(questId, q.giver)
-                            call QV_ProtectEscort(questId, q.giver)
-                            call FollowSystem_SetFollow(q.giver, hero, QV_ESCORT_FOLLOW_MAX_DISTANCE, true, 5.00, FOLLOW_STYLE_PASSIVE, true, true)
-                            set QV_EscortLeader.unit[questId] = hero
-                        endif
+                    if q.active and q.state == QUEST_STATE_IN_PROGRESS then
+                        call QV_EnsureEscortMovement(questId, escortIndex, q.giver)
                     endif
                 endif
             endif
             set index = index + 1
         endloop
-        set hero = null
     endfunction
 
     private function QV_IsRelevantUnitType takes integer unitTypeId returns boolean
@@ -1330,22 +1462,12 @@ library QuestsVendor initializer Init requires QuestsGeneric, VoicelinesQuests, 
         local integer definitionId = QuestsGeneric_GetDefinitionForQuest(questId)
         local integer escortIndex = QV_EscortIndexByDefinition.integer[definitionId]
         local QuestData q = QuestMaster_GetById(questId)
-        local unit hero
 
         if escortIndex <= 0 or q == 0 then
             return
         endif
         if q.active and q.state == QUEST_STATE_IN_PROGRESS then
-            set hero = QV_EscortLeader.unit[questId]
-            if hero == null then
-                set hero = DialogInteraction_GetAvailableHero(q.giver, 0.00)
-            endif
-            if hero != null and not FollowSystem_IsFollowing(q.giver) then
-                call QV_RecordEscortOrigin(questId, q.giver)
-                call QV_ProtectEscort(questId, q.giver)
-                call FollowSystem_SetFollow(q.giver, hero, QV_ESCORT_FOLLOW_MAX_DISTANCE, true, 5.00, FOLLOW_STYLE_PASSIVE, true, true)
-                set QV_EscortLeader.unit[questId] = hero
-            endif
+            call QV_EnsureEscortMovement(questId, escortIndex, q.giver)
         elseif q.state == QUEST_STATE_READY_TURNIN then
             call QV_StopEscort(questId, q.giver)
             call QV_CleanupEscortAmbushes(questId, definitionId)
@@ -1363,7 +1485,6 @@ library QuestsVendor initializer Init requires QuestsGeneric, VoicelinesQuests, 
                 call QV_RefreshEscortObjective(questId, escortIndex, q.giver)
             endif
         endif
-        set hero = null
     endfunction
 
     private function Init takes nothing returns nothing

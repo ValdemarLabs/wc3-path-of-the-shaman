@@ -1,32 +1,38 @@
-// ===========================================================================
-// ESCORT QUEST EXAMPLE
-// ===========================================================================
-// This template shows how to use the Escort Quest system from QuestGiver.j
-// Copy and adapt this for your own quest givers (like qAradion)
-//
-// ESCORT QUEST WORKFLOW:
-// 1. Register escort requirement when quest is accepted
-// 2. Use FollowSystem to make NPC follow player hero
-// 3. QuestGiver automatically checks if NPC reaches destination region
-// 4. Quest becomes ready for turn-in when NPC enters destination
-// 5. Unregister escort requirement when quest completes/fails
-//
-// USAGE IN YOUR QUEST SUBLIBRARY:
-//   - Create destination region in World Editor (e.g., gg_rct_ValeriaDestination)
-//   - Store escort unit reference (e.g., Valeria)
-//   - Call RegisterEscortRequirement in OnAcceptQuest
-//   - Call FollowSystem_SetFollow to make NPC follow hero
-//   - Call UnregisterEscortRequirement in OnCompleteQuest/OnFailQuest
-// ===========================================================================
+/**
+    ExampleEscortQuest
 
-library ExampleEscortQuest initializer Init requires QuestGiver, QuestMaster, DialogSystem, FollowSystem
+    Author: Valdemar
+    Version: 1.0.0
+
+    Description:
+    Example of a custom QuestGiver escort whose NPC leads the player toward a
+    destination, waits when the hero falls behind, and may use simple waypoints.
+
+    Credits:
+
+    How to install:
+    Copy the relevant pattern into an owning qXXX library after QuestGiver,
+    QuestMaster, DialogSystem, and EscortMovement. Replace all example handles.
+
+    API:
+    Example only; no reusable public API.
+
+    Workflow:
+    1. Register the escort requirement when the quest is accepted.
+    2. Use EscortMovement to send the NPC toward its destination.
+    3. QuestGiver detects when the NPC reaches the destination region.
+    4. Stop movement and unregister the requirement on every exit path.
+
+**/
+
+library ExampleEscortQuest initializer Init requires QuestGiver, QuestMaster, DialogSystem, EscortMovement
 globals
 	private constant boolean DEBUG = true
 	
 	// Quest configuration
 	private constant string QUEST_SAFE_PASSAGE = "Safe Passage"
 	private constant real DIALOG_RANGE = 500.00
-	private constant real FOLLOW_MAX_DISTANCE = 2000.00  // Stop following if hero too far
+	private constant real ESCORT_MAX_DISTANCE = 2000.00  // Wait if hero falls too far behind
 	
 	// Units and regions
 	private unit QuestGiver_NPC = null
@@ -61,9 +67,11 @@ private function OnAcceptQuestEnd takes nothing returns nothing
 	// Parameters: questId, questGiver, requirementIndex, escortUnit, destinationRect, destinationName
 	call QuestGiver_RegisterEscortRequirement(SafePassageQuest.id, QuestGiver_NPC, 1, EscortNPC, EscortDestination, "Safety Zone")
 	
-	// Make escort NPC follow player hero using FollowSystem
-	// Parameters: follower, target, maxDistance, unfollowOnAttack, unfollowDuration, commandStyle, enableMapIcon, enablePing
-	call FollowSystem_SetFollow(EscortNPC, udg_Nazgrek, FOLLOW_MAX_DISTANCE, false, 0, FOLLOW_STYLE_PASSIVE, true, true)
+	// Make the escort NPC lead the player toward the destination.
+	call EscortMovement_Begin(EscortNPC, udg_Nazgrek, ESCORT_MAX_DISTANCE)
+	// Optional road point before Start:
+	// call EscortMovement_AddWaypoint(EscortNPC, waypointX, waypointY, 160.00)
+	call EscortMovement_Start(EscortNPC, GetRectCenterX(EscortDestination), GetRectCenterY(EscortDestination), 160.00)
 	
 	call EnableUserControl(true)
 endfunction
@@ -98,8 +106,8 @@ private function OnCompleteQuestEnd takes nothing returns nothing
 	// Unregister escort requirement
 	call QuestGiver_UnregisterEscortRequirement(SafePassageQuest.id, 1)
 	
-	// Stop escort NPC from following
-	call FollowSystem_RemoveUnit(EscortNPC)
+	// Stop autonomous escort movement
+	call EscortMovement_Stop(EscortNPC)
 	
 	call EnableUserControl(true)
 endfunction
@@ -134,9 +142,9 @@ private function OnFailQuest takes nothing returns nothing
 	// Unregister escort requirement
 	call QuestGiver_UnregisterEscortRequirement(SafePassageQuest.id, 1)
 	
-	// Stop escort NPC from following (if still alive)
-	if EscortNPC != null and UnitAlive(EscortNPC) then
-		call FollowSystem_RemoveUnit(EscortNPC)
+	// Stop escort NPC movement and clean route state.
+	if EscortNPC != null then
+		call EscortMovement_Stop(EscortNPC)
 	endif
 endfunction
 

@@ -74,6 +74,11 @@ its quest choices with QuestsGeneric_AddDialogButtons from the owning
 selection-dialog integration. A generic giver needs no Shop catalog and must
 not be routed through vendor greetings or Trade UI.
 
+For an autonomous Escort objective, use the shared QuestsVendor escort adapter
+even when the giver is not a shop. EscortMovement sends the NPC toward its
+destination, waits when the accepting hero leaves range, and supports optional
+ordered point or rect waypoints without changing the NPC into a vendor.
+
 The repository cannot choose the final giver from role text alone. Before
 adding a planned regional quest, select or create the exact World Editor unit,
 record its canonical name/rawcode/faction/zone, inspect active GUI triggers,

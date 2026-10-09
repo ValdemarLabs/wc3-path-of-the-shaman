@@ -2,7 +2,7 @@
 
 Import in this order: `QuestsGeneric.j`, `Voicelines_Quests.j`,
 `Voicelines_Nazgrek.j`, `Voicelines_Zulkis.j`,
-`FollowSystem.j`, `UnitSpawn.j`, `ZonesCore.j`, `Companions.j`, `AI.j`, `QuestsVendor.j`, the desired
+`EscortMovement.j`, `UnitSpawn.j`, `ZonesCore.j`, `Companions.j`, `AI.j`, `QuestsVendor.j`, the desired
 `qVendorName.j` libraries, `VendorCatalogs.j`,
 all `VendorFactions/Vendor*.j` libraries, `VendorBags.j`, and `VendorDialogs.j`.
 `VendorDialogs.j` discovers placed vendor units and instantiates every quest
@@ -43,10 +43,14 @@ that choice into trade and require the requested catalog item to be purchased
 and returned. Other supply quests use a dialogue handoff and can replace their
 quest item through the same choice if it was lost before turn-in.
 
-Vendor escorts are always one-time Normal quests. The escorted giver follows the
-accepting hero through `FollowSystem`. A destination may be an NPC unit type, a
-point and radius, an existing rect, or a `ZonesCore` zone; towns and settlements
-should normally use a rect or zone instead of inventing a destination NPC. Unit
+Vendor escorts are always one-time Normal quests. The escorted giver now walks
+toward the configured destination through `EscortMovement`; the accepting hero
+protects and accompanies it instead of leading it by trial and error. The giver
+stops when that hero leaves its configured range, displays the stopped route
+marker, and resumes automatically when the hero returns. A destination may be
+an NPC unit type, a point and radius, an existing rect, or a `ZonesCore` zone;
+towns and settlements should normally use a rect or zone instead of inventing
+a destination NPC. Unit
 destinations are discovered independently of quest ownership or Shop status and
 are rescanned once on acceptance before a destination-specific unavailable
 warning is shown. A failed destination check closes the vendor conversation
@@ -54,12 +58,18 @@ after the dialog-button event completes, so it cannot leave player input in
 cinematic mode. A
 specific preplaced NPC may instead be bound directly with
 `QuestsVendor_SetEscortDestinationUnit`; rawcode-based routes may be changed with
-`QuestsVendor_SetEscortDestinationUnitType`. A route
-may finish at its destination or begin a second leg back to the giver's recorded
-start. The giver is temporarily invulnerable while following and returns to the
+`QuestsVendor_SetEscortDestinationUnitType`. Warcraft pathing is the default.
+Routes that need to remain on a road or avoid a bad path may append up to eight
+ordered points with `QuestsVendor_AddEscortWaypoint` or rect centers with
+`QuestsVendor_AddEscortWaypointRect`; round trips traverse those points in
+reverse on the return leg. `QuestsVendor_SetEscortLeaderRange` overrides the
+default 2400-unit leash for exceptional routes. A route may finish at its
+destination or begin a second leg back to the giver's recorded start. The giver
+is temporarily invulnerable while travelling and returns to the
 unit's prior invulnerability state on safe arrival, abandonment, or another
 state exit. Abandoning an active route also returns the giver to its recorded
-start.
+start. Exact waypoints must be selected and verified in World Editor; they are
+not inferred from terrain or region names.
 
 Nara Stormhoof, Cedran Pike, Kargun Ashblade, Giznak Edgeprice, and Torren
 Deepsteel keep Trade locked until their escort is turned in. The other escorted
