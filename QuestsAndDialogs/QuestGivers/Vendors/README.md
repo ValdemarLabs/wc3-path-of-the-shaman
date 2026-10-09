@@ -59,7 +59,7 @@ cinematic mode. A
 specific preplaced NPC may instead be bound directly with
 `QuestsVendor_SetEscortDestinationUnit`; rawcode-based routes may be changed with
 `QuestsVendor_SetEscortDestinationUnitType`. Warcraft pathing is the default.
-Routes that need to remain on a road or avoid a bad path may append up to eight
+Routes that need to remain on a road or avoid a bad path may append up to 128
 ordered points with `QuestsVendor_AddEscortWaypoint` or rect centers with
 `QuestsVendor_AddEscortWaypointRect`; round trips traverse those points in
 reverse on the return leg. `QuestsVendor_SetEscortLeaderRange` overrides the

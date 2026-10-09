@@ -2,7 +2,7 @@
     QuestsVendor
 
     Author: Valdemar
-    Version: 1.8.0
+    Version: 1.8.1
 
     Description:
     Shop-vendor adapter for QuestsGeneric. Generic giver quests are delegated
@@ -47,7 +47,7 @@ library QuestsVendor initializer Init requires QuestsGeneric, VoicelinesQuests, 
     globals
         private constant integer QV_MAX_SUPPLY_DEFINITIONS = 32
         private constant integer QV_MAX_ESCORT_DEFINITIONS = 16
-        private constant integer QV_MAX_ESCORT_WAYPOINTS = 8
+        private constant integer QV_MAX_ESCORT_WAYPOINTS = 128
         private constant integer QV_MAX_ESCORT_AMBUSHES = 32
         private constant integer QV_AMBUSH_STATE_KEY_STRIDE = 64
         private constant integer QV_AMBUSH_WAVE_KEY_STRIDE = 512

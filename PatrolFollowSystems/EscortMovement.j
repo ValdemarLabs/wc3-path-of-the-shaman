@@ -2,12 +2,12 @@
     EscortMovement
 
     Author: Valdemar
-    Version: 1.0.0
+    Version: 1.0.1
 
     Description:
     Moves an escorted unit toward a destination while requiring its assigned
     leader to remain nearby. Routes use Warcraft pathing automatically and may
-    include a short ordered waypoint list for roads or other difficult paths.
+    include an ordered waypoint list for roads or other difficult paths.
 
     Credits:
 
@@ -27,7 +27,7 @@
 library EscortMovement initializer Init requires Table, SpeciFX, IconQuery, FallenHeroState
     globals
         private constant integer EM_MAX_ACTIVE_ROUTES = 32
-        private constant integer EM_MAX_WAYPOINTS = 12
+        private constant integer EM_MAX_WAYPOINTS = 128
         private constant real EM_UPDATE_INTERVAL = 0.50
         private constant real EM_DEFAULT_LEADER_RANGE = 2400.00
         private constant real EM_DEFAULT_POINT_RADIUS = 160.00
