@@ -5,7 +5,7 @@
     Version: 1.0.0
 
     Description:
-    Vendor quest content for Wixx Prizebroker, Goblin arena quartermaster.
+    Vendor quest content for Grizzik Bloodbet, Goblin arena quartermaster.
 
     Credits:
 
@@ -13,7 +13,7 @@
     Import after QuestsVendor and VoicelinesQuests.
 
     API:
-    Registers Wixx's vendor quest automatically.
+    Registers Grizzik's vendor quest automatically.
 
 **/
 library qGrizzikBloodbet initializer Init requires QuestsVendor, VoicelinesQuests

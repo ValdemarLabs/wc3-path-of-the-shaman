@@ -5,7 +5,7 @@
     Version: 1.0.0
 
     Description:
-    Daily vendor quest content for Kargul Bloodring, Orc arena vendor.
+    Daily vendor quest content for Ghorak Bloodmark, Orc arena vendor.
 
     Credits:
 
@@ -13,7 +13,7 @@
     Import after QuestsVendor and VoicelinesQuests.
 
     API:
-    Registers Kargul's vendor quest automatically.
+    Registers Ghorak's vendor quest automatically.
 
 **/
 library qGhorakBloodmark initializer Init requires QuestsVendor, VoicelinesQuests

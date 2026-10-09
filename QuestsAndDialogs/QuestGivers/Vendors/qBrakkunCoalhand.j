@@ -5,7 +5,7 @@
     Version: 1.0.0
 
     Description:
-    Daily vendor quest content for Thrag Forgehand, Orc forge supplier.
+    Daily vendor quest content for Brakkun Coalhand, Orc forge supplier.
 
     Credits:
 
@@ -13,12 +13,12 @@
     Import after QuestsVendor and VoicelinesQuests.
 
     API:
-    Registers Thrag's vendor quest automatically.
+    Registers Brakkun's vendor quest automatically.
 
 **/
 library qBrakkunCoalhand initializer Init requires QuestsVendor, VoicelinesQuests, qANightToRemember
     private function Init takes nothing returns nothing
         call qANightToRemember_RegisterVendorType('o00G', VL_GENERIC_ORC_MALE_4_TYPE, 1101)
-        call QuestsVendor_RegisterFetchQuest('o00G', "Keep the Forges Hot", "daily", 5, "Keep the Forges Hot", "ReplaceableTextures\\CommandButtons\\BTNHumanLumberUpgrade1.blp", "Collect enough fuel to keep Thrag's communal forges burning.", 'I689', 8, 30, VL_GENERIC_ORC_MALE_4_TYPE, 1011, VL_VENDORQUEST_ORC_0011, VL_VENDORQUEST_ORC_0012)
+        call QuestsVendor_RegisterFetchQuest('o00G', "Keep the Forges Hot", "daily", 5, "Keep the Forges Hot", "ReplaceableTextures\\CommandButtons\\BTNHumanLumberUpgrade1.blp", "Collect enough fuel to keep Brakkun's communal forges burning.", 'I689', 8, 30, VL_GENERIC_ORC_MALE_4_TYPE, 1011, VL_VENDORQUEST_ORC_0011, VL_VENDORQUEST_ORC_0012)
     endfunction
 endlibrary

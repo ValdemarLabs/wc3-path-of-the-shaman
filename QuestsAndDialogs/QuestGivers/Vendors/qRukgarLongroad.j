@@ -19,7 +19,7 @@
 **/
 library qRukgarLongroad initializer Init requires QuestsVendor, VoicelinesQuests, VoicelinesNazgrek, VoicelinesZulkis, qANightToRemember
     private function Init takes nothing returns nothing
-        local integer definitionId = QuestsVendor_RegisterSupplyQuest('o00B', "Quartermaster's Parcel", "daily", 6, "Quartermaster's Parcel", "ReplaceableTextures\\CommandButtons\\BTNPackBeast.blp", "Pick up Rukha's supply parcel from Vargan Warstock and return.", 'o014', "Vargan Warstock", 'I010', 35, VL_GENERIC_ORC_MALE_3_TYPE, 1017, VL_VENDORQUEST_ORC_0017, VL_VENDORQUEST_ORC_0018)
+        local integer definitionId = QuestsVendor_RegisterSupplyQuest('o00B', "Quartermaster's Parcel", "daily", 6, "Quartermaster's Parcel", "ReplaceableTextures\\CommandButtons\\BTNPackBeast.blp", "Pick up Rukgar's supply parcel from Gorthak Jungle Banner and return.", 'o014', "Gorthak Jungle Banner", 'I010', 35, VL_GENERIC_ORC_MALE_3_TYPE, 1017, VL_VENDORQUEST_ORC_0017, VL_VENDORQUEST_ORC_0018)
         local integer normalDefinitionId
         local integer escortDefinitionId
 

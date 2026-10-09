@@ -5,7 +5,7 @@
     Version: 1.0.0
 
     Description:
-    Daily vendor quest content for Mokkar Orekeeper, Orc mining supplier.
+    Daily vendor quest content for Thurgash Ore-Eye, Orc mining supplier.
 
     Credits:
 
@@ -13,11 +13,11 @@
     Import after QuestsVendor and VoicelinesQuests.
 
     API:
-    Registers Mokkar's vendor quest automatically.
+    Registers Thurgash's vendor quest automatically.
 
 **/
 library qThurgashOreEye initializer Init requires QuestsVendor, VoicelinesQuests
     private function Init takes nothing returns nothing
-        call QuestsVendor_RegisterSupplyQuest('o00L', "Tools from the Road", "daily", 6, "Tools from the Road", "ReplaceableTextures\\CommandButtons\\BTNPick.blp", "Collect a replacement mining tool from Rukha Trailhoof and return it to Mokkar.", 'o00B', "Rukha Trailhoof", 'I672', 35, VL_GENERIC_ORC_MALE_5_TYPE, 1013, VL_VENDORQUEST_ORC_0013, VL_VENDORQUEST_ORC_0014)
+        call QuestsVendor_RegisterSupplyQuest('o00L', "Tools from the Road", "daily", 6, "Tools from the Road", "ReplaceableTextures\\CommandButtons\\BTNPick.blp", "Collect Thurgash's replacement mining tool from Rukgar Longroad and return it.", 'o00B', "Rukgar Longroad", 'I672', 35, VL_GENERIC_ORC_MALE_5_TYPE, 1013, VL_VENDORQUEST_ORC_0013, VL_VENDORQUEST_ORC_0014)
     endfunction
 endlibrary

@@ -2,7 +2,7 @@
     QuestsGeneric
 
     Author: Valdemar
-    Version: 1.4.1
+    Version: 1.5.0
 
     Description:
     Reusable kill, fetch, talk, purchase, and escort quest templates built on
@@ -19,6 +19,9 @@
     API:
     - QuestsGeneric_RegisterFetchQuest(...) registers an item template.
     - QuestsGeneric_RegisterKillQuest(...) registers a kill template.
+    - QuestsGeneric_AddKillTargetCandidate(...) adds a safe random target.
+    - QuestsGeneric_SetKillTargetZone(...) limits candidate discovery by zone.
+    - QuestsGeneric_GetQuestTargetType(...) returns an instance's chosen target.
     - QuestsGeneric_RegisterTalkQuest(...) registers a manual talk template.
     - QuestsGeneric_RegisterEscortQuest(...) registers an escort template.
     - QuestsGeneric_SetObjective(...) changes an uninstantiated definition.
@@ -40,7 +43,7 @@
       interrupt-safe accept, progress, and completion dialogue.
 
 **/
-library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogSystem, DialogInteraction, HeroItemCheck, Table
+library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogSystem, DialogInteraction, HeroItemCheck, Table, optional ZonesCore
     globals
         public constant integer OBJECTIVE_FETCH = 1
         public constant integer OBJECTIVE_KILL = 2
@@ -59,9 +62,10 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
 
         private constant integer QG_MAX_DEFINITIONS = 128
         private constant integer QG_MAX_QUESTS = 500
-        private constant integer QG_MAX_DAILY_VARIANTS = 96
+        private constant integer QG_MAX_DAILY_VARIANTS = 512
         private constant integer QG_MAX_PROGRESS_VARIANTS = 64
         private constant integer QG_MAX_HERO_VOICE_VARIANTS = 256
+        private constant integer QG_MAX_KILL_CANDIDATES_PER_DEFINITION = 8
         private constant integer QG_ACTION_BASE = 10000
         private constant integer QG_PENDING_ACCEPT = 1
         private constant integer QG_PENDING_COMPLETE = 2
@@ -91,10 +95,14 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
         private integer array QG_AcceptExtraVoiceIndex
         private string array QG_CompleteExtraText
         private integer array QG_CompleteExtraVoiceIndex
+        private integer array QG_KillCandidateCount
+        private integer array QG_KillCandidateUnitType
+        private integer array QG_KillCandidateZoneId
 
         private integer QG_QuestCount = 0
         private integer array QG_QuestIds
         private Table QG_DefinitionByQuest = 0
+        private Table QG_TargetTypeByQuest = 0
         private Table QG_InstantiatedByUnit = 0
 
         private integer QG_DailyVariantCount = 0
@@ -206,6 +214,32 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
 
     public function RegisterKillQuest takes integer giverUnitTypeId, string questName, string questType, integer questLevel, string title, string iconPath, string description, integer unitTypeId, integer amount, integer goldBonus, string voiceType, integer voiceIndex, string introText, string completeText returns integer
         return QG_RegisterDefinition(giverUnitTypeId, questName, questType, questLevel, title, iconPath, description, OBJECTIVE_KILL, unitTypeId, amount, "", goldBonus, voiceType, voiceIndex, introText, completeText)
+    endfunction
+
+    private function QG_GetKillCandidateSlot takes integer definitionId, integer candidateIndex returns integer
+        return definitionId * QG_MAX_KILL_CANDIDATES_PER_DEFINITION + candidateIndex
+    endfunction
+
+    public function AddKillTargetCandidate takes integer definitionId, integer unitTypeId returns nothing
+        local integer candidateCount
+
+        if definitionId <= 0 or definitionId > QG_DefinitionCount or QG_ObjectiveType[definitionId] != OBJECTIVE_KILL or unitTypeId == 0 then
+            return
+        endif
+        set candidateCount = QG_KillCandidateCount[definitionId]
+        if candidateCount >= QG_MAX_KILL_CANDIDATES_PER_DEFINITION then
+            return
+        endif
+        set candidateCount = candidateCount + 1
+        set QG_KillCandidateCount[definitionId] = candidateCount
+        set QG_KillCandidateUnitType[QG_GetKillCandidateSlot(definitionId, candidateCount)] = unitTypeId
+    endfunction
+
+    public function SetKillTargetZone takes integer definitionId, integer zoneId returns nothing
+        if definitionId <= 0 or definitionId > QG_DefinitionCount or QG_ObjectiveType[definitionId] != OBJECTIVE_KILL then
+            return
+        endif
+        set QG_KillCandidateZoneId[definitionId] = zoneId
     endfunction
 
     public function RegisterTalkQuest takes integer giverUnitTypeId, string questName, string questType, integer questLevel, string title, string iconPath, string description, string targetName, integer goldBonus, string voiceType, integer voiceIndex, string introText, string completeText returns integer
@@ -329,10 +363,91 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
         return "|cffffcc00Quest|r\n\n"
     endfunction
 
+    private function QG_IsPointInZoneOrChild takes real x, real y, integer targetZoneId returns boolean
+        local integer zoneId
+
+        if targetZoneId <= 0 then
+            return true
+        endif
+        static if LIBRARY_ZonesCore then
+            set zoneId = ZonesCore_GetZoneIdAtPoint(x, y)
+            loop
+                if zoneId == targetZoneId then
+                    return true
+                endif
+                exitwhen zoneId <= 0
+                set zoneId = ZonesCore_GetParentZoneId(zoneId)
+            endloop
+            return false
+        else
+            return true
+        endif
+    endfunction
+
+    private function QG_IsKillCandidatePresent takes integer unitTypeId, integer zoneId returns boolean
+        local group worldUnits = CreateGroup()
+        local rect worldBounds = GetWorldBounds()
+        local unit enumUnit
+        local boolean found = false
+
+        call GroupEnumUnitsInRect(worldUnits, worldBounds, null)
+        loop
+            set enumUnit = FirstOfGroup(worldUnits)
+            exitwhen enumUnit == null
+            call GroupRemoveUnit(worldUnits, enumUnit)
+            if GetUnitTypeId(enumUnit) == unitTypeId and GetWidgetLife(enumUnit) > 0.405 and QG_IsPointInZoneOrChild(GetUnitX(enumUnit), GetUnitY(enumUnit), zoneId) then
+                set found = true
+                set enumUnit = null
+                exitwhen true
+            endif
+        endloop
+
+        call DestroyGroup(worldUnits)
+        call RemoveRect(worldBounds)
+        set worldUnits = null
+        set worldBounds = null
+        set enumUnit = null
+        return found
+    endfunction
+
+    private function QG_SelectKillTarget takes integer definitionId, unit giver returns integer
+        local integer candidateIndex = 1
+        local integer candidateCount = QG_KillCandidateCount[definitionId]
+        local integer eligibleCount = 0
+        local integer selectedType = QG_TargetType[definitionId]
+        local integer unitTypeId
+        local integer zoneId = QG_KillCandidateZoneId[definitionId]
+
+        if candidateCount <= 0 then
+            set giver = null
+            return selectedType
+        endif
+        static if LIBRARY_ZonesCore then
+            if zoneId <= 0 and giver != null then
+                set zoneId = ZonesCore_GetZoneIdAtPoint(GetUnitX(giver), GetUnitY(giver))
+            endif
+        endif
+        loop
+            exitwhen candidateIndex > candidateCount
+            set unitTypeId = QG_KillCandidateUnitType[QG_GetKillCandidateSlot(definitionId, candidateIndex)]
+            if QG_IsKillCandidatePresent(unitTypeId, zoneId) then
+                set eligibleCount = eligibleCount + 1
+                if GetRandomInt(1, eligibleCount) == 1 then
+                    set selectedType = unitTypeId
+                endif
+            endif
+            set candidateIndex = candidateIndex + 1
+        endloop
+
+        set giver = null
+        return selectedType
+    endfunction
+
     private function QG_CreateQuest takes integer definitionId, unit giver, string giverName returns nothing
         local QuestData q
         local string info2Text
         local string factionName
+        local integer targetType
 
         if definitionId <= 0 or definitionId > QG_DefinitionCount or giver == null or QG_QuestCount >= QG_MAX_QUESTS then
             set giver = null
@@ -347,6 +462,10 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
             set factionName = Reputation_GetUnitFactionName(giver)
         endif
         set info2Text = "|cffffcc00Recommended level:|r " + I2S(QG_QuestLevel[definitionId]) + "\n\n"
+        set targetType = QG_TargetType[definitionId]
+        if QG_ObjectiveType[definitionId] == OBJECTIVE_KILL then
+            set targetType = QG_SelectKillTarget(definitionId, giver)
+        endif
         set q = QuestGiver_CreateConfiguredQuest(QG_QuestName[definitionId], giver, QG_QuestType[definitionId], QG_QuestLevel[definitionId], null, QG_Title[definitionId], QG_IconPath[definitionId], QG_Description[definitionId] + "\n\n", QG_GetInfoText(QG_QuestType[definitionId]), info2Text, QG_QuestLevel[definitionId], true, true, true, factionName, giverName)
         if q == 0 then
             set giver = null
@@ -359,9 +478,9 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
         call QuestGiver_SetQuestRewards(q, true, 0, true, QG_GoldBonus[definitionId], false, 0, QG_ReputationBonus[definitionId] != 0, QG_ReputationBonus[definitionId], QG_ReputationLinked[definitionId])
 
         if QG_ObjectiveType[definitionId] == OBJECTIVE_FETCH or QG_ObjectiveType[definitionId] == OBJECTIVE_PURCHASE then
-            call QuestGiver_RegisterItemRequirement(q.id, giver, 1, QG_TargetType[definitionId], QG_TargetAmount[definitionId])
+            call QuestGiver_RegisterItemRequirement(q.id, giver, 1, targetType, QG_TargetAmount[definitionId])
         elseif QG_ObjectiveType[definitionId] == OBJECTIVE_KILL then
-            call QuestGiver_RegisterUnitKillRequirement(q.id, giver, 1, QG_TargetType[definitionId], QG_TargetAmount[definitionId])
+            call QuestGiver_RegisterUnitKillRequirement(q.id, giver, 1, targetType, QG_TargetAmount[definitionId])
         elseif QG_ObjectiveType[definitionId] == OBJECTIVE_TALK then
             call QuestGiver_RegisterTalkToRequirement(q.id, giver, 1, null, QG_TargetName[definitionId])
         endif
@@ -369,6 +488,7 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
         set QG_QuestCount = QG_QuestCount + 1
         set QG_QuestIds[QG_QuestCount] = q.id
         set QG_DefinitionByQuest.integer[q.id] = definitionId
+        set QG_TargetTypeByQuest.integer[q.id] = targetType
         call QuestMaster_RefreshAvailabilityForGiver(giver)
         set giver = null
     endfunction
@@ -440,6 +560,10 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
 
     public function GetTargetType takes integer definitionId returns integer
         return QG_TargetType[definitionId]
+    endfunction
+
+    public function GetQuestTargetType takes integer questId returns integer
+        return QG_TargetTypeByQuest.integer[questId]
     endfunction
 
     public function GetTargetAmount takes integer definitionId returns integer
@@ -795,6 +919,7 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
 
     private function Init takes nothing returns nothing
         set QG_DefinitionByQuest = Table.create()
+        set QG_TargetTypeByQuest = Table.create()
         set QG_InstantiatedByUnit = Table.create()
     endfunction
 endlibrary

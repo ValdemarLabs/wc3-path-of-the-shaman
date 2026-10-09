@@ -19,7 +19,7 @@
 **/
 library qRixitRoadcoin initializer Init requires QuestsVendor, VoicelinesQuests, VoicelinesNazgrek, VoicelinesZulkis
     private function Init takes nothing returns nothing
-        local integer definitionId = QuestsVendor_RegisterSupplyQuest('n03X', "A Favor Between Merchants", "daily", 7, "A Favor Between Merchants", "ReplaceableTextures\\CommandButtons\\BTNChestOfGold.blp", "Buy Brakko's trade bundle from Tink Sprocketcrate and return it.", 'n04C', "Tink Sprocketcrate", 'I689', 40, VL_GENERIC_GOBLIN_MALE_2_TYPE, 1003, VL_VENDORQUEST_GOBLIN_0003, VL_VENDORQUEST_GOBLIN_0004)
+        local integer definitionId = QuestsVendor_RegisterSupplyQuest('n03X', "A Favor Between Merchants", "daily", 7, "A Favor Between Merchants", "ReplaceableTextures\\CommandButtons\\BTNChestOfGold.blp", "Buy Rixit's trade bundle from Mogzik Cratecount and return it.", 'n04C', "Mogzik Cratecount", 'I689', 40, VL_GENERIC_GOBLIN_MALE_2_TYPE, 1003, VL_VENDORQUEST_GOBLIN_0003, VL_VENDORQUEST_GOBLIN_0004)
         local integer normalDefinitionId
         local integer escortDefinitionId
 

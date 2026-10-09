@@ -5,7 +5,7 @@
     Version: 1.0.0
 
     Description:
-    Daily vendor quest content for Brakka Bulwark, Orc shield merchant.
+    Daily vendor quest content for Varok Emberwall, Orc shield merchant.
 
     Credits:
 
@@ -13,12 +13,12 @@
     Import after QuestsVendor and VoicelinesQuests.
 
     API:
-    Registers Brakka's vendor quest automatically.
+    Registers Varok's vendor quest automatically.
 
 **/
 library qVarokEmberwall initializer Init requires QuestsVendor, VoicelinesQuests, qANightToRemember
     private function Init takes nothing returns nothing
         call qANightToRemember_RegisterVendorType('o013', VL_GENERIC_ORC_MALE_3_TYPE, 1101)
-        call QuestsVendor_RegisterFetchQuest('o013', "Straps for the Line", "daily", 5, "Straps for the Line", "ReplaceableTextures\\CommandButtons\\BTNLeatherUpgradeOne.blp", "Gather leather for the straps and grips on Brakka's shields.", 'I6A6', 6, 30, VL_GENERIC_ORC_MALE_3_TYPE, 1005, VL_VENDORQUEST_ORC_0005, VL_VENDORQUEST_ORC_0006)
+        call QuestsVendor_RegisterFetchQuest('o013', "Straps for the Line", "daily", 5, "Straps for the Line", "ReplaceableTextures\\CommandButtons\\BTNLeatherUpgradeOne.blp", "Gather leather for the straps and grips on Varok's shields.", 'I6A6', 6, 30, VL_GENERIC_ORC_MALE_3_TYPE, 1005, VL_VENDORQUEST_ORC_0005, VL_VENDORQUEST_ORC_0006)
     endfunction
 endlibrary

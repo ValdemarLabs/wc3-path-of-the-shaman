@@ -1,4 +1,4 @@
-# Generic and vendor quest roster
+# Named vendor quest roster
 
 Import in this order: `QuestsGeneric.j`, `Voicelines_Quests.j`,
 `Voicelines_Nazgrek.j`, `Voicelines_Zulkis.j`,
@@ -23,6 +23,11 @@ the work. Shared hero acknowledgements, daily flavor follow-ups, and progress
 prompts may remain brief connective dialogue, but must not replace those
 quest-specific lines. A vendor kill quest must never target the giver's own
 faction, even when the target unit is normally hostile in the map.
+
+These are named characters, not generic quest givers. Their VL_GENERIC_*
+assignment identifies a reusable voice profile only. See the parent
+QuestGivers/README.md for the content classes, non-vendor integration
+contract, reusable voice coverage, and random regional kill-target rules.
 
 `QuestsGeneric.j` has no Shop or Vendor dependency. Non-vendor NPCs can use its
 kill, fetch, talk, and escort definitions directly, then supply an explicit

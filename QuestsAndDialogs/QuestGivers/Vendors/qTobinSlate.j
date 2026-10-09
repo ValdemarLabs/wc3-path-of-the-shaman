@@ -5,7 +5,7 @@
     Version: 1.0.0
 
     Description:
-    Daily vendor quest content for Bram Stone, Human miner.
+    Daily vendor quest content for Tobin Slate, Human miner.
 
     Credits:
 
@@ -13,11 +13,11 @@
     Import after QuestsVendor and VoicelinesQuests.
 
     API:
-    Registers Bram's vendor quest automatically.
+    Registers Tobin's vendor quest automatically.
 
 **/
 library qTobinSlate initializer Init requires QuestsVendor, VoicelinesQuests
     private function Init takes nothing returns nothing
-        call QuestsVendor_RegisterFetchQuest('n03E', "Lantern Fuel", "daily", 5, "Lantern Fuel", "ReplaceableTextures\\CommandButtons\\BTNHumanLumberUpgrade1.blp", "Collect fuel for Bram's mine lanterns and heating braziers.", 'I689', 7, 30, VL_GENERIC_HUMAN_MALE_2_TYPE, 1011, VL_VENDORQUEST_HUMAN_0011, VL_VENDORQUEST_HUMAN_0012)
+        call QuestsVendor_RegisterFetchQuest('n03E', "Lantern Fuel", "daily", 5, "Lantern Fuel", "ReplaceableTextures\\CommandButtons\\BTNHumanLumberUpgrade1.blp", "Collect fuel for Tobin's mine lanterns and heating braziers.", 'I689', 7, 30, VL_GENERIC_HUMAN_MALE_2_TYPE, 1011, VL_VENDORQUEST_HUMAN_0011, VL_VENDORQUEST_HUMAN_0012)
     endfunction
 endlibrary

@@ -5,7 +5,7 @@
     Version: 1.0.0
 
     Description:
-    Daily vendor quest content for Krikzak Raregear, Goblin rare-goods dealer.
+    Daily vendor quest content for Razwick Goldglint, Goblin rare-goods dealer.
 
     Credits:
 
@@ -13,12 +13,12 @@
     Import after QuestsVendor and VoicelinesQuests.
 
     API:
-    Registers Krikzak's vendor quest automatically.
+    Registers Razwick's vendor quest automatically.
 
 **/
 library qRazwickGoldglint initializer Init requires QuestsVendor, VoicelinesQuests
     private function Init takes nothing returns nothing
-        local integer definitionId = QuestsVendor_RegisterSupplyQuest('n04A', "Reagent on Credit", "daily", 12, "Reagent on Credit", "ReplaceableTextures\\CommandButtons\\BTNCrystalBall.blp", "Buy Krikzak's reagent shipment from Fizzik Hexstock and return it.", 'n047', "Fizzik Hexstock", 'I003', 70, VL_GENERIC_GOBLIN_MALE_4_TYPE, 1015, VL_VENDORQUEST_GOBLIN_0015, VL_VENDORQUEST_GOBLIN_0016)
+        local integer definitionId = QuestsVendor_RegisterSupplyQuest('n04A', "Reagent on Credit", "daily", 12, "Reagent on Credit", "ReplaceableTextures\\CommandButtons\\BTNCrystalBall.blp", "Buy Razwick's reagent shipment from Snikka Sparkdust and return it.", 'n047', "Snikka Sparkdust", 'I003', 70, VL_GENERIC_GOBLIN_MALE_4_TYPE, 1015, VL_VENDORQUEST_GOBLIN_0015, VL_VENDORQUEST_GOBLIN_0016)
         call QuestsVendor_SetSupplyRequiresPurchase(definitionId, true)
     endfunction
 endlibrary

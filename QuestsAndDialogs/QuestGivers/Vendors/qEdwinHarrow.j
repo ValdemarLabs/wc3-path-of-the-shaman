@@ -5,7 +5,7 @@
     Version: 1.0.0
 
     Description:
-    Daily vendor quest content for Mira Voss, Human potion merchant.
+    Daily vendor quest content for Edwin Harrow, Human potion merchant.
 
     Credits:
 
@@ -13,11 +13,11 @@
     Import after QuestsVendor and VoicelinesQuests.
 
     API:
-    Registers Mira's vendor quest automatically.
+    Registers Edwin's vendor quest automatically.
 
 **/
 library qEdwinHarrow initializer Init requires QuestsVendor, VoicelinesQuests
     private function Init takes nothing returns nothing
-        call QuestsVendor_RegisterFetchQuest('n03T', "Morning Herbs", "daily", 6, "Morning Herbs", "ReplaceableTextures\\CommandButtons\\BTNHerb.blp", "Gather herbs for Mira's daily restorative potion batch.", 'I60Y', 8, 35, VL_GENERIC_HUMAN_MALE_1_TYPE, 1017, VL_VENDORQUEST_HUMAN_0017, VL_VENDORQUEST_HUMAN_0018)
+        call QuestsVendor_RegisterFetchQuest('n03T', "Morning Herbs", "daily", 6, "Morning Herbs", "ReplaceableTextures\\CommandButtons\\BTNHerb.blp", "Gather herbs for Edwin's daily restorative potion batch.", 'I60Y', 8, 35, VL_GENERIC_HUMAN_MALE_1_TYPE, 1017, VL_VENDORQUEST_HUMAN_0017, VL_VENDORQUEST_HUMAN_0018)
     endfunction
 endlibrary

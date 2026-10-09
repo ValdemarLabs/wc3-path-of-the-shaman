@@ -2,7 +2,7 @@
 
 - **Status:** Living implementation and production ledger
 - **Created:** 22 August 2026
-- **Last reviewed:** 21 September 2026
+- **Last reviewed:** 9 October 2026
 - **Scope:** Quest implementation, technical dependencies, content inventory, production order, and World Editor verification
 
 > **Navigation:** The narrative source of truth is [Story and Quest Design.md](Story%20and%20Quest%20Design.md). The earlier repository review is retained in [PotS_Story_Design_Guide.md](PotS_Story_Design_Guide.md) as design provenance. This ledger owns technical status and implementation detail; it must not silently redefine the story.
@@ -206,7 +206,41 @@ reveals its surrounding managed cells, and unregisters before removal.
 
 At this revision, the core named qXXX libraries do not consistently assign the new content categories. The Story/Dungeon labels in this plan are design intent until an explicit category pass is implemented and validated.
 
-### Generic vendor quests
+### Named vendor quests and generic quest engine
+
+The vendor README remains the implementation ledger for 68 quests across 51
+qVendor libraries. These are named characters even when they share a
+VL_GENERIC_* voice profile; the profile identifies the reusable actor/voice
+asset, not generic character ownership. The parent QuestGivers README owns the
+named/generic content classes and voice-reuse rules.
+
+The named vendor pass now uses the canonical identities from VendorCatalogs.j
+in qXXX headers, quest descriptions, cross-vendor targets, and affected voiced
+text instead of older placeholder names. Giver-owned offers and completions
+remain specific; reusable Daily follow-ups were rewritten where merchant
+assumptions, gratuitous cruelty, or Ogre caricature made them unsafe for
+non-vendor quests. Existing recordings at changed keys are stale until reviewed
+and re-recorded.
+
+QuestsGeneric now retains up to 512 Daily voice variants; the previous 96-entry
+limit silently discarded every pool registered after the first Orc/Satyr
+entries. Active reusable Kill/Fetch/Talk coverage now includes Human female,
+Morgrim Dwarf male, Troll male, and Tauren Talk pools in addition to the
+existing families. Female Orc, Tauren, Troll, Dwarf, Goblin, and Bonecrusher
+profiles remain production gaps because no matching reusable voice identities
+exist yet.
+
+Generic Kill definitions may add up to eight explicitly approved target
+rawcodes with QuestsGeneric_AddKillTargetCandidate and optionally restrict them
+with QuestsGeneric_SetKillTargetZone. At giver registration, the engine selects
+among candidate types currently alive in the configured zone or child zones,
+or in the giver's zone when none is specified; the original registered type is
+the fallback. Candidate lists are mandatory safety filters—automatic selection
+from every unit in a region is rejected because it can choose allies, bosses,
+critters, summons, or quest actors.
+
+Pure non-vendor definitions remain planned until the exact placed NPC/rawcode,
+faction, zone, and active GUI ownership are selected in World Editor.
 
 `QuestsAndDialogs/QuestGivers/Vendors/README.md` is the implementation ledger for the vendor quest set. It currently records 68 quests across 51 qVendor libraries: 43 Daily and 25 Normal. Keep that README authoritative for exact vendor quest titles, rawcodes, objectives, and setup.
 
