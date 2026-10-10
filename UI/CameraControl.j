@@ -2,14 +2,14 @@
     CameraControl
     
     Author: [Valdemar]
-    Version: 1.7.1
+    Version: 1.8.0
 
-    Description: Keeps each player's camera behavior consistent, including modes, target tracking, local middle-drag mouse-look, basic movement controls, and optional DynamicMinimap safety turns. Experimental camera-type and input-ownership APIs remain disabled by default.
+    Description: Keeps each player's camera behavior consistent, including modes, target tracking, local middle-drag mouse-look, DynamicFarZ, basic movement controls, and optional DynamicMinimap safety turns. Experimental camera-type and input-ownership APIs remain disabled by default.
 
     Credits: Tasyen (TasQuestBox as inspiration), Rahko, Sabe
 
     How to install:
-    Import after FixedCameraLock, AdvancedCameraSystem, ArrowKeyMovement, and FallenHeroState.
+    Import after DynamicFarZ, FixedCameraLock, AdvancedCameraSystem, ArrowKeyMovement, and FallenHeroState.
 
     API:
     call CameraControl_SetTargetUnit(whichPlayer, whichUnit)
@@ -21,6 +21,8 @@
     call CameraControl_PrepareScriptedCamera(whichPlayer)
     call CameraControl_ResumeQuick(whichPlayer)
     call CameraControl_IsSuspended(whichPlayer) returns boolean
+    call CameraControl_GetEffectiveFarZ(whichPlayer) returns real
+    call CameraControl_RefreshFarZ(whichPlayer)
     call CameraControl_SetMouseOrbitEnabled(whichPlayer, enabled)
     call CameraControl_IsMouseOrbitEnabled(whichPlayer) returns boolean
     call CameraControl_SetMouseOrbitHorizontalInverted(whichPlayer, inverted)
@@ -43,7 +45,7 @@
     call CameraControl_IsExperimentalInputOwnershipApplied(whichPlayer) returns boolean
 
 **/
-library CameraControl initializer AutoInit requires FixedCameraLock, AdvancedCameraSystem, ArrowKeyMovement, FallenHeroState, optional DynamicMinimap
+library CameraControl initializer AutoInit requires DynamicFarZ, FixedCameraLock, AdvancedCameraSystem, ArrowKeyMovement, FallenHeroState, optional DynamicMinimap
 globals
     public constant integer CAMERA_MODE_NORMAL = 1
     public constant integer CAMERA_MODE_ADVANCED = 2
@@ -548,6 +550,10 @@ private function CC_InitSpecialModeConfigs takes nothing returns nothing
     call CC_DefineSpecialMode(CAMERA_SPECIAL_MODE_GNOLLHIDEOUT, "Gnoll hideout", 2200.00, 5000.00, 270.00, 90.00, 70.00, true, 295.00)
     call CC_DefineSpecialMode(CAMERA_SPECIAL_MODE_TEMPLATE01, "Template 01", 1800.00, 6000.00, 285.00, 90.00, 70.00, false, CAMERA_ANGLE_MAX)
     call CC_DefineSpecialMode(CAMERA_SPECIAL_MODE_TEMPLATE02, "Template 02", 1400.00, 4500.00, 300.00, 180.00, 65.00, false, CAMERA_ANGLE_MAX)
+
+    // Context maxima preserve tighter visibility ranges in enclosed areas.
+    call DynamicFarZ_DefineContext(CAMERA_SPECIAL_MODE_BOOMMINE, 4500.00, 3500.00, 2750.00)
+    call DynamicFarZ_DefineContext(CAMERA_SPECIAL_MODE_GNOLLHIDEOUT, 5000.00, 4500.00, 3750.00)
 endfunction
 
 private function CC_IsSpecialModeKeyboardAdjustable takes integer specialMode returns boolean
@@ -865,10 +871,27 @@ private function CC_UpdateNormalEffectiveDistance takes player whichPlayer retur
     set target = null
 endfunction
 
-private function CC_ApplySharedFields takes player whichPlayer, real duration returns nothing
+private function CC_GetDynamicFarZ takes player whichPlayer, real baseFarZ, real angle, integer specialMode returns real
+    local integer pid = CC_GetPlayerIndex(whichPlayer)
+    return DynamicFarZ_GetEffectiveFarZ(whichPlayer, baseFarZ, angle, specialMode, CC_Suspended[pid] and not CC_ResumePending[pid])
+endfunction
+
+private function CC_GetCurrentEffectiveFarZ takes player whichPlayer returns real
+    local integer pid = CC_GetPlayerIndex(whichPlayer)
+    if CC_Suspended[pid] and CC_SuspendedKeyboardAdjustable[pid] then
+        return CC_GetDynamicFarZ(whichPlayer, CC_GetSpecialFarZ(pid), CC_GetSpecialAngle(pid), CC_GetResolvedSpecialMode(pid))
+    elseif CC_HasSpecialMode(pid) then
+        return CC_GetDynamicFarZ(whichPlayer, CC_GetSpecialFarZ(pid), CC_GetSpecialAngle(pid), CC_GetResolvedSpecialMode(pid))
+    elseif CC_Mode[pid] == CAMERA_MODE_ADVANCED then
+        return CC_GetDynamicFarZ(whichPlayer, CC_FarZ[pid], CC_GetAdvancedAngle(whichPlayer), CAMERA_SPECIAL_MODE_NONE)
+    endif
+    return CC_GetDynamicFarZ(whichPlayer, CC_FarZ[pid], CC_Angle[pid], CAMERA_SPECIAL_MODE_NONE)
+endfunction
+
+private function CC_ApplySharedFields takes player whichPlayer, real duration, real angle returns nothing
     local integer pid = CC_GetPlayerIndex(whichPlayer)
     if GetLocalPlayer() == whichPlayer then
-        call SetCameraField(CAMERA_FIELD_FARZ, CC_FarZ[pid], duration)
+        call SetCameraField(CAMERA_FIELD_FARZ, CC_GetDynamicFarZ(whichPlayer, CC_FarZ[pid], angle, CAMERA_SPECIAL_MODE_NONE), duration)
         call SetCameraField(CAMERA_FIELD_FIELD_OF_VIEW, CC_Fov[pid], duration)
     endif
 endfunction
@@ -876,7 +899,7 @@ endfunction
 private function CC_ApplySpecialFields takes player whichPlayer, real duration returns nothing
     local integer pid = CC_GetPlayerIndex(whichPlayer)
     if GetLocalPlayer() == whichPlayer then
-        call SetCameraField(CAMERA_FIELD_FARZ, CC_GetSpecialFarZ(pid), duration)
+        call SetCameraField(CAMERA_FIELD_FARZ, CC_GetDynamicFarZ(whichPlayer, CC_GetSpecialFarZ(pid), CC_GetSpecialAngle(pid), CC_GetResolvedSpecialMode(pid)), duration)
         call SetCameraField(CAMERA_FIELD_FIELD_OF_VIEW, CC_GetSpecialFov(pid), duration)
         call SetCameraField(CAMERA_FIELD_TARGET_DISTANCE, CC_GetSpecialDistance(pid), duration)
         call SetCameraField(CAMERA_FIELD_ANGLE_OF_ATTACK, CC_GetSpecialAngle(pid), duration)
@@ -886,7 +909,7 @@ endfunction
 
 private function CC_ApplyNormalFields takes player whichPlayer, real duration returns nothing
     local integer pid = CC_GetPlayerIndex(whichPlayer)
-    call CC_ApplySharedFields(whichPlayer, duration)
+    call CC_ApplySharedFields(whichPlayer, duration, CC_NormalEffectiveAngle[pid])
     if GetLocalPlayer() == whichPlayer then
         call SetCameraField(CAMERA_FIELD_TARGET_DISTANCE, CC_NormalEffectiveDistance[pid], duration)
         call SetCameraField(CAMERA_FIELD_ANGLE_OF_ATTACK, CC_NormalEffectiveAngle[pid], duration)
@@ -901,7 +924,7 @@ endfunction
 
 private function CC_ApplyDirectFields takes player whichPlayer, real duration returns nothing
     local integer pid = CC_GetPlayerIndex(whichPlayer)
-    call CC_ApplySharedFields(whichPlayer, duration)
+    call CC_ApplySharedFields(whichPlayer, duration, CC_Angle[pid])
     if GetLocalPlayer() == whichPlayer then
         call SetCameraField(CAMERA_FIELD_TARGET_DISTANCE, CC_Distance[pid], duration)
         call SetCameraField(CAMERA_FIELD_ANGLE_OF_ATTACK, CC_Angle[pid], duration)
@@ -911,7 +934,7 @@ endfunction
 
 private function CC_ApplyAdvancedFields takes player whichPlayer, real duration returns nothing
     local integer pid = CC_GetPlayerIndex(whichPlayer)
-    call CC_ApplySharedFields(whichPlayer, duration)
+    call CC_ApplySharedFields(whichPlayer, duration, CC_GetAdvancedAngle(whichPlayer))
     if GetLocalPlayer() == whichPlayer then
         call SetCameraField(CAMERA_FIELD_TARGET_DISTANCE, CC_Distance[pid], duration)
         call SetCameraField(CAMERA_FIELD_ANGLE_OF_ATTACK, CC_GetAdvancedAngle(whichPlayer), duration)
@@ -921,7 +944,7 @@ endfunction
 
 private function CC_ApplyAdvancedDriftFields takes player whichPlayer, real duration returns nothing
     local integer pid = CC_GetPlayerIndex(whichPlayer)
-    call CC_ApplySharedFields(whichPlayer, duration)
+    call CC_ApplySharedFields(whichPlayer, duration, CC_GetAdvancedAngle(whichPlayer))
     if GetLocalPlayer() == whichPlayer then
         call SetCameraField(CAMERA_FIELD_TARGET_DISTANCE, CC_Distance[pid], duration)
         call SetCameraField(CAMERA_FIELD_ANGLE_OF_ATTACK, CC_GetAdvancedAngle(whichPlayer), duration)
@@ -930,7 +953,7 @@ endfunction
 
 private function CC_ApplyAdvancedResumePreviewFields takes player whichPlayer, real duration returns nothing
     local integer pid = CC_GetPlayerIndex(whichPlayer)
-    call CC_ApplySharedFields(whichPlayer, duration)
+    call CC_ApplySharedFields(whichPlayer, duration, CC_GetAdvancedAngle(whichPlayer))
     if GetLocalPlayer() == whichPlayer then
         call SetCameraField(CAMERA_FIELD_TARGET_DISTANCE, CC_Distance[pid], duration)
         call SetCameraField(CAMERA_FIELD_ANGLE_OF_ATTACK, CC_GetAdvancedAngle(whichPlayer), duration)
@@ -1639,6 +1662,17 @@ public function GetFarZ takes player whichPlayer returns real
     return CC_FarZ[CC_GetPlayerIndex(whichPlayer)]
 endfunction
 
+public function GetEffectiveFarZ takes player whichPlayer returns real
+    return CC_GetCurrentEffectiveFarZ(whichPlayer)
+endfunction
+
+public function RefreshFarZ takes player whichPlayer returns nothing
+    local integer pid = CC_GetPlayerIndex(whichPlayer)
+    if not CC_Suspended[pid] and not CC_ResumePending[pid] and GetLocalPlayer() == whichPlayer then
+        call SetCameraField(CAMERA_FIELD_FARZ, CC_GetCurrentEffectiveFarZ(whichPlayer), 0.25)
+    endif
+endfunction
+
 public function GetAngle takes player whichPlayer returns real
     return CC_Angle[CC_GetPlayerIndex(whichPlayer)]
 endfunction
@@ -1693,6 +1727,7 @@ public function ResetDefaults takes player whichPlayer returns nothing
     set CC_Angle[pid] = CAMERA_DEFAULT_ANGLE
     set CC_Rotation[pid] = CAMERA_DEFAULT_ROTATION
     set CC_Fov[pid] = CAMERA_DEFAULT_FOV
+    call DynamicFarZ_ResetDefaults(whichPlayer)
     if GetLocalPlayer() == whichPlayer then
         set CC_MouseOrbitEnabled[pid] = CAMERA_MOUSE_ORBIT_ENABLED_BY_DEFAULT
         set CC_MouseOrbitHorizontalInverted[pid] = CAMERA_MOUSE_ORBIT_HORIZONTAL_INVERTED_BY_DEFAULT
