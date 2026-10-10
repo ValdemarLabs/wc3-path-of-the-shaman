@@ -9,13 +9,14 @@
     place-of-interest, and optional companion/follower map markers. Registered
     icons are kept hidden and revealed one at a time to avoid map overlap.
     Flight master and ship master icons can optionally be revealed together.
+    Available quests are range-filtered around the locally controlled hero.
 
     Credits:
     Blizzard campaign minimap icon helpers.
 
     How to install:
-    Import this library before systems that register query icons. Replace old
-    GUI minimap-icon toggle triggers with calls to the public registration API.
+    Import after CameraControl and before systems that register query icons.
+    Replace old GUI minimap-icon toggles with the public registration API.
 
     API:
     call IconQuery_RegisterQuestGiverUnitIcon(unit u, integer style)
@@ -46,7 +47,7 @@
     call IconQuery_CycleDisplayMode()
 
 **/
-library IconQuery initializer Init requires Table, FallenHeroState
+library IconQuery initializer Init requires Table, FallenHeroState, CameraControl
     globals
         // Public category IDs used by SettingsUI and GUI custom script bridges.
         constant integer ICONQUERY_CATEGORY_QUEST_GIVERS = 1
@@ -62,7 +63,7 @@ library IconQuery initializer Init requires Table, FallenHeroState
         constant integer ICONQUERY_CATEGORY_MODE_ON = 2
         constant integer ICONQUERY_CATEGORY_MODE_ALWAYS = 3
 
-        // Query timing configuration.
+        // Query timing and available quest proximity configuration.
         private constant integer IQ_CATEGORY_COUNT = 5
         private constant integer IQ_MAX_ENTRIES = 2048
         private constant real IQ_QUERY_TIME_MIN = 0.50
@@ -73,11 +74,13 @@ library IconQuery initializer Init requires Table, FallenHeroState
         private constant real IQ_DEFAULT_QUERY_TIME = 4.00
         private constant real IQ_DEFAULT_QUERY_REST_TIME = 45.00
         private constant real IQ_PING_DURATION = 1.25
+        private constant real IQ_AVAILABLE_QUEST_RANGE = 2000.00
+        private constant real IQ_AVAILABLE_QUEST_REFRESH_INTERVAL = 1.00
         private constant integer IQ_CATEGORY_FREQUENCY_MIN = 1
         private constant integer IQ_CATEGORY_FREQUENCY_MAX = 5
         private constant boolean IQ_SHOW_FLIGHT_AND_SHIP_MASTERS_TOGETHER = true
         private constant boolean IQ_DEFAULT_PINGS_ENABLED = true
-        private constant boolean IQ_DEFAULT_SHOW_AVAILABLE_QUESTS = false
+        private constant boolean IQ_DEFAULT_SHOW_AVAILABLE_QUESTS = true
         private constant integer IQ_DEFAULT_DISPLAY_MODE = ICONQUERY_DISPLAY_MODE_QUERY
 
         private boolean IQ_Initialized = false
@@ -92,6 +95,8 @@ library IconQuery initializer Init requires Table, FallenHeroState
         private real IQ_QueryTime = IQ_DEFAULT_QUERY_TIME
         private real IQ_QueryRestTime = IQ_DEFAULT_QUERY_REST_TIME
         private timer IQ_QueryTimer = null
+        private timer IQ_AvailableQuestRangeTimer = null
+        private unit IQ_ControlledHero = null
         private integer IQ_QueryCategory = ICONQUERY_CATEGORY_QUEST_GIVERS
         private integer IQ_DisplayMode = IQ_DEFAULT_DISPLAY_MODE
         private integer array IQ_CategoryMode
@@ -345,6 +350,19 @@ library IconQuery initializer Init requires Table, FallenHeroState
         set IQ_QueryCategory = ICONQUERY_CATEGORY_QUEST_GIVERS
     endfunction
 
+    private function IQ_IsAvailableQuestInRange takes integer entryIndex returns boolean
+        local real dx
+        local real dy
+
+        if IQ_ControlledHero == null or GetUnitTypeId(IQ_ControlledHero) == 0 then
+            return false
+        endif
+
+        set dx = GetUnitX(IQ_EntryUnit[entryIndex]) - GetUnitX(IQ_ControlledHero)
+        set dy = GetUnitY(IQ_EntryUnit[entryIndex]) - GetUnitY(IQ_ControlledHero)
+        return dx * dx + dy * dy <= IQ_AVAILABLE_QUEST_RANGE * IQ_AVAILABLE_QUEST_RANGE
+    endfunction
+
     private function IQ_IsEntryCandidate takes integer entryIndex returns boolean
         local integer category
 
@@ -359,10 +377,10 @@ library IconQuery initializer Init requires Table, FallenHeroState
         if IQ_EntryIcon[entryIndex] == null then
             return false
         endif
-        if IQ_EntryAvailableQuest[entryIndex] and not IQ_ShowAvailableQuests then
+        if IQ_EntryUsesUnit[entryIndex] and not IQ_IsUnitValidForCategory(IQ_EntryUnit[entryIndex], category) then
             return false
         endif
-        if IQ_EntryUsesUnit[entryIndex] and not IQ_IsUnitValidForCategory(IQ_EntryUnit[entryIndex], category) then
+        if IQ_EntryAvailableQuest[entryIndex] and (not IQ_ShowAvailableQuests or not IQ_IsAvailableQuestInRange(entryIndex)) then
             return false
         endif
         return true
@@ -624,6 +642,8 @@ library IconQuery initializer Init requires Table, FallenHeroState
     endfunction
 
     private function IQ_RefreshTimerState takes nothing returns nothing
+        set IQ_ControlledHero = CameraControl_GetTargetUnit(GetLocalPlayer())
+
         if not IQ_HasAnyActiveEntry() then
             call IQ_HideActive()
             call IQ_HideAllEntries()
@@ -1147,6 +1167,12 @@ library IconQuery initializer Init requires Table, FallenHeroState
         return IQ_EntryCount
     endfunction
 
+    private function IQ_AvailableQuestRangeTick takes nothing returns nothing
+        if IQ_ShowAvailableQuests then
+            call IQ_RefreshTimerState()
+        endif
+    endfunction
+
     private function Init takes nothing returns nothing
         if IQ_Initialized then
             return
@@ -1155,6 +1181,7 @@ library IconQuery initializer Init requires Table, FallenHeroState
 
         set IQ_IconIndex = Table.create()
         set IQ_QueryTimer = CreateTimer()
+        set IQ_AvailableQuestRangeTimer = CreateTimer()
         set IQ_CategoryMode[ICONQUERY_CATEGORY_QUEST_GIVERS] = ICONQUERY_CATEGORY_MODE_ALWAYS
         set IQ_CategoryMode[ICONQUERY_CATEGORY_FLIGHT_MASTER] = ICONQUERY_CATEGORY_MODE_QUERY
         set IQ_CategoryMode[ICONQUERY_CATEGORY_BOSSES] = ICONQUERY_CATEGORY_MODE_QUERY
@@ -1166,5 +1193,6 @@ library IconQuery initializer Init requires Table, FallenHeroState
         set IQ_CategoryFrequency[ICONQUERY_CATEGORY_PLACES_OF_INTEREST] = 3
         set IQ_CategoryFrequency[ICONQUERY_CATEGORY_COMPANIONS_AND_FOLLOWERS] = 1
         call IQ_ResetCategoryCursors()
+        call TimerStart(IQ_AvailableQuestRangeTimer, IQ_AVAILABLE_QUEST_REFRESH_INTERVAL, true, function IQ_AvailableQuestRangeTick)
     endfunction
 endlibrary

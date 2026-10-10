@@ -6,8 +6,8 @@
 
     Description:
     In-game settings panel for icon query timing, minimap marker categories,
-    pings/display mode, secondary marker scan frequency, UI sounds, map
-    difficulty, and the active AI unit cap.
+    pings/display mode, nearby available quests, secondary marker scan
+    frequency, UI sounds, map difficulty, and the active AI unit cap.
 
     Credits:
     Tasyen (TasQuestBox as inspiration)
