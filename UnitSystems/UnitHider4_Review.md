@@ -124,7 +124,10 @@ UnitHider-owned hidden population, foreign-hidden population, visible units
 inside reference range, and visible eligible units outside the hide range.
 After an active settlement, `visible outside hide range` should be zero. A
 large `visible near references` count instead identifies reference coverage,
-not another system showing distant units.
+not another system showing distant units. Version 4.9.1 also lists each active
+reference's unit name, source category, owner slot, coordinates, and show/hide
+range so stale or unintended anchors can be distinguished from required
+player, AI, party, and cinematic references.
 
 The full-map audit with 2,490 known units confirmed that discovery was complete:
 2,036 units were UnitHider-owned hidden, only 3 eligible units were visible
@@ -337,3 +340,20 @@ states. The checked-in GUI reference files show the exact placement.
 Do not call `UnitHider_SetSystemEnabled(false)` or
 `UnitHider_SetSystemEnabled(true)` from Cinematic ON/OFF. The begin/end API owns
 the visibility transition without globally showing UnitHider-managed units.
+
+Version 4.9.2 gives cinematic reveals their own ownership group instead of
+relying on the ordinary throttled visible-unit scan. Every ordinary unit shown
+through a cinematic reference is recorded. A repeated Cinematic ON replaces
+the previous primary scene reference rather than accumulating reveal bubbles,
+while references explicitly added through `UnitHider_RegisterCinematicReference`
+remain until unregistered or the cinematic ends. Cinematic OFF performs the
+full normal settlement before synchronously
+reclassifying any cinematic-visible unit missed by the merged inventory pass.
+The periodic worker also repairs stale managed cinematic state when
+`udg_InCinematic` is already false.
+
+`/debug unithider audit` retains the previous reference listing and now reports
+the most recent cinematic begin/end hidden counts, cinematic-visible candidate
+count, and remaining managed-visible count. This distinguishes a large scene
+reveal from an incomplete exit reconciliation without adding continuous debug
+output during gameplay.

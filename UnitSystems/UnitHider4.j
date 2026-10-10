@@ -2,7 +2,7 @@
     UnitHider4
 
     Author: Valdemar
-    Version: 4.9.0
+    Version: 4.9.2
 
     Description:
     Hides the ordinary map population outside tracked-unit reveal ranges.
@@ -18,7 +18,8 @@
     rather than every hidden unit. Authoritative passes merge world enumeration
     with Unit Event's indexed handles so units hidden by cinematic or scripted
     systems are not lost. Cinematic mode temporarily narrows reveal coverage to
-    the active scene without surrendering UnitHider's normal hidden ownership.
+    the active scene and owns a separate set of units revealed for that scene,
+    allowing synchronous reclassification when the scene changes or ends.
     The system only shows units that it hid.
 
     Credits:
@@ -65,6 +66,7 @@ globals
     private constant integer UnitHider4_VISIBLE_UNITS_PER_TICK = 128
     private constant integer UnitHider4_GRID_AXIS = 64
     private constant integer UnitHider4_MAX_REFERENCES = 8190
+    private constant integer UnitHider4_DEBUG_REFERENCE_LIMIT = 20
     private constant integer UnitHider4_CELL_CHILD_KEY = 0
     private constant real UnitHider4_DEFAULT_HIDE_DISTANCE = 5500.00
     private constant real UnitHider4_DEFAULT_SHOW_DISTANCE = 5200.00
@@ -82,9 +84,13 @@ globals
     private group UnitHider4_AutomaticReferences = CreateGroup()
     private group UnitHider4_RegisteredReferences = CreateGroup()
     private group UnitHider4_CinematicReferences = CreateGroup()
+    private group UnitHider4_CinematicVisibleUnits = CreateGroup()
     private group UnitHider4_ReferenceCacheGroup = CreateGroup()
+    private unit UnitHider4_CinematicSceneReference = null
+    private unit array UnitHider4_ReferenceUnit
     private real array UnitHider4_ReferenceX
     private real array UnitHider4_ReferenceY
+    private real array UnitHider4_ReferenceHideDistance
     private real array UnitHider4_ReferenceHideDistanceSq
     private real array UnitHider4_ReferenceShowDistance
     private real array UnitHider4_ReferenceShowDistanceSq
@@ -114,6 +120,13 @@ globals
     private integer UnitHider4_Checked = 0
     private integer UnitHider4_Hidden = 0
     private integer UnitHider4_Shown = 0
+    private integer UnitHider4_LastCinematicBeginHiddenBefore = 0
+    private integer UnitHider4_LastCinematicBeginHiddenAfter = 0
+    private integer UnitHider4_LastCinematicBeginVisibleAfter = 0
+    private integer UnitHider4_LastCinematicEndCandidates = 0
+    private integer UnitHider4_LastCinematicEndHiddenBefore = 0
+    private integer UnitHider4_LastCinematicEndHiddenAfter = 0
+    private integer UnitHider4_LastCinematicEndVisibleAfter = 0
 endglobals
 
 private function UnitHider4_AddIndexedUnitsToKnown takes nothing returns nothing
@@ -197,7 +210,7 @@ private function UnitHider4_UsesAIRange takes unit whichUnit returns boolean
     if not UnitHider4_IsConfiguredAIHero(whichUnit) then
         return false
     endif
-    if UnitHider4_IsPlayerControlledHero(whichUnit) or IsUnitInGroup(whichUnit, UnitHider4_RegisteredReferences) or IsUnitInGroup(whichUnit, UnitHider4_CinematicReferences) then
+    if UnitHider4_IsPlayerControlledHero(whichUnit) or IsUnitInGroup(whichUnit, UnitHider4_RegisteredReferences) or whichUnit == UnitHider4_CinematicSceneReference or IsUnitInGroup(whichUnit, UnitHider4_CinematicReferences) then
         return false
     endif
     if (udg_Companion_Group != null and IsUnitInGroup(whichUnit, udg_Companion_Group)) or (udg_TamedUnits != null and IsUnitInGroup(whichUnit, udg_TamedUnits)) then
@@ -225,15 +238,18 @@ private function UnitHider4_CacheReferenceGroup takes group sourceGroup returns 
     loop
         exitwhen index >= count or UnitHider4_ReferenceCount >= UnitHider4_MAX_REFERENCES
         set whichUnit = BlzGroupUnitAt(sourceGroup, index)
-        if FallenHeroState_IsAlive(whichUnit) and not IsUnitLoaded(whichUnit) and (not IsUnitHidden(whichUnit) or IsUnitInGroup(whichUnit, UnitHider4_HiddenUnits) or (UnitHider4_CinematicDepth > 0 and IsUnitInGroup(whichUnit, UnitHider4_CinematicReferences))) then
+        if FallenHeroState_IsAlive(whichUnit) and not IsUnitLoaded(whichUnit) and (not IsUnitHidden(whichUnit) or IsUnitInGroup(whichUnit, UnitHider4_HiddenUnits) or (UnitHider4_CinematicDepth > 0 and (whichUnit == UnitHider4_CinematicSceneReference or IsUnitInGroup(whichUnit, UnitHider4_CinematicReferences)))) then
             set UnitHider4_ReferenceX[UnitHider4_ReferenceCount] = GetUnitX(whichUnit)
             set UnitHider4_ReferenceY[UnitHider4_ReferenceCount] = GetUnitY(whichUnit)
+            set UnitHider4_ReferenceUnit[UnitHider4_ReferenceCount] = whichUnit
             if UnitHider4_UsesAIRange(whichUnit) then
+                set UnitHider4_ReferenceHideDistance[UnitHider4_ReferenceCount] = UnitHider4_AI_HIDE_DISTANCE
                 set UnitHider4_ReferenceHideDistanceSq[UnitHider4_ReferenceCount] = UnitHider4_AI_HIDE_DISTANCE * UnitHider4_AI_HIDE_DISTANCE
                 set UnitHider4_ReferenceShowDistance[UnitHider4_ReferenceCount] = UnitHider4_AI_SHOW_DISTANCE
                 set UnitHider4_ReferenceShowDistanceSq[UnitHider4_ReferenceCount] = UnitHider4_AI_SHOW_DISTANCE * UnitHider4_AI_SHOW_DISTANCE
                 set UnitHider4_AIReferenceCount = UnitHider4_AIReferenceCount + 1
             else
+                set UnitHider4_ReferenceHideDistance[UnitHider4_ReferenceCount] = UnitHider4_HideDistance
                 set UnitHider4_ReferenceHideDistanceSq[UnitHider4_ReferenceCount] = UnitHider4_HideDistanceSq
                 set UnitHider4_ReferenceShowDistance[UnitHider4_ReferenceCount] = UnitHider4_ShowDistance
                 set UnitHider4_ReferenceShowDistanceSq[UnitHider4_ReferenceCount] = UnitHider4_ShowDistanceSq
@@ -285,12 +301,22 @@ private function UnitHider4_AddAllowedLegacyReferences takes nothing returns not
 endfunction
 
 private function UnitHider4_UpdateReferenceCache takes nothing returns nothing
+    local integer index = 0
+
+    loop
+        exitwhen index >= UnitHider4_ReferenceCount
+        set UnitHider4_ReferenceUnit[index] = null
+        set index = index + 1
+    endloop
     call GroupClear(UnitHider4_ReferenceCacheGroup)
     if UnitHider4_CinematicDepth > 0 then
         // During a cinematic only the active scene and explicit scripted
         // references reveal surrounding population. Automatic references stay
         // protected themselves without keeping unrelated map areas active.
         call GroupAddGroup(UnitHider4_CinematicReferences, UnitHider4_ReferenceCacheGroup)
+        if UnitHider4_CinematicSceneReference != null then
+            call GroupAddUnit(UnitHider4_ReferenceCacheGroup, UnitHider4_CinematicSceneReference)
+        endif
         call GroupAddGroup(UnitHider4_RegisteredReferences, UnitHider4_ReferenceCacheGroup)
     endif
     if UnitHider4_CinematicDepth == 0 or BlzGroupGetSize(UnitHider4_ReferenceCacheGroup) == 0 then
@@ -352,7 +378,7 @@ private function UnitHider4_IsWithinHideRange takes unit whichUnit returns boole
 endfunction
 
 private function UnitHider4_IsTrackedReference takes unit whichUnit, boolean isAutomaticReference returns boolean
-    return isAutomaticReference or IsUnitInGroup(whichUnit, UnitHider4_RegisteredReferences) or IsUnitInGroup(whichUnit, UnitHider4_CinematicReferences) or UnitHider4_IsAllowedLegacyReference(whichUnit)
+    return isAutomaticReference or IsUnitInGroup(whichUnit, UnitHider4_RegisteredReferences) or whichUnit == UnitHider4_CinematicSceneReference or IsUnitInGroup(whichUnit, UnitHider4_CinematicReferences) or UnitHider4_IsAllowedLegacyReference(whichUnit)
 endfunction
 
 private function UnitHider4_IsProtected takes unit whichUnit, boolean isAutomaticReference returns boolean
@@ -428,6 +454,9 @@ private function UnitHider4_ShowManaged takes unit whichUnit, boolean trackVisib
     call UnitHider4_ShowOwned(whichUnit, true)
     if trackVisible then
         call GroupAddUnit(UnitHider4_VisibleUnits, whichUnit)
+        if UnitHider4_CinematicDepth > 0 then
+            call GroupAddUnit(UnitHider4_CinematicVisibleUnits, whichUnit)
+        endif
     else
         call GroupRemoveUnit(UnitHider4_VisibleUnits, whichUnit)
     endif
@@ -436,6 +465,7 @@ endfunction
 
 private function UnitHider4_HideManaged takes unit whichUnit returns nothing
     call GroupRemoveUnit(UnitHider4_VisibleUnits, whichUnit)
+    call GroupRemoveUnit(UnitHider4_CinematicVisibleUnits, whichUnit)
     call UnitHider4_ShowOwned(whichUnit, false)
     call UnitHider4_AddHiddenTracking(whichUnit)
     set UnitHider4_Hidden = UnitHider4_Hidden + 1
@@ -660,6 +690,26 @@ private function UnitHider4_SettleMap takes nothing returns boolean
     return true
 endfunction
 
+private function UnitHider4_ClearCinematicState takes nothing returns nothing
+    set UnitHider4_CinematicDepth = 0
+    set UnitHider4_WasInCinematic = false
+    set UnitHider4_CinematicSceneReference = null
+    call GroupClear(UnitHider4_CinematicReferences)
+endfunction
+
+private function UnitHider4_ReconcileCinematicVisible takes nothing returns nothing
+    local unit whichUnit
+
+    loop
+        set whichUnit = FirstOfGroup(UnitHider4_CinematicVisibleUnits)
+        exitwhen whichUnit == null
+        call GroupRemoveUnit(UnitHider4_CinematicVisibleUnits, whichUnit)
+        call UnitHider4_ProcessUnit(whichUnit)
+    endloop
+
+    set whichUnit = null
+endfunction
+
 private function UnitHider4_ProcessBatch takes nothing returns nothing
     local integer processed = 0
     local integer inspected = 0
@@ -678,6 +728,15 @@ private function UnitHider4_ProcessBatch takes nothing returns nothing
         endif
         return
     endif
+    // The GUI cinematic state is authoritative. Recover from repeated or
+    // unmatched Begin calls instead of leaving normal processing suspended.
+    if UnitHider4_CinematicDepth > 0 and not udg_InCinematic then
+        call UnitHider4_ClearCinematicState()
+        set UnitHider4_Initialized = false
+        call UnitHider4_SettleMap()
+        call UnitHider4_ReconcileCinematicVisible()
+        return
+    endif
     if UnitHider4_CinematicDepth > 0 or udg_InCinematic then
         set UnitHider4_WasInCinematic = true
         return
@@ -686,6 +745,7 @@ private function UnitHider4_ProcessBatch takes nothing returns nothing
         set UnitHider4_WasInCinematic = false
         set UnitHider4_Initialized = false
         call UnitHider4_SettleMap()
+        call UnitHider4_ReconcileCinematicVisible()
         return
     endif
 
@@ -728,6 +788,7 @@ private function UnitHider4_UnhideAllManaged takes nothing returns nothing
     endloop
     call GroupClear(UnitHider4_VisibleUnits)
     call GroupClear(UnitHider4_PendingUnits)
+    call GroupClear(UnitHider4_CinematicVisibleUnits)
     set UnitHider4_VisibleScanIndex = 0
 
     set whichUnit = null
@@ -791,6 +852,8 @@ function UnitHider_DebugAudit takes player whichPlayer returns nothing
     local boolean isAlive
     local boolean isLoaded
     local boolean isAutomaticReference
+    local integer referenceIndex = 0
+    local string referenceKind
     local string state = "enabled"
 
     call UnitHider4_PrepareWorldScan()
@@ -829,6 +892,31 @@ function UnitHider_DebugAudit takes player whichPlayer returns nothing
     call DisplayTextToPlayer(whichPlayer, 0.00, 0.00, "Inventory=" + I2S(totalCount) + " | known=" + I2S(BlzGroupGetSize(UnitHider4_KnownUnits)) + " | exempt=" + I2S(exemptCount) + " | managed hidden=" + I2S(eligibleHiddenCount) + " | foreign hidden=" + I2S(foreignHiddenCount))
     call DisplayTextToPlayer(whichPlayer, 0.00, 0.00, "Visible near references=" + I2S(nearVisibleCount) + " | visible outside hide range=" + I2S(farVisibleCount) + " | pending=" + I2S(BlzGroupGetSize(UnitHider4_PendingUnits)))
     call DisplayTextToPlayer(whichPlayer, 0.00, 0.00, "Ranges: full=" + I2S(R2I(UnitHider4_ShowDistance)) + "/" + I2S(R2I(UnitHider4_HideDistance)) + " | autonomous AI=" + I2S(R2I(UnitHider4_AI_SHOW_DISTANCE)) + "/" + I2S(R2I(UnitHider4_AI_HIDE_DISTANCE)) + " (show/hide)")
+    call DisplayTextToPlayer(whichPlayer, 0.00, 0.00, "Last cinematic: begin hidden=" + I2S(UnitHider4_LastCinematicBeginHiddenBefore) + "->" + I2S(UnitHider4_LastCinematicBeginHiddenAfter) + " visible=" + I2S(UnitHider4_LastCinematicBeginVisibleAfter) + " | end candidates=" + I2S(UnitHider4_LastCinematicEndCandidates) + " hidden=" + I2S(UnitHider4_LastCinematicEndHiddenBefore) + "->" + I2S(UnitHider4_LastCinematicEndHiddenAfter) + " visible=" + I2S(UnitHider4_LastCinematicEndVisibleAfter))
+    loop
+        exitwhen referenceIndex >= UnitHider4_ReferenceCount or referenceIndex >= UnitHider4_DEBUG_REFERENCE_LIMIT
+        set whichUnit = UnitHider4_ReferenceUnit[referenceIndex]
+        if whichUnit == UnitHider4_CinematicSceneReference or IsUnitInGroup(whichUnit, UnitHider4_CinematicReferences) then
+            set referenceKind = "cinematic"
+        elseif IsUnitInGroup(whichUnit, UnitHider4_RegisteredReferences) then
+            set referenceKind = "explicit"
+        elseif UnitHider4_IsPlayerControlledHero(whichUnit) then
+            set referenceKind = "player hero"
+        elseif udg_Companion_Group != null and IsUnitInGroup(whichUnit, udg_Companion_Group) then
+            set referenceKind = "companion"
+        elseif udg_TamedUnits != null and IsUnitInGroup(whichUnit, udg_TamedUnits) then
+            set referenceKind = "pet"
+        elseif UnitHider4_IsConfiguredAIHero(whichUnit) then
+            set referenceKind = "autonomous AI"
+        else
+            set referenceKind = "legacy"
+        endif
+        call DisplayTextToPlayer(whichPlayer, 0.00, 0.00, "Ref " + I2S(referenceIndex + 1) + ": " + GetUnitName(whichUnit) + " | " + referenceKind + " | owner=" + I2S(GetPlayerId(GetOwningPlayer(whichUnit)) + 1) + " | x=" + I2S(R2I(UnitHider4_ReferenceX[referenceIndex])) + " y=" + I2S(R2I(UnitHider4_ReferenceY[referenceIndex])) + " | range=" + I2S(R2I(UnitHider4_ReferenceShowDistance[referenceIndex])) + "/" + I2S(R2I(UnitHider4_ReferenceHideDistance[referenceIndex])))
+        set referenceIndex = referenceIndex + 1
+    endloop
+    if UnitHider4_ReferenceCount > UnitHider4_DEBUG_REFERENCE_LIMIT then
+        call DisplayTextToPlayer(whichPlayer, 0.00, 0.00, I2S(UnitHider4_ReferenceCount - UnitHider4_DEBUG_REFERENCE_LIMIT) + " additional references omitted.")
+    endif
     set whichUnit = null
     set whichPlayer = null
 endfunction
@@ -875,6 +963,9 @@ endfunction
 
 function UnitHider_UnregisterCinematicReference takes unit whichUnit returns nothing
     call GroupRemoveUnit(UnitHider4_CinematicReferences, whichUnit)
+    if whichUnit == UnitHider4_CinematicSceneReference then
+        set UnitHider4_CinematicSceneReference = null
+    endif
     call UnitHider4_UpdateReferenceCache()
     if UnitHider4_Enabled and UnitHider4_CinematicDepth > 0 then
         set UnitHider4_Initialized = false
@@ -883,32 +974,38 @@ function UnitHider_UnregisterCinematicReference takes unit whichUnit returns not
 endfunction
 
 function UnitHider_BeginCinematic takes unit sceneReference returns nothing
-    set UnitHider4_CinematicDepth = UnitHider4_CinematicDepth + 1
+    set UnitHider4_LastCinematicBeginHiddenBefore = BlzGroupGetSize(UnitHider4_HiddenUnits)
+    // Cinematic ON is shared boolean state. A new scene replaces the previous
+    // primary reference without discarding additional registered scene anchors.
+    set UnitHider4_CinematicSceneReference = sceneReference
+    set UnitHider4_CinematicDepth = 1
     set UnitHider4_WasInCinematic = true
     if sceneReference != null then
         call GroupAddUnit(UnitHider4_KnownUnits, sceneReference)
-        call GroupAddUnit(UnitHider4_CinematicReferences, sceneReference)
     endif
     if UnitHider4_Enabled then
         set UnitHider4_Initialized = false
         call UnitHider4_SettleMap()
     endif
+    set UnitHider4_LastCinematicBeginHiddenAfter = BlzGroupGetSize(UnitHider4_HiddenUnits)
+    set UnitHider4_LastCinematicBeginVisibleAfter = BlzGroupGetSize(UnitHider4_CinematicVisibleUnits)
 endfunction
 
 function UnitHider_EndCinematic takes nothing returns nothing
-    if UnitHider4_CinematicDepth <= 0 then
-        return
-    endif
-    set UnitHider4_CinematicDepth = UnitHider4_CinematicDepth - 1
-    if UnitHider4_CinematicDepth > 0 then
-        return
-    endif
-    call GroupClear(UnitHider4_CinematicReferences)
-    set UnitHider4_WasInCinematic = false
+    set UnitHider4_LastCinematicEndCandidates = BlzGroupGetSize(UnitHider4_CinematicVisibleUnits)
+    set UnitHider4_LastCinematicEndHiddenBefore = BlzGroupGetSize(UnitHider4_HiddenUnits)
+    // Always normalize and settle. The full settlement immediately hides
+    // cinematic-only visible units outside restored normal reference ranges.
+    call UnitHider4_ClearCinematicState()
     if UnitHider4_Enabled then
         set UnitHider4_Initialized = false
         call UnitHider4_SettleMap()
     endif
+    // The exact cinematic reveal set is owned separately so even a unit missed
+    // by world/known inventory traversal cannot fall into gradual recovery.
+    call UnitHider4_ReconcileCinematicVisible()
+    set UnitHider4_LastCinematicEndHiddenAfter = BlzGroupGetSize(UnitHider4_HiddenUnits)
+    set UnitHider4_LastCinematicEndVisibleAfter = BlzGroupGetSize(UnitHider4_VisibleUnits)
 endfunction
 
 function UnitHider_SetSystemEnabled takes boolean enable returns nothing
@@ -1002,6 +1099,7 @@ private function UnitHider4_OnShowUnit takes unit whichUnit, boolean show return
         call GroupAddUnit(UnitHider4_KnownUnits, whichUnit)
         call UnitHider4_RemoveHiddenTracking(whichUnit)
         call GroupRemoveUnit(UnitHider4_VisibleUnits, whichUnit)
+        call GroupRemoveUnit(UnitHider4_CinematicVisibleUnits, whichUnit)
         if show and UnitHider4_Enabled then
             call GroupAddUnit(UnitHider4_PendingUnits, whichUnit)
         else
@@ -1039,6 +1137,9 @@ endfunction
 private function UnitHider4_OnUnitDeindex takes nothing returns nothing
     local unit whichUnit = udg_UDexUnits[udg_UDex]
 
+    if whichUnit == UnitHider4_CinematicSceneReference then
+        set UnitHider4_CinematicSceneReference = null
+    endif
     call UnitHider4_RemoveHiddenTracking(whichUnit)
     call GroupRemoveUnit(UnitHider4_KnownUnits, whichUnit)
     call GroupRemoveUnit(UnitHider4_VisibleUnits, whichUnit)
@@ -1046,6 +1147,7 @@ private function UnitHider4_OnUnitDeindex takes nothing returns nothing
     call GroupRemoveUnit(UnitHider4_AutomaticReferences, whichUnit)
     call GroupRemoveUnit(UnitHider4_RegisteredReferences, whichUnit)
     call GroupRemoveUnit(UnitHider4_CinematicReferences, whichUnit)
+    call GroupRemoveUnit(UnitHider4_CinematicVisibleUnits, whichUnit)
     set whichUnit = null
 endfunction
 
