@@ -22,6 +22,7 @@
 
 ### Player-Facing Updates
 
+- Added automatic Far Z scaling to the Camera UI. Its end goal is to improve performance seamlessly by avoiding rendering distant parts of the world that the player is not looking toward. It can be disabled or run with Light, Medium, or Heavy profiles: steeper/top-down gameplay views reduce draw distance, while cameras tilted farther toward the horizon automatically gain the range needed to show more of the world; cinematic cameras retain their authored range, and enclosed dungeon profiles can impose tighter limits.
 - Boom Mine and Gnoll Hideout now both allow the dungeon camera angle to be adjusted within the limited 270-295-degree range.
 - Minimap quest icons now show active ongoing and ready-to-turn-in quests globally, while available quests are shown only when they are within 2000 range of the currently controlled hero. Nearby available quest icons can be disabled from the Settings UI.
 - Updated shared escort quests so the escorted NPC walks toward its destination while the hero accompanies it, instead of requiring the player to discover the route by pulling a following NPC behind them.
@@ -29,6 +30,7 @@
 
 ### Technical Updates
 
+- Added `UI/DynamicFarZ.j` and updated `UI/CameraControl.j` and `UI/CameraUI.j` with per-player automatic Far Z profiles, camera-angle interpolation, full authored cinematic range, dedicated Boom Mine and Gnoll Hideout context caps, and immediate profile controls in the Camera panel. The system is intended to remain unobtrusive during play while reducing unnecessary distant rendering whenever the current camera pitch does not expose that part of the world.
 - Updated `UI/CameraControl.j` to restore Boom Mine's keyboard-adjustable special-camera preset and register both native arrow events and OS-key events. Defined dungeon modes retain their 270-295-degree angle limit and special-mode-local rotation state while fullscreen interactive cameras keep their input path.
 - Updated `UI/IconQuery.j`, `QuestsAndDialogs/QuestMaster.j`, and `UI/SettingsUI.j` with per-entry available-quest filtering, periodic range refreshes based on `CameraControl`'s controlled hero, and a player-facing nearby-quest toggle that defaults to on.
 - Added `PatrolFollowSystems/EscortMovement.j` with autonomous pathing, configurable hero range, stopped-route pings and indicators, dynamic destinations, and optional ordered waypoints.
@@ -56,6 +58,7 @@
 
 ### Actions Remaining
 
+- Import `UI/DynamicFarZ.j` before `UI/CameraControl.j`, reimport `UI/CameraUI.j` after both, compile a focused test map and the full map through World Editor/JassHelper, then runtime-test all three profiles, disabled mode, Defaults, Boom Mine/Gnoll Hideout transitions, advanced/developer modes, interactive travel/crafting cameras, scripted cinematics, and two-client local preference isolation.
 - Import `PatrolFollowSystems/EscortMovement.j` before `QuestsAndDialogs/QuestsVendor.j`, compile through the current World Editor/JassHelper workflow, and runtime-test all ten existing escort quests.
 - Add waypoints only to routes that fail ordinary Warcraft pathing, selecting and validating each point in World Editor on both outbound and reversed return legs.
 - Compile the expanded performance-disable dependencies through World Editor/JassHelper, then run `/debug performance disable` outside production play and verify all 11 messages arrive five seconds apart. Confirm the UnitHider and DoodadRender stages do not reveal hidden map content; reload the map after each diagnostic run.
