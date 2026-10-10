@@ -2,7 +2,7 @@
     CameraControl
     
     Author: [Valdemar]
-    Version: 1.7.0
+    Version: 1.7.1
 
     Description: Keeps each player's camera behavior consistent, including modes, target tracking, local middle-drag mouse-look, basic movement controls, and optional DynamicMinimap safety turns. Experimental camera-type and input-ownership APIs remain disabled by default.
 
@@ -544,7 +544,7 @@ private function CC_InitSpecialModeConfigs takes nothing returns nothing
     //    Give an angleMax when keyboardAdjustable=true.
     // 4. If the mode should activate from a camera-local rect, register that rect in CC_RegisterBuiltInSpecialCameraRects().
     // 5. Leave ZoneEvent-owned zone camera switching in ZoneEvent.
-    call CC_DefineSpecialMode(CAMERA_SPECIAL_MODE_BOOMMINE, "Boom Mine", 1600.00, 5000.00, 270.00, 90.00, 70.00, false, 270.00)
+    call CC_DefineSpecialMode(CAMERA_SPECIAL_MODE_BOOMMINE, "Boom Mine", 1600.00, 5000.00, 270.00, 90.00, 70.00, true, 295.00)
     call CC_DefineSpecialMode(CAMERA_SPECIAL_MODE_GNOLLHIDEOUT, "Gnoll hideout", 2200.00, 5000.00, 270.00, 90.00, 70.00, true, 295.00)
     call CC_DefineSpecialMode(CAMERA_SPECIAL_MODE_TEMPLATE01, "Template 01", 1800.00, 6000.00, 285.00, 90.00, 70.00, false, CAMERA_ANGLE_MAX)
     call CC_DefineSpecialMode(CAMERA_SPECIAL_MODE_TEMPLATE02, "Template 02", 1400.00, 4500.00, 300.00, 180.00, 65.00, false, CAMERA_ANGLE_MAX)
@@ -2352,6 +2352,16 @@ public function Init takes nothing returns nothing
     loop
         exitwhen i >= bj_MAX_PLAYERS
         call TriggerRegisterPlayerUnitEvent(CC_SelectTrigger, Player(i), EVENT_PLAYER_UNIT_SELECTED, null)
+        // Keep the native arrow events used by normal gameplay while the OS-key
+        // registrations retain input support for interactive fullscreen cameras.
+        call TriggerRegisterPlayerEvent(CC_LeftDownTrigger, Player(i), EVENT_PLAYER_ARROW_LEFT_DOWN)
+        call TriggerRegisterPlayerEvent(CC_LeftUpTrigger, Player(i), EVENT_PLAYER_ARROW_LEFT_UP)
+        call TriggerRegisterPlayerEvent(CC_RightDownTrigger, Player(i), EVENT_PLAYER_ARROW_RIGHT_DOWN)
+        call TriggerRegisterPlayerEvent(CC_RightUpTrigger, Player(i), EVENT_PLAYER_ARROW_RIGHT_UP)
+        call TriggerRegisterPlayerEvent(CC_UpDownTrigger, Player(i), EVENT_PLAYER_ARROW_UP_DOWN)
+        call TriggerRegisterPlayerEvent(CC_UpUpTrigger, Player(i), EVENT_PLAYER_ARROW_UP_UP)
+        call TriggerRegisterPlayerEvent(CC_DownDownTrigger, Player(i), EVENT_PLAYER_ARROW_DOWN_DOWN)
+        call TriggerRegisterPlayerEvent(CC_DownUpTrigger, Player(i), EVENT_PLAYER_ARROW_DOWN_UP)
         call BlzTriggerRegisterPlayerKeyEvent(CC_LeftDownTrigger, Player(i), OSKEY_LEFT, 0, true)
         call BlzTriggerRegisterPlayerKeyEvent(CC_LeftUpTrigger, Player(i), OSKEY_LEFT, 0, false)
         call BlzTriggerRegisterPlayerKeyEvent(CC_RightDownTrigger, Player(i), OSKEY_RIGHT, 0, true)
