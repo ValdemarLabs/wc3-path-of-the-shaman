@@ -61,8 +61,8 @@ globals
     constant integer DR_SILENCES = 5
 
     // Configuration.
-    private constant boolean DR_DEBUG_MODE_DEFAULT = true
-    private constant boolean DR_TEST_MODE_DEFAULT = true
+    private constant boolean DR_DEBUG_MODE_DEFAULT = false
+    private constant boolean DR_TEST_MODE_DEFAULT = false
     private constant real DR_RESET_WINDOW = 18.00
     private constant real DR_PULSE_INTERVAL = 0.05
     private constant real DR_SUPPRESS_DURATION = 0.01
