@@ -22,11 +22,15 @@
 
 ### Player-Facing Updates
 
+- Boom Mine and Gnoll Hideout now both allow the dungeon camera angle to be adjusted within the limited 270-295-degree range.
+- Minimap quest icons now show active ongoing and ready-to-turn-in quests globally, while available quests are shown only when they are within 2000 range of the currently controlled hero. Nearby available quest icons can be disabled from the Settings UI.
 - Updated shared escort quests so the escorted NPC walks toward its destination while the hero accompanies it, instead of requiring the player to discover the route by pulling a following NPC behind them.
 - Escort NPCs now stop and mark their position when the accepting hero falls outside the route leash, then resume automatically when the hero returns.
 
 ### Technical Updates
 
+- Updated `UI/CameraControl.j` to restore Boom Mine's keyboard-adjustable special-camera preset and register both native arrow events and OS-key events. Defined dungeon modes retain their 270-295-degree angle limit and special-mode-local rotation state while fullscreen interactive cameras keep their input path.
+- Updated `UI/IconQuery.j`, `QuestsAndDialogs/QuestMaster.j`, and `UI/SettingsUI.j` with per-entry available-quest filtering, periodic range refreshes based on `CameraControl`'s controlled hero, and a player-facing nearby-quest toggle that defaults to on.
 - Added `PatrolFollowSystems/EscortMovement.j` with autonomous pathing, configurable hero range, stopped-route pings and indicators, dynamic destinations, and optional ordered waypoints.
 - Raised escort route capacity to 128 waypoints in `PatrolFollowSystems/EscortMovement.j` and `QuestsAndDialogs/QuestsVendor.j`, supporting long authored routes with tens of points.
 - Updated `QuestsAndDialogs/QuestsVendor.j` to use autonomous movement for outbound and return legs, reverse configured waypoints on round trips, and recover an active route after quest-state or leader changes.
@@ -41,6 +45,7 @@
 
 ### Resolved Issues
 
+- Fixed Boom Mine and Gnoll Hideout applying their camera presets but ignoring the limited angle and rotation controls during normal dungeon play.
 - Fixed unrelated AI-registered hero NPCs creating overlapping UnitHider reveal bubbles that could leave most of the map population shown, without removing the intended standard AI heroes as reference units.
 - Confirmed the Cinematic ON/OFF UnitHider enable/disable calls must remain disabled: `udg_InCinematic` already suspends UnitHider, while disabling it would immediately unhide every UnitHider-managed unit.
 
