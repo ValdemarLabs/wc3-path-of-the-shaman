@@ -28,7 +28,7 @@ correct and performant enough for permanent use.
 | `UnitHider.j` (1.0) | Simple two-phase ownership: check owned hidden units for showing, then visible units for hiding. It was the known working fallback. | Enumerates the full map every 0.5 seconds; creates and destroys a reference group for every proximity test; uses `SquareRoot`; leaks a newly created work group on every disabled timer tick; and does not recognize current companion/pet registrations. |
 | `UnitHider2.j` | Reuses work groups, filters invalid units, compares squared distances, and keeps the reliable two-phase flow. | Still enumerates nearly every eligible map unit every 0.5 seconds and copies the full reference group for every proximity test. `Table` state duplicates the authoritative hidden group without improving behavior. The archived runtime result was slow hiding and severe lag. |
 | `UnitHider3_Optimized.j` | Caches reference positions, uses squared distances, reuses main work groups, and retains the reliable two-phase flow. The archive says it worked. | Still performs a full-world enumeration every 0.5 seconds; creates a temporary reference group each cycle; limits references to 20; aborts with zero references without restoring already hidden units; does not consume current array registrations; and can show units another system intentionally hid because visibility ownership is not transferred on foreign `ShowUnit` calls. |
-| `UnitHider4.j` | Drains a merged world/known/indexed snapshot for every complete settlement using the known-working UnitHider 1.0 traversal, spatially buckets hidden units, checks only nearby buckets for revealing, preserves foreign visibility ownership, and retains hide/show hysteresis. Player-controlled heroes, configured basic AI heroes, and registered companions/pets are automatic revealers; other intentional revealers use the explicit API. Cinematic begin/end calls narrow reveal coverage to the staged scene and synchronously restore normal distance ownership. | Requires full-map runtime validation because hiding units changes simulation behavior by design. Version 4.8 performs complete authoritative settlements at initialization and cinematic boundaries, then checks at most 128 managed visible units and 8 recovery units per 0.10-second tick. Hidden units outside revealer cells receive no continuous per-unit polling. |
+| `UnitHider4.j` | Drains a merged world/known/indexed snapshot for every complete settlement using the known-working UnitHider 1.0 traversal, spatially buckets hidden units, checks only nearby buckets for revealing, preserves foreign visibility ownership, and retains hide/show hysteresis. Player-controlled heroes, configured basic AI heroes, and registered companions/pets are automatic revealers; other intentional revealers use the explicit API. Cinematic begin/end calls narrow reveal coverage to the staged scene and synchronously restore normal distance ownership. | Requires full-map runtime validation because hiding units changes simulation behavior by design. Version 4.9 performs complete authoritative settlements at initialization and cinematic boundaries, then checks at most 128 managed visible units and 8 recovery units per 0.10-second tick. Hidden units outside revealer cells receive no continuous per-unit polling. |
 
 Some older UnitHider Markdown files describe an earlier proposed "smart filter"
 and quote estimated operation reductions. The final `UnitHider3_Optimized.j`
@@ -78,10 +78,12 @@ Treat those estimates as historical planning notes rather than measured results.
 - With zero valid revealers, ordinary eligible units remain hidden by default.
   Creating or restoring a tracked revealer exposes its nearby spatial cells on
   the next timer update.
-- Hidden units are stored in a 64-by-64 world grid. Each update visits only the
-  cells intersecting a revealer's 5,200 range instead of polling the complete
-  hidden population. Units still visible around revealers are kept in a much
-  smaller managed-visible group and hide after leaving the 5,500 range.
+- Hidden units are stored in a 64-by-64 world grid. Camera-followed player,
+  party, cinematic, and explicit references use the 5,200/5,500 show/hide
+  range. Autonomous configured AI heroes remain revealers but use a
+  2,500/2,800 simulation range, preventing several remote AI heroes from
+  collectively keeping much of the world population active. Units still
+  visible around revealers are kept in a smaller managed-visible group.
 - `Events_RegisterUnitEnter` adds newly entering units to the known-unit group
   immediately. Unit Event's fully-created callback supplies a second indexed
   discovery path and deindex cleanup, while complete settlements numerically
@@ -123,6 +125,16 @@ inside reference range, and visible eligible units outside the hide range.
 After an active settlement, `visible outside hide range` should be zero. A
 large `visible near references` count instead identifies reference coverage,
 not another system showing distant units.
+
+The full-map audit with 2,490 known units confirmed that discovery was complete:
+2,036 units were UnitHider-owned hidden, only 3 eligible units were visible
+outside all hide ranges, and 407 were intentionally visible inside seven
+5,500-range reference bubbles. This is not the archived v2 registration delay.
+It is overlapping coverage produced by applying the player camera-safe radius
+to every distributed autonomous AI hero. Version 4.9 retains all configured
+basic AI heroes as reference units while giving autonomous AI a smaller
+simulation/combat bubble. Player-controlled, party, cinematic, and explicit
+references keep the full camera-safe range.
 
 The cinematic GUI continues to own movement, player-unit ownership, pause
 groups, UI state, and temporary invisibility abilities. UnitHider now owns both

@@ -2,14 +2,16 @@
     UnitHider4
 
     Author: Valdemar
-    Version: 4.8.0
+    Version: 4.9.0
 
     Description:
     Hides the ordinary map population outside tracked-unit reveal ranges.
     Player-controlled heroes, configured basic AI heroes, registered companions
-    and pets, and explicit reference units reveal nearby units. Generic heroes,
-    combatants, vendors, and quest givers remain hideable; only explicit
-    exclusions and revealers bypass distance hiding. Complete settlements drain
+    and pets, and explicit reference units reveal nearby units. Autonomous AI
+    heroes use a smaller simulation range than camera-followed player and
+    scripted references. Generic heroes, combatants, vendors, and quest givers
+    remain hideable; only explicit exclusions and revealers bypass distance
+    hiding. Complete settlements drain
     a direct world snapshot using the proven UnitHider 1.0 traversal, while
     Events supplies incremental world-enter notifications. Hidden units are
     indexed spatially so continuous work scales with nearby visible population
@@ -66,6 +68,8 @@ globals
     private constant integer UnitHider4_CELL_CHILD_KEY = 0
     private constant real UnitHider4_DEFAULT_HIDE_DISTANCE = 5500.00
     private constant real UnitHider4_DEFAULT_SHOW_DISTANCE = 5200.00
+    private constant real UnitHider4_AI_HIDE_DISTANCE = 2800.00
+    private constant real UnitHider4_AI_SHOW_DISTANCE = 2500.00
 
     // Visibility owned by UnitHider4. Foreign hidden units are never added here.
     private group UnitHider4_HiddenUnits = CreateGroup()
@@ -81,7 +85,11 @@ globals
     private group UnitHider4_ReferenceCacheGroup = CreateGroup()
     private real array UnitHider4_ReferenceX
     private real array UnitHider4_ReferenceY
+    private real array UnitHider4_ReferenceHideDistanceSq
+    private real array UnitHider4_ReferenceShowDistance
+    private real array UnitHider4_ReferenceShowDistanceSq
     private integer UnitHider4_ReferenceCount = 0
+    private integer UnitHider4_AIReferenceCount = 0
 
     private timer UnitHider4_Timer = CreateTimer()
     private boolean UnitHider4_Enabled = true
@@ -185,6 +193,19 @@ private function UnitHider4_IsAutomaticReference takes unit whichUnit, boolean i
     return UnitHider4_IsLegacyCompanionReference(whichUnit)
 endfunction
 
+private function UnitHider4_UsesAIRange takes unit whichUnit returns boolean
+    if not UnitHider4_IsConfiguredAIHero(whichUnit) then
+        return false
+    endif
+    if UnitHider4_IsPlayerControlledHero(whichUnit) or IsUnitInGroup(whichUnit, UnitHider4_RegisteredReferences) or IsUnitInGroup(whichUnit, UnitHider4_CinematicReferences) then
+        return false
+    endif
+    if (udg_Companion_Group != null and IsUnitInGroup(whichUnit, udg_Companion_Group)) or (udg_TamedUnits != null and IsUnitInGroup(whichUnit, udg_TamedUnits)) then
+        return false
+    endif
+    return true
+endfunction
+
 private function UnitHider4_UpdateAutomaticReference takes unit whichUnit, boolean isAlive, boolean isLoaded returns boolean
     local boolean isReference = UnitHider4_IsAutomaticReference(whichUnit, isAlive, isLoaded)
 
@@ -207,6 +228,16 @@ private function UnitHider4_CacheReferenceGroup takes group sourceGroup returns 
         if FallenHeroState_IsAlive(whichUnit) and not IsUnitLoaded(whichUnit) and (not IsUnitHidden(whichUnit) or IsUnitInGroup(whichUnit, UnitHider4_HiddenUnits) or (UnitHider4_CinematicDepth > 0 and IsUnitInGroup(whichUnit, UnitHider4_CinematicReferences))) then
             set UnitHider4_ReferenceX[UnitHider4_ReferenceCount] = GetUnitX(whichUnit)
             set UnitHider4_ReferenceY[UnitHider4_ReferenceCount] = GetUnitY(whichUnit)
+            if UnitHider4_UsesAIRange(whichUnit) then
+                set UnitHider4_ReferenceHideDistanceSq[UnitHider4_ReferenceCount] = UnitHider4_AI_HIDE_DISTANCE * UnitHider4_AI_HIDE_DISTANCE
+                set UnitHider4_ReferenceShowDistance[UnitHider4_ReferenceCount] = UnitHider4_AI_SHOW_DISTANCE
+                set UnitHider4_ReferenceShowDistanceSq[UnitHider4_ReferenceCount] = UnitHider4_AI_SHOW_DISTANCE * UnitHider4_AI_SHOW_DISTANCE
+                set UnitHider4_AIReferenceCount = UnitHider4_AIReferenceCount + 1
+            else
+                set UnitHider4_ReferenceHideDistanceSq[UnitHider4_ReferenceCount] = UnitHider4_HideDistanceSq
+                set UnitHider4_ReferenceShowDistance[UnitHider4_ReferenceCount] = UnitHider4_ShowDistance
+                set UnitHider4_ReferenceShowDistanceSq[UnitHider4_ReferenceCount] = UnitHider4_ShowDistanceSq
+            endif
             set UnitHider4_ReferenceCount = UnitHider4_ReferenceCount + 1
         endif
         set index = index + 1
@@ -273,6 +304,7 @@ private function UnitHider4_UpdateReferenceCache takes nothing returns nothing
     endif
 
     set UnitHider4_ReferenceCount = 0
+    set UnitHider4_AIReferenceCount = 0
     call UnitHider4_CacheReferenceGroup(UnitHider4_ReferenceCacheGroup)
 endfunction
 
@@ -300,7 +332,7 @@ private function UnitHider4_RebuildAutomaticReferences takes nothing returns not
     set whichUnit = null
 endfunction
 
-private function UnitHider4_IsNearReference takes unit whichUnit, real distanceSq returns boolean
+private function UnitHider4_IsWithinHideRange takes unit whichUnit returns boolean
     local real unitX = GetUnitX(whichUnit)
     local real unitY = GetUnitY(whichUnit)
     local real deltaX
@@ -311,7 +343,7 @@ private function UnitHider4_IsNearReference takes unit whichUnit, real distanceS
         exitwhen index >= UnitHider4_ReferenceCount
         set deltaX = UnitHider4_ReferenceX[index] - unitX
         set deltaY = UnitHider4_ReferenceY[index] - unitY
-        if deltaX * deltaX + deltaY * deltaY <= distanceSq then
+        if deltaX * deltaX + deltaY * deltaY <= UnitHider4_ReferenceHideDistanceSq[index] then
             return true
         endif
         set index = index + 1
@@ -448,7 +480,7 @@ private function UnitHider4_ProcessUnit takes unit whichUnit returns nothing
 
     if UnitHider4_ReferenceCount == 0 then
         call UnitHider4_HideManaged(whichUnit)
-    elseif UnitHider4_IsNearReference(whichUnit, UnitHider4_HideDistanceSq) then
+    elseif UnitHider4_IsWithinHideRange(whichUnit) then
         call GroupAddUnit(UnitHider4_VisibleUnits, whichUnit)
     else
         call UnitHider4_HideManaged(whichUnit)
@@ -483,7 +515,7 @@ private function UnitHider4_ResetKnownUnitScan takes nothing returns nothing
     set UnitHider4_ScanIndex = 0
 endfunction
 
-private function UnitHider4_RevealCell takes integer cellId, real referenceX, real referenceY returns nothing
+private function UnitHider4_RevealCell takes integer cellId, real referenceX, real referenceY, real showDistanceSq returns nothing
     local group cellGroup = UnitHider4_HiddenCells[cellId]
     local integer index = 0
     local integer count
@@ -514,7 +546,7 @@ private function UnitHider4_RevealCell takes integer cellId, real referenceX, re
             set isProtected = UnitHider4_IsProtected(whichUnit, isAutomaticReference)
             set deltaX = GetUnitX(whichUnit) - referenceX
             set deltaY = GetUnitY(whichUnit) - referenceY
-            if not isLoaded and (not isAlive or isProtected or deltaX * deltaX + deltaY * deltaY <= UnitHider4_ShowDistanceSq) then
+            if not isLoaded and (not isAlive or isProtected or deltaX * deltaX + deltaY * deltaY <= showDistanceSq) then
                 call UnitHider4_ShowManaged(whichUnit, isAlive and not isProtected)
                 set count = BlzGroupGetSize(cellGroup)
             else
@@ -537,22 +569,26 @@ private function UnitHider4_RevealNearReferences takes nothing returns nothing
     local integer gridY
     local real referenceX
     local real referenceY
+    local real showDistance
+    local real showDistanceSq
 
     loop
         exitwhen referenceIndex >= UnitHider4_ReferenceCount
         set referenceX = UnitHider4_ReferenceX[referenceIndex]
         set referenceY = UnitHider4_ReferenceY[referenceIndex]
-        set minGridX = UnitHider4_GetGridX(referenceX - UnitHider4_ShowDistance)
-        set maxGridX = UnitHider4_GetGridX(referenceX + UnitHider4_ShowDistance)
-        set minGridY = UnitHider4_GetGridY(referenceY - UnitHider4_ShowDistance)
-        set maxGridY = UnitHider4_GetGridY(referenceY + UnitHider4_ShowDistance)
+        set showDistance = UnitHider4_ReferenceShowDistance[referenceIndex]
+        set showDistanceSq = UnitHider4_ReferenceShowDistanceSq[referenceIndex]
+        set minGridX = UnitHider4_GetGridX(referenceX - showDistance)
+        set maxGridX = UnitHider4_GetGridX(referenceX + showDistance)
+        set minGridY = UnitHider4_GetGridY(referenceY - showDistance)
+        set maxGridY = UnitHider4_GetGridY(referenceY + showDistance)
         set gridY = minGridY
         loop
             exitwhen gridY > maxGridY
             set gridX = minGridX
             loop
                 exitwhen gridX > maxGridX
-                call UnitHider4_RevealCell(gridX + gridY * UnitHider4_GRID_AXIS, referenceX, referenceY)
+                call UnitHider4_RevealCell(gridX + gridY * UnitHider4_GRID_AXIS, referenceX, referenceY, showDistanceSq)
                 set gridX = gridX + 1
             endloop
             set gridY = gridY + 1
@@ -774,7 +810,7 @@ function UnitHider_DebugAudit takes player whichPlayer returns nothing
                 set eligibleHiddenCount = eligibleHiddenCount + 1
             elseif IsUnitHidden(whichUnit) then
                 set foreignHiddenCount = foreignHiddenCount + 1
-            elseif UnitHider4_IsNearReference(whichUnit, UnitHider4_HideDistanceSq) then
+            elseif UnitHider4_IsWithinHideRange(whichUnit) then
                 set nearVisibleCount = nearVisibleCount + 1
             else
                 set farVisibleCount = farVisibleCount + 1
@@ -789,9 +825,10 @@ function UnitHider_DebugAudit takes player whichPlayer returns nothing
     elseif udg_InCinematic then
         set state = state + ", cinematic compatibility suspension"
     endif
-    call DisplayTextToPlayer(whichPlayer, 0.00, 0.00, "|cffffcc00[UnitHider4 audit]|r " + state + " | references=" + I2S(UnitHider4_ReferenceCount))
+    call DisplayTextToPlayer(whichPlayer, 0.00, 0.00, "|cffffcc00[UnitHider4 audit]|r " + state + " | references=" + I2S(UnitHider4_ReferenceCount) + " (full=" + I2S(UnitHider4_ReferenceCount - UnitHider4_AIReferenceCount) + ", AI=" + I2S(UnitHider4_AIReferenceCount) + ")")
     call DisplayTextToPlayer(whichPlayer, 0.00, 0.00, "Inventory=" + I2S(totalCount) + " | known=" + I2S(BlzGroupGetSize(UnitHider4_KnownUnits)) + " | exempt=" + I2S(exemptCount) + " | managed hidden=" + I2S(eligibleHiddenCount) + " | foreign hidden=" + I2S(foreignHiddenCount))
     call DisplayTextToPlayer(whichPlayer, 0.00, 0.00, "Visible near references=" + I2S(nearVisibleCount) + " | visible outside hide range=" + I2S(farVisibleCount) + " | pending=" + I2S(BlzGroupGetSize(UnitHider4_PendingUnits)))
+    call DisplayTextToPlayer(whichPlayer, 0.00, 0.00, "Ranges: full=" + I2S(R2I(UnitHider4_ShowDistance)) + "/" + I2S(R2I(UnitHider4_HideDistance)) + " | autonomous AI=" + I2S(R2I(UnitHider4_AI_SHOW_DISTANCE)) + "/" + I2S(R2I(UnitHider4_AI_HIDE_DISTANCE)) + " (show/hide)")
     set whichUnit = null
     set whichPlayer = null
 endfunction
