@@ -618,12 +618,12 @@ private function RemoveOldMapPing takes unit u returns nothing
 	call iconTable.integer.remove(QUEST_ICON_MINIMAP_STYLE_ID)
 endfunction
 
-private function CreateMapPingForUnit takes unit u, integer style returns nothing
+private function CreateMapPingForUnit takes unit u, integer style, integer questState returns nothing
 	local minimapicon qi
 	local Table iconTable
 
 	call RemoveOldMapPing(u)
-	set qi = IconQuery_RegisterQuestGiverUnitIcon(u, style)
+	set qi = IconQuery_RegisterQuestGiverUnitIconWithAvailability(u, style, questState == QUEST_STATE_AVAILABLE)
 	if qi != null then
 		call StoreQuestMinimapIcon(u, qi)
 		set iconTable = QuestIconTable.link(GetHandleId(u))
@@ -703,7 +703,9 @@ public function IconRefresh takes unit u, integer questID, string questType, int
 			call RemoveOldMapPing(u)
 		endif
 	elseif qi == null or not iconTable.integer.has(QUEST_ICON_MINIMAP_STYLE_ID) or iconTable.integer[QUEST_ICON_MINIMAP_STYLE_ID] != pingStyle then
-		call CreateMapPingForUnit(u, pingStyle)
+		call CreateMapPingForUnit(u, pingStyle, questState)
+	else
+		call IconQuery_SetQuestIconAvailable(qi, questState == QUEST_STATE_AVAILABLE)
 	endif
 	set e = null
 	set qi = null

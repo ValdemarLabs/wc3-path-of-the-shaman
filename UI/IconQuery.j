@@ -19,6 +19,7 @@
 
     API:
     call IconQuery_RegisterQuestGiverUnitIcon(unit u, integer style)
+    call IconQuery_RegisterQuestGiverUnitIconWithAvailability(unit u, integer style, boolean available)
     call IconQuery_RegisterFlightMasterUnitIcon(unit u)
     call IconQuery_RegisterShipMasterUnitIcon(unit u)
     call IconQuery_RegisterFlightMasterPoint(real x, real y)
@@ -28,6 +29,7 @@
     call IconQuery_RegisterPlaceOfInterest(real x, real y, integer style)
     call IconQuery_RegisterExistingIcon(minimapicon icon, real x, real y, integer category, integer style, boolean enablePing)
     call IconQuery_UnregisterIcon(minimapicon icon)
+    call IconQuery_SetQuestIconAvailable(minimapicon icon, boolean available)
     call IconQuery_SetCategoryMode(integer category, integer mode)
     call IconQuery_CycleCategoryMode(integer category)
     call IconQuery_SetCategoryEnabled(integer category, boolean enabled)
@@ -39,6 +41,7 @@
     call IconQuery_SetCategoryFrequency(integer category, integer everyRounds)
     call IconQuery_SetSecondaryCategoryFrequency(integer everyRounds)
     call IconQuery_SetPingsEnabled(boolean enabled)
+    call IconQuery_SetAvailableQuestIconsEnabled(boolean enabled)
     call IconQuery_SetDisplayMode(integer mode)
     call IconQuery_CycleDisplayMode()
 
@@ -74,11 +77,13 @@ library IconQuery initializer Init requires Table, FallenHeroState
         private constant integer IQ_CATEGORY_FREQUENCY_MAX = 5
         private constant boolean IQ_SHOW_FLIGHT_AND_SHIP_MASTERS_TOGETHER = true
         private constant boolean IQ_DEFAULT_PINGS_ENABLED = true
+        private constant boolean IQ_DEFAULT_SHOW_AVAILABLE_QUESTS = false
         private constant integer IQ_DEFAULT_DISPLAY_MODE = ICONQUERY_DISPLAY_MODE_QUERY
 
         private boolean IQ_Initialized = false
         private boolean IQ_AllEnabled = true
         private boolean IQ_PingsEnabled = IQ_DEFAULT_PINGS_ENABLED
+        private boolean IQ_ShowAvailableQuests = IQ_DEFAULT_SHOW_AVAILABLE_QUESTS
         private boolean IQ_TimerRunning = false
         private boolean IQ_QueryResting = false
         private boolean IQ_ShowAllVisible = false
@@ -105,6 +110,7 @@ library IconQuery initializer Init requires Table, FallenHeroState
         private integer array IQ_EntryCategory
         private integer array IQ_EntryStyle
         private boolean array IQ_EntryPing
+        private boolean array IQ_EntryAvailableQuest
 
         private Table IQ_IconIndex = 0
     endglobals
@@ -351,6 +357,9 @@ library IconQuery initializer Init requires Table, FallenHeroState
             return false
         endif
         if IQ_EntryIcon[entryIndex] == null then
+            return false
+        endif
+        if IQ_EntryAvailableQuest[entryIndex] and not IQ_ShowAvailableQuests then
             return false
         endif
         if IQ_EntryUsesUnit[entryIndex] and not IQ_IsUnitValidForCategory(IQ_EntryUnit[entryIndex], category) then
@@ -736,6 +745,7 @@ library IconQuery initializer Init requires Table, FallenHeroState
             set IQ_EntryCategory[entryIndex] = IQ_EntryCategory[lastIndex]
             set IQ_EntryStyle[entryIndex] = IQ_EntryStyle[lastIndex]
             set IQ_EntryPing[entryIndex] = IQ_EntryPing[lastIndex]
+            set IQ_EntryAvailableQuest[entryIndex] = IQ_EntryAvailableQuest[lastIndex]
             if IQ_EntryIcon[entryIndex] != null then
                 set IQ_IconIndex.integer[GetHandleId(IQ_EntryIcon[entryIndex])] = entryIndex
             endif
@@ -752,13 +762,14 @@ library IconQuery initializer Init requires Table, FallenHeroState
         set IQ_EntryCategory[lastIndex] = 0
         set IQ_EntryStyle[lastIndex] = 0
         set IQ_EntryPing[lastIndex] = false
+        set IQ_EntryAvailableQuest[lastIndex] = false
         set IQ_EntryCount = lastIndex - 1
 
         call IQ_ResetCategoryCursors()
         call IQ_RefreshTimerState()
     endfunction
 
-    private function IQ_AddEntry takes minimapicon icon, unit u, boolean usesUnit, real x, real y, integer category, integer style, boolean enablePing returns minimapicon
+    private function IQ_AddEntry takes minimapicon icon, unit u, boolean usesUnit, real x, real y, integer category, integer style, boolean enablePing, boolean availableQuest returns minimapicon
         local integer entryIndex
 
         if icon == null then
@@ -785,6 +796,7 @@ library IconQuery initializer Init requires Table, FallenHeroState
         set IQ_EntryCategory[entryIndex] = category
         set IQ_EntryStyle[entryIndex] = style
         set IQ_EntryPing[entryIndex] = enablePing
+        set IQ_EntryAvailableQuest[entryIndex] = availableQuest
         set IQ_IconIndex.integer[GetHandleId(icon)] = entryIndex
 
         call IQ_RefreshTimerState()
@@ -795,23 +807,30 @@ library IconQuery initializer Init requires Table, FallenHeroState
         if not IQ_IsUnitValidForCategory(u, category) then
             return null
         endif
-        return IQ_AddEntry(IQ_CreateUnitIcon(u, style), u, true, 0.00, 0.00, category, style, enablePing)
+        return IQ_AddEntry(IQ_CreateUnitIcon(u, style), u, true, 0.00, 0.00, category, style, enablePing, false)
     endfunction
 
     public function RegisterPointIcon takes real x, real y, integer category, integer style, boolean enablePing returns minimapicon
-        return IQ_AddEntry(IQ_CreatePointIcon(x, y, style), null, false, x, y, category, style, enablePing)
+        return IQ_AddEntry(IQ_CreatePointIcon(x, y, style), null, false, x, y, category, style, enablePing, false)
     endfunction
 
     public function RegisterExistingIcon takes minimapicon icon, real x, real y, integer category, integer style, boolean enablePing returns minimapicon
-        return IQ_AddEntry(icon, null, false, x, y, category, style, enablePing)
+        return IQ_AddEntry(icon, null, false, x, y, category, style, enablePing, false)
     endfunction
 
     public function RegisterTravelPoint takes real x, real y, integer style returns minimapicon
         return RegisterPointIcon(x, y, ICONQUERY_CATEGORY_FLIGHT_MASTER, style, true)
     endfunction
 
+    public function RegisterQuestGiverUnitIconWithAvailability takes unit u, integer style, boolean available returns minimapicon
+        if not IQ_IsUnitValidForCategory(u, ICONQUERY_CATEGORY_QUEST_GIVERS) then
+            return null
+        endif
+        return IQ_AddEntry(IQ_CreateUnitIcon(u, style), u, true, 0.00, 0.00, ICONQUERY_CATEGORY_QUEST_GIVERS, style, true, available)
+    endfunction
+
     public function RegisterQuestGiverUnitIcon takes unit u, integer style returns minimapicon
-        return RegisterUnitIcon(u, ICONQUERY_CATEGORY_QUEST_GIVERS, style, true)
+        return RegisterQuestGiverUnitIconWithAvailability(u, style, false)
     endfunction
 
     public function RegisterFlightMasterUnitIcon takes unit u returns minimapicon
@@ -877,6 +896,27 @@ library IconQuery initializer Init requires Table, FallenHeroState
         endloop
     endfunction
 
+    public function SetQuestIconAvailable takes minimapicon icon, boolean available returns nothing
+        local integer entryIndex
+
+        if icon == null or not IQ_IconIndex.has(GetHandleId(icon)) then
+            return
+        endif
+        set entryIndex = IQ_IconIndex.integer[GetHandleId(icon)]
+        if IQ_EntryCategory[entryIndex] != ICONQUERY_CATEGORY_QUEST_GIVERS or IQ_EntryAvailableQuest[entryIndex] == available then
+            return
+        endif
+
+        set IQ_EntryAvailableQuest[entryIndex] = available
+        if IQ_ActiveEntry == entryIndex and not IQ_IsEntryCandidate(entryIndex) then
+            call IQ_HideActive()
+        endif
+        call IQ_ResetCategoryCursors()
+        call IQ_ShowPinnedEntries()
+        call IQ_RefreshTimerState()
+        call IQ_RestartCurrentTimer()
+    endfunction
+
     public function SetAllEnabled takes boolean enabled returns nothing
         set IQ_AllEnabled = enabled
         if not enabled then
@@ -895,6 +935,21 @@ library IconQuery initializer Init requires Table, FallenHeroState
 
     public function GetPingsEnabled takes nothing returns boolean
         return IQ_PingsEnabled
+    endfunction
+
+    public function SetAvailableQuestIconsEnabled takes boolean enabled returns nothing
+        set IQ_ShowAvailableQuests = enabled
+        if not enabled and IQ_ActiveEntry > 0 and IQ_EntryAvailableQuest[IQ_ActiveEntry] then
+            call IQ_HideActive()
+        endif
+        call IQ_ResetCategoryCursors()
+        call IQ_ShowPinnedEntries()
+        call IQ_RefreshTimerState()
+        call IQ_RestartCurrentTimer()
+    endfunction
+
+    public function GetAvailableQuestIconsEnabled takes nothing returns boolean
+        return IQ_ShowAvailableQuests
     endfunction
 
     public function SetDisplayMode takes integer mode returns nothing

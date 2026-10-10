@@ -43,6 +43,7 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery, Dif
         private constant integer SETUI_ACTION_PINGS = 9
         private constant integer SETUI_ACTION_ICON_MODE = 10
         private constant integer SETUI_ACTION_UI_SOUNDS = 11
+        private constant integer SETUI_ACTION_AVAILABLE_QUESTS = 12
 
         private constant integer SETUI_SLIDER_QUERY_TIME = 1
         private constant integer SETUI_SLIDER_REST_TIME = 2
@@ -175,6 +176,7 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery, Dif
             call BlzFrameSetText(SETUI_Button[9], "Pings: " + SETUI_OnOff(IconQuery_GetPingsEnabled()))
             call BlzFrameSetText(SETUI_Button[10], "Mode: " + IconQuery_GetDisplayModeName())
             call BlzFrameSetText(SETUI_Button[11], "UI Sounds: " + SETUI_OnOff(Interface_AreSoundsEnabled()))
+            call BlzFrameSetText(SETUI_Button[12], "Available Quests: " + SETUI_OnOff(IconQuery_GetAvailableQuestIconsEnabled()))
 
             call BlzFrameSetText(SETUI_SliderLabel[1], "Query: " + I2S(R2I(queryTime + 0.5)) + "s")
             call BlzFrameSetText(SETUI_SliderLabel[2], "Rest: " + I2S(R2I(restTime + 0.5)) + "s")
@@ -261,6 +263,8 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery, Dif
                 call IconQuery_CycleDisplayMode()
             elseif actionId == SETUI_ACTION_UI_SOUNDS then
                 call Interface_SetSoundsEnabled(not Interface_AreSoundsEnabled())
+            elseif actionId == SETUI_ACTION_AVAILABLE_QUESTS then
+                call IconQuery_SetAvailableQuestIconsEnabled(not IconQuery_GetAvailableQuestIconsEnabled())
             endif
             call SETUI_Refresh(p)
         endif
@@ -387,6 +391,7 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, IconQuery, Dif
         call SETUI_CreateButton(5, "Places", SETUI_ACTION_POI, 0.010, -0.160)
         call SETUI_CreateButton(6, "Companions", SETUI_ACTION_COMPANIONS, 0.010, -0.196)
         call SETUI_CreateButton(11, "UI Sounds", SETUI_ACTION_UI_SOUNDS, 0.010, -0.232)
+        call SETUI_CreateButton(12, "Available Quests", SETUI_ACTION_AVAILABLE_QUESTS, 0.010, -0.268)
 
         call SETUI_CreateSliderRow(1, "Query", SETUI_SLIDER_QUERY_TIME, -0.030, SETUI_QUERY_TIME_MIN, SETUI_QUERY_TIME_MAX, 1.0)
         call SETUI_CreateSliderRow(2, "Rest", SETUI_SLIDER_REST_TIME, -0.070, SETUI_QUERY_REST_MIN, SETUI_QUERY_REST_MAX, 5.0)
