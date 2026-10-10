@@ -2,7 +2,7 @@
     CameraControl
     
     Author: [Valdemar]
-    Version: 1.8.0
+    Version: 1.8.1
 
     Description: Keeps each player's camera behavior consistent, including modes, target tracking, local middle-drag mouse-look, DynamicFarZ, basic movement controls, and optional DynamicMinimap safety turns. Experimental camera-type and input-ownership APIs remain disabled by default.
 
@@ -515,6 +515,8 @@ private function CC_GetResolvedSpecialMode takes integer pid returns integer
 endfunction
 
 private function CC_DefineSpecialMode takes integer specialMode, string label, real distance, real farZ, real angle, real rotation, real fov, boolean keyboardAdjustable, real angleMax returns nothing
+    // farZ is the Auto fallback when this mode has no DynamicFarZ context.
+    // Auto contexts use the player's maximum plus their profile cap; disabled Auto remains fully manual.
     // keyboardAdjustable controls whether arrow keys can change this special mode's angle/rotation.
     // - true  = this mode uses CC_SpecialAngle / CC_SpecialRotation and arrow-key updates stay active.
     // - false = this mode uses the fixed angle/rotation values defined here.
@@ -659,7 +661,7 @@ private function CC_GetSpecialFarZ takes integer pid returns real
     if CC_Suspended[pid] and CC_SuspendedKeyboardAdjustable[pid] then
         return CC_SuspendedFarZ[pid]
     endif
-    if specialMode != CAMERA_SPECIAL_MODE_NONE then
+    if specialMode != CAMERA_SPECIAL_MODE_NONE and DynamicFarZ_IsAuto(Player(pid)) and not DynamicFarZ_HasContext(specialMode) then
         return CC_SpecialModeFarZConfig[specialMode]
     endif
     return CC_FarZ[pid]
@@ -1513,12 +1515,32 @@ private function CC_UpdateDynamicMinimapSafeRotation takes nothing returns nothi
     endif
 endfunction
 
+// Camera resets and engine input can replace Far Z after a mode/profile change.
+// Reclaim only the local gameplay camera and only when the value has drifted.
+private function CC_MaintainFarZ takes nothing returns nothing
+    local player whichPlayer = GetLocalPlayer()
+    local integer pid = CC_GetPlayerIndex(whichPlayer)
+    local real effectiveFarZ
+
+    if CC_Suspended[pid] or CC_ResumePending[pid] then
+        set whichPlayer = null
+        return
+    endif
+
+    set effectiveFarZ = CC_GetCurrentEffectiveFarZ(whichPlayer)
+    if CC_Abs(GetCameraField(CAMERA_FIELD_FARZ) - effectiveFarZ) > CAMERA_FIELD_TOLERANCE then
+        call SetCameraField(CAMERA_FIELD_FARZ, effectiveFarZ, 0.00)
+    endif
+    set whichPlayer = null
+endfunction
+
 private function CC_CheckCameraDrift takes nothing returns nothing
     local integer i = 0
     local player whichPlayer
 
     call CC_UpdateMouseOrbit()
     call CC_UpdateDynamicMinimapSafeRotation()
+    call CC_MaintainFarZ()
 
     loop
         exitwhen i >= bj_MAX_PLAYERS
@@ -1669,7 +1691,8 @@ endfunction
 public function RefreshFarZ takes player whichPlayer returns nothing
     local integer pid = CC_GetPlayerIndex(whichPlayer)
     if not CC_Suspended[pid] and not CC_ResumePending[pid] and GetLocalPlayer() == whichPlayer then
-        call SetCameraField(CAMERA_FIELD_FARZ, CC_GetCurrentEffectiveFarZ(whichPlayer), 0.25)
+        // CameraUI clears frame focus with StopCamera after clicks, so preference changes apply immediately.
+        call SetCameraField(CAMERA_FIELD_FARZ, CC_GetCurrentEffectiveFarZ(whichPlayer), 0.00)
     endif
 endfunction
 

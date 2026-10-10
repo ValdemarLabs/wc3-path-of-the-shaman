@@ -2,7 +2,7 @@
     CameraUI
     
     Author: [Valdemar]
-    Version: 1.3.0
+    Version: 1.3.1
 
     Description: Provides a panel for switching camera modes and adjusting camera, DynamicFarZ, and mouse-orbit settings.
 
@@ -81,7 +81,7 @@ private function CUI_GetSliderDisplay takes integer sliderKind, player whichPlay
         return "Distance: " + I2S(R2I(CameraControl_GetDistance(whichPlayer)))
     elseif sliderKind == CUI_SLIDER_FARZ then
         if DynamicFarZ_IsAuto(whichPlayer) then
-            return "Far Z max: " + I2S(R2I(CameraControl_GetFarZ(whichPlayer)))
+            return "Far Z: " + I2S(R2I(CameraControl_GetEffectiveFarZ(whichPlayer))) + " / " + I2S(R2I(CameraControl_GetFarZ(whichPlayer)))
         endif
         return "Far Z: " + I2S(R2I(CameraControl_GetFarZ(whichPlayer)))
     elseif sliderKind == CUI_SLIDER_ANGLE then
@@ -311,14 +311,20 @@ private function CUI_CreateActionButton takes integer index, string label, integ
 endfunction
 
 private function CUI_CreateSliderRow takes integer index, string label, integer sliderKind, real y returns nothing
+    local real sliderX = 0.052
+    local real labelWidth = 0.092
+    if sliderKind == CUI_SLIDER_FARZ then
+        set sliderX = 0.082
+        set labelWidth = 0.122
+    endif
     set CUI_Slider[index] = BlzCreateFrame("EscMenuSliderTemplate", CUI_Parent, 0, index)
-    call BlzFrameSetPoint(CUI_Slider[index], FRAMEPOINT_TOPLEFT, CUI_RightPane, FRAMEPOINT_TOPLEFT, 0.052, y)
+    call BlzFrameSetPoint(CUI_Slider[index], FRAMEPOINT_TOPLEFT, CUI_RightPane, FRAMEPOINT_TOPLEFT, sliderX, y)
     call BlzFrameSetSize(CUI_Slider[index], 0.150, 0.018)
     call CUI_SetSliderBounds(CUI_Slider[index], sliderKind)
 
     set CUI_SliderLabel[index] = BlzCreateFrame("EscMenuLabelTextTemplate", CUI_Slider[index], 0, 0)
     call BlzFrameSetPoint(CUI_SliderLabel[index], FRAMEPOINT_RIGHT, CUI_Slider[index], FRAMEPOINT_LEFT, -0.005, 0.0)
-    call BlzFrameSetSize(CUI_SliderLabel[index], 0.092, 0.016)
+    call BlzFrameSetSize(CUI_SliderLabel[index], labelWidth, 0.016)
     call BlzFrameSetTextAlignment(CUI_SliderLabel[index], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_RIGHT)
     call BlzFrameSetText(CUI_SliderLabel[index], label + ": 0")
 

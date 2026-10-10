@@ -2,7 +2,7 @@
     DynamicFarZ
 
     Author: Valdemar
-    Version: 1.0.0
+    Version: 1.0.1
 
     Description:
     Calculates a local player's Far Z from the active camera angle, selected
@@ -23,6 +23,7 @@
     call DynamicFarZ_GetProfileName(whichPlayer) returns string
     call DynamicFarZ_ResetDefaults(whichPlayer)
     call DynamicFarZ_DefineContext(contextId, lightMaximum, mediumMaximum, heavyMaximum)
+    call DynamicFarZ_HasContext(contextId) returns boolean
     call DynamicFarZ_GetEffectiveFarZ(whichPlayer, baseFarZ, angle, contextId, cinematic) returns real
 
 **/
@@ -50,6 +51,7 @@ globals
     private real array DFZ_ContextLightMaximum
     private real array DFZ_ContextMediumMaximum
     private real array DFZ_ContextHeavyMaximum
+    private boolean array DFZ_ContextDefined
 endglobals
 
 private function DFZ_GetPlayerIndex takes player whichPlayer returns integer
@@ -158,6 +160,11 @@ public function DefineContext takes integer contextId, real lightMaximum, real m
     set DFZ_ContextLightMaximum[contextId] = lightMaximum
     set DFZ_ContextMediumMaximum[contextId] = mediumMaximum
     set DFZ_ContextHeavyMaximum[contextId] = heavyMaximum
+    set DFZ_ContextDefined[contextId] = true
+endfunction
+
+public function HasContext takes integer contextId returns boolean
+    return contextId > 0 and DFZ_ContextDefined[contextId]
 endfunction
 
 public function GetEffectiveFarZ takes player whichPlayer, real baseFarZ, real angle, integer contextId, boolean cinematic returns real
