@@ -21,15 +21,6 @@ Cinematic ON
                 -------- ====================UNIT LOCATIONS - STORE --------
                 Custom script:   call CinematicMover_MoveUnitsToCinematic(udg_CinematicTriggerUnit, udg_CinematicMoveMode)
             Else - Actions
-        -------- ====================UNIT HIDER --------
-        -------- RUN THIS before Cinematic / etc. --------
-        If (All Conditions are True) then do (Then Actions) else do (Else Actions)
-            If - Conditions
-                IntroCinematic Equal to False
-            Then - Actions
-                // not enabled
-                //Custom script:   call UnitHider_SetSystemEnabled(false)
-            Else - Actions
         -------- Pick player units --------
         Set VariableSet PlayerCinemaGroup = (Units owned by Player 1 (Red).)
         Unit Group - Pick every unit in PlayerCinemaGroup and do (Actions).
@@ -66,6 +57,8 @@ Cinematic ON
         -------- ============= OTHER --------
         -------- Ability related --------
         Trigger - Run Cinematic Invisibility <gen> (checking conditions)
+        -------- UnitHider owns cinematic visibility after scene staging is complete --------
+        Custom script:   call UnitHider_BeginCinematic(udg_CinematicTriggerUnit)
         -------- FLOATING TEXTs --------
         Trigger - Turn off Damage Tag <gen>
         Custom script:   call DisableTrigger(gg_trg_Floating_Texts_Spell_Event)

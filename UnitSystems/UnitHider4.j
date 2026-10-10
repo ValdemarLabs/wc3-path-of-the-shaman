@@ -2,7 +2,7 @@
     UnitHider4
 
     Author: Valdemar
-    Version: 4.7.1
+    Version: 4.8.0
 
     Description:
     Hides the ordinary map population outside tracked-unit reveal ranges.
@@ -13,13 +13,17 @@
     a direct world snapshot using the proven UnitHider 1.0 traversal, while
     Events supplies incremental world-enter notifications. Hidden units are
     indexed spatially so continuous work scales with nearby visible population
-    rather than every hidden unit. The system only shows units that it hid.
+    rather than every hidden unit. Authoritative passes merge world enumeration
+    with Unit Event's indexed handles so units hidden by cinematic or scripted
+    systems are not lost. Cinematic mode temporarily narrows reveal coverage to
+    the active scene without surrendering UnitHider's normal hidden ownership.
+    The system only shows units that it hid.
 
     Credits:
     - UnitHider 1.0 for the reliable owned-hidden-unit model
     - UnitHider3 for cached positions and squared-distance comparisons
     - Events for incremental world-enter notifications
-    - Bribe's Unit Event 2.5.3.2 for removal and legacy index compatibility
+    - Bribe's Unit Event 2.5.3.2 for hidden-unit inventory and removal cleanup
 
     How to install:
     Import after Events, Unit Event, and FallenHeroState. Keep the GUI variables
@@ -36,6 +40,10 @@
     - UnitHider_SetUnhidingDistance(distance)
     - UnitHider_RegisterReference(whichUnit) immediately reveals its area
     - UnitHider_UnregisterReference(whichUnit)
+    - UnitHider_BeginCinematic(sceneReference)
+    - UnitHider_EndCinematic()
+    - UnitHider_RegisterCinematicReference(whichUnit)
+    - UnitHider_UnregisterCinematicReference(whichUnit)
     - UnitHider_SetUnitIgnored(whichUnit, ignored)
     - UnitHider_IsUnitHiddenBySystem(whichUnit) -> boolean
     - UnitHider_Refresh()
@@ -69,6 +77,7 @@ globals
     private group UnitHider4_WorldScanUnits = CreateGroup()
     private group UnitHider4_AutomaticReferences = CreateGroup()
     private group UnitHider4_RegisteredReferences = CreateGroup()
+    private group UnitHider4_CinematicReferences = CreateGroup()
     private group UnitHider4_ReferenceCacheGroup = CreateGroup()
     private real array UnitHider4_ReferenceX
     private real array UnitHider4_ReferenceY
@@ -80,6 +89,7 @@ globals
     private boolean UnitHider4_InternalShow = false
     private boolean UnitHider4_WasInCinematic = false
     private boolean UnitHider4_Initialized = false
+    private integer UnitHider4_CinematicDepth = 0
     private integer UnitHider4_ScanIndex = 0
     private integer UnitHider4_VisibleScanIndex = 0
     private rect UnitHider4_WorldBounds = null
@@ -97,6 +107,32 @@ globals
     private integer UnitHider4_Hidden = 0
     private integer UnitHider4_Shown = 0
 endglobals
+
+private function UnitHider4_AddIndexedUnitsToKnown takes nothing returns nothing
+    local integer unitId = 1
+    local unit whichUnit
+
+    loop
+        exitwhen unitId > udg_UDexMax
+        set whichUnit = udg_UDexUnits[unitId]
+        if whichUnit != null and GetUnitTypeId(whichUnit) != 0 then
+            call GroupAddUnit(UnitHider4_KnownUnits, whichUnit)
+        endif
+        set unitId = unitId + 1
+    endloop
+
+    set whichUnit = null
+endfunction
+
+private function UnitHider4_PrepareWorldScan takes nothing returns nothing
+    // World enumeration can omit units already hidden by another system. Unit
+    // Event is supplemental inventory here; neither source is trusted alone.
+    call UnitHider4_AddIndexedUnitsToKnown()
+    call GroupClear(UnitHider4_WorldScanUnits)
+    call GroupEnumUnitsInRect(UnitHider4_WorldScanUnits, UnitHider4_WorldBounds, null)
+    call GroupAddGroup(UnitHider4_KnownUnits, UnitHider4_WorldScanUnits)
+    call GroupAddGroup(UnitHider4_WorldScanUnits, UnitHider4_KnownUnits)
+endfunction
 
 private function UnitHider4_IsLegacyCompanionReference takes unit whichUnit returns boolean
     local integer unitId
@@ -168,7 +204,7 @@ private function UnitHider4_CacheReferenceGroup takes group sourceGroup returns 
     loop
         exitwhen index >= count or UnitHider4_ReferenceCount >= UnitHider4_MAX_REFERENCES
         set whichUnit = BlzGroupUnitAt(sourceGroup, index)
-        if FallenHeroState_IsAlive(whichUnit) and not IsUnitLoaded(whichUnit) and (not IsUnitHidden(whichUnit) or IsUnitInGroup(whichUnit, UnitHider4_HiddenUnits)) then
+        if FallenHeroState_IsAlive(whichUnit) and not IsUnitLoaded(whichUnit) and (not IsUnitHidden(whichUnit) or IsUnitInGroup(whichUnit, UnitHider4_HiddenUnits) or (UnitHider4_CinematicDepth > 0 and IsUnitInGroup(whichUnit, UnitHider4_CinematicReferences))) then
             set UnitHider4_ReferenceX[UnitHider4_ReferenceCount] = GetUnitX(whichUnit)
             set UnitHider4_ReferenceY[UnitHider4_ReferenceCount] = GetUnitY(whichUnit)
             set UnitHider4_ReferenceCount = UnitHider4_ReferenceCount + 1
@@ -219,13 +255,22 @@ endfunction
 
 private function UnitHider4_UpdateReferenceCache takes nothing returns nothing
     call GroupClear(UnitHider4_ReferenceCacheGroup)
-    call GroupAddGroup(UnitHider4_AutomaticReferences, UnitHider4_ReferenceCacheGroup)
-    call GroupAddGroup(UnitHider4_RegisteredReferences, UnitHider4_ReferenceCacheGroup)
-    call UnitHider4_AddPartyReferences(udg_Companion_Group)
-    call UnitHider4_AddPartyReferences(udg_TamedUnits)
-    // The legacy group often contains obsolete NPC/dummy entries. Only its
-    // player-controlled heroes and current companion/pet registrations reveal.
-    call UnitHider4_AddAllowedLegacyReferences()
+    if UnitHider4_CinematicDepth > 0 then
+        // During a cinematic only the active scene and explicit scripted
+        // references reveal surrounding population. Automatic references stay
+        // protected themselves without keeping unrelated map areas active.
+        call GroupAddGroup(UnitHider4_CinematicReferences, UnitHider4_ReferenceCacheGroup)
+        call GroupAddGroup(UnitHider4_RegisteredReferences, UnitHider4_ReferenceCacheGroup)
+    endif
+    if UnitHider4_CinematicDepth == 0 or BlzGroupGetSize(UnitHider4_ReferenceCacheGroup) == 0 then
+        call GroupAddGroup(UnitHider4_AutomaticReferences, UnitHider4_ReferenceCacheGroup)
+        call GroupAddGroup(UnitHider4_RegisteredReferences, UnitHider4_ReferenceCacheGroup)
+        call UnitHider4_AddPartyReferences(udg_Companion_Group)
+        call UnitHider4_AddPartyReferences(udg_TamedUnits)
+        // The legacy group often contains obsolete NPC/dummy entries. Only its
+        // player-controlled heroes and current companion/pet registrations reveal.
+        call UnitHider4_AddAllowedLegacyReferences()
+    endif
 
     set UnitHider4_ReferenceCount = 0
     call UnitHider4_CacheReferenceGroup(UnitHider4_ReferenceCacheGroup)
@@ -275,7 +320,7 @@ private function UnitHider4_IsNearReference takes unit whichUnit, real distanceS
 endfunction
 
 private function UnitHider4_IsTrackedReference takes unit whichUnit, boolean isAutomaticReference returns boolean
-    return isAutomaticReference or IsUnitInGroup(whichUnit, UnitHider4_RegisteredReferences) or UnitHider4_IsAllowedLegacyReference(whichUnit)
+    return isAutomaticReference or IsUnitInGroup(whichUnit, UnitHider4_RegisteredReferences) or IsUnitInGroup(whichUnit, UnitHider4_CinematicReferences) or UnitHider4_IsAllowedLegacyReference(whichUnit)
 endfunction
 
 private function UnitHider4_IsProtected takes unit whichUnit, boolean isAutomaticReference returns boolean
@@ -554,10 +599,7 @@ private function UnitHider4_SettleMap takes nothing returns boolean
     // snapshot, merge already-known units, then remove each snapshot member
     // before changing its visibility. The persistent group is never used as
     // the mutable traversal source for the authoritative pass.
-    call GroupClear(UnitHider4_WorldScanUnits)
-    call GroupEnumUnitsInRect(UnitHider4_WorldScanUnits, UnitHider4_WorldBounds, null)
-    call GroupAddGroup(UnitHider4_KnownUnits, UnitHider4_WorldScanUnits)
-    call GroupAddGroup(UnitHider4_WorldScanUnits, UnitHider4_KnownUnits)
+    call UnitHider4_PrepareWorldScan()
     set whichUnit = FirstOfGroup(UnitHider4_WorldScanUnits)
     if whichUnit == null then
         return false
@@ -570,6 +612,10 @@ private function UnitHider4_SettleMap takes nothing returns boolean
         call GroupAddUnit(UnitHider4_KnownUnits, whichUnit)
         set whichUnit = FirstOfGroup(UnitHider4_WorldScanUnits)
     endloop
+    // ProcessUnit preserves already-managed hidden units. Complete the
+    // settlement by revealing the spatial cells around the new reference set.
+    call UnitHider4_UpdateReferenceCache()
+    call UnitHider4_RevealNearReferences()
     set UnitHider4_Initialized = true
     call GroupClear(UnitHider4_PendingUnits)
     call UnitHider4_FinishSweep()
@@ -596,7 +642,7 @@ private function UnitHider4_ProcessBatch takes nothing returns nothing
         endif
         return
     endif
-    if udg_InCinematic then
+    if UnitHider4_CinematicDepth > 0 or udg_InCinematic then
         set UnitHider4_WasInCinematic = true
         return
     endif
@@ -659,10 +705,7 @@ function UnitHider_DebugHideAllExceptTracked takes nothing returns integer
     local boolean isAutomaticReference
     local boolean wasManaged
 
-    call GroupClear(UnitHider4_WorldScanUnits)
-    call GroupEnumUnitsInRect(UnitHider4_WorldScanUnits, UnitHider4_WorldBounds, null)
-    call GroupAddGroup(UnitHider4_KnownUnits, UnitHider4_WorldScanUnits)
-    call GroupAddGroup(UnitHider4_WorldScanUnits, UnitHider4_KnownUnits)
+    call UnitHider4_PrepareWorldScan()
     call UnitHider4_RebuildAutomaticReferences()
 
     loop
@@ -714,10 +757,7 @@ function UnitHider_DebugAudit takes player whichPlayer returns nothing
     local boolean isAutomaticReference
     local string state = "enabled"
 
-    call GroupClear(UnitHider4_WorldScanUnits)
-    call GroupEnumUnitsInRect(UnitHider4_WorldScanUnits, UnitHider4_WorldBounds, null)
-    call GroupAddGroup(UnitHider4_KnownUnits, UnitHider4_WorldScanUnits)
-    call GroupAddGroup(UnitHider4_WorldScanUnits, UnitHider4_KnownUnits)
+    call UnitHider4_PrepareWorldScan()
     call UnitHider4_RebuildAutomaticReferences()
     loop
         set whichUnit = FirstOfGroup(UnitHider4_WorldScanUnits)
@@ -744,11 +784,13 @@ function UnitHider_DebugAudit takes player whichPlayer returns nothing
     if not UnitHider4_Enabled then
         set state = "disabled"
     endif
-    if udg_InCinematic then
-        set state = state + ", cinematic suspended"
+    if UnitHider4_CinematicDepth > 0 then
+        set state = state + ", cinematic managed"
+    elseif udg_InCinematic then
+        set state = state + ", cinematic compatibility suspension"
     endif
     call DisplayTextToPlayer(whichPlayer, 0.00, 0.00, "|cffffcc00[UnitHider4 audit]|r " + state + " | references=" + I2S(UnitHider4_ReferenceCount))
-    call DisplayTextToPlayer(whichPlayer, 0.00, 0.00, "World=" + I2S(totalCount) + " | exempt=" + I2S(exemptCount) + " | managed hidden=" + I2S(eligibleHiddenCount) + " | foreign hidden=" + I2S(foreignHiddenCount))
+    call DisplayTextToPlayer(whichPlayer, 0.00, 0.00, "Inventory=" + I2S(totalCount) + " | known=" + I2S(BlzGroupGetSize(UnitHider4_KnownUnits)) + " | exempt=" + I2S(exemptCount) + " | managed hidden=" + I2S(eligibleHiddenCount) + " | foreign hidden=" + I2S(foreignHiddenCount))
     call DisplayTextToPlayer(whichPlayer, 0.00, 0.00, "Visible near references=" + I2S(nearVisibleCount) + " | visible outside hide range=" + I2S(farVisibleCount) + " | pending=" + I2S(BlzGroupGetSize(UnitHider4_PendingUnits)))
     set whichUnit = null
     set whichPlayer = null
@@ -777,6 +819,59 @@ endfunction
 function UnitHider_SetDebugEnabled takes boolean enable returns nothing
     set UnitHider4_Debug = enable
     set udg_UnitHider_debug = enable
+endfunction
+
+function UnitHider_RegisterCinematicReference takes unit whichUnit returns nothing
+    if whichUnit == null then
+        return
+    endif
+    call GroupAddUnit(UnitHider4_KnownUnits, whichUnit)
+    call GroupAddUnit(UnitHider4_CinematicReferences, whichUnit)
+    if IsUnitInGroup(whichUnit, UnitHider4_HiddenUnits) then
+        call UnitHider4_ShowManaged(whichUnit, false)
+    endif
+    call UnitHider4_UpdateReferenceCache()
+    if UnitHider4_Enabled and UnitHider4_CinematicDepth > 0 then
+        call UnitHider4_RevealNearReferences()
+    endif
+endfunction
+
+function UnitHider_UnregisterCinematicReference takes unit whichUnit returns nothing
+    call GroupRemoveUnit(UnitHider4_CinematicReferences, whichUnit)
+    call UnitHider4_UpdateReferenceCache()
+    if UnitHider4_Enabled and UnitHider4_CinematicDepth > 0 then
+        set UnitHider4_Initialized = false
+        call UnitHider4_SettleMap()
+    endif
+endfunction
+
+function UnitHider_BeginCinematic takes unit sceneReference returns nothing
+    set UnitHider4_CinematicDepth = UnitHider4_CinematicDepth + 1
+    set UnitHider4_WasInCinematic = true
+    if sceneReference != null then
+        call GroupAddUnit(UnitHider4_KnownUnits, sceneReference)
+        call GroupAddUnit(UnitHider4_CinematicReferences, sceneReference)
+    endif
+    if UnitHider4_Enabled then
+        set UnitHider4_Initialized = false
+        call UnitHider4_SettleMap()
+    endif
+endfunction
+
+function UnitHider_EndCinematic takes nothing returns nothing
+    if UnitHider4_CinematicDepth <= 0 then
+        return
+    endif
+    set UnitHider4_CinematicDepth = UnitHider4_CinematicDepth - 1
+    if UnitHider4_CinematicDepth > 0 then
+        return
+    endif
+    call GroupClear(UnitHider4_CinematicReferences)
+    set UnitHider4_WasInCinematic = false
+    if UnitHider4_Enabled then
+        set UnitHider4_Initialized = false
+        call UnitHider4_SettleMap()
+    endif
 endfunction
 
 function UnitHider_SetSystemEnabled takes boolean enable returns nothing
@@ -894,6 +989,16 @@ private function UnitHider4_OnUnitEnter takes nothing returns nothing
     set whichUnit = null
 endfunction
 
+private function UnitHider4_OnUnitIndexed takes nothing returns nothing
+    local unit whichUnit = udg_UDexUnits[udg_UDex]
+
+    if whichUnit != null then
+        call GroupAddUnit(UnitHider4_KnownUnits, whichUnit)
+        call GroupAddUnit(UnitHider4_PendingUnits, whichUnit)
+    endif
+    set whichUnit = null
+endfunction
+
 private function UnitHider4_OnUnitDeindex takes nothing returns nothing
     local unit whichUnit = udg_UDexUnits[udg_UDex]
 
@@ -903,11 +1008,13 @@ private function UnitHider4_OnUnitDeindex takes nothing returns nothing
     call GroupRemoveUnit(UnitHider4_PendingUnits, whichUnit)
     call GroupRemoveUnit(UnitHider4_AutomaticReferences, whichUnit)
     call GroupRemoveUnit(UnitHider4_RegisteredReferences, whichUnit)
+    call GroupRemoveUnit(UnitHider4_CinematicReferences, whichUnit)
     set whichUnit = null
 endfunction
 
 private function Init takes nothing returns nothing
     local rect worldBounds = GetWorldBounds()
+    local trigger indexTrigger = CreateTrigger()
     local trigger deindexTrigger = CreateTrigger()
 
     if udg_UnitHider_ReferenceGroup == null then
@@ -924,11 +1031,14 @@ private function Init takes nothing returns nothing
     set UnitHider4_CellWidth = (GetRectMaxX(worldBounds) - UnitHider4_WorldMinX) / I2R(UnitHider4_GRID_AXIS)
     set UnitHider4_CellHeight = (GetRectMaxY(worldBounds) - UnitHider4_WorldMinY) / I2R(UnitHider4_GRID_AXIS)
     call Events_RegisterUnitEnter(function UnitHider4_OnUnitEnter)
+    call TriggerRegisterVariableEvent(indexTrigger, "udg_UnitIndexEvent", EQUAL, 1.50)
+    call TriggerAddAction(indexTrigger, function UnitHider4_OnUnitIndexed)
     call TriggerRegisterVariableEvent(deindexTrigger, "udg_UnitIndexEvent", EQUAL, 2.00)
     call TriggerAddAction(deindexTrigger, function UnitHider4_OnUnitDeindex)
     call UnitHider4_ResetKnownUnitScan()
     call TimerStart(UnitHider4_Timer, UnitHider4_TICK_INTERVAL, true, function UnitHider4_ProcessBatch)
     set worldBounds = null
+    set indexTrigger = null
     set deindexTrigger = null
 endfunction
 
