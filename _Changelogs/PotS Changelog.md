@@ -18,6 +18,29 @@
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
 
+## [11.10.2026]
+
+### Technical Updates
+
+- Updated `UnitSystems/UnitHider4.j` to 4.10 with Bribe's Table v6 for handle-keyed hidden ownership and spatial-cell state, one delayed UnitHider 1.0-style bootstrap snapshot, and event-driven lifecycle tracking through `Events`, `UnitDeathEvent`, and Unit Event.
+- Replaced the recurring known-unit and `udg_UDexUnits` recovery scans with exact pending callbacks for world entry, creation finalization, owner changes, cargo load/unload, transforms, death, revival, removal, foreign `ShowUnit` changes, and scripted relocation. Normal timer work now covers only tracked references, pending units, nearby hidden cells, and the currently visible candidate set.
+- Updated cinematic visibility restoration so begin/end reclassifies the managed visible and exact cinematic-visible sets without another full-world enumeration or a global unhide step.
+- Updated `UnitSystems/UnitHider4.j` to 4.10.1 and renamed its active vJASS library from `UnitHider4` to `UnitHider`. Private constants, globals, and helpers now use normal scoped JASS names, and API declarations use vJASS `public function` names without redundant system/version prefixes. JassHelper still exposes the same public `UnitHider_*` API, and all `udg_UnitHider_*` GUI variables remain unchanged. Updated `Debug/DebugCommands.j` and `QuestsAndDialogs/QuestGivers/Player/qZulkis.j` to require the clean library name.
+- Updated `UnitSystems/UnitHider4_Review.md` with the 4.10 architecture, the superseded bounded-recovery diagnosis, dependency order, and focused full-map validation plan.
+
+### Resolved Issues
+
+- Fixed UnitHider correctness still depending on a slow bounded recovery cursor, which could leave distant eligible units visible until a revealer visited and departed from their area.
+- Fixed cinematic completion being able to degrade into delayed visible-unit cleanup. Cinematic exit now restores normal reference ownership from exact managed candidate sets instead of rebuilding the whole map in visible waves.
+- Removed recurring all-unit snapshots from normal UnitHider processing while retaining an explicit one-time bootstrap and opt-in refresh/debug enumerations.
+
+### Actions Remaining
+
+- Import Table v6, `Events`, `UnitDeathEvent`, Unit Event, and `FallenHeroState` before `UnitSystems/UnitHider4.j`, then compile a focused test map and the full map through World Editor/JassHelper.
+- Runtime-test the initial bootstrap; created, killed, removed, transformed, revived, loaded, unloaded, owner-changed, and scripted-relocated units; all required player/basic-AI/companion/pet references; the Zul'kis arrival ship; and normal, skipped, and repeated cinematics.
+- Run `/debug unithider audit` after bootstrap and after each cinematic. `Visible outside hide range` should be zero by the next 0.50-second visible-candidate sweep, and cinematic exit must not produce a whole-map unhide/re-hide wave or corresponding lag spike.
+
+
 ## [10.10.2026]
 
 ### Player-Facing Updates
