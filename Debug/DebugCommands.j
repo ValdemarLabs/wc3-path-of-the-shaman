@@ -39,7 +39,7 @@
     - /debug wc3 help
 
 **/
-library DebugCommands initializer Init requires DebugObjectRegistry, Ascii, GatherNodes, GatherNodeUnits, GatherNodeSkills, ZonesCore, Dungeon, Drunk, PlayerHome, UnitHider4, DoodadRender, AI, AIRoutines, Companions, TerrainDamage, QuestMaster, WeatherSystem, VendorFloatingText, Warcraft300TestHarness, Warcraft300P2TestHarness
+library DebugCommands initializer Init requires DebugObjectRegistry, Ascii, GatherNodes, GatherNodeUnits, GatherNodeSkills, ZonesCore, Dungeon, Drunk, PlayerHome, UnitHider, DoodadRender, AI, AIRoutines, Companions, TerrainDamage, QuestMaster, WeatherSystem, VendorFloatingText, Warcraft300TestHarness, Warcraft300P2TestHarness
     globals
         private constant string DBG_ROOT = "/debug"
         private constant string DBG_PREFIX = "/debug "
@@ -813,7 +813,7 @@ library DebugCommands initializer Init requires DebugObjectRegistry, Ascii, Gath
             call DBG_Message(DBG_PerformancePlayer, "Performance step 9/11: disabled GatherNodes spawn, respawn, and lifetime work.")
         elseif DBG_PerformanceStep == 10 then
             call UnitHider_DebugPauseProcessing()
-            call DBG_Message(DBG_PerformancePlayer, "Performance step 10/11: paused UnitHider4 processing without unhiding units.")
+            call DBG_Message(DBG_PerformancePlayer, "Performance step 10/11: paused UnitHider processing without unhiding units.")
         elseif DBG_PerformanceStep == 11 then
             call DoodadRender_DebugPause()
             call DBG_Message(DBG_PerformancePlayer, "Performance step 11/11: paused DoodadRender without restoring hidden doodads.")

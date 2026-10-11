@@ -35,7 +35,7 @@
     qZulkis_IsPrologueCompleted() gates Call of the Horde convergence.
 
 **/
-library qZulkis initializer Init requires QuestGiver, QuestMaster, DialogInteraction, DialogSystem, CameraControl, UnitHider4, Companions, Death, Revival, HintsUI, DInventory, DEquipment, Start, VoicelinesNarrator, VoicelinesNazgrek, VoicelinesZulkis, VoicelinesThork, VoicelinesZulkarak, VoicelinesGenericTroll, VoicelinesOrcGrunt, optional Pet
+library qZulkis initializer Init requires QuestGiver, QuestMaster, DialogInteraction, DialogSystem, CameraControl, UnitHider, Companions, Death, Revival, HintsUI, DInventory, DEquipment, Start, VoicelinesNarrator, VoicelinesNazgrek, VoicelinesZulkis, VoicelinesThork, VoicelinesZulkarak, VoicelinesGenericTroll, VoicelinesOrcGrunt, optional Pet
     globals
         // Quest and staging configuration
         public constant string QUEST_MEET_CHIEFTAIN_THORK = "Meet with Chieftain Thork"

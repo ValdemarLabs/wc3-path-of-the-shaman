@@ -174,7 +174,7 @@ This section records current qXXX content at the time this plan was created. Upd
 
 ### Main and character quest libraries
 
-`qZulkis.j` now requires `UnitHider4`: the temporary arrival ship registers as
+`qZulkis.j` now requires `UnitHider`: the temporary arrival ship registers as
 an explicit reference before the first ship camera is applied, immediately
 reveals its surrounding managed cells, and unregisters before removal.
 
