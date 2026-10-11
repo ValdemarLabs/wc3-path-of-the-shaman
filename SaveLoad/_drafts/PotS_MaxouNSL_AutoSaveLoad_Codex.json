@@ -1,0 +1,281 @@
+{
+  "specification_type": "codex_implementation_task",
+  "specification_version": "1.0.0",
+  "task_id": "pots-maxou-nsl-auto-save-load",
+  "title": "Implement low-maintenance version-compatible automatic Save/Load for Path of the Shaman using Maxou NSL",
+  "execution_instruction": "Implement the solution in the existing local PotS codebase, not merely an architectural proposal. Inspect the repository, map source, build pipeline, and the actual Maxou NSL demo/source before writing integration code. Compile what can be compiled, test what can be tested, and report remaining engine-only tests. Do not invent undocumented Maxou NSL API names or claim untested functionality works.",
+  "project": {
+    "name": "Path of the Shaman",
+    "short_name": "PotS",
+    "expected_source_root_windows": "H:/Pelit/PotS_JASS/",
+    "proposed_new_module_directory": "H:/Pelit/PotS_JASS/SaveLoad/",
+    "root_discovery_policy": "Find the actual accessible project root; treat the Windows paths as location hints only. Respect repository conventions and existing build/import infrastructure.",
+    "target_game": "Current retail Warcraft III (Reforged/current patch, including SD and DE graphics)",
+    "implementation_language": "JASS/vJASS matching the actual project and verified Maxou NSL requirements",
+    "initial_runtime_mode": "single_player",
+    "future_runtime_mode": "multiplayer_optional_not_implemented_now",
+    "compatibility_requirement": "Save on an older PotS map version and restore persistent character progress in a newer map version without native Warcraft III Save Game files."
+  },
+  "priority_order": [
+    "Correct restoration across map updates",
+    "Minimal ongoing maintenance when adding items and abilities",
+    "Preservation of existing PotS functionality and code",
+    "Compile/runtime correctness and robust failure handling",
+    "Low runtime and file/encoded-data overhead",
+    "Ability to add multiplayer-safe transport later"
+  ],
+  "dependencies": {
+    "primary_backend": {
+      "name": "Maxou NSL (New Save Load)",
+      "upstream_url": "https://www.hiveworkshop.com/threads/maxou-nsl-new-save-load.353480/",
+      "use_release": "Latest verified compatible NSL release; specifically inspect the package updated November 13, 2025 before selecting or replacing it.",
+      "published_properties_to_verify_in_source": [
+        "vJASS system",
+        "In-game -save <name> and -load <name> workflow",
+        "Integer-only input including negative integers",
+        "Codes associated with player names",
+        "Integrity/tamper checks",
+        "Built-in multi-version save-code support",
+        "File-backed persistence and its actual limitations"
+      ],
+      "boundary": "Use NSL for encoding, protection, and file operations. PotS handles what data to save, how to discover it, schema versioning, validation, and restoration.",
+      "source_policy": "Reuse/import the actual upstream source, comply with its attribution/license, and keep vendor code unmodified when possible. If demo/source is not accessible, create a compile-ready adapter interface and explicitly mark the backend integration as BLOCKED; never manufacture NSL function signatures."
+    },
+    "secondary_references": [
+      {
+        "name": "Hive JASS FileIO (for understanding file and local-player concerns only)",
+        "url": "https://www.hiveworkshop.com/threads/fileio.307568/"
+      },
+      {
+        "name": "Warcraft III unit ability enumeration discussion",
+        "url": "https://www.hiveworkshop.com/threads/hero-ability-list.351993/"
+      },
+      {
+        "name": "Warcraft III file-load synchronization discussion",
+        "url": "https://www.hiveworkshop.com/threads/jass-help-me-pls-sync.353247/"
+      }
+    ]
+  },
+  "non_goals": [
+    "Do not use Warcraft III native Save Game (.w3z/.w3v) as the persistence format.",
+    "Do not replace NSL with another encoder or invent a new disk-file system without evidence NSL cannot meet a measured requirement.",
+    "Do not port the map from JASS to Lua.",
+    "Do not serialize the entire running game, arbitrary JASS globals, all timers, buffs, temporary summoned units, or engine handles.",
+    "Do not implement multiplayer sync/network transfer during this task; only preserve a clean boundary for it.",
+    "Do not require manual registration of each ordinary inventory item, hero, or learned spell.",
+    "Do not refactor gameplay, quests, equipment, StunGuard, DiminishingReturns, object data, or unrelated systems."
+  ],
+  "strict_change_scope": {
+    "create_new_module": true,
+    "permitted_existing_changes": [
+      "Minimum required map/library import or build manifest entries for new SaveLoad module and verified upstream NSL source.",
+      "Small save/load command or initialization hooks, only if necessary and after checking for existing competing handlers.",
+      "Small optional adapters in existing custom persistence systems only where there is already an appropriate supported API; prefer new-module bridge implementations."
+    ],
+    "prohibited_changes": [
+      "Modifying unrelated JASS libraries or gameplay logic.",
+      "Renaming existing Warcraft III object rawcodes.",
+      "Reordering or replacing legacy saved ID tables if discovered.",
+      "Silently removing or reimplementing NSL security, versioning, or network semantics.",
+      "Adding external executables, launchers, services, or user-install prerequisites."
+    ],
+    "version_control": "Inspect git status first. Preserve user work and uncommitted changes. List all files modified in the delivery report."
+  },
+  "architecture": {
+    "new_module_files_suggested": [
+      {"file": "SaveLoad/PotSSaveLoad.j", "responsibility": "Public API, slot commands, orchestration, state-machine, lifecycle events."},
+      {"file": "SaveLoad/PotSSaveSnapshot.j", "responsibility": "Automatic collection and safe restoration of core Warcraft III hero/player state."},
+      {"file": "SaveLoad/PotSSaveSchema.j", "responsibility": "Integer-only tagged records, validation, limits, migrations, stable schema versions."},
+      {"file": "SaveLoad/PotSSaveMaxouAdapter.j", "responsibility": "Thin integration using verified NSL API and demo lifecycle. No duplicate file backend."},
+      {"file": "SaveLoad/README.md", "responsibility": "Build/integration instructions, supported data, limitations, save compatibility policy and test results."}
+    ],
+    "components": [
+      {"name": "StateCollector", "inputs": ["player", "hero"], "output": "Validated neutral integer-based character snapshot", "rule": "Never invoke local file reads while inspecting global gameplay state."},
+      {"name": "SchemaCodec", "inputs": ["snapshot", "schema_version"], "output": "Bounded integer records", "rule": "Keep field IDs stable and decode old revisions explicitly."},
+      {"name": "NSLBackend", "inputs": ["player", "save_slot", "integer_records"], "output": "NSL save/load completion or failure", "rule": "Adapt to verified NSL source and preserve its player-name binding and file protocol."},
+      {"name": "StateRestorer", "inputs": ["validated snapshot", "player"], "output": "Persistent progress applied to a new PotS game", "rule": "Apply only after full decode, migration, and validation; guard against partial restore."},
+      {"name": "CustomStateHooks", "inputs": ["system identifier", "snapshot writer/reader"], "output": "Optional persistent progression records", "rule": "One adapter per custom subsystem, not one registration per ability or item."},
+      {"name": "FutureTransportBoundary", "inputs": ["validated snapshot", "player"], "output": "Presently local-only; future synchronized snapshot", "rule": "Separate disk I/O from gameplay-state mutation to avoid future multiplayer desyncs."}
+    ],
+    "public_api_design_intent": {
+      "save_request": "PotSSave_RequestSave(player whichPlayer, string slotName): accept/reject request; completion may be asynchronous depending on NSL.",
+      "load_request": "PotSSave_RequestLoad(player whichPlayer, string slotName): accept/reject request; completion occurs through lifecycle events.",
+      "lifecycle_events": ["onSaveCompleted", "onSaveFailed", "onLoadCompleted", "onLoadFailed"],
+      "command_behavior": "Preserve verified NSL -save <name> and -load <name> experience or intercept them cleanly; do not register duplicate command triggers.",
+      "api_note": "These are desired semantics, not assertions about existing functions or exact JASS signatures. Implement signatures consistent with project conventions and verified NSL lifecycle."
+    }
+  },
+  "automatic_core_state": {
+    "character_identity": {
+      "persist": ["hero unit type rawcode", "hero level", "hero experience", "remaining unspent hero skill points"],
+      "strategy": "Resolve player-controlled persistent hero through existing PotS hero ownership/progression logic. Support a configurable hero resolver for maps with multiple controllable heroes; never arbitrarily pick the first unit owned by the player.",
+      "rawcode_policy": "Store stable rawcodes as integer values when supported by tested NSL integer range; do not use positional arrays. Handle signed 32-bit rawcodes safely."
+    },
+    "attributes_and_resources": {
+      "persist": ["persistent base strength/agility/intelligence or equivalent permanent stat state", "gold", "lumber", "optional current health/mana fractions"],
+      "restore_order": "Recreate/resolve hero, apply level/XP and persistent attributes, restore abilities and inventory, then optional health/mana so bonuses are accounted for.",
+      "rules": [
+        "Never persist derived stats (e.g. damage/armor after item bonuses) as permanent base stats.",
+        "Inspect PotS stat systems and distinguish raw hero stats from bonus/modifier stacks to prevent applying upgrades twice.",
+        "Persist only map-relevant resources. Keep health/mana optional and scale fractional values deterministically to integers if enabled.",
+        "Clamp and validate values to safe and meaningful engine bounds."
+      ]
+    },
+    "inventory": {
+      "zero_registration_goal": true,
+      "persist": ["occupied inventory slot index", "item rawcode", "item charges", "optional engine-persistent item fields only when demonstrably needed"],
+      "collect": "Enumerate actual supported inventory slots via the engine, read each item handle and its type; do not use an authored item-type catalog.",
+      "restore": "Preserve occupied/empty slots and item charges. Validate rawcode existence before creating items. Use map-specific custom inventory/equipment adapter if inspection shows they are not engine inventory slots.",
+      "exclusions": ["ground items outside declared persistent inventory", "temporary/dropped items", "arbitrary item user-data handles", "unserializable item effects"],
+      "change_behavior": "Adding a new ordinary item object requires no SaveLoad source edits if rawcode and vanilla item state suffice."
+    },
+    "abilities": {
+      "zero_registration_goal": true,
+      "persist": ["stable ability rawcode", "persistently learned ability level", "spent/unspent skill progression where obtainable"],
+      "discovery_strategy": [
+        "Investigate current-patch unit-ability enumeration such as BlzGetUnitAbilityByIndex and BlzGetAbilityId, confirming actual JASS signature and iteration semantics.",
+        "Use existing PotS talent/learn-skill APIs or object-data metadata when available to identify genuinely persistent learned abilities.",
+        "If ambiguity remains, derive a safe per-hero baseline using a temporary isolated reference/template or build-time generated metadata, then identify learned differences without requiring hand-entry of each ability rawcode.",
+        "Use a centralized category/exclusion mechanism for temporary buffs, item-granted spells, innate/default abilities, and system helper abilities. Do not silently assume every enumerated ability is a player-learned spell.",
+        "Explicitly report any abilities that cannot be reliably classified automatically and support a small optional system-level hook."
+      ],
+      "restoration_rules": [
+        "Do not permanently grant transient, item-provided or helper abilities.",
+        "Restore persistent abilities after hero initialization and before applying optional transient state.",
+        "Avoid duplicated abilities, duplicated spent skill points, and triggering normal skill-learn rewards during restoration.",
+        "Respect new-map ability maximum levels and migrations of removed/renamed abilities."
+      ],
+      "change_behavior": "Adding a conventional learned hero ability should require no manual SaveLoad registration once discovery/classification is established and tested."
+    }
+  },
+  "optional_custom_progression": {
+    "phase_1": "Inspect PotS custom inventory/equipment, talents, quest globals, and world progression. Implement only adapters that have a stable, documented source of truth and are required for preserving existing meaningful player progress.",
+    "phase_2_deferred": ["Quest objectives or branches", "Story decisions", "Unlocks", "Custom items/affixes/rolls", "Player-level achievement state", "Secondary characters or stash"],
+    "integration_policy": "Provide small opt-in hooks per subsystem, e.g. one QuestState adapter; never claim arbitrary GUI globals or quest variables can be discovered automatically.",
+    "missing_adapters": "Write a documented coverage matrix and show a non-destructive message if a save intentionally excludes unsupported persistent state."
+  },
+  "save_format": {
+    "core_principle": "Persist only permanent character progression, using NSL's verified integer writer/reader; keep the PotS data schema independent of the map version and NSL's own code-format version.",
+    "encoding": "Integer-only; validate max/min values, sign handling, payload size, NSL buffer constraints and maximum record count against upstream code.",
+    "proposed_logical_layout": ["magic_or_format_identifier", "pots_schema_major", "pots_schema_minor", "record_count", "repeated_records"],
+    "record_shape": {"tag": "stable positive integer field identifier", "length": "integer count of following payload integers", "payload": "array of integers of exactly that length"},
+    "example_field_ids": {
+      "1": "hero identity",
+      "2": "hero level and XP",
+      "3": "persistent hero base attributes",
+      "4": "hero learned abilities, packed as repeated rawcode-and-level pairs",
+      "5": "engine inventory, packed as repeated slot/rawcode/charges tuples",
+      "6": "player resources",
+      "7": "optional health/mana fractions",
+      "1000": "first available custom system namespace"
+    },
+    "hard_rules": [
+      "Do not reuse a field tag for a different meaning.",
+      "Do not change field interpretation without changing the schema version.",
+      "Keep the older schema decoders and explicit migrations after each schema change.",
+      "Unknown optional tags can be skipped safely by length. Unknown required semantics or newer incompatible major versions must fail cleanly before changing gameplay state.",
+      "Enforce count and length bounds; reject negative lengths, truncated data, overflow, duplicate singleton fields and unreasonable values.",
+      "Do not silently truncate records if an NSL limit is reached; reject before overwriting a known-good save."
+    ],
+    "migration_policy": {
+      "initial_schema": "1.0",
+      "forward_compatibility": "Older saves must load on later map versions with explicit migration functions as needed.",
+      "backward_compatibility": "Older map versions are not required to understand newer save formats.",
+      "renamed_rawcodes": "Use small explicit old-rawcode-to-new-rawcode migration tables only when object IDs actually change.",
+      "removed_content": "Follow a defined fallback per category, preferably report and safely skip the removed item/ability; never substitute unrelated content.",
+      "new_fields": "Default absent fields rather than requiring users to resave before upgrading.",
+      "preservation": "Do not overwrite original incompatible/corrupt saves as part of an attempted load or migration."
+    }
+  },
+  "file_and_session_behavior": {
+    "primary_commands": ["-save <slot>", "-load <slot>"],
+    "slots": "Prefer NSL's native naming/slot capability. Sanitize user input according to verified NSL filename rules; reject traversal, control characters and excessive lengths.",
+    "default_mode": "Explicit manual save and load. Do not auto-overwrite profiles or auto-load without informed user action.",
+    "save_preconditions": ["Valid persistent player hero", "Save not already in progress", "State snapshot passes size and value validation"],
+    "load_preconditions": ["Allow load only during a safe initial/new-game phase or another explicitly supported checkpoint", "Load not already in progress"],
+    "failure_behavior": "Missing, truncated, invalid, incorrect-player, unsupported-schema or oversized save must return an understandable error without half-restoring the hero.",
+    "backup_policy": "Retain existing save when validation fails. If NSL exposes a safe backup/alternate-slot facility, optionally use it before overwrite; do not claim atomic replacement or backup capability until verified.",
+    "profile_binding_limitation": "NSL binds codes to player names; document that renaming a Warcraft III profile can prevent old saves from loading unless a future deliberate migration facility is provided.",
+    "security": "Keep NSL's tamper checks; treat them as integrity checks rather than guaranteed cheat prevention. Never execute loaded strings as JASS code."
+  },
+  "correctness_and_performance": {
+    "load_atomicity": "Decode, migrate and validate the full snapshot in temporary data first. Commit only in a safe restoration phase. If a commit can fail, design preflight checks and a rollback or replace-at-once strategy appropriate for PotS.",
+    "idempotence": "A repeated load must not stack attributes, duplicate inventory, relearn rewards, or create multiple persistent heroes; reject repeat load or safely reset previous state.",
+    "determinism": "Enumerate abilities/inventory in stable order (e.g. inventory slot order and sorted ability IDs) before serialization to make output reproducible.",
+    "performance": "Use bounded loops and ephemeral allocation only during save/load; no periodic polling, handle leaks, unnecessary waits or global map scans every frame.",
+    "memory": "Release transient handles/arrays/timers used by SaveLoad; avoid unnecessary hashtable growth.",
+    "size_budget": "Measure encoded size on representative maximal characters, not just trivial demo data. If too large, introduce optional record suppression or a documented compact stable catalog generated from map objects rather than a hand-maintained list.",
+    "event_safety": "Inspect hero-create, level, ability-learn, item-pickup and quest triggers. Where restoring would incorrectly award progress, use a scoped restoration guard with minimal integration hooks.",
+    "multiplayer_future": "All write/read access to local files must be isolated within the backend; only a synchronized validated snapshot may mutate common gameplay state in future multiplayer. Do not add GetLocalPlayer-guarded game mutations."
+  },
+  "implementation_sequence": [
+    {"step": 1, "name": "Repository and API reconnaissance", "actions": ["Inspect PotS build/import conventions and current hero/progression implementations.", "Locate and inspect genuine Maxou NSL 2025 demo library, API, save-load flow, dependencies, and patch constraints.", "Check for existing save/load code, unsupported native calls, current git modifications and compiler.", "Write brief verified API/compatibility notes before integration."]},
+    {"step": 2, "name": "Minimal NSL integration", "actions": ["Import NSL using the project's supported build process.", "Create new thin PotS backend adapter.", "Demonstrate single-player file save and load of a small integer payload using the real API.", "Keep NSL vendor code and unrelated code unchanged."]},
+    {"step": 3, "name": "Schema and automatic snapshot", "actions": ["Implement tagged integer schema with strict validation.", "Implement automatic hero, XP, stats, resources and inventory scanner.", "Implement safe automatic ability classification and persistence, leveraging map inspection rather than manually enumerating all ability IDs.", "Add minimal user-facing -save/-load integration."]},
+    {"step": 4, "name": "Restore and old-version support", "actions": ["Stage validation before restore.", "Restore in controlled order without duplicate rewards or effects.", "Provide schema 1 decoder and a fixture demonstrating an old-save-to-new-schema migration.", "Handle removed content and version mismatch safely."]},
+    {"step": 5, "name": "Test and documentation", "actions": ["Run available compile/build checks and deterministic serializer tests.", "Run in-game single-player smoke tests if Warcraft III is runnable in this environment; otherwise provide precise manual test steps.", "Document which features are automatic, which custom hooks are needed, NSL restrictions and how to introduce schema 2 without breaking schema 1.", "Record all changed paths and any blocked prerequisites."]}
+  ],
+  "test_plan": {
+    "automated_or_scripted_when_possible": [
+      "Encode/decode roundtrip for empty and fully populated inventory slots.",
+      "Signed 32-bit rawcode and negative integer values, within verified NSL supported range.",
+      "Character levels, XP, skill points, learned skill levels and player resources.",
+      "Stable serialization order regardless of enumeration order.",
+      "Missing record defaults, unknown optional record skip and schema 1-to-2 migration.",
+      "Malformed lengths, invalid rawcode, missing required record, corrupted code and size limits.",
+      "Double-load prevention and no partial mutation on decode failure."
+    ],
+    "in_game_required": [
+      "Create PotS vA, level the hero, learn skills, acquire three different items including charged items, save slot A and quit.",
+      "Start PotS vA fresh and load slot A; compare persisted player state exactly.",
+      "Create PotS vB with at least one new item, one new ability and one unrelated gameplay change without changing existing rawcodes; load original vA slot unchanged.",
+      "Create schema v2 with one additional optional field; load and migrate an original schema v1 save.",
+      "Save/load a hero with item-derived and temporary abilities; verify they do not become permanently learned.",
+      "Try nonexistent, wrong-profile, truncated and tampered saves; ensure clear errors and no state corruption.",
+      "Try repeated loads, rapid repeated save/load requests, maxed-out skill levels, full inventory and an empty inventory.",
+      "Verify gameplay remains operational after loading: abilities, item use, StunGuard and DiminishingReturns should behave normally.",
+      "Verify save files survive updating the PotS map without relying on old-map native game saves."
+    ],
+    "pass_criteria": [
+      "No per-item registry maintenance for ordinary items.",
+      "No per-ability registry maintenance for conventional learned hero abilities.",
+      "Old save reads in newer map version after introduction of optional new schema fields.",
+      "No duplicate bonuses, abilities, inventory or progression events.",
+      "Corrupt and incompatible saves never leave a half-loaded game.",
+      "Code compiles with the project's actual toolchain; no deprecated/wrong signatures used.",
+      "No regressions to unrelated PotS gameplay code."
+    ]
+  },
+  "deliverables": [
+    "Working new JASS/vJASS SaveLoad library and verified Maxou NSL integration.",
+    "Clear, minimal map/build integration points.",
+    "Documentation including save format and schema migration rules.",
+    "Automatic-core-versus-custom-hook coverage matrix.",
+    "Unit/integration test cases or available test scripts and exact in-game test protocol.",
+    "Final implementation summary with files changed, compile commands/results, manual tests and limitations."
+  ],
+  "definition_of_done": "A player can save ordinary PotS hero progression, inventory items, learned abilities, and resources in one map version and load that save in a newer map version without manual per-item or per-spell additions to SaveLoad. The exact NSL API has been verified, errors fail safely, unrelated gameplay remains unchanged, and the implementation is proven by build/tests rather than assumed.",
+  "codex_reporting_requirements": {
+    "must_report": [
+      "Which Maxou NSL release was used, how its API was verified and whether it had to be modified.",
+      "Actual files created and changed.",
+      "Which state categories are truly automatic versus requiring map-specific hooks.",
+      "Schema version and compatibility/migration behavior.",
+      "Compile/test commands and actual pass/fail results.",
+      "Warcraft III manual test steps that could not be executed.",
+      "Known technical risks, including profile-name binding and unsupported temporary/custom ability state."
+    ],
+    "do_not": [
+      "Claim full automation for custom systems whose state cannot be inspected.",
+      "Claim latest-patch compatibility without checking engine/toolchain versions.",
+      "Claim multiplayer support without a synchronization implementation and multiplayer tests.",
+      "Invent Maxou NSL functions, native APIs or test results."
+    ]
+  },
+  "references": [
+    "https://www.hiveworkshop.com/threads/maxou-nsl-new-save-load.353480/",
+    "https://www.hiveworkshop.com/threads/fileio.307568/",
+    "https://www.hiveworkshop.com/threads/hero-ability-list.351993/",
+    "https://www.hiveworkshop.com/threads/jass-help-me-pls-sync.353247/"
+  ]
+}
