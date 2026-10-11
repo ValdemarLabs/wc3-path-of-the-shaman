@@ -3,7 +3,7 @@
   "specification_version": "2.0.0",
   "task_id": "pots-maxou-nsl-statesaver-inspired-jass",
   "title": "Implement StateSaver-inspired automatic JASS persistent state on TOP of unmodified Maxou NSL for Path of the Shaman",
-  "execution_instruction": "IMPLEMENT, do not stop at planning. Inspect the real PotS repository/build, existing gameplay-state ownership, and actual Maxou NSL library/demo scripts (including user-supplied screenshots when available). Keep Maxou NSL and all its upstream scripts EXACTLY UNCHANGED: treat them as immutable third-party files. Create separate PotS-specific JASS/vJASS libraries that use only verified public NSL integration points for encode/decode/file commands. Port the useful StateSaver architecture and behavior, NOT its Lua code or dependencies: event-assisted automatic hero/item/ability/player scanning, bounded state tracking, schema migration and scoped persistent world progression. Preserve existing PotS code except necessary minimal wiring. Compile/test as far as tools permit; distinguish actual tests from proposed engine tests. Never invent an NSL API, treat inaccessible source as an integration blocker instead of editing NSL.",
+  "execution_instruction": "IMPLEMENT, do not stop at planning. Inspect the real PotS repository/build, existing gameplay-state ownership, and actual Maxou NSL library/demo scripts. Keep Maxou NSL and all its upstream scripts EXACTLY UNCHANGED: treat them as immutable third-party files. Create separate PotS-specific JASS/vJASS libraries that use only verified public NSL integration points for encode/decode/file commands. Port the useful StateSaver architecture and behavior, NOT its Lua code or dependencies: event-assisted automatic hero/item/ability/player scanning, bounded state tracking, schema migration and scoped persistent world progression. Preserve existing PotS code except necessary minimal wiring. Compile/test as far as tools permit; distinguish actual tests from proposed engine tests. Never invent an NSL API, treat inaccessible source as an integration blocker instead of editing NSL.",
   "project": {
     "name": "Path of the Shaman",
     "short_name": "PotS",
@@ -16,7 +16,8 @@
     "future_runtime_mode": "multiplayer_optional_not_implemented_now",
     "compatibility_requirement": "Load meaningful persistent character and selected game-world progress from saves made on an earlier PotS map version into a newer map, without Warcraft III native Save Game loading or replaying an obsolete entire map.",
     "implementation_style": "Opt-in StateSaver-inspired subsystems built above an immutable Maxou NSL backend.",
-    "reference_material_policy": "Inspect any screenshot(s) of the Maxou NSL trigger/script tree provided by the user, if visible in the working context. Use the screenshot to locate genuine modules/functions, never to guess code signatures; inspect the actual text/source. If screenshots are absent, proceed with verified source inspection and note that gap, not a blocker."
+    "reference_material_policy": "Inspect Maxou NSL trigger/script tree provided by the user, if visible in the working context.",
+    "current_library_policy": "Do not modify any existing PotS gameplay library or NSL source file. Only add new files and minimal wiring to integrate them. Do not change any existing PotS gameplay logic or object rawcodes."
   },
   "priority_order": [
     "Absolute preservation of unmodified upstream Maxou NSL scripts and public behavior",
@@ -569,7 +570,7 @@
       "name": "Inventory existing source + immutable NSL baseline",
       "actions": [
         "Read the repository instructions, build tooling, custom hero/items/abilities/quest structures; check git status and preserve uncommitted work.",
-        "Locate NSL release 2025 library, actual trigger/script tree, and user reference screenshot(s) if available.",
+        "Locate NSL release 2025 library, actual trigger/script tree",
         "Identify NSL-owned files and record clean git diff or hashes; commit to ZERO changes to those files.",
         "Verify actual public API, extension points, integer capacity, filename commands, source requirements and supported patch/toolchain.",
         "Locate existing SaveLoad code and assess whether incremental integration is safer than replacing its PotS-owned modules."
@@ -739,8 +740,7 @@
       "Explicit Maxou NSL file-diff/hash comparison establishing that NO original NSL code changed.",
       "Which abilities can be identified automatically; how tracked skill provenance is maintained across game reloads.",
       "Which quest/world scopes use adapters and which game/world state remains intentionally unsaved.",
-      "Measured NSL capacity and snapshot sizes on smallest/largest representative state.",
-      "Whether the reference screenshot was available, and what actual source inspection established."
+      "Measured NSL capacity and snapshot sizes on smallest/largest representative state."
     ],
     "do_not": [
       "Claim full automation for custom systems whose state cannot be inspected.",
