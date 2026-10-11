@@ -28,7 +28,7 @@ correct and performant enough for permanent use.
 | `UnitHider.j` (1.0) | Simple two-phase ownership: check owned hidden units for showing, then visible units for hiding. It was the known working fallback. | Enumerates the full map every 0.5 seconds; creates and destroys a reference group for every proximity test; uses `SquareRoot`; leaks a newly created work group on every disabled timer tick; and does not recognize current companion/pet registrations. |
 | `UnitHider2.j` | Reuses work groups, filters invalid units, compares squared distances, and keeps the reliable two-phase flow. | Still enumerates nearly every eligible map unit every 0.5 seconds and copies the full reference group for every proximity test. `Table` state duplicates the authoritative hidden group without improving behavior. The archived runtime result was slow hiding and severe lag. |
 | `UnitHider3_Optimized.j` | Caches reference positions, uses squared distances, reuses main work groups, and retains the reliable two-phase flow. The archive says it worked. | Still performs a full-world enumeration every 0.5 seconds; creates a temporary reference group each cycle; limits references to 20; aborts with zero references without restoring already hidden units; does not consume current array registrations; and can show units another system intentionally hid because visibility ownership is not transferred on foreign `ShowUnit` calls. |
-| `UnitHider4.j` | Drains a merged world/known/indexed snapshot for every complete settlement using the known-working UnitHider 1.0 traversal, spatially buckets hidden units, checks only nearby buckets for revealing, preserves foreign visibility ownership, and retains hide/show hysteresis. Player-controlled heroes, configured basic AI heroes, and registered companions/pets are automatic revealers; other intentional revealers use the explicit API. Cinematic begin/end calls narrow reveal coverage to the staged scene and synchronously restore normal distance ownership. | Requires full-map runtime validation because hiding units changes simulation behavior by design. Version 4.9 performs complete authoritative settlements at initialization and cinematic boundaries, then checks at most 128 managed visible units and 8 recovery units per 0.10-second tick. Hidden units outside revealer cells receive no continuous per-unit polling. |
+| `UnitHider4.j` | Performs one delayed UnitHider 1.0-style bootstrap snapshot, stores owned-hidden state and spatial cells in Table v6 by handle ID, and then discovers lifecycle changes through `Events`, `UnitDeathEvent`, Unit Event, and native visibility/relocation hooks. Hidden units are spatially bucketed; player-controlled heroes, configured basic AI heroes, and registered companions/pets remain automatic revealers. Cinematic begin/end reclassifies only exact managed candidate sets. | Requires full-map runtime validation because hiding units changes simulation behavior by design. Version 4.10.1 has no recurring world, known-unit, or `udg_UDexUnits` inventory scan. Normal timer work updates references, drains event-fed pending units, reveals nearby hidden cells, and rechecks the currently visible candidate set every 0.50 seconds. Explicit refresh, re-enable, audit, and force-hide operations may intentionally enumerate the world. |
 
 Some older UnitHider Markdown files describe an earlier proposed "smart filter"
 and quote estimated operation reductions. The final `UnitHider3_Optimized.j`
@@ -36,7 +36,11 @@ does not implement that positional filter: its filter removes dead, reference,
 ignored, and Locust units, then its main loop still checks every remaining unit.
 Treat those estimates as historical planning notes rather than measured results.
 
-## PotS integration in UnitHider4
+## PotS integration in UnitHider
+
+`UnitHider4.j` declares `library UnitHider`. Its source uses scoped private
+identifiers and vJASS `public function` declarations; JassHelper therefore
+retains the established external `UnitHider_*` API names.
 
 - Player-controlled heroes and AI profiles explicitly marked through
   `AI_SetProfileUnitHiderRevealer` act as automatic revealers and remain
@@ -59,22 +63,23 @@ Treat those estimates as historical planning notes rather than measured results.
   must use the public register API.
 - `udg_UnitHider_IgnoredUnits`, Locust units, loaded units, dead units, and
   retained fallen-hero bodies are never newly hidden.
-- Initial and cinematic-boundary settlements enumerate the world bounds, merge
-  the snapshot with UnitHider's known-unit group and every current
-  `udg_UDexUnits` handle, then drain the disposable snapshot with
-  `FirstOfGroup` before changing visibility. World enumeration remains the
-  primary visible-unit source; Unit Event is supplemental inventory for units
-  already hidden by cinematic or scripted systems.
+- One delayed bootstrap enumerates the world bounds and drains a disposable
+  snapshot with `FirstOfGroup` before changing visibility. That pass seeds
+  preplaced visible units once; normal updates never enumerate the world,
+  `KnownUnits`, or the complete `udg_UDexUnits` registry. A unit already
+  hidden by another system remains foreign-owned and is queued exactly if that
+  system later calls `ShowUnit(..., true)`.
 - `UnitHider_BeginCinematic` synchronously changes the reference cache to the
   active scene and explicit scripted references, hiding unrelated population
   before the cinematic camera proceeds. Automatic player/basic-AI/party
   references remain protected units but do not keep their surrounding map areas
   revealed during the scene. `UnitHider_EndCinematic` restores the normal
-  reference cache and performs another synchronous settlement without first
-  unhiding the whole map.
-- A `ShowUnit` hook removes foreign visibility changes from UnitHider4's owned
+  reference cache and synchronously reclassifies the normal visible and exact
+  cinematic-visible candidate sets without enumerating or first unhiding the
+  whole map.
+- A `ShowUnit` hook removes foreign visibility changes from UnitHider's owned
   hidden set. Consequently, disabling or proximity showing affects only units
-  whose hidden state UnitHider4 still owns.
+  whose hidden state UnitHider still owns.
 - With zero valid revealers, ordinary eligible units remain hidden by default.
   Creating or restoring a tracked revealer exposes its nearby spatial cells on
   the next timer update.
@@ -84,16 +89,51 @@ Treat those estimates as historical planning notes rather than measured results.
   2,500/2,800 simulation range, preventing several remote AI heroes from
   collectively keeping much of the world population active. Units still
   visible around revealers are kept in a smaller managed-visible group.
-- `Events_RegisterUnitEnter` adds newly entering units to the known-unit group
-  immediately. Unit Event's fully-created callback supplies a second indexed
-  discovery path and deindex cleanup, while complete settlements numerically
-  merge current indexed handles. Foreign-show units use the same next-update
-  queue, while a low 8-unit, 64-slot recovery scan over known units repairs
-  other changing exclusions without making hidden population continuous work.
+- `Events` supplies world-enter, owner-change, cargo-load, and hero-revive
+  notifications; `UnitDeathEvent` supplies exact death notifications. Unit
+  Event supplies fully-created, transform, cargo load/unload, full-revive, and
+  deindex callbacks. Each callback queues or removes only its current unit.
+  `udg_UDexUnits[udg_UDex]` is read only inside those exact Unit Event
+  callbacks and is never treated as an inventory.
+- Scripted `SetUnitX`, `SetUnitY`, `SetUnitPosition`, and
+  `SetUnitPositionLoc` calls queue the affected unit through hooks. Other
+  custom movement wrappers can call `UnitHider_NotifyUnitRelocated`. This
+  repairs a hidden unit's spatial cell without polling every hidden unit.
 - Debug APIs can force-hide every eligible non-tracked unit or unhide every
   UnitHider-owned unit without changing the enabled state. Foreign-hidden,
   ignored, Locust, loaded, and dead units retain their existing ownership or
   engine-sensitive state.
+
+## 11 October 2026 event-driven inventory correction
+
+The remaining runtime symptom showed that version 4.9 still used its bounded
+recovery path as a correctness mechanism. A unit missed by an authoritative
+transition stayed visible until the recovery cursor reached it, which produced
+the same slow hide wave seen after cinematics. Raising that budget would only
+trade the delay for a larger periodic lag spike.
+
+Version 4.10 restores the simple v1 hidden-by-default invariant with one
+delayed bootstrap snapshot, but does not repeat that snapshot every tick or at
+each cinematic boundary. Table v6 now records UnitHider-owned hidden state and
+the hidden spatial cell by stable handle ID. Creation, entry, ownership,
+loading, unloading, transform, death, revival, removal, foreign `ShowUnit`,
+and scripted relocation paths feed exact units into the pending set. Unit
+Event user-data indexes are used only while their event callback guarantees the
+corresponding handle is valid.
+
+After bootstrap, periodic work has four bounded sources: tracked references,
+the exact pending event set, hidden grid cells intersecting a revealer, and the
+eligible units currently shown around revealers. The last set is reclassified
+every 0.50 seconds so ordinary movement away from a revealer still hides
+promptly. There is no steady-state world, persistent-known, hidden-population,
+or Unit Event registry sweep.
+
+Cinematic begin/end no longer requests another global settlement. Begin
+reclassifies the existing visible candidates against the scene references and
+records every unit UnitHider reveals for the scene. End clears the scene
+references and synchronously reclassifies those exact candidates against the
+normal references. The checked-in Cinematic ON/OFF GUI references contain no
+global `ShowUnit` pass and do not enable or disable UnitHider.
 
 ## 10 October 2026 revealer-scope correction
 
@@ -286,9 +326,9 @@ the inactive world stays hidden and ongoing work follows the active areas.
 
 ## Full-map validation
 
-1. Import UnitHider4 after `Events`, Unit Event, and `FallenHeroState`;
-   disable or remove every earlier UnitHider implementation and its GUI
-   timer/toggle triggers.
+1. Import `UnitHider4.j` (library `UnitHider`) after Table v6, `Events`,
+   `UnitDeathEvent`, Unit Event, and `FallenHeroState`; disable or remove every
+   earlier UnitHider implementation and its GUI timer/toggle triggers.
 2. Confirm initial hiding around player-controlled heroes after heavy unit
    create/remove churn, while unrelated AI-registered hero NPCs remain
    hideable.
@@ -305,9 +345,10 @@ the inactive world stays hidden and ongoing work follows the active areas.
 7. Test with zero valid revealers. Ordinary eligible units should remain hidden;
    creating or reviving a tracked hero should reveal only its nearby area.
 8. Enable debug temporarily and verify that `Known` matches the expected live
-   map population, then compare initial settlement and steady frame pacing
-   during a long session. Tune recovery or visible-unit budgets only from
-   measured full-map results.
+   map population and `visible outside hide range` reaches zero no later than
+   the next 0.50-second visible-candidate sweep. Compare the one-time bootstrap
+   and steady frame pacing during a long session; no later cinematic should
+   produce a whole-map unhide/re-hide wave.
 9. Temporarily place ordinary vendors, quest givers, and dummies in the legacy
    reference group. They should remain hideable and must not reveal nearby
    populations; an intentional nonhero registered through the API should still
@@ -341,16 +382,15 @@ Do not call `UnitHider_SetSystemEnabled(false)` or
 `UnitHider_SetSystemEnabled(true)` from Cinematic ON/OFF. The begin/end API owns
 the visibility transition without globally showing UnitHider-managed units.
 
-Version 4.9.2 gives cinematic reveals their own ownership group instead of
-relying on the ordinary throttled visible-unit scan. Every ordinary unit shown
+Version 4.10 gives cinematic reveals their own exact ownership group instead of
+relying on a global settlement or recovery cursor. Every ordinary unit shown
 through a cinematic reference is recorded. A repeated Cinematic ON replaces
 the previous primary scene reference rather than accumulating reveal bubbles,
-while references explicitly added through `UnitHider_RegisterCinematicReference`
-remain until unregistered or the cinematic ends. Cinematic OFF performs the
-full normal settlement before synchronously
-reclassifying any cinematic-visible unit missed by the merged inventory pass.
-The periodic worker also repairs stale managed cinematic state when
-`udg_InCinematic` is already false.
+while references explicitly added through
+`UnitHider_RegisterCinematicReference` remain until unregistered or the
+cinematic ends. Cinematic OFF synchronously reclassifies the normal visible set
+and the exact cinematic-visible set. The periodic worker also repairs stale
+managed cinematic state when `udg_InCinematic` is already false.
 
 `/debug unithider audit` retains the previous reference listing and now reports
 the most recent cinematic begin/end hidden counts, cinematic-visible candidate
