@@ -22,11 +22,13 @@
 
 ### Player-Facing Updates
 
+- Developer camera mode now overrides Boom Mine, Gnoll Hideout, and other special camera presets while it is selected. The zone preset remains stored and resumes after switching back to another camera mode.
 - Updated the post-preload startup flow with a first `New Game` / `Load Saved` choice. New Game continues to the existing game-mode and difficulty choices, while Load Saved lists six local PotS slots before gameplay begins.
 - Added a `Save / Load` entry to the Game menu. Party saves now preserve Nazgrek and an owned Zul'kis independently, including each hero's level/XP, learned persistent abilities, normal inventory, custom bag layout/items, equipped items, charges, base attributes, skill points, ability points, and vitals.
 
 ### Technical Updates
 
+- Updated `UI/CameraControl.j` so Developer mode takes precedence over special modes in camera application, input handling, effective Far Z, resume previews, drift reapplication, and displayed mode names without clearing the underlying zone mode.
 - Updated `SaveLoad/PotSSaveConfig.j`, `SaveLoad/PotSMaxouNSLAdapter.j`, `SaveLoad/tests/PotSSaveLoadCompile.j`, `SaveLoad/README.md`, and added `SaveLoad/tests/PotSSaveConfigNSLImplCompile.j` so the map's immutable original `NSLImpl` remains the sole owner of `NSL_CodeVersion`, `NSL_FolderName`, and `NSL_Key`, resolving the three duplicate-symbol map compile errors.
 - Added `SaveLoad/PotSSaveUI.j` and updated `Preload/Start.j`, `Preload/Preloader.j`, `UI/GameMode.j`, and `UI/MasterUI.j` with saved-mode startup coordination, delayed current-map initialization, fixed-slot selection, and in-game access.
 - Updated `SaveLoad/PotSSaveConfig.j`, `SaveLoad/PotSStateData.j`, `SaveLoad/PotSStateScanner.j`, `SaveLoad/PotSStateSerializer.j`, `SaveLoad/PotSStateMigration.j`, `SaveLoad/PotSMaxouNSLAdapter.j`, and `SaveLoad/PotSSaveLoad.j` to schema 2.1 with exact DInventory/DEquipment slot records, two-character party-file suffix handling, whole-party prevalidation, a cached validated Zul'kis snapshot before Nazgrek mutation, staged party files, and a manifest published only after all required files succeed.
@@ -37,6 +39,10 @@
 
 - Import `SaveLoad/PotSSaveUI.j` after its documented UI dependencies, retain the required 50-level `Z000` FileIO buffer ability in World Editor, compile the focused test map and full map, and runtime-test all six slots with Nazgrek alone and the two-hero party.
 - Runtime-test catalog/tracked/temporary abilities, charged normal/custom/equipped items, equipment bonuses and set counters, bad or wrong-profile files, repeated loads, vA-to-vB migration, current-map quest overlays, and save-file persistence across a map update. Private in-progress story-scene globals outside `QuestMaster` remain intentionally outside automatic coverage.
+
+### Resolved Issues
+
+- Updated `SaveLoad/PotSSaveLoad.j`, `SaveLoad/tests/PotSSaveLoadCompile.j`, and `SaveLoad/README.md` so exact-slot normal inventory restoration temporarily uses DInventory's existing per-hero item-type exclusion API. This prevents the pickup handler from moving restored consumables into custom storage and causing a validated load to fail during application. Apply failures now identify the affected hero and restoration stage.
 
 
 ## [11.10.2026]
