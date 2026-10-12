@@ -3,7 +3,7 @@ library NSLImpl initializer Init requires NSLCodeHelper, NSLCodexStore
         // Saved into the code, requires a matching Codex to load (multi-versioning code support)
         constant integer NSL_CodeVersion = 1
         // Folder name where the save is located at : Documents\Warcraft III\CustomMapData\<<NSL_FolderName>>\SaveChar_<<Save_Name>>.pld
-        constant string NSL_FolderName = "MaxouNSL"
+        constant string NSL_FolderName = "Path of the Shaman"
          // MUST BE a prime number, used by the code generation to ensure the code is valid and not altered, editing this will render all previous generated codes invalid
 		constant integer NSL_Key = 19
         // Allow the integrated -save/-load commands otherwise need to use a manual triggering system
