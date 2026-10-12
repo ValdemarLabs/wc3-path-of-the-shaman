@@ -27,10 +27,11 @@
 
 ### Technical Updates
 
+- Updated `SaveLoad/PotSSaveConfig.j`, `SaveLoad/PotSMaxouNSLAdapter.j`, `SaveLoad/tests/PotSSaveLoadCompile.j`, `SaveLoad/README.md`, and added `SaveLoad/tests/PotSSaveConfigNSLImplCompile.j` so the map's immutable original `NSLImpl` remains the sole owner of `NSL_CodeVersion`, `NSL_FolderName`, and `NSL_Key`, resolving the three duplicate-symbol map compile errors.
 - Added `SaveLoad/PotSSaveUI.j` and updated `Preload/Start.j`, `Preload/Preloader.j`, `UI/GameMode.j`, and `UI/MasterUI.j` with saved-mode startup coordination, delayed current-map initialization, fixed-slot selection, and in-game access.
 - Updated `SaveLoad/PotSSaveConfig.j`, `SaveLoad/PotSStateData.j`, `SaveLoad/PotSStateScanner.j`, `SaveLoad/PotSStateSerializer.j`, `SaveLoad/PotSStateMigration.j`, `SaveLoad/PotSMaxouNSLAdapter.j`, and `SaveLoad/PotSSaveLoad.j` to schema 2.1 with exact DInventory/DEquipment slot records, two-character party-file suffix handling, whole-party prevalidation, a cached validated Zul'kis snapshot before Nazgrek mutation, staged party files, and a manifest published only after all required files succeed.
 - Updated `SaveLoad/PotSSaveLoadTests.j`, `SaveLoad/tests/PotSSaveLoadCompile.j`, `SaveLoad/tests/PotSSaveUICompile.j`, `SaveLoad/README.md`, and `SaveLoad/NSL_SHA256.txt` with custom-storage fixtures, current 1,000-integer capacity measurements, startup/UI compile coverage, FileIO path limitations, and fresh immutable-vendor verification.
-- Configured the unchanged Maxou NSL FileIO backend to use the relative `Pots` folder. Warcraft III still owns the physical custom-map storage location; the backend does not expose arbitrary absolute Windows paths.
+- Kept the unchanged original `NSLImpl` relative `MaxouNSL` folder authoritative. Warcraft III owns the physical custom-map storage location; the backend does not expose arbitrary absolute Windows paths, and changing the vendor folder constant would violate the immutable-dependency requirement.
 
 ### Actions Remaining
 
