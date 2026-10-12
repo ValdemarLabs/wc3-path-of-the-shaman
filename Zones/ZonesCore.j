@@ -2,11 +2,12 @@
     ZonesCore
 
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.2.0
 
     Description:
     Defines authoritative zone metadata, lookup state, weather configuration,
-    detection regions, and dungeon/interior portal geometry.
+    detection regions, dungeon/interior portal geometry, and optional hostile
+    unit pools for zone-appropriate procedural encounters.
 
     Credits:
     - Path of the Shaman zone definitions
@@ -20,10 +21,12 @@
     - ZoneData.addLeaveRegion(rect)
     - ZoneData.addDungeonEnterRegion(sourceRect, destinationRect, facing)
     - ZoneData.addDungeonExitRegion(sourceRect, destinationRect, facing)
+    - ZoneData.addHostileUnitType(unitTypeId)
     - ZoneData.blocksWeatherEffects
     - ZonesCore_GetZoneData(zoneId) returns ZoneData
     - ZonesCore_GetEffectiveZoneIconPath(zoneId) returns string
     - ZonesCore_GetZoneIdAtPoint(x, y) returns integer
+    - ZonesCore_GetRandomHostileUnitType(zoneId) returns a configured rawcode
 
 **/
 library ZonesCore initializer Init
@@ -94,6 +97,8 @@ struct ZoneData
     string notableEntities
     string notableCharacters
     string iconPath
+    integer array hostileUnitTypes[16]
+    integer hostileUnitTypeCount
 
     // Weather may be generated for this zone (default TRUE).
     boolean weatherAllowed
@@ -225,6 +230,20 @@ struct ZoneData
         set this.levelMin = 0
         set this.levelMax = 0
         set this.questLevelReq = displayText
+    endmethod
+
+    method addHostileUnitType takes integer unitTypeId returns nothing
+        if unitTypeId != 0 and this.hostileUnitTypeCount < 16 then
+            set this.hostileUnitTypes[this.hostileUnitTypeCount] = unitTypeId
+            set this.hostileUnitTypeCount = this.hostileUnitTypeCount + 1
+        endif
+    endmethod
+
+    method getRandomHostileUnitType takes nothing returns integer
+        if this.hostileUnitTypeCount <= 0 then
+            return 0
+        endif
+        return this.hostileUnitTypes[GetRandomInt(0, this.hostileUnitTypeCount - 1)]
     endmethod
 
     // Add a weather rect and increment count automatically
@@ -435,6 +454,7 @@ struct ZoneData
         set this.notableEntities = "Unknown"
         set this.notableCharacters = "Unknown"
         set this.iconPath = ZC_DEFAULT_ZONE_ICON
+        set this.hostileUnitTypeCount = 0
         set this.isDungeon = false              // Default false
         set this.enterRegionCount = 0
         set this.leaveRegionCount = 0
@@ -1216,6 +1236,12 @@ private function ConfigureZones takes nothing returns nothing
     set z.notableEntities = "Tiger, Panther, Raptor, Turtle, Crab, Naga, Troll, Ogre, Crocolisk, Frenzy"
     set z.notableCharacters = "Boom Brothers, Blix, Golgar, Vorkatha"
     set z.iconPath = "zones\\zone014_sirensong.blp"    
+    call z.addHostileUnitType('nftr')
+    call z.addHostileUnitType('nftt')
+    call z.addHostileUnitType('nftb')
+    call z.addHostileUnitType('nmyr')
+    call z.addHostileUnitType('nnsw')
+    call z.addHostileUnitType('nsnp')
     call z.addEnterRegion(gg_rct_014Sirensong)
     call RegisterZone(z)
     
@@ -1269,6 +1295,9 @@ private function ConfigureZones takes nothing returns nothing
     set z.notableEntities = "Jungle Trolls"
     set z.notableCharacters = "-"
     set z.iconPath = "zones\\zone014_sirensong.blp"   
+    call z.addHostileUnitType('nftr')
+    call z.addHostileUnitType('nftt')
+    call z.addHostileUnitType('nftb')
     call z.setParentZone(14)
     call z.addEnterRegion(gg_rct_014Zulgarok)
     call RegisterZone(z)
@@ -1323,6 +1352,9 @@ private function ConfigureZones takes nothing returns nothing
     set z.notableEntities = "Naga"
     set z.notableCharacters = "Kelziss"
     set z.iconPath = "zones\\zone014_sirensong.blp"    
+    call z.addHostileUnitType('nmyr')
+    call z.addHostileUnitType('nnsw')
+    call z.addHostileUnitType('nsnp')
     call z.setParentZone(14)
     call z.addEnterRegion(gg_rct_014Serpentshore)
     call RegisterZone(z)
@@ -2256,6 +2288,23 @@ endfunction
 //=======================================================================
 public function GetZoneData takes integer zoneId returns ZoneData
     return zoneDatabase[zoneId]
+endfunction
+
+public function GetRandomHostileUnitType takes integer zoneId returns integer
+    local integer depth = 0
+    local ZoneData z
+
+    loop
+        exitwhen zoneId <= 0 or depth >= 16
+        set z = GetZoneData(zoneId)
+        exitwhen z == 0
+        if z.hostileUnitTypeCount > 0 then
+            return z.getRandomHostileUnitType()
+        endif
+        set zoneId = z.getParentZoneId()
+        set depth = depth + 1
+    endloop
+    return 0
 endfunction
 
 public function AddFishRect takes integer zoneId, rect r returns boolean
