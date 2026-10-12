@@ -2,7 +2,7 @@
     DragonfirePeaksDragons
 
     Author: Valdemar
-    Version: 1.0.1
+    Version: 1.1.0
 
     Description:
     Owns the high-altitude dragons in Dragonfire Peaks. Existing preplaced
@@ -36,6 +36,7 @@ library DragonfirePeaksDragons initializer Init requires DragonBehavior, Table, 
         private group TargetGroup = null
         private timer WanderTimer = null
         private timer CastTimer = null
+        private trigger ZoneEnterTrigger = null
         private timer array CastingTimers
         private unit array CastingUnits
         private Table CastingTimerToSlot = 0
@@ -100,6 +101,9 @@ library DragonfirePeaksDragons initializer Init requires DragonBehavior, Table, 
     private function Wander takes nothing returns nothing
         local unit dragon = null
 
+        if not DragonBehavior_HasAudience(gg_rct_04DragonfirePeaks) then
+            return
+        endif
         call GroupClear(CastWorkGroup)
         call BlzGroupAddGroupFast(DragonGroup, CastWorkGroup)
         loop
@@ -135,10 +139,13 @@ library DragonfirePeaksDragons initializer Init requires DragonBehavior, Table, 
         return target
     endfunction
 
-    private function CastFlameStrikes takes nothing returns nothing
+    private function RunFlameStrikePass takes nothing returns nothing
         local unit dragon = null
         local unit target = null
 
+        if not DragonBehavior_HasAudience(gg_rct_04DragonfirePeaks) then
+            return
+        endif
         call GroupClear(CastWorkGroup)
         call BlzGroupAddGroupFast(DragonGroup, CastWorkGroup)
         loop
@@ -154,9 +161,23 @@ library DragonfirePeaksDragons initializer Init requires DragonBehavior, Table, 
                 endif
             endif
         endloop
-        call TimerStart(CastTimer, GetRandomReal(CAST_DELAY_MIN, CAST_DELAY_MAX), false, function CastFlameStrikes)
         set target = null
         set dragon = null
+    endfunction
+
+    private function CastFlameStrikes takes nothing returns nothing
+        call RunFlameStrikePass()
+        call TimerStart(CastTimer, GetRandomReal(CAST_DELAY_MIN, CAST_DELAY_MAX), false, function CastFlameStrikes)
+    endfunction
+
+    private function OnZoneEnter takes nothing returns nothing
+        local unit enteringUnit = GetTriggerUnit()
+
+        if DragonBehavior_IsAudienceHero(enteringUnit) then
+            call Wander()
+            call RunFlameStrikePass()
+        endif
+        set enteringUnit = null
     endfunction
 
     private function RegisterDragon takes nothing returns nothing
@@ -198,8 +219,12 @@ library DragonfirePeaksDragons initializer Init requires DragonBehavior, Table, 
         call ForGroup(WorkGroup, function RegisterDragon)
         call GroupClear(WorkGroup)
         call EnsureWandererCount()
+        set ZoneEnterTrigger = CreateTrigger()
+        call TriggerRegisterEnterRectSimple(ZoneEnterTrigger, gg_rct_04DragonfirePeaks)
+        call TriggerAddAction(ZoneEnterTrigger, function OnZoneEnter)
         call TimerStart(WanderTimer, WANDER_PERIOD, true, function Wander)
         call TimerStart(CastTimer, GetRandomReal(CAST_DELAY_MIN, CAST_DELAY_MAX), false, function CastFlameStrikes)
+        call Wander()
         call DestroyTimer(initTimer)
         set initTimer = null
     endfunction

@@ -2,7 +2,7 @@
     EmberpeakDragons
 
     Author: Valdemar
-    Version: 1.1.1
+    Version: 1.2.0
 
     Description:
     Manages the high-altitude dragons in Emberpeak Highlands. The dragons
@@ -38,6 +38,7 @@ library EmberpeakDragons initializer Init requires DragonBehavior, Table, CreepR
         private timer CenterWanderTimer = null
         private timer HighlandsWanderTimer = null
         private timer CastTimer = null
+        private trigger ZoneEnterTrigger = null
         private timer array CastingTimers
         private unit array CastingUnits
         private integer array CastingLegacyIndex
@@ -118,6 +119,9 @@ library EmberpeakDragons initializer Init requires DragonBehavior, Table, CreepR
     private function WanderGroup takes group dragonGroup, rect destinationRect, rect audienceRect returns nothing
         local unit dragon = null
 
+        if not DragonBehavior_HasAudience(audienceRect) then
+            return
+        endif
         call GroupClear(WorkGroup)
         call BlzGroupAddGroupFast(dragonGroup, WorkGroup)
         loop
@@ -175,11 +179,29 @@ library EmberpeakDragons initializer Init requires DragonBehavior, Table, CreepR
         set target = null
     endfunction
 
-    private function CastFlameStrikes takes nothing returns nothing
+    private function RunFlameStrikePass takes nothing returns nothing
+        if not DragonBehavior_HasAudience(gg_rct_03EmberpeakHighlands) then
+            return
+        endif
         call TryCastFlameStrike(gg_unit_n647_1938, 3, 2, 1)
         call TryCastFlameStrike(gg_unit_n647_1009, 4, 2, 2)
         call TryCastFlameStrike(gg_unit_n647_0846, 5, 3, 3)
+    endfunction
+
+    private function CastFlameStrikes takes nothing returns nothing
+        call RunFlameStrikePass()
         call TimerStart(CastTimer, GetRandomReal(CAST_DELAY_MIN, CAST_DELAY_MAX), false, function CastFlameStrikes)
+    endfunction
+
+    private function OnZoneEnter takes nothing returns nothing
+        local unit enteringUnit = GetTriggerUnit()
+
+        if DragonBehavior_IsAudienceHero(enteringUnit) then
+            call CenterWander()
+            call HighlandsWander()
+            call RunFlameStrikePass()
+        endif
+        set enteringUnit = null
     endfunction
 
     private function RegisterHighlandsDragon takes nothing returns nothing
@@ -217,9 +239,14 @@ library EmberpeakDragons initializer Init requires DragonBehavior, Table, CreepR
         call GroupEnumUnitsInRect(WorkGroup, gg_rct_03EmberpeakHighlands, null)
         call ForGroup(WorkGroup, function RegisterHighlandsDragon)
         call GroupClear(WorkGroup)
+        set ZoneEnterTrigger = CreateTrigger()
+        call TriggerRegisterEnterRectSimple(ZoneEnterTrigger, gg_rct_03EmberpeakHighlands)
+        call TriggerAddAction(ZoneEnterTrigger, function OnZoneEnter)
         call TimerStart(CenterWanderTimer, CENTER_WANDER_PERIOD, true, function CenterWander)
         call TimerStart(HighlandsWanderTimer, HIGHLANDS_WANDER_PERIOD, true, function HighlandsWander)
         call TimerStart(CastTimer, GetRandomReal(CAST_DELAY_MIN, CAST_DELAY_MAX), false, function CastFlameStrikes)
+        call CenterWander()
+        call HighlandsWander()
         call DestroyTimer(initTimer)
         set initTimer = null
     endfunction

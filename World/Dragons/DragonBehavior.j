@@ -2,7 +2,7 @@
     DragonBehavior
 
     Author: Valdemar
-    Version: 1.0.0
+    Version: 1.1.0
 
     Description:
     Implements shared red/scorching dragon combat animations, opportunistic
@@ -17,10 +17,12 @@
 
     API:
     - DragonBehavior_IsDragonType(unitTypeId) returns boolean
+    - DragonBehavior_IsAudienceHero(whichUnit) returns boolean
+    - DragonBehavior_HasAudience(audienceRect) returns boolean
     - DragonBehavior_TryPlayAmbientSound(whichUnit, audienceRect)
 
 **/
-library DragonBehavior initializer Init
+library DragonBehavior initializer Init requires optional AI
     globals
         private constant integer UNIT_RED_DRAKE_10 = 'n63G'
         private constant integer UNIT_RED_DRAGON_10 = 'n644'
@@ -51,7 +53,20 @@ library DragonBehavior initializer Init
         return IsRedMeleeType(unitTypeId) or IsScorchingType(unitTypeId) or unitTypeId == 'n647'
     endfunction
 
-    private function HasAudience takes rect audienceRect returns boolean
+    public function IsAudienceHero takes unit whichUnit returns boolean
+        if not IsAlive(whichUnit) or not IsUnitType(whichUnit, UNIT_TYPE_HERO) then
+            return false
+        endif
+        if IsPlayerInForce(GetOwningPlayer(whichUnit), udg_PlayerGroup) then
+            return true
+        endif
+        static if LIBRARY_AI then
+            return AI_IsAlive(whichUnit) and AI_IsUnitHiderRevealer(whichUnit)
+        endif
+        return false
+    endfunction
+
+    public function HasAudience takes rect audienceRect returns boolean
         local unit picked = null
         local boolean found = false
 
@@ -64,7 +79,7 @@ library DragonBehavior initializer Init
             set picked = FirstOfGroup(SearchGroup)
             exitwhen picked == null
             call GroupRemoveUnit(SearchGroup, picked)
-            if IsAlive(picked) and IsPlayerInForce(GetOwningPlayer(picked), udg_PlayerGroup) then
+            if IsAudienceHero(picked) then
                 set found = true
                 exitwhen true
             endif
@@ -77,7 +92,7 @@ library DragonBehavior initializer Init
     public function TryPlayAmbientSound takes unit whichUnit, rect audienceRect returns nothing
         local integer line
 
-        if not IsAlive(whichUnit) or not HasAudience(audienceRect) or GetRandomInt(1, 8) != 1 then
+        if not IsAlive(whichUnit) or not DragonBehavior_HasAudience(audienceRect) or GetRandomInt(1, 8) != 1 then
             return
         endif
         set line = GetRandomInt(1, 6)
