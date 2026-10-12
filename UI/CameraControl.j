@@ -2,7 +2,7 @@
     CameraControl
     
     Author: [Valdemar]
-    Version: 1.8.1
+    Version: 1.8.2
 
     Description: Keeps each player's camera behavior consistent, including modes, target tracking, local middle-drag mouse-look, DynamicFarZ, basic movement controls, and optional DynamicMinimap safety turns. Experimental camera-type and input-ownership APIs remain disabled by default.
 
@@ -600,6 +600,9 @@ private function CC_IsKeyboardModeActive takes player whichPlayer returns boolea
     if CC_Suspended[pid] then
         return CC_SuspendedKeyboardAdjustable[pid]
     endif
+    if CC_Mode[pid] == CAMERA_MODE_DEVELOPER then
+        return false
+    endif
     // Special modes opt into arrow-key control through CC_DefineSpecialMode(..., keyboardAdjustable, ...).
     if CC_IsResolvedSpecialModeKeyboardAdjustable(pid) then
         return true
@@ -882,6 +885,8 @@ private function CC_GetCurrentEffectiveFarZ takes player whichPlayer returns rea
     local integer pid = CC_GetPlayerIndex(whichPlayer)
     if CC_Suspended[pid] and CC_SuspendedKeyboardAdjustable[pid] then
         return CC_GetDynamicFarZ(whichPlayer, CC_GetSpecialFarZ(pid), CC_GetSpecialAngle(pid), CC_GetResolvedSpecialMode(pid))
+    elseif CC_Mode[pid] == CAMERA_MODE_DEVELOPER then
+        return CC_GetDynamicFarZ(whichPlayer, CC_FarZ[pid], CC_Angle[pid], CAMERA_SPECIAL_MODE_NONE)
     elseif CC_HasSpecialMode(pid) then
         return CC_GetDynamicFarZ(whichPlayer, CC_GetSpecialFarZ(pid), CC_GetSpecialAngle(pid), CC_GetResolvedSpecialMode(pid))
     elseif CC_Mode[pid] == CAMERA_MODE_ADVANCED then
@@ -967,6 +972,8 @@ private function CC_ApplyKeyboardFields takes player whichPlayer returns nothing
     local integer pid = CC_GetPlayerIndex(whichPlayer)
     if CC_Suspended[pid] and CC_SuspendedKeyboardAdjustable[pid] then
         call CC_ApplySpecialFields(whichPlayer, CAMERA_KEYBOARD_FIELD_DURATION)
+    elseif CC_Mode[pid] == CAMERA_MODE_DEVELOPER then
+        call CC_ApplyDirectFields(whichPlayer, CAMERA_KEYBOARD_FIELD_DURATION)
     elseif CC_IsResolvedSpecialModeKeyboardAdjustable(pid) then
         call CC_ApplySpecialFields(whichPlayer, CAMERA_KEYBOARD_FIELD_DURATION)
     else
@@ -1170,7 +1177,9 @@ private function CC_StartSmoothResumeVisualWithDuration takes player whichPlayer
 
     call CC_PanToUnit(whichPlayer, target, duration)
 
-    if CC_HasSpecialMode(pid) then
+    if CC_Mode[pid] == CAMERA_MODE_DEVELOPER then
+        call CC_ApplyDirectFields(whichPlayer, duration)
+    elseif CC_HasSpecialMode(pid) then
         call CC_ApplySpecialFields(whichPlayer, duration)
     elseif CC_Mode[pid] == CAMERA_MODE_ADVANCED then
         call CC_ApplyAdvancedResumePreviewFields(whichPlayer, duration)
@@ -1221,7 +1230,7 @@ private function CC_UpdateCameraInput takes nothing returns nothing
             endif
 
             call CC_ApplyKeyboardFields(Player(i))
-        elseif CC_IsSpecialModeKeyboardAdjustable(specialMode) and not CC_Suspended[i] then
+        elseif CC_Mode[i] != CAMERA_MODE_DEVELOPER and CC_IsSpecialModeKeyboardAdjustable(specialMode) and not CC_Suspended[i] then
             set specialAngleMax = CC_GetConfiguredSpecialModeAngleMax(specialMode)
             if CC_MoveDown[i] then
                 set CC_SpecialAngle[i] = CC_SpecialAngle[i] + CAMERA_KEYBOARD_VERTICAL_SPEED
@@ -1286,7 +1295,9 @@ endfunction
 
 private function CC_ReapplyStoredFields takes player whichPlayer returns nothing
     local integer pid = CC_GetPlayerIndex(whichPlayer)
-    if CC_HasSpecialMode(pid) then
+    if CC_Mode[pid] == CAMERA_MODE_DEVELOPER then
+        call CC_ApplyDirectFields(whichPlayer, 0.00)
+    elseif CC_HasSpecialMode(pid) then
         call CC_ApplySpecialFields(whichPlayer, CAMERA_NORMAL_TRACE_CORRECTION_DURATION)
     elseif CC_Mode[pid] == CAMERA_MODE_ADVANCED then
         call CC_ApplyAdvancedDriftFields(whichPlayer, 0.00)
@@ -1321,7 +1332,12 @@ private function CC_ApplyMode takes player whichPlayer returns nothing
     if CC_IsSuspended(whichPlayer) then
         return
     endif
-    if CC_HasSpecialMode(pid) then
+    // Developer mode temporarily overrides presentation without discarding the zone's stored special mode.
+    if mode == CAMERA_MODE_DEVELOPER then
+        call CC_ClearKeyState(whichPlayer)
+        call CC_UpdateLoopState()
+        call CC_ApplyDeveloperMode(whichPlayer)
+    elseif CC_HasSpecialMode(pid) then
         // Preserve held arrow-key state for special modes that are intentionally keyboard-adjustable.
         if not CC_IsResolvedSpecialModeKeyboardAdjustable(pid) then
             call CC_ClearKeyState(whichPlayer)
@@ -1332,10 +1348,6 @@ private function CC_ApplyMode takes player whichPlayer returns nothing
         call CC_ClearKeyState(whichPlayer)
         call CC_UpdateLoopState()
         call CC_ApplyAdvancedMode(whichPlayer)
-    elseif mode == CAMERA_MODE_DEVELOPER then
-        call CC_ClearKeyState(whichPlayer)
-        call CC_UpdateLoopState()
-        call CC_ApplyDeveloperMode(whichPlayer)
     else
         call CC_ApplyNormalMode(whichPlayer)
     endif
@@ -1665,13 +1677,13 @@ endfunction
 public function GetModeName takes player whichPlayer returns string
     local integer pid = CC_GetPlayerIndex(whichPlayer)
     local integer mode = CC_Mode[pid]
-    if CC_HasSpecialMode(pid) then
+    if mode == CAMERA_MODE_DEVELOPER then
+        return "Developer"
+    elseif CC_HasSpecialMode(pid) then
         return CC_GetSpecialModeName(pid)
     endif
     if mode == CAMERA_MODE_ADVANCED then
         return "Advanced"
-    elseif mode == CAMERA_MODE_DEVELOPER then
-        return "Developer"
     endif
     return "Normal"
 endfunction
