@@ -2,9 +2,10 @@
     MasterUI
     
     Author: Valdemar
-    Version: 1.0
+    Version: 1.1.0
 
-    Description: Serves as the main in-game menu for opening the different info and utility panels.
+    Description: Serves as the main in-game menu for opening information,
+    settings, and the PotS save/load panel.
 
     Credits: Tasyen (TasQuestBox as inspiration)
 
@@ -62,6 +63,7 @@ globals
     private constant integer MUI_ACTION_COMMANDS = 10
     private constant integer MUI_ACTION_PLAYER_HOME = 11
     private constant integer MUI_ACTION_SETTINGS = 12
+    private constant integer MUI_ACTION_SAVE_LOAD = 13
 
     private constant real MUI_PANEL_LEFT = 0.110
     private constant real MUI_PANEL_RIGHT = 0.560
@@ -95,6 +97,7 @@ globals
     private constant string MUI_ICON_COMMANDS = "ReplaceableTextures\\CommandButtons\\BTNTicket_Tarot_Lunacy.blp"     // OK?
     private constant string MUI_ICON_PLAYER_HOME = "ReplaceableTextures\\CommandButtons\\BTNBook_07.blp"
     private constant string MUI_ICON_SETTINGS = "ReplaceableTextures\\CommandButtons\\BTNEngineeringUpgrade.blp"     // OK
+    private constant string MUI_ICON_SAVE_LOAD = "ReplaceableTextures\\CommandButtons\\BTNReplay-Loop.blp"
 endglobals
 
 private function MUI_FormatButtonLabel takes string label returns string
@@ -194,6 +197,7 @@ private function MUI_HideAllPanels takes nothing returns nothing
     call ExecuteFunc("CommandsUI_Hide")
     call ExecuteFunc("PlayerHomeUI_Hide")
     call ExecuteFunc("SettingsUI_Hide")
+    call ExecuteFunc("PotSSaveUI_Hide")
     static if LIBRARY_QuestUI then
         call ExecuteFunc("QuestUI_Hide")
     endif
@@ -278,6 +282,11 @@ private function MUI_OpenSettings takes nothing returns nothing
     call ExecuteFunc("SettingsUI_Show")
 endfunction
 
+private function MUI_OpenSaveLoad takes nothing returns nothing
+    call MUI_HideAllPanels()
+    call ExecuteFunc("PotSSaveUI_Show")
+endfunction
+
 private function MUI_RunAction takes integer actionId returns nothing
     if actionId == MUI_ACTION_ZONES then
         call MUI_OpenZones()
@@ -303,6 +312,8 @@ private function MUI_RunAction takes integer actionId returns nothing
         call MUI_OpenPlayerHome()
     elseif actionId == MUI_ACTION_SETTINGS then
         call MUI_OpenSettings()
+    elseif actionId == MUI_ACTION_SAVE_LOAD then
+        call MUI_OpenSaveLoad()
     endif
 endfunction
 
@@ -437,6 +448,7 @@ private function MUI_CreateFrames takes nothing returns nothing
     call MUI_CreateMenuButton(10, "Commands", MUI_ICON_COMMANDS, MUI_ACTION_COMMANDS, 0.300, -0.102)
     call MUI_CreateMenuButton(11, "Traveler's Journal", MUI_ICON_PLAYER_HOME, MUI_ACTION_PLAYER_HOME, 0.300, -0.144)
     call MUI_CreateMenuButton(12, "Settings", MUI_ICON_SETTINGS, MUI_ACTION_SETTINGS, 0.300, -0.186)
+    call MUI_CreateMenuButton(13, "Save / Load", MUI_ICON_SAVE_LOAD, MUI_ACTION_SAVE_LOAD, 0.300, -0.228)
 
     set MUI_HintsButtonAlert = MUI_CreateHintsButtonAlert()
 

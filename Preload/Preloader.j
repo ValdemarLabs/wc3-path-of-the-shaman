@@ -2,7 +2,7 @@
     Preloader
 
     Author: Valdemar
-    Version:
+    Version: 1.1.0
 
     Description:
     Asks the player to choose a normal preload or a fast developer check
@@ -13,11 +13,11 @@
 
     How to install:
     Import after PreloadAbilities.j, ImagesUI.j, RegionTitlesLight.j,
-    ExSound.j, ExMusic.j, StatsLiteUI.j, and GameMode.j. Disable the old GUI
+    ExSound.j, ExMusic.j, StatsLiteUI.j, GameMode.j, and PotSSaveUI.j. Disable the old GUI
     preload triggers so this library owns the elapsed-time 0.00 preload flow.
     The old Game Start GUI trigger should not also fire from its own
-    elapsed-time event; this library shows GameMode when preloading is done.
-    GameMode calls Start_Start() after mode and difficulty are selected.
+    elapsed-time event; this library shows PotSSaveUI's New Game / Load Saved
+    choice when preloading is done. New Game then opens GameMode.
     Ability preloading creates a temporary AbilityLoader unit from
     rawcode 'h60N' and removes it immediately after ability data is loaded.
     Fast developer checks still preload abilities but bypass the sound and
@@ -29,7 +29,7 @@
     call Preloader_StartLoadedGame()
 
 **/
-library Preloader initializer AutoInit requires ImagesUI, RegionTitles, ExSound, ExMusic, PreloadAbilities, StatsLiteUI, FullscreenUI, GameMode
+library Preloader initializer AutoInit requires ImagesUI, RegionTitles, ExSound, ExMusic, PreloadAbilities, StatsLiteUI, FullscreenUI, GameMode, PotSSaveUI
     globals
         // Timing between visible preload stages. Actual preload calls still run synchronously.
         private constant real PRL_START_MESSAGE_DELAY = 5.00
@@ -134,9 +134,9 @@ library Preloader initializer AutoInit requires ImagesUI, RegionTitles, ExSound,
         call HidePreloadTitle()
 
         if PRL_RunGameStartOnFinish then
-            // Retain the completed logo beneath GameMode until the run starts.
+            // Retain the completed logo beneath the startup choice until the run starts.
             call ImagesUI_SetPreloadText("")
-            call GameMode_Show()
+            call PotSSaveUI_ShowStartup()
         else
             call ImagesUI_HidePreload()
             call EnableUserControl(true)

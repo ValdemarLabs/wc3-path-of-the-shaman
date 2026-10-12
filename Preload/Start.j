@@ -2,11 +2,11 @@
     Start
 
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.3.0
 
     Description:
-    Runs the player start flow after GameMode finishes. This replaces the old
-    Game Start GUI trigger with explicit startup phases.
+    Runs the player start flow after a new-game mode choice or a saved-game
+    selection. This replaces the old Game Start GUI trigger with explicit phases.
 
     Credits:
     - Old GUI "Game Start" trigger
@@ -21,6 +21,9 @@
     call Start_SetupZulkisStartingItems()
     call Start_SetRunIntroCinematic(boolean enabled)
     call Start_SetStartingGoldBonus(integer amount)
+    call Start_SetPendingLoadSlot(string slot)
+    call Start_GetPendingLoadSlot()
+    call Start_ContinueAfterLoad()
 
 **/
 library Start requires ZonesCore, DInventory, DEquipment, WeatherSystem, TerrainDamage, BridgeSystem
@@ -88,6 +91,8 @@ library Start requires ZonesCore, DInventory, DEquipment, WeatherSystem, Terrain
         private boolean ST_RunIntroCinematic = true
         private boolean ST_ZulkisStartingItemsAdded = false
         private integer ST_StartingGoldBonus = 0
+        private string ST_PendingLoadSlot = ""
+        private boolean ST_AwaitingLoad = false
     endglobals
 
     private function ST_StopTimer takes nothing returns nothing
@@ -254,6 +259,10 @@ library Start requires ZonesCore, DInventory, DEquipment, WeatherSystem, Terrain
         endif
     endfunction
 
+    private function ST_BeginPendingLoad takes nothing returns nothing
+        call ExecuteFunc("PotSSaveLoad_StartPendingLoad")
+    endfunction
+
     // Phase 2: create Nazgrek and apply starter systems, abilities, items, and resources.
     private function ST_PhaseHeroSetup takes nothing returns nothing
         call ST_CreateNazgrek()
@@ -263,7 +272,14 @@ library Start requires ZonesCore, DInventory, DEquipment, WeatherSystem, Terrain
         call ST_AddStartingItems()
         call ST_SetStartingResources()
 
-        call TimerStart(ST_Timer, ST_INTRO_DELAY, false, function ST_PhaseIntroAndWorldSystems)
+        if ST_PendingLoadSlot != "" then
+            set ST_AwaitingLoad = true
+            // Let hero-dependent zero-delay initializers create their current-map
+            // quest and companion state before the saved overlay is preflighted.
+            call TimerStart(ST_Timer, ST_INTRO_DELAY, false, function ST_BeginPendingLoad)
+        else
+            call TimerStart(ST_Timer, ST_INTRO_DELAY, false, function ST_PhaseIntroAndWorldSystems)
+        endif
     endfunction
 
     public function Start takes nothing returns nothing
@@ -284,5 +300,27 @@ library Start requires ZonesCore, DInventory, DEquipment, WeatherSystem, Terrain
 
     public function SetStartingGoldBonus takes integer amount returns nothing
         set ST_StartingGoldBonus = amount
+    endfunction
+
+    public function SetPendingLoadSlot takes string slot returns nothing
+        if not ST_Started then
+            set ST_PendingLoadSlot = slot
+        endif
+    endfunction
+
+    public function GetPendingLoadSlot takes nothing returns string
+        return ST_PendingLoadSlot
+    endfunction
+
+    public function ContinueAfterLoad takes nothing returns nothing
+        if not ST_AwaitingLoad then
+            return
+        endif
+        set ST_AwaitingLoad = false
+        set ST_PendingLoadSlot = ""
+        if ST_Timer == null then
+            set ST_Timer = CreateTimer()
+        endif
+        call TimerStart(ST_Timer, ST_INTRO_DELAY, false, function ST_PhaseIntroAndWorldSystems)
     endfunction
 endlibrary

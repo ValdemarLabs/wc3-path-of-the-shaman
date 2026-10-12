@@ -2,7 +2,7 @@
     GameMode
 
     Author: Valdemar
-    Version:
+    Version: 1.1.0
 
     Description:
     Shows the pre-start game mode and difficulty selection UI. The selected
@@ -13,12 +13,13 @@
 
     How to install:
     Import before Preloader.j and after Difficulty.j, Start.j, Interface.j, and ImagesUI.j.
-    Preloader.j calls GameMode_Show() after preload; this library applies the
-    selected difficulty and then calls Start_Start().
+    PotSSaveUI calls GameMode_Show() for New Game after preload; this library
+    applies the selected difficulty and then calls Start_Start().
 
     API:
     call GameMode_Show()
     call GameMode_Hide()
+    call GameMode_StartSavedGame(slot, mode, difficulty)
     call GameMode_GetMode()
     call GameMode_GetDifficulty()
     call GameMode_IsStoryEnabled()
@@ -431,6 +432,28 @@ library GameMode initializer AutoInit requires Difficulty, Start, Interface, Ima
 
     public function Hide takes nothing returns nothing
         call GM_HideInternal()
+    endfunction
+
+    public function StartSavedGame takes string slot, integer mode, integer difficulty returns nothing
+        if slot == "" then
+            return
+        endif
+        if mode < GAME_MODE_STORY or mode > GAME_MODE_DEVELOPER or (mode == GAME_MODE_DEVELOPER and not GM_SHOW_DEVELOPER_MODE) then
+            set mode = GAME_MODE_STORY
+        endif
+        if difficulty < DIFFICULTY_STORY or difficulty > DIFFICULTY_HARD then
+            set difficulty = DIFFICULTY_NORMAL
+        endif
+        call GM_ApplyModeConfig(mode)
+        set GM_SelectedDifficulty = difficulty
+        call Difficulty_SetDifficulty(difficulty)
+        call Start_SetRunIntroCinematic(false)
+        call Start_SetStartingGoldBonus(GM_StartingGoldBonus)
+        call Start_SetPendingLoadSlot(slot)
+        call GM_HideInternal()
+        call ImagesUI_HidePreload()
+        call EnableUserControl(false)
+        call Start_Start()
     endfunction
 
     public function IsVisible takes nothing returns boolean
