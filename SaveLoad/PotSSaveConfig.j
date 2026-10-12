@@ -2,18 +2,18 @@
     PotSSaveConfig
 
     Author: Valdemar
-    Version: 2.1.0
+    Version: 2.1.1
 
     Description:
-    Owns PotS application-schema limits and the immutable Maxou NSL core
-    configuration used by the separate PotS integration.
+    Owns PotS application-schema limits. The immutable original Maxou NSLImpl
+    remains the sole owner of NSL_CodeVersion, NSL_Key, and NSL_FolderName.
 
     Credits:
     - Maxou, New Save Load (NSL)
 
     How to install:
-    Import before the reusable NSL core and every PotS SaveLoad library. Do
-    not also import the vendor NSLImpl/command example.
+    Import after the existing Maxou NSL stack and before every PotS SaveLoad
+    library. Keep exactly one original vendor NSLImpl installation.
 
     API:
     - Configuration constants are exposed with the PotSSaveConfig_ prefix.
@@ -21,11 +21,6 @@
 **/
 library PotSSaveConfig
     globals
-        // Required by the immutable NSL codec and SaveFile core.
-        constant integer NSL_CodeVersion = 1
-        constant integer NSL_Key = 19
-        constant string NSL_FolderName = "Pots"
-
         // PotS application schema. Schema 1 remains readable; schema 2.0 adds
         // ability provenance and schema 2.1 adds custom inventory/equipment.
         public constant integer SCHEMA_MAJOR = 2

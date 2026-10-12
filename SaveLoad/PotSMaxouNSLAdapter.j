@@ -2,7 +2,7 @@
     PotSMaxouNSLAdapter
 
     Author: Valdemar
-    Version: 2.1.0
+    Version: 2.1.1
 
     Description:
     Bridges bounded PotS integer streams to the immutable Maxou NSL codec and
@@ -13,9 +13,10 @@
     - TriggerHappy, FileIO and SaveFile
 
     How to install:
-    Import PotSSaveConfig first, then the reusable vendor core (FileIO,
-    SaveFile, NSL Size Enum, NSL Helper, NSL Save Load), then this library.
-    Do not import the vendor NSLImpl/NSLUtils command example with this bridge.
+    Retain the existing vendor stack (FileIO, SaveFile, NSL Size Enum, NSL
+    Helper, NSL Save Load, and NSLImpl), then import PotSSaveConfig, the PotS
+    state/serializer libraries, and this library. PotS uses distinct commands
+    and character identifiers.
 
     API:
     - PotSMaxouNSLAdapter_SetSaveCallback(callback)

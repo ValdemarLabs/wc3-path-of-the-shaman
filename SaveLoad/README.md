@@ -1,4 +1,4 @@
-# PotS Maxou NSL SaveLoad 2.1.0
+# PotS Maxou NSL SaveLoad 2.1.1
 
 This directory contains the PotS-owned automatic character-state layer described by `PotS_MaxouNSL_AutoSaveLoad_Codex.json`. It uses the existing Maxou New Save Load (NSL) codec and FileIO stack as an immutable backend. No file under `_CoreSystems/MaxouNSL/` is modified or copied.
 
@@ -8,13 +8,13 @@ The implementation is single-player only. Local file reads are deliberately sepa
 
 Import the scripts in this dependency order:
 
-1. `PotSSaveConfig.j`
-2. Immutable vendor core:
+1. Existing immutable Maxou NSL installation, including its single `NSL Implementation.j` configuration:
    - `_CoreSystems/MaxouNSL/Core by Trigger Happy vJASS/FileIO.j`
    - `_CoreSystems/MaxouNSL/Core by Trigger Happy vJASS/SaveFile.j`
    - `_CoreSystems/MaxouNSL/Save Load System vJASS/NSL Size Enum.j`
    - `_CoreSystems/MaxouNSL/Save Load System vJASS/NSL Helper.j`
    - `_CoreSystems/MaxouNSL/Save Load System vJASS/NSL Save Load.j`
+2. `PotSSaveConfig.j`
 3. `PotSStateData.j`
 4. `PotSStateTracker.j`
 5. `PotSWorldProgression.j`
@@ -28,7 +28,7 @@ Import the scripts in this dependency order:
 
 `PotSSaveLoadTests.j` is test-map-only and has no initializer.
 
-Do not import the vendor example/user-integration scripts (`NSL Implementation.j`, `NSL Utils.j`, `NSL SaveLoadExecutor.j`, `NSL CodeHelper.j`, `NSL CodexStore.j`, `NSL NumberUtils.j`, or the multiple-code example) as part of this PotS workflow. They remain byte-identical in the repository. The examples own their own state and `-save`/`-load` workflow; selecting only the reusable NSL core avoids duplicate commands and duplicate vendor configuration. `NSL NumberUtils.j` is empty in the inspected package, while the example helper references number utilities, so the example stack is not a safe dependency for this adapter.
+Retain the complete original vendor stack unchanged. `NSLImpl` is the sole owner of `NSL_CodeVersion`, `NSL_Key`, and `NSL_FolderName`; `PotSSaveConfig.j` deliberately does not redeclare them. The original example continues to own `-save`/`-load`, while PotS owns only `-pots-save`/`-pots-load` and its UI slots. Do not import a second copy of any vendor script or configuration trigger.
 
 The PotS ability, quest, and item integrations are optional vJASS dependencies. For full PotS behavior, import the existing `AbilitiesPlayer`, `Abilities`, `AbilityPoints`, `QuestMaster`, `DInventory`, and `DEquipment` libraries before the relevant SaveLoad modules. `Start`, `GameMode`, `Preloader`, and `MasterUI` contain only the narrow startup/menu wiring for this feature.
 
@@ -47,7 +47,7 @@ The adapter uses only these source-verified public APIs:
 
 NSL remains responsible for its player-name binding, integrity check, NSL code version, integer encoding, and FileIO transport. PotS adds an application-schema header inside the NSL integer payload. The inspected package matches the published Maxou NSL resource updated 13 November 2025.
 
-`PotSSaveConfig.j` supplies the three globals required by the reusable vendor core without editing vendor files: `NSL_CodeVersion = 1`, `NSL_Key = 19`, and `NSL_FolderName = "Pots"`.
+The inspected original `NSLImpl` supplies `NSL_CodeVersion = 1`, `NSL_Key = 19`, and `NSL_FolderName = "MaxouNSL"`. Keeping it as the single configuration owner prevents duplicate globals and preserves original NSL behavior without modifying vendor code.
 
 ## Player workflow
 
@@ -58,7 +58,7 @@ NSL remains responsible for its player-name binding, integrity check, NSL code v
 - The startup panel restores the saved mode/difficulty before `Start` creates Nazgrek, then loads Nazgrek followed by Zul'kis when the manifest contains both heroes.
 - The startup slot choice explicitly reopens and owns the safe-load window, so waiting on the title panel does not invalidate a selected save.
 
-The unchanged FileIO backend accepts only a relative folder. With `NSL_FolderName = "Pots"`, its generated paths are `Pots\SaveChar_<characterId>.pld` inside Warcraft III's permitted custom-map/FileIO storage. JASS cannot force these files into the literal installation directory `C:\Program Files (x86)\Warcraft III\_retail_\Pots`; the client chooses the physical sandbox location.
+The unchanged FileIO backend accepts only a relative folder. With the immutable original `NSLImpl`, its generated paths are `MaxouNSL\SaveChar_<characterId>.pld` inside Warcraft III's permitted custom-map/FileIO storage. JASS cannot force these files into the literal installation directory `C:\Program Files (x86)\Warcraft III\_retail_\Pots`; changing the vendor folder constant would also violate the immutable-dependency requirement.
 
 Party saves prefer `udg_Nazgrek` and include `udg_Zulkis` when Zul'kis is a valid player-owned hero. The registered/selected-hero resolver remains as a safe fallback when Nazgrek is unavailable.
 
@@ -135,7 +135,7 @@ These counts are asserted by `PotSSaveLoadTests`. The maximum remains below the 
 
 Import `PotSSaveLoadTests.j` into a test map and call `PotSSaveLoadTests_Run()`. It covers deterministic ordering, signed integer/rawcode serialization, custom inventory/equipment roundtrips and invalid slots, schema-2.1 roundtrip, schema-1 fixture migration, unknown optional tags, missing defaults, malformed/truncated records, future schema rejection, representative sizes, and hard-cap rejection.
 
-`tests/PotSSaveLoadCompile.j` is compile-only and must not be imported into a production map. It imports the immutable reusable NSL core, actual `AbilitiesPlayer`/`AbilityPoints`, and narrow contracts for `Abilities`, `QuestMaster`, `DInventory`, `DEquipment`, `Start`, and `GameMode`, so every optional branch is preprocessed outside the full map. `tests/PotSSaveUICompile.j` independently compiles the changed startup, GameMode, Preloader, MasterUI, and Save UI path. Compile either with `jasshelper --scriptonly <common.j> <blizzard.j> <harness.j> <output.j>`, then pass the generated output to pJass with the same active API files. These focused compiles supplement rather than replace a current World Editor full-map compile.
+`tests/PotSSaveLoadCompile.j` is compile-only and must not be imported into a production map. It imports the immutable reusable NSL core, supplies the inspected NSLImpl constants as a test contract, imports actual `AbilitiesPlayer`/`AbilityPoints`, and provides narrow contracts for `Abilities`, `QuestMaster`, `DInventory`, `DEquipment`, `Start`, and `GameMode`, so every optional branch is preprocessed outside the full map. `tests/PotSSaveConfigNSLImplCompile.j` reproduces the production configuration ownership and verifies that its globals coexist without redeclaration. `tests/PotSSaveUICompile.j` independently compiles the changed startup, GameMode, Preloader, MasterUI, and Save UI path. Compile each with `jasshelper --scriptonly <common.j> <blizzard.j> <harness.j> <output.j>`, then pass the generated output to pJass with the same active API files. These focused compiles supplement rather than replace a current World Editor full-map compile.
 
 Required engine tests that cannot be run from the source repository alone:
 

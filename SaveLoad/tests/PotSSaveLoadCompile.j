@@ -17,6 +17,11 @@
     - None; config/main exist only as compiler entry points.
 **/
 globals
+    // Test contract supplied by the production map's immutable NSLImpl.
+    constant integer NSL_CodeVersion = 1
+    constant integer NSL_Key = 19
+    constant string NSL_FolderName = "MaxouNSL"
+
     unit udg_Nazgrek = null
     unit udg_Zulkis = null
     integer udg_Companion_GroupSize = 0
