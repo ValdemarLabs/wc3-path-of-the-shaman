@@ -2,7 +2,7 @@
     qRixitRoadcoin
 
     Author: Valdemar
-    Version: 1.2.0
+    Version: 1.3.0
 
     Description:
     Daily and normal vendor quest content for Rixit Roadcoin.
@@ -29,6 +29,7 @@ library qRixitRoadcoin initializer Init requires QuestsVendor, VoicelinesQuests,
         set escortDefinitionId = QuestsVendor_RegisterEscortQuest('n03X', "Terms and Conditions", 11, "Terms and Conditions", "ReplaceableTextures\\CommandButtons\\BTNScroll.blp", "Protect Rixit Roadcoin while he negotiates with Snikka Sparkdust, then escort him back to his cart route.", 'n047', "Snikka Sparkdust's reagent counter", 90, VL_GENERIC_GOBLIN_MALE_2_TYPE, 1044, VL_VENDORQUEST_GOBLIN_0044, VL_VENDORQUEST_GOBLIN_0045)
         call QuestsVendor_SetExtendedDialogue(escortDefinitionId, VL_VENDORQUEST_GOBLIN_0046, 1046, VL_VENDORQUEST_GOBLIN_0047, 1047)
         call QuestsVendor_SetEscortTravelDialogue(escortDefinitionId, VL_VENDORQUEST_GOBLIN_0048, 1048, "I can look threatening. Whether that improves the contract is another matter.")
+        call QuestsVendor_SetEscortCombatBehavior(escortDefinitionId, QuestsVendor_ESCORT_COMBAT_TAKE_COVER, 320.00)
         call QuestsVendor_RegisterEscortProgressVariant(escortDefinitionId, VL_VENDORQUEST_GOBLIN_0049, 1049)
         call QuestsVendor_RegisterEscortProgressVariant(escortDefinitionId, VL_VENDORQUEST_GOBLIN_0050, 1050)
         call QuestsVendor_RegisterEscortProgressVariant(escortDefinitionId, VL_VENDORQUEST_GOBLIN_0051, 1051)
@@ -39,7 +40,7 @@ library qRixitRoadcoin initializer Init requires QuestsVendor, VoicelinesQuests,
         call QuestsVendor_RegisterEscortHeroProgressVariant(escortDefinitionId, VL_ZULKIS_GENERIC_TYPE, VL_ZULKIS_GENERIC_0055_TEXT, 55)
         call QuestsVendor_RegisterEscortHeroProgressVariant(escortDefinitionId, VL_ZULKIS_GENERIC_TYPE, VL_ZULKIS_GENERIC_0056_TEXT, 56)
         call QuestsVendor_SetEscortRoundTrip(escortDefinitionId, "Rixit's cart route", VL_VENDORQUEST_GOBLIN_0052, 1052)
-        call QuestsVendor_RegisterEscortAmbushes(escortDefinitionId, QuestsVendor_ESCORT_LEG_RETURN, 0.40, 2, 4, 'nsty', 4, 400.00, VL_VENDORQUEST_GOBLIN_0053, 1053)
+        call QuestsVendor_RegisterEscortZoneAmbushes(escortDefinitionId, QuestsVendor_ESCORT_LEG_RETURN, 0.40, 2, 4, 'nftr', 4, 400.00, VL_VENDORQUEST_GOBLIN_0048, 1048)
         call QuestsVendor_SetFactionReward(escortDefinitionId, "Goblins", 25, false)
     endfunction
 endlibrary

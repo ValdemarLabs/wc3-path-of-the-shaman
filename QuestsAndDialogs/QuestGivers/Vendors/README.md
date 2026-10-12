@@ -2,7 +2,7 @@
 
 Import in this order: `QuestsGeneric.j`, `Voicelines_Quests.j`,
 `Voicelines_Nazgrek.j`, `Voicelines_Zulkis.j`,
-`EscortMovement.j`, `UnitSpawn.j`, `ZonesCore.j`, `Companions.j`, `AI.j`, `QuestsVendor.j`, the desired
+`ThreatSystem.j`, `EscortMovement.j`, `UnitSpawn.j`, `ZonesCore.j`, `Companions.j`, `AI.j`, `QuestsVendor.j`, the desired
 `qVendorName.j` libraries, `VendorCatalogs.j`,
 all `VendorFactions/Vendor*.j` libraries, `VendorBags.j`, and `VendorDialogs.j`.
 `VendorDialogs.j` discovers placed vendor units and instantiates every quest
@@ -47,7 +47,11 @@ Vendor escorts are always one-time Normal quests. The escorted giver now walks
 toward the configured destination through `EscortMovement`; the accepting hero
 protects and accompanies it instead of leading it by trial and error. The giver
 stops when that hero leaves its configured range, displays the stopped route
-marker, and resumes automatically when the hero returns. A destination may be
+marker, and resumes automatically when the hero returns. It also stops when
+attacked by an ordinary hostile or scripted ambush and resumes only after
+combat ends. `QuestsVendor_SetEscortCombatBehavior` may instead make vulnerable
+escorts retreat to a point behind the protecting hero before waiting; Cedran,
+Giznak, and Rixit use this behavior. A destination may be
 an NPC unit type, a point and radius, an existing rect, or a `ZonesCore` zone;
 towns and settlements should normally use a rect or zone instead of inventing
 a destination NPC. Unit
@@ -78,7 +82,14 @@ spawn fixed or randomized series of one to five hostile groups beginning at a
 specified percentage of the outbound or return leg and spreading toward 90% of
 that leg. Kargun and Gorthak use two attacks; Rukgar uses one to three, Rixit two
 to four, and Mugrok one to five. Every group is tracked, ordered to attack the
-escorted giver, and removed if the quest exits with survivors. On acceptance,
+escorted giver with initial `ThreatSystem` threat, and removed if the quest
+exits with survivors. Player damage, healing, support, and taunts may pull those
+enemies through the normal threat rules. Gorthak, Rixit, and Mugrok choose each
+wave from the current `ZonesCore` hostile pool; Sirensong and its relevant
+subzones currently provide jungle trolls and naga instead of unrelated satyrs.
+These waves reuse existing species-neutral warning recordings and require no
+new voice assets.
+On acceptance,
 each merchant has a route-specific
 field line and may receive a short answer from one nearby active AI hero
 companion. Each escort also has three vendor-specific progress lines and three

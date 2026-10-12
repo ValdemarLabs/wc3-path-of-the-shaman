@@ -2,41 +2,54 @@
     EscortMovement
 
     Author: Valdemar
-    Version: 1.0.1
+    Version: 1.1.0
 
     Description:
     Moves an escorted unit toward a destination while requiring its assigned
     leader to remain nearby. Routes use Warcraft pathing automatically and may
-    include an ordered waypoint list for roads or other difficult paths.
+    include an ordered waypoint list for roads or other difficult paths. An
+    attacked escort stops for combat and may optionally retreat behind its
+    leader before waiting for the threat to end.
 
     Credits:
 
     How to install:
-    Import after Table, SpeciFX, IconQuery, and FallenHeroState. Import before
-    quest libraries that configure autonomous escort routes.
+    Import after Table, SpeciFX, IconQuery, FallenHeroState, and ThreatSystem.
+    Import before quest libraries that configure autonomous escort routes.
 
     API:
     - EscortMovement_Begin prepares an escort and its leader.
     - EscortMovement_AddWaypoint appends an optional route point.
     - EscortMovement_Start sets the final destination and begins movement.
     - EscortMovement_UpdateDestination moves a dynamic final destination.
+    - EscortMovement_SetCombatBehavior selects wait or take-cover behavior.
+    - EscortMovement_EngageAttacker gives an enemy initial escort threat.
+    - EscortMovement_SetCombatActive holds movement for a scripted encounter.
     - EscortMovement_Stop removes an escort and cleans its route indicators.
     - EscortMovement_IsActive/IsPaused/HasArrived expose route state.
 
 **/
-library EscortMovement initializer Init requires Table, SpeciFX, IconQuery, FallenHeroState
+library EscortMovement initializer Init requires Table, SpeciFX, IconQuery, FallenHeroState, ThreatSystem
     globals
         private constant integer EM_MAX_ACTIVE_ROUTES = 32
         private constant integer EM_MAX_WAYPOINTS = 128
         private constant real EM_UPDATE_INTERVAL = 0.50
         private constant real EM_DEFAULT_LEADER_RANGE = 2400.00
         private constant real EM_DEFAULT_POINT_RADIUS = 160.00
+        private constant real EM_DEFAULT_COVER_DISTANCE = 320.00
+        private constant real EM_COVER_RADIUS = 96.00
+        private constant real EM_INITIAL_ESCORT_THREAT = 25.00
+        private constant integer EM_COMBAT_MEMORY_TICKS = 8
         private constant integer EM_ORDER_REISSUE_TICKS = 4
         private constant integer EM_PING_TICKS = 10
         private constant string EM_STOPPED_EFFECT_PATH = "war3mapImported\\QuestMarking.mdl"
         private constant string EM_STOPPED_EFFECT_ATTACH = "origin"
 
+        public constant integer COMBAT_WAIT = 0
+        public constant integer COMBAT_TAKE_COVER = 1
+
         private timer EM_UpdateTimer = null
+        private trigger EM_AttackedTrigger = null
         private Table EM_SlotByUnit = 0
         private boolean array EM_Active
         private unit array EM_Escort
@@ -57,6 +70,13 @@ library EscortMovement initializer Init requires Table, SpeciFX, IconQuery, Fall
         private boolean array EM_Arrived
         private integer array EM_OrderTicks
         private integer array EM_PingTicks
+        private integer array EM_CombatBehavior
+        private real array EM_CoverDistance
+        private real array EM_CoverX
+        private real array EM_CoverY
+        private boolean array EM_HasCoverPoint
+        private boolean array EM_ForcedCombat
+        private integer array EM_CombatTicks
     endglobals
 
     private function EM_GetWaypointSlot takes integer routeSlot, integer waypointIndex returns integer
@@ -114,6 +134,13 @@ library EscortMovement initializer Init requires Table, SpeciFX, IconQuery, Fall
         set EM_Arrived[routeSlot] = false
         set EM_OrderTicks[routeSlot] = 0
         set EM_PingTicks[routeSlot] = 0
+        set EM_CombatBehavior[routeSlot] = COMBAT_WAIT
+        set EM_CoverDistance[routeSlot] = 0.00
+        set EM_CoverX[routeSlot] = 0.00
+        set EM_CoverY[routeSlot] = 0.00
+        set EM_HasCoverPoint[routeSlot] = false
+        set EM_ForcedCombat[routeSlot] = false
+        set EM_CombatTicks[routeSlot] = 0
     endfunction
 
     private function EM_GetFreeSlot takes nothing returns integer
@@ -171,6 +198,80 @@ library EscortMovement initializer Init requires Table, SpeciFX, IconQuery, Fall
         set pingPoint = null
     endfunction
 
+    private function EM_HasCombatThreat takes integer routeSlot returns boolean
+        local unit target = ThreatSystem_GetCombatTarget(EM_Escort[routeSlot])
+        local boolean active = EM_IsUnitValid(target)
+
+        set target = null
+        return active
+    endfunction
+
+    private function EM_SetCoverPoint takes integer routeSlot, unit attacker returns nothing
+        local real dx
+        local real dy
+        local real distance
+
+        if attacker == null or EM_Leader[routeSlot] == null then
+            set attacker = null
+            return
+        endif
+        set dx = GetUnitX(EM_Leader[routeSlot]) - GetUnitX(attacker)
+        set dy = GetUnitY(EM_Leader[routeSlot]) - GetUnitY(attacker)
+        set distance = SquareRoot(dx*dx + dy*dy)
+        if distance > 0.00 then
+            set EM_CoverX[routeSlot] = GetUnitX(EM_Leader[routeSlot]) + dx*EM_CoverDistance[routeSlot]/distance
+            set EM_CoverY[routeSlot] = GetUnitY(EM_Leader[routeSlot]) + dy*EM_CoverDistance[routeSlot]/distance
+            set EM_HasCoverPoint[routeSlot] = true
+        endif
+        set attacker = null
+    endfunction
+
+    private function EM_IssueCombatOrder takes integer routeSlot returns nothing
+        local real dx
+        local real dy
+
+        if EM_CombatBehavior[routeSlot] == COMBAT_TAKE_COVER and EM_HasCoverPoint[routeSlot] then
+            set dx = EM_CoverX[routeSlot] - GetUnitX(EM_Escort[routeSlot])
+            set dy = EM_CoverY[routeSlot] - GetUnitY(EM_Escort[routeSlot])
+            if dx*dx + dy*dy > EM_COVER_RADIUS*EM_COVER_RADIUS then
+                if GetUnitCurrentOrder(EM_Escort[routeSlot]) != OrderId("move") or EM_OrderTicks[routeSlot] >= EM_ORDER_REISSUE_TICKS then
+                    call IssuePointOrderById(EM_Escort[routeSlot], OrderId("move"), EM_CoverX[routeSlot], EM_CoverY[routeSlot])
+                    set EM_OrderTicks[routeSlot] = 0
+                endif
+                set EM_OrderTicks[routeSlot] = EM_OrderTicks[routeSlot] + 1
+            elseif GetUnitCurrentOrder(EM_Escort[routeSlot]) != OrderId("stop") then
+                call IssueImmediateOrder(EM_Escort[routeSlot], "stop")
+            endif
+        elseif GetUnitCurrentOrder(EM_Escort[routeSlot]) != OrderId("stop") then
+            call IssueImmediateOrder(EM_Escort[routeSlot], "stop")
+        endif
+    endfunction
+
+    private function EM_EnterCombat takes integer routeSlot, unit attacker returns nothing
+        local boolean wasInCombat = EM_ForcedCombat[routeSlot] or EM_CombatTicks[routeSlot] > 0
+
+        set EM_CombatTicks[routeSlot] = EM_COMBAT_MEMORY_TICKS
+        set EM_Paused[routeSlot] = true
+        set EM_PingTicks[routeSlot] = 0
+        call EM_DestroyStoppedEffect(routeSlot)
+        if not wasInCombat and EM_CombatBehavior[routeSlot] == COMBAT_TAKE_COVER then
+            call EM_SetCoverPoint(routeSlot, attacker)
+        endif
+        call EM_IssueCombatOrder(routeSlot)
+        set attacker = null
+    endfunction
+
+    private function EM_EngageAttacker takes integer routeSlot, unit attacker returns nothing
+        if routeSlot <= 0 or not EM_Active[routeSlot] or not EM_IsUnitValid(attacker) or not IsUnitEnemy(attacker, GetOwningPlayer(EM_Escort[routeSlot])) then
+            set attacker = null
+            return
+        endif
+        call EM_EnterCombat(routeSlot, attacker)
+        call ThreatSystem_Add(attacker, EM_Escort[routeSlot], EM_INITIAL_ESCORT_THREAT)
+        call IssueTargetOrder(attacker, "attack", EM_Escort[routeSlot])
+        set attacker = null
+    endfunction
+
     private function EM_UpdateSlot takes integer routeSlot returns nothing
         local real dx
         local real dy
@@ -180,6 +281,17 @@ library EscortMovement initializer Init requires Table, SpeciFX, IconQuery, Fall
             call EM_ClearSlot(routeSlot)
             return
         endif
+        if EM_CombatTicks[routeSlot] > 0 then
+            set EM_CombatTicks[routeSlot] = EM_CombatTicks[routeSlot] - 1
+        endif
+        if EM_ForcedCombat[routeSlot] or EM_CombatTicks[routeSlot] > 0 or EM_HasCombatThreat(routeSlot) then
+            set EM_Paused[routeSlot] = true
+            set EM_PingTicks[routeSlot] = 0
+            call EM_DestroyStoppedEffect(routeSlot)
+            call EM_IssueCombatOrder(routeSlot)
+            return
+        endif
+        set EM_HasCoverPoint[routeSlot] = false
         set dx = GetUnitX(EM_Leader[routeSlot]) - GetUnitX(EM_Escort[routeSlot])
         set dy = GetUnitY(EM_Leader[routeSlot]) - GetUnitY(EM_Escort[routeSlot])
         if dx*dx + dy*dy > EM_LeaderRange[routeSlot]*EM_LeaderRange[routeSlot] then
@@ -265,6 +377,8 @@ library EscortMovement initializer Init requires Table, SpeciFX, IconQuery, Fall
         set EM_Escort[routeSlot] = escortUnit
         set EM_Leader[routeSlot] = leader
         set EM_LeaderRange[routeSlot] = leaderRange
+        set EM_CombatBehavior[routeSlot] = COMBAT_WAIT
+        set EM_CoverDistance[routeSlot] = EM_DEFAULT_COVER_DISTANCE
         set EM_SlotByUnit.integer[GetHandleId(escortUnit)] = routeSlot
         set EM_MapIcon[routeSlot] = IconQuery_RegisterCompanionFollowerUnitIcon(escortUnit)
         set escortUnit = null
@@ -322,6 +436,9 @@ library EscortMovement initializer Init requires Table, SpeciFX, IconQuery, Fall
         set EM_Arrived[routeSlot] = false
         set EM_OrderTicks[routeSlot] = 0
         set EM_PingTicks[routeSlot] = 0
+        set EM_HasCoverPoint[routeSlot] = false
+        set EM_ForcedCombat[routeSlot] = false
+        set EM_CombatTicks[routeSlot] = 0
         call EM_DestroyStoppedEffect(routeSlot)
         set dx = GetUnitX(EM_Leader[routeSlot]) - GetUnitX(EM_Escort[routeSlot])
         set dy = GetUnitY(EM_Leader[routeSlot]) - GetUnitY(EM_Escort[routeSlot])
@@ -333,6 +450,71 @@ library EscortMovement initializer Init requires Table, SpeciFX, IconQuery, Fall
             call EM_IssueCurrentOrder(routeSlot)
         endif
         set escortUnit = null
+    endfunction
+
+    public function SetCombatBehavior takes unit escortUnit, integer behavior, real coverDistance returns nothing
+        local integer routeSlot
+
+        if escortUnit == null then
+            set escortUnit = null
+            return
+        endif
+        set routeSlot = EM_SlotByUnit.integer[GetHandleId(escortUnit)]
+        if routeSlot > 0 and EM_Active[routeSlot] then
+            if behavior != COMBAT_TAKE_COVER then
+                set behavior = COMBAT_WAIT
+            endif
+            if coverDistance <= 0.00 then
+                set coverDistance = EM_DEFAULT_COVER_DISTANCE
+            endif
+            set EM_CombatBehavior[routeSlot] = behavior
+            set EM_CoverDistance[routeSlot] = coverDistance
+        endif
+        set escortUnit = null
+    endfunction
+
+    public function EngageAttacker takes unit escortUnit, unit attacker returns nothing
+        local integer routeSlot
+
+        if escortUnit == null then
+            set escortUnit = null
+            set attacker = null
+            return
+        endif
+        set routeSlot = EM_SlotByUnit.integer[GetHandleId(escortUnit)]
+        call EM_EngageAttacker(routeSlot, attacker)
+        set escortUnit = null
+        set attacker = null
+    endfunction
+
+    public function SetCombatActive takes unit escortUnit, boolean active returns nothing
+        local integer routeSlot
+
+        if escortUnit == null then
+            set escortUnit = null
+            return
+        endif
+        set routeSlot = EM_SlotByUnit.integer[GetHandleId(escortUnit)]
+        if routeSlot > 0 and EM_Active[routeSlot] then
+            set EM_ForcedCombat[routeSlot] = active
+            if active then
+                call EM_EnterCombat(routeSlot, null)
+            endif
+        endif
+        set escortUnit = null
+    endfunction
+
+    private function EM_OnAttacked takes nothing returns nothing
+        local unit escortUnit = GetTriggerUnit()
+        local unit attacker = GetAttacker()
+        local integer routeSlot
+
+        if escortUnit != null then
+            set routeSlot = EM_SlotByUnit.integer[GetHandleId(escortUnit)]
+            call EM_EngageAttacker(routeSlot, attacker)
+        endif
+        set escortUnit = null
+        set attacker = null
     endfunction
 
     public function UpdateDestination takes unit escortUnit, real destinationX, real destinationY returns nothing
@@ -412,8 +594,17 @@ library EscortMovement initializer Init requires Table, SpeciFX, IconQuery, Fall
     endfunction
 
     private function Init takes nothing returns nothing
+        local integer playerIndex = 0
+
         set EM_SlotByUnit = Table.create()
         set EM_UpdateTimer = CreateTimer()
+        set EM_AttackedTrigger = CreateTrigger()
+        loop
+            exitwhen playerIndex >= bj_MAX_PLAYER_SLOTS
+            call TriggerRegisterPlayerUnitEvent(EM_AttackedTrigger, Player(playerIndex), EVENT_PLAYER_UNIT_ATTACKED, null)
+            set playerIndex = playerIndex + 1
+        endloop
+        call TriggerAddAction(EM_AttackedTrigger, function EM_OnAttacked)
         call TimerStart(EM_UpdateTimer, EM_UPDATE_INTERVAL, true, function EM_OnUpdate)
     endfunction
 endlibrary

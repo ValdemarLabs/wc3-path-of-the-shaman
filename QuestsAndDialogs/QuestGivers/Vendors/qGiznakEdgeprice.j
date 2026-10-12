@@ -2,7 +2,7 @@
     qGiznakEdgeprice
 
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.2.0
 
     Description:
     Daily and normal vendor quest content for Giznak Edgeprice.
@@ -25,6 +25,7 @@ library qGiznakEdgeprice initializer Init requires QuestsVendor, VoicelinesQuest
         set escortDefinitionId = QuestsVendor_RegisterEscortQuest('n03Y', "An Edge Worth Selling", 7, "An Edge Worth Selling", "ReplaceableTextures\\CommandButtons\\BTNGoblinLandMine.blp", "Escort Giznak Edgeprice and his weapon samples to Kargun Ashblade's forge for inspection.", 'o011', "Kargun Ashblade's forge", 70, VL_GENERIC_GOBLIN_MALE_1_TYPE, 1036, VL_VENDORQUEST_GOBLIN_0036, VL_VENDORQUEST_GOBLIN_0037)
         call QuestsVendor_SetExtendedDialogue(escortDefinitionId, VL_VENDORQUEST_GOBLIN_0038, 1038, VL_VENDORQUEST_GOBLIN_0039, 1039)
         call QuestsVendor_SetEscortTravelDialogue(escortDefinitionId, VL_VENDORQUEST_GOBLIN_0040, 1040, "I cannot promise expensive, but I can promise dangerous.")
+        call QuestsVendor_SetEscortCombatBehavior(escortDefinitionId, QuestsVendor_ESCORT_COMBAT_TAKE_COVER, 320.00)
         call QuestsVendor_RegisterEscortProgressVariant(escortDefinitionId, VL_VENDORQUEST_GOBLIN_0041, 1041)
         call QuestsVendor_RegisterEscortProgressVariant(escortDefinitionId, VL_VENDORQUEST_GOBLIN_0042, 1042)
         call QuestsVendor_RegisterEscortProgressVariant(escortDefinitionId, VL_VENDORQUEST_GOBLIN_0043, 1043)
