@@ -22,12 +22,20 @@
 
 ### Player-Facing Updates
 
+- Escort NPCs now stop when attacked and resume their route only after combat or the active ambush has ended. Cedran Pike, Giznak Edgeprice, and Rixit Roadcoin retreat behind the protecting hero before waiting.
+- Sirensong escort ambushes for Gorthak, Rixit, and Mugrok now draw jungle trolls or naga from the current zone instead of spawning unrelated satyrs.
 - Developer camera mode now overrides Boom Mine, Gnoll Hideout, and other special camera presets while it is selected. The zone preset remains stored and resumes after switching back to another camera mode.
 - Updated the post-preload startup flow with a first `New Game` / `Load Saved` choice. New Game continues to the existing game-mode and difficulty choices, while Load Saved lists six local PotS slots before gameplay begins.
 - Added a `Save / Load` entry to the Game menu. Party saves now preserve Nazgrek and an owned Zul'kis independently, including each hero's level/XP, learned persistent abilities, normal inventory, custom bag layout/items, equipped items, charges, base attributes, skill points, ability points, and vitals.
 
 ### Technical Updates
 
+- Updated `PatrolFollowSystems/EscortMovement.j` and `Threat/ThreatSystem.j` integration so ordinary attackers and scripted waves begin with escort-focused threat while player damage, healing, support, and taunts can pull aggro normally.
+- Updated `QuestsAndDialogs/QuestsVendor.j`, five vendor escort definitions, and `Zones/ZonesCore.j` with wave-completion pauses, configurable take-cover behavior, inherited hostile unit-type pools for zone-authored encounters, and existing species-neutral warning recordings instead of new voice assets.
+- Updated `DungeonsAndBosses/Boss.j` and region-scoped boss libraries with safe placed-unit discovery: encounters prefer their configured area, then accept a map-wide fallback only when the boss unit type has exactly one placed instance.
+- Updated `World/Dragons/DragonBehavior.j`, `World/Dragons/DragonfirePeaksDragons.j`, and `World/Dragons/EmberpeakDragons.j` so ambient dragon behavior starts immediately when a player hero or configured AI revealer enters its zone and periodic wandering, casting, and sounds run only while an eligible hero is present.
+- Updated `UnitSystems/UnitHider4.j` to 4.11 so native and GUI unit visibility calls transfer ownership through `ShowUnit`, `ShowUnitShow`, and `ShowUnitHide` hooks. Added a one-time UnitHider-owned hidden-state verification after bootstrap and at cinematic restoration; normal timer work still performs no whole-world or hidden-population snapshot.
+- Updated `UnitSystems/UnitHider4_Review.md` with the managed-hidden visibility desynchronization diagnosis, GUI wrapper behavior, boundary repair, and new audit fields.
 - Updated `UI/CameraControl.j` so Developer mode takes precedence over special modes in camera application, input handling, effective Far Z, resume previews, drift reapplication, and displayed mode names without clearing the underlying zone mode.
 - Updated `SaveLoad/PotSSaveConfig.j`, `SaveLoad/PotSMaxouNSLAdapter.j`, `SaveLoad/tests/PotSSaveLoadCompile.j`, `SaveLoad/README.md`, and added `SaveLoad/tests/PotSSaveConfigNSLImplCompile.j` so the map's immutable original `NSLImpl` remains the sole owner of `NSL_CodeVersion`, `NSL_FolderName`, and `NSL_Key`, resolving the three duplicate-symbol map compile errors.
 - Added `SaveLoad/PotSSaveUI.j` and updated `Preload/Start.j`, `Preload/Preloader.j`, `UI/GameMode.j`, and `UI/MasterUI.j` with saved-mode startup coordination, delayed current-map initialization, fixed-slot selection, and in-game access.
@@ -37,11 +45,16 @@
 
 ### Actions Remaining
 
+- Import `Threat/ThreatSystem.j` before `PatrolFollowSystems/EscortMovement.j`, compile through the current World Editor/JassHelper workflow, and runtime-test random attacks, player threat pulls, cover pathing, overlapping waves, and all five authored ambush routes. Verify Gorthak, Rixit, and Mugrok remain inside the intended Sirensong parent/subzones when their ambushes trigger.
 - Import `SaveLoad/PotSSaveUI.j` after its documented UI dependencies, retain the required 50-level `Z000` FileIO buffer ability in World Editor, compile the focused test map and full map, and runtime-test all six slots with Nazgrek alone and the two-hero party.
 - Runtime-test catalog/tracked/temporary abilities, charged normal/custom/equipped items, equipment bonuses and set counters, bad or wrong-profile files, repeated loads, vA-to-vB migration, current-map quest overlays, and save-file persistence across a map update. Private in-progress story-scene globals outside `QuestMaster` remain intentionally outside automatic coverage.
 
 ### Resolved Issues
 
+- Fixed Colossus and other converted bosses silently skipping registration, initial encounter state, and attack-start callbacks when their legacy GUI unit global was unset and the placed boss was outside the preferred lookup region.
+- Updated `QuestsAndDialogs/QuestsVendor.j` so accepted vendor escorts defer movement and travel-dialogue startup until after the quest-dialog callback releases cinematic input. This prevents `Steel for the Ring` and the other shared escort quests from trapping the player in cinematic mode if route startup interrupts its callback.
+- Fixed UnitHider retaining logical ownership of units that another engine or GUI path had physically shown. These mismatched units previously stayed visible until a reference entered their spatial cell and left again; cinematic restoration now reclassifies them synchronously.
+- Fixed `/debug unithider audit` counting physically shown ownership mismatches as managed-hidden units. It now reports `managed shown mismatch` and the checked/repaired counts from the last owned-hidden verification.
 - Updated `SaveLoad/PotSSaveLoad.j`, `SaveLoad/tests/PotSSaveLoadCompile.j`, and `SaveLoad/README.md` so exact-slot normal inventory restoration temporarily uses DInventory's existing per-hero item-type exclusion API. This prevents the pickup handler from moving restored consumables into custom storage and causing a validated load to fail during application. Apply failures now identify the affected hero and restoration stage.
 
 
