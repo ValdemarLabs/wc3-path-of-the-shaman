@@ -80,6 +80,19 @@ library DInventory requires Table
         set whichItem = null
     endfunction
 
+    function IsItemTypeOnExclusionListOfUnit takes integer itemTypeId, unit hero returns boolean
+        set hero = null
+        return false
+    endfunction
+
+    function AddItemTypeToUnitExclusionList takes integer itemTypeId, unit hero returns nothing
+        set hero = null
+    endfunction
+
+    function RemoveItemTypeFromUnitExclusionList takes integer itemTypeId, unit hero returns nothing
+        set hero = null
+    endfunction
+
     function DInvRefreshCapacityTextForBID takes integer bid returns nothing
     endfunction
 endlibrary

@@ -1,4 +1,4 @@
-# PotS Maxou NSL SaveLoad 2.1.1
+# PotS Maxou NSL SaveLoad 2.1.2
 
 This directory contains the PotS-owned automatic character-state layer described by `PotS_MaxouNSL_AutoSaveLoad_Codex.json`. It uses the existing Maxou New Save Load (NSL) codec and FileIO stack as an immutable backend. No file under `_CoreSystems/MaxouNSL/` is modified or copied.
 
@@ -63,6 +63,8 @@ The unchanged FileIO backend accepts only a relative folder. With the immutable 
 Party saves prefer `udg_Nazgrek` and include `udg_Zulkis` when Zul'kis is a valid player-owned hero. The registered/selected-hero resolver remains as a safe fallback when Nazgrek is unavailable.
 
 Only one operation per player can run at once. A second load is rejected. An unexpected apply-stage failure locks further loading for that session and tells the player to reload the map, because Warcraft III does not provide a transactional rollback for arbitrary unit mutations.
+
+Normal inventory restoration temporarily adds each saved item type to the hero's existing DInventory exclusion list while `UnitAddItemToSlotById` fires its pickup event. This preserves exact native slots without letting DInventory redirect the item into custom storage. Apply-stage errors identify the affected hero and whether abilities, normal inventory, custom inventory/equipment, or the cached Zul'kis stream failed.
 
 Checkpoints may explicitly reopen or close loading with `PotSSaveLoad_SetLoadAllowed`. The default implementation does not relocate a hero to a checkpoint because no stable authoritative checkpoint API was found.
 

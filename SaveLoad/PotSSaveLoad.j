@@ -2,7 +2,7 @@
     PotSSaveLoad
 
     Author: Valdemar
-    Version: 2.1.0
+    Version: 2.1.2
 
     Description:
     Public single-player party save/load facade, fixed-slot metadata, safe-load
@@ -45,6 +45,8 @@ library PotSSaveLoad initializer Init requires PotSSaveConfig, PotSStateData, Po
         private boolean array PSS_PartyHasZulkis
         private integer array PSS_SavedNazgrekLevel
         private integer array PSS_SavedZulkisLevel
+        private integer array PSS_ApplyFailureStage
+        private string array PSS_ApplyFailureHero
         private integer PSS_ZulkisStreamCount = 0
         private integer array PSS_ZulkisStreamValue
 
@@ -54,6 +56,11 @@ library PotSSaveLoad initializer Init requires PotSSaveConfig, PotSStateData, Po
         private constant integer PSS_PHASE_LOAD_NAZGREK = 3
         private constant integer PSS_PHASE_LOAD_ZULKIS = 4
         private constant integer PSS_PHASE_VALIDATE_ZULKIS = 5
+        private constant integer PSS_APPLY_STAGE_NONE = 0
+        private constant integer PSS_APPLY_STAGE_ABILITIES = 1
+        private constant integer PSS_APPLY_STAGE_INVENTORY = 2
+        private constant integer PSS_APPLY_STAGE_CUSTOM_STORAGE = 3
+        private constant integer PSS_APPLY_STAGE_ZULKIS_STREAM = 4
         private constant string PSS_META_PREFIX = "pots_meta_"
 
         public trigger OnSaveComplete = CreateTrigger()
@@ -66,7 +73,7 @@ library PotSSaveLoad initializer Init requires PotSSaveConfig, PotSStateData, Po
         public integer EventWarningCount = 0
     endglobals
 
-    private function PSS_ErrorText takes integer errorCode returns string
+    private function PSS_ErrorText takes integer playerId, integer errorCode returns string
         if errorCode == PotSSaveConfig_ERROR_BUSY then
             return "Another save/load operation is already in progress."
         elseif errorCode == PotSSaveConfig_ERROR_INVALID_SLOT then
@@ -94,6 +101,15 @@ library PotSSaveLoad initializer Init requires PotSSaveConfig, PotSStateData, Po
         elseif errorCode == PotSSaveConfig_ERROR_PREFLIGHT then
             return "The current map cannot safely apply required saved content."
         elseif errorCode == PotSSaveConfig_ERROR_APPLY_FAILED then
+            if PSS_ApplyFailureStage[playerId] == PSS_APPLY_STAGE_ABILITIES then
+                return "The validated " + PSS_ApplyFailureHero[playerId] + " abilities could not be restored. Reload the map before retrying."
+            elseif PSS_ApplyFailureStage[playerId] == PSS_APPLY_STAGE_INVENTORY then
+                return "The validated " + PSS_ApplyFailureHero[playerId] + " normal inventory could not be restored. Reload the map before retrying."
+            elseif PSS_ApplyFailureStage[playerId] == PSS_APPLY_STAGE_CUSTOM_STORAGE then
+                return "The validated " + PSS_ApplyFailureHero[playerId] + " custom inventory/equipment could not be restored. Reload the map before retrying."
+            elseif PSS_ApplyFailureStage[playerId] == PSS_APPLY_STAGE_ZULKIS_STREAM then
+                return "The validated Zul'kis snapshot could not be restored from memory. Reload the map before retrying."
+            endif
             return "The validated state could not be fully applied. Reload the map before retrying."
         elseif errorCode == PotSSaveConfig_ERROR_SINGLE_PLAYER_ONLY then
             return "This version supports single-player save/load only."
@@ -121,7 +137,7 @@ library PotSSaveLoad initializer Init requires PotSSaveConfig, PotSStateData, Po
             endif
         endif
         set PSS_LastError[playerId] = errorCode
-        call PSS_Message(playerId, "|cffff3333[PotS SaveLoad]|r ", PSS_ErrorText(errorCode))
+        call PSS_Message(playerId, "|cffff3333[PotS SaveLoad]|r ", PSS_ErrorText(playerId, errorCode))
         if loading then
             call PSS_Fire(OnLoadFailed, playerId, errorCode)
             if errorCode != PotSSaveConfig_ERROR_BUSY then
@@ -420,7 +436,9 @@ library PotSSaveLoad initializer Init requires PotSSaveConfig, PotSStateData, Po
     private function PSS_ApplyInventory takes unit hero returns boolean
         local integer slot = 0
         local integer i = 0
+        local integer itemTypeId
         local item whichItem = null
+        local boolean temporaryTypeExclusion = false
 
         call PSS_ClearPreparedItems()
         loop
@@ -435,11 +453,28 @@ library PotSSaveLoad initializer Init requires PotSSaveConfig, PotSStateData, Po
 
         loop
             exitwhen i >= PotSStateData_GetInventoryCount()
-            if not UnitAddItemToSlotById(hero, PotSStateData_GetInventoryType(i), PotSStateData_GetInventorySlot(i)) then
+            set itemTypeId = PotSStateData_GetInventoryType(i)
+            static if LIBRARY_DInventory then
+                set temporaryTypeExclusion = not IsItemTypeOnExclusionListOfUnit(itemTypeId, hero)
+                if temporaryTypeExclusion then
+                    call AddItemTypeToUnitExclusionList(itemTypeId, hero)
+                endif
+            endif
+            if not UnitAddItemToSlotById(hero, itemTypeId, PotSStateData_GetInventorySlot(i)) then
+                static if LIBRARY_DInventory then
+                    if temporaryTypeExclusion then
+                        call RemoveItemTypeFromUnitExclusionList(itemTypeId, hero)
+                    endif
+                endif
                 return false
             endif
+            static if LIBRARY_DInventory then
+                if temporaryTypeExclusion then
+                    call RemoveItemTypeFromUnitExclusionList(itemTypeId, hero)
+                endif
+            endif
             set whichItem = UnitItemInSlot(hero, PotSStateData_GetInventorySlot(i))
-            if whichItem == null or GetItemTypeId(whichItem) != PotSStateData_GetInventoryType(i) then
+            if whichItem == null or GetItemTypeId(whichItem) != itemTypeId then
                 set whichItem = null
                 return false
             endif
@@ -610,8 +645,16 @@ library PotSSaveLoad initializer Init requires PotSSaveConfig, PotSStateData, Po
     endfunction
 
     private function PSS_ApplyHero takes player whichPlayer, unit hero returns boolean
+        local integer playerId = GetPlayerId(whichPlayer)
         local integer skillDelta
         local boolean abilityPointsWereEnabled = false
+
+        set PSS_ApplyFailureStage[playerId] = PSS_APPLY_STAGE_NONE
+        if hero == udg_Zulkis then
+            set PSS_ApplyFailureHero[playerId] = "Zul'kis"
+        else
+            set PSS_ApplyFailureHero[playerId] = "Nazgrek"
+        endif
 
         static if LIBRARY_AbilityPoints then
             set abilityPointsWereEnabled = AbilityPoints_IsHeroLevelUpEnabled()
@@ -635,7 +678,20 @@ library PotSSaveLoad initializer Init requires PotSSaveConfig, PotSStateData, Po
             call AbilityPoints_SetHeroLevelUpEnabled(abilityPointsWereEnabled)
         endif
 
-        if not PSS_ApplyAbilities(hero) or not PSS_ApplyInventory(hero) or not PSS_ApplyDInventoryAndEquipment(hero) then
+        if not PSS_ApplyAbilities(hero) then
+            set PSS_ApplyFailureStage[playerId] = PSS_APPLY_STAGE_ABILITIES
+            set whichPlayer = null
+            set hero = null
+            return false
+        endif
+        if not PSS_ApplyInventory(hero) then
+            set PSS_ApplyFailureStage[playerId] = PSS_APPLY_STAGE_INVENTORY
+            set whichPlayer = null
+            set hero = null
+            return false
+        endif
+        if not PSS_ApplyDInventoryAndEquipment(hero) then
+            set PSS_ApplyFailureStage[playerId] = PSS_APPLY_STAGE_CUSTOM_STORAGE
             set whichPlayer = null
             set hero = null
             return false
@@ -931,6 +987,8 @@ library PotSSaveLoad initializer Init requires PotSSaveConfig, PotSStateData, Po
             set PSS_PartyPhase[playerId] = PSS_PHASE_LOAD_ZULKIS
             set PSS_OperationHero[playerId] = hero
             if not PSS_RestoreZulkisStream() then
+                set PSS_ApplyFailureStage[playerId] = PSS_APPLY_STAGE_ZULKIS_STREAM
+                set PSS_ApplyFailureHero[playerId] = "Zul'kis"
                 set PSS_Loaded[playerId] = true
                 set PSS_LoadAllowed[playerId] = false
                 set hero = null
@@ -954,6 +1012,8 @@ library PotSSaveLoad initializer Init requires PotSSaveConfig, PotSStateData, Po
             return false
         endif
         set playerId = GetPlayerId(whichPlayer)
+        set PSS_ApplyFailureStage[playerId] = PSS_APPLY_STAGE_NONE
+        set PSS_ApplyFailureHero[playerId] = "character"
         if not PSS_IsSinglePlayer() then
             call PSS_Fail(playerId, PotSSaveConfig_ERROR_SINGLE_PLAYER_ONLY, false)
             set whichPlayer = null
@@ -1021,6 +1081,8 @@ library PotSSaveLoad initializer Init requires PotSSaveConfig, PotSStateData, Po
             return false
         endif
         set playerId = GetPlayerId(whichPlayer)
+        set PSS_ApplyFailureStage[playerId] = PSS_APPLY_STAGE_NONE
+        set PSS_ApplyFailureHero[playerId] = "character"
         if not PSS_IsSinglePlayer() then
             call PSS_Fail(playerId, PotSSaveConfig_ERROR_SINGLE_PLAYER_ONLY, true)
             set whichPlayer = null
