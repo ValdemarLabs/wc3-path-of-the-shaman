@@ -2,7 +2,7 @@
     Boss
 
     Author: Valdemar
-    Version: 0.5.1
+    Version: 0.6.0
 
     Description:
     Shared foundation for PotS boss encounters. The library registers
@@ -35,6 +35,7 @@
     API:
     - set bossId = Boss_Register(whichUnit, displayName)
     - set whichUnit = Boss_FindUnitByType(unitTypeId, searchRect)
+    - set whichUnit = Boss_FindPlacedUnitByType(unitTypeId, preferredRect)
     - set whichUnit = Boss_FindUnitByName(unitName, searchRect)
     - call Boss_Unregister(bossId)
     - call Boss_ReplaceUnit(bossId, newUnit, true)
@@ -400,6 +401,43 @@ library Boss initializer Init requires Table, Events, UnitDeathEvent, DamageEngi
         call GroupClear(Boss_FindGroup)
         set pickedUnit = null
         return null
+    endfunction
+
+    // Prefer the encounter area; only fall back map-wide when the rawcode
+    // identifies exactly one placed unit.
+    public function FindPlacedUnitByType takes integer unitTypeId, rect preferredRect returns unit
+        local unit pickedUnit = null
+
+        if unitTypeId == 0 then
+            return null
+        endif
+        if preferredRect != null then
+            set Boss_FindResult = FindUnitByType(unitTypeId, preferredRect)
+            if Boss_FindResult != null then
+                return Boss_FindResult
+            endif
+        endif
+
+        set Boss_FindResult = null
+        call GroupClear(Boss_FindGroup)
+        call GroupEnumUnitsInRect(Boss_FindGroup, bj_mapInitialPlayableArea, null)
+        loop
+            set pickedUnit = FirstOfGroup(Boss_FindGroup)
+            exitwhen pickedUnit == null
+            call GroupRemoveUnit(Boss_FindGroup, pickedUnit)
+            if GetUnitTypeId(pickedUnit) == unitTypeId then
+                if Boss_FindResult != null then
+                    call GroupClear(Boss_FindGroup)
+                    set Boss_FindResult = null
+                    set pickedUnit = null
+                    return null
+                endif
+                set Boss_FindResult = pickedUnit
+            endif
+        endloop
+        call GroupClear(Boss_FindGroup)
+        set pickedUnit = null
+        return Boss_FindResult
     endfunction
 
     public function FindUnitByName takes string unitName, rect searchRect returns unit

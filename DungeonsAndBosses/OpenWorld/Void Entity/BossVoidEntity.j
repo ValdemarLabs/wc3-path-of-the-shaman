@@ -100,7 +100,7 @@ library BossVoidEntity initializer Init requires Boss, BossVoidEntityDialogue
         local timer initTimer = GetExpiredTimer()
         local unit whichUnit = udg_BossVoidEntity
         if whichUnit == null or GetUnitTypeId(whichUnit) != UNIT_VOID_ENTITY then
-            set whichUnit = Boss_FindUnitByType(UNIT_VOID_ENTITY, gg_rct_ElvenTown)
+            set whichUnit = Boss_FindPlacedUnitByType(UNIT_VOID_ENTITY, gg_rct_ElvenTown)
         endif
         if whichUnit != null then
             set udg_BossVoidEntity = whichUnit

@@ -86,7 +86,7 @@ library BossImpaler initializer Init requires Boss, DungeonGnollHideout
         local timer initTimer = GetExpiredTimer()
         local unit boss = udg_BossImpaler
         if boss == null or GetUnitTypeId(boss) != UNIT_IMPALER then
-            set boss = Boss_FindUnitByType(UNIT_IMPALER, gg_rct_BossImpalerArea)
+            set boss = Boss_FindPlacedUnitByType(UNIT_IMPALER, gg_rct_BossImpalerArea)
         endif
 
         if boss != null then

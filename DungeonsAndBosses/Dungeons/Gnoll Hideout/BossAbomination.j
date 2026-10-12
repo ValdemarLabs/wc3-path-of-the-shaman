@@ -94,7 +94,7 @@ library BossAbomination initializer Init requires Boss, CreepRespawn, DungeonGno
         local timer initTimer = GetExpiredTimer()
         local unit boss = udg_BossAbomination
         if boss == null or GetUnitTypeId(boss) != UNIT_ABOMINATION then
-            set boss = Boss_FindUnitByType(UNIT_ABOMINATION, gg_rct_AbominationArea)
+            set boss = Boss_FindPlacedUnitByType(UNIT_ABOMINATION, gg_rct_AbominationArea)
         endif
 
         if boss != null then

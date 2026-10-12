@@ -38,7 +38,7 @@ library BossVorkatha initializer Init requires Boss
         local timer initTimer = GetExpiredTimer()
         local unit whichUnit = udg_BossVorkatha
         if whichUnit == null or GetUnitTypeId(whichUnit) != UNIT_VORKATHA then
-            set whichUnit = Boss_FindUnitByType(UNIT_VORKATHA, gg_rct_DevilsaurWP1)
+            set whichUnit = Boss_FindPlacedUnitByType(UNIT_VORKATHA, gg_rct_DevilsaurWP1)
         endif
 
         if whichUnit != null then

@@ -389,7 +389,7 @@ library BossColossus initializer Init requires Boss, EmberpeakDragonfire, Damage
         local timer initTimer = GetExpiredTimer()
         local unit whichUnit = udg_BossColossus
         if whichUnit == null or GetUnitTypeId(whichUnit) != UNIT_COLOSSUS then
-            set whichUnit = Boss_FindUnitByType(UNIT_COLOSSUS, gg_rct_DragonFireSpam01)
+            set whichUnit = Boss_FindPlacedUnitByType(UNIT_COLOSSUS, gg_rct_DragonFireSpam01)
         endif
         if whichUnit != null then
             set udg_BossColossus = whichUnit

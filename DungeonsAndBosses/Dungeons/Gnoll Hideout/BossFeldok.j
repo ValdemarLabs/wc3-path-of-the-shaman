@@ -157,7 +157,7 @@ library BossFeldok initializer Init requires Boss, CreepRespawn, DungeonGnollHid
         local timer initTimer = GetExpiredTimer()
         local unit boss = udg_BossFeldok
         if boss == null or GetUnitTypeId(boss) != UNIT_FELDOK then
-            set boss = Boss_FindUnitByType(UNIT_FELDOK, gg_rct_BossFeldokArea01)
+            set boss = Boss_FindPlacedUnitByType(UNIT_FELDOK, gg_rct_BossFeldokArea01)
         endif
 
         if boss != null then

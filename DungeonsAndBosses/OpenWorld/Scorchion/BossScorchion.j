@@ -734,7 +734,7 @@ library BossScorchion initializer Init requires Boss, DamageEngine, ExSound, Cre
         local timer initTimer = GetExpiredTimer()
         local unit boss = udg_BossScorchion
         if boss == null or GetUnitTypeId(boss) != UNIT_SCORCHION then
-            set boss = Boss_FindUnitByType(UNIT_SCORCHION, gg_rct_BossScorchionArea)
+            set boss = Boss_FindPlacedUnitByType(UNIT_SCORCHION, gg_rct_BossScorchionArea)
         endif
         if boss != null then
             set udg_BossScorchion = boss

@@ -162,7 +162,7 @@ library BossSargoth initializer Init requires Boss, CreepRespawn
         local timer initTimer = GetExpiredTimer()
         local unit whichUnit = udg_BossSargoth
         if whichUnit == null or GetUnitTypeId(whichUnit) != UNIT_SARGOTH then
-            set whichUnit = Boss_FindUnitByType(UNIT_SARGOTH, gg_rct_SargothLair)
+            set whichUnit = Boss_FindPlacedUnitByType(UNIT_SARGOTH, gg_rct_SargothLair)
         endif
         if whichUnit != null then
             set udg_BossSargoth = whichUnit

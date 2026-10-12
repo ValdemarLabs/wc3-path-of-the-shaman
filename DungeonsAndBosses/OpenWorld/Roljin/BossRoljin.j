@@ -165,7 +165,7 @@ library BossRoljin initializer Init requires Boss, CreepRespawn
         local timer initTimer = GetExpiredTimer()
         local unit whichUnit = udg_Roljin
         if whichUnit == null or GetUnitTypeId(whichUnit) != UNIT_ROLJIN then
-            set whichUnit = Boss_FindUnitByType(UNIT_ROLJIN, gg_rct_BloodtuskTribe)
+            set whichUnit = Boss_FindPlacedUnitByType(UNIT_ROLJIN, gg_rct_BloodtuskTribe)
         endif
         if whichUnit == null then
             call BJDebugMsg("|cffff8080[BossRoljin] ERROR:|r Could not find placed Rol'jin unit 'n605'.")

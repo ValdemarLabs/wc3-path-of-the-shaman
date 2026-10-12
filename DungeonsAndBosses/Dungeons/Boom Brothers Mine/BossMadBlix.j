@@ -75,7 +75,7 @@ library BossMadBlix initializer Init requires Boss, DungeonBoomBrothersMine
         local timer initTimer = GetExpiredTimer()
         local unit boss = udg_BossMadBlix
         if boss == null or GetUnitTypeId(boss) != UNIT_MAD_BLIX then
-            set boss = Boss_FindUnitByType(UNIT_MAD_BLIX, gg_rct_BoomBrothersMine)
+            set boss = Boss_FindPlacedUnitByType(UNIT_MAD_BLIX, gg_rct_BoomBrothersMine)
         endif
 
         if boss != null then

@@ -57,7 +57,7 @@ library BossMorthun initializer Init requires Boss, PatrolSystem
         local timer initTimer = GetExpiredTimer()
         local unit whichUnit = udg_BossMorthun
         if whichUnit == null or GetUnitTypeId(whichUnit) != UNIT_MORTHUN then
-            set whichUnit = Boss_FindUnitByType(UNIT_MORTHUN, gg_rct_MorthunWP02)
+            set whichUnit = Boss_FindPlacedUnitByType(UNIT_MORTHUN, gg_rct_MorthunWP02)
         endif
 
         if whichUnit != null then
