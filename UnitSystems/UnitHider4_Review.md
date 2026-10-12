@@ -28,7 +28,7 @@ correct and performant enough for permanent use.
 | `UnitHider.j` (1.0) | Simple two-phase ownership: check owned hidden units for showing, then visible units for hiding. It was the known working fallback. | Enumerates the full map every 0.5 seconds; creates and destroys a reference group for every proximity test; uses `SquareRoot`; leaks a newly created work group on every disabled timer tick; and does not recognize current companion/pet registrations. |
 | `UnitHider2.j` | Reuses work groups, filters invalid units, compares squared distances, and keeps the reliable two-phase flow. | Still enumerates nearly every eligible map unit every 0.5 seconds and copies the full reference group for every proximity test. `Table` state duplicates the authoritative hidden group without improving behavior. The archived runtime result was slow hiding and severe lag. |
 | `UnitHider3_Optimized.j` | Caches reference positions, uses squared distances, reuses main work groups, and retains the reliable two-phase flow. The archive says it worked. | Still performs a full-world enumeration every 0.5 seconds; creates a temporary reference group each cycle; limits references to 20; aborts with zero references without restoring already hidden units; does not consume current array registrations; and can show units another system intentionally hid because visibility ownership is not transferred on foreign `ShowUnit` calls. |
-| `UnitHider4.j` | Performs one delayed UnitHider 1.0-style bootstrap snapshot, stores owned-hidden state and spatial cells in Table v6 by handle ID, and then discovers lifecycle changes through `Events`, `UnitDeathEvent`, Unit Event, and native visibility/relocation hooks. Hidden units are spatially bucketed; player-controlled heroes, configured basic AI heroes, and registered companions/pets remain automatic revealers. Cinematic begin/end reclassifies only exact managed candidate sets. | Requires full-map runtime validation because hiding units changes simulation behavior by design. Version 4.10.1 has no recurring world, known-unit, or `udg_UDexUnits` inventory scan. Normal timer work updates references, drains event-fed pending units, reveals nearby hidden cells, and rechecks the currently visible candidate set every 0.50 seconds. Explicit refresh, re-enable, audit, and force-hide operations may intentionally enumerate the world. |
+| `UnitHider4.j` | Performs one delayed UnitHider 1.0-style bootstrap snapshot, stores owned-hidden state and spatial cells in Table v6 by handle ID, and then discovers lifecycle changes through `Events`, `UnitDeathEvent`, Unit Event, and native/BJ visibility and relocation hooks. Hidden units are spatially bucketed; player-controlled heroes, configured basic AI heroes, and registered companions/pets remain automatic revealers. Cinematic begin/end reclassifies exact managed candidate sets and verifies system-owned hidden state. | Requires full-map runtime validation because hiding units changes simulation behavior by design. Version 4.11 has no recurring world, known-unit, `udg_UDexUnits`, or hidden-population inventory scan. Normal timer work updates references, drains event-fed pending units, reveals nearby hidden cells, and rechecks the currently visible candidate set every 0.50 seconds. Bootstrap verification and cinematic settlement may inspect only the UnitHider-owned hidden group. Explicit refresh, audit, and force-hide operations may intentionally enumerate the world. |
 
 Some older UnitHider Markdown files describe an earlier proposed "smart filter"
 and quote estimated operation reductions. The final `UnitHider3_Optimized.j`
@@ -77,9 +77,10 @@ retains the established external `UnitHider_*` API names.
   reference cache and synchronously reclassifies the normal visible and exact
   cinematic-visible candidate sets without enumerating or first unhiding the
   whole map.
-- A `ShowUnit` hook removes foreign visibility changes from UnitHider's owned
-  hidden set. Consequently, disabling or proximity showing affects only units
-  whose hidden state UnitHider still owns.
+- Native `ShowUnit` and GUI `ShowUnitShow`/`ShowUnitHide` hooks remove foreign
+  visibility changes from UnitHider's owned hidden set. Consequently,
+  disabling or proximity showing affects only units whose hidden state
+  UnitHider still owns.
 - With zero valid revealers, ordinary eligible units remain hidden by default.
   Creating or restoring a tracked revealer exposes its nearby spatial cells on
   the next timer update.
@@ -103,6 +104,31 @@ retains the established external `UnitHider_*` API names.
   UnitHider-owned unit without changing the enabled state. Foreign-hidden,
   ignored, Locust, loaded, and dead units retain their existing ownership or
   engine-sensitive state.
+
+## 12 October 2026 managed-hidden visibility correction
+
+The persistent symptom now has a specific state signature: a unit can be
+physically shown while `managedHidden` and `hiddenUnits` still say UnitHider
+owns its hidden state. The previous audit counted that unit as managed hidden
+without checking `IsUnitHidden`, so `visible outside hide range=0` could mask
+the failure visible on the minimap. When a revealer later entered the unit's
+spatial cell, `RevealCell` transferred it into `visibleUnits`; only then could
+the departure sweep hide it, exactly matching the observed walk-near-then-away
+behavior.
+
+GUI Unit Show/Hide actions call Blizzard's `ShowUnitShow` and `ShowUnitHide`
+wrappers. Their internal native calls live in `blizzard.j`, outside the map
+script call sites rewritten by the existing native `ShowUnit` hook. Version
+4.11 hooks both wrappers as well as the native, so GUI visibility changes feed
+the exact pending-unit path and transfer ownership correctly.
+
+As a defensive boundary invariant, UnitHider now verifies only its own
+`hiddenUnits` group once after bootstrap and during cinematic restoration. A
+managed handle that is physically visible is immediately reclassified against
+the active references; it is not left for a reference hero to discover. This
+owned-hidden verification is not recurring timer work and never snapshots the
+world, known-unit set, or Unit Event registry. The audit now reports `managed
+shown mismatch` plus the checked/repaired counts from the last verification.
 
 ## 11 October 2026 event-driven inventory correction
 

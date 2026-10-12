@@ -2,7 +2,7 @@
     UnitHider
 
     Author: Valdemar
-    Version: 4.10.1
+    Version: 4.11.0
 
     Description:
     Hides the ordinary map population outside tracked-unit reveal ranges.
@@ -13,8 +13,8 @@
     remain hideable; only explicit exclusions and revealers bypass distance
     hiding. One delayed bootstrap drains a fresh world snapshot using the
     proven UnitHider 1.0 traversal. Ongoing discovery is event-driven through
-    Events, UnitDeathEvent, Unit Event finalization/cargo/removal, and ShowUnit
-    ownership transfers; normal timer work is limited to tracked references,
+    Events, UnitDeathEvent, Unit Event finalization/cargo/removal, and native or
+    GUI ShowUnit ownership transfers; normal timer work is limited to references,
     pending changes, nearby hidden cells, and the currently visible candidate
     set. Table v6 stores per-unit ownership and spatial state independently of
     recycled unit indexes. Cinematic mode temporarily narrows reveal coverage
@@ -105,6 +105,7 @@ globals
     private integer internalShowDepth = 0
     private boolean wasInCinematic = false
     private boolean initialized = false
+    private boolean managedVisibilityVerificationPending = false
     private integer cinematicDepth = 0
     private integer ticksUntilVisibleSweep = 0
     private rect mapBounds = null
@@ -128,6 +129,8 @@ globals
     private integer lastCinematicEndHiddenBefore = 0
     private integer lastCinematicEndHiddenAfter = 0
     private integer lastCinematicEndVisibleAfter = 0
+    private integer lastManagedVisibilityChecked = 0
+    private integer lastManagedVisibilityRepaired = 0
 endglobals
 
 private function IsManagedHidden takes unit whichUnit returns boolean
@@ -562,6 +565,33 @@ private function ProcessPendingUnits takes nothing returns nothing
     set whichUnit = null
 endfunction
 
+private function ReconcileManagedHiddenVisibility takes nothing returns nothing
+    local unit whichUnit
+
+    // Validate only UnitHider-owned handles. This is used at authoritative
+    // boundaries, never as a recurring world or hidden-population scan.
+    set lastManagedVisibilityChecked = 0
+    set lastManagedVisibilityRepaired = 0
+    call GroupClear(worldScanUnits)
+    call GroupAddGroup(hiddenUnits, worldScanUnits)
+    loop
+        set whichUnit = FirstOfGroup(worldScanUnits)
+        exitwhen whichUnit == null
+        call GroupRemoveUnit(worldScanUnits, whichUnit)
+        set lastManagedVisibilityChecked = lastManagedVisibilityChecked + 1
+        if GetUnitTypeId(whichUnit) == 0 or not IsManagedHidden(whichUnit) then
+            call RemoveHiddenTracking(whichUnit)
+        elseif not IsUnitHidden(whichUnit) then
+            // A BJ wrapper or engine transition showed a unit without the
+            // native hook observing it. Reclassify that exact unit now.
+            set lastManagedVisibilityRepaired = lastManagedVisibilityRepaired + 1
+            call ProcessUnit(whichUnit)
+        endif
+    endloop
+
+    set whichUnit = null
+endfunction
+
 private function FinishSweep takes nothing returns nothing
     // Include revealers discovered late in this sweep before the next begins.
     call UpdateReferenceCache()
@@ -687,6 +717,7 @@ private function BootstrapMap takes nothing returns nothing
     call RevealNearReferences()
     set initialized = true
     set ticksUntilVisibleSweep = VISIBLE_SWEEP_TICKS
+    set managedVisibilityVerificationPending = true
     call GroupClear(pendingUnits)
     call FinishSweep()
     set whichUnit = null
@@ -716,6 +747,8 @@ private function RestoreNormalVisibility takes nothing returns nothing
     call ClearCinematicState()
     call ProcessPendingUnits()
     call UpdateReferenceCache()
+    set managedVisibilityVerificationPending = false
+    call ReconcileManagedHiddenVisibility()
     call ReclassifyVisibleUnits()
     call ReconcileCinematicVisible()
     call UpdateReferenceCache()
@@ -750,6 +783,8 @@ private function ProcessBatch takes nothing returns nothing
         set wasInCinematic = false
         call ProcessPendingUnits()
         call UpdateReferenceCache()
+        set managedVisibilityVerificationPending = false
+        call ReconcileManagedHiddenVisibility()
         call ReclassifyVisibleUnits()
         call RevealNearReferences()
         set ticksUntilVisibleSweep = VISIBLE_SWEEP_TICKS
@@ -760,6 +795,11 @@ private function ProcessBatch takes nothing returns nothing
     // Events and ShowUnit ownership transfers feed this exact pending set.
     call ProcessPendingUnits()
     call UpdateReferenceCache()
+    if managedVisibilityVerificationPending then
+        set managedVisibilityVerificationPending = false
+        call ReconcileManagedHiddenVisibility()
+        call UpdateReferenceCache()
+    endif
     call RevealNearReferences()
     // Movement has no native position-changed event. Recheck only currently
     // shown eligible candidates every 0.50 seconds, never the whole map.
@@ -786,6 +826,7 @@ private function UnhideAllManaged takes nothing returns nothing
     call GroupClear(pendingUnits)
     call GroupClear(cinematicVisibleUnits)
     set ticksUntilVisibleSweep = 0
+    set managedVisibilityVerificationPending = false
 
     set whichUnit = null
 endfunction
@@ -839,6 +880,7 @@ public function DebugAudit takes player whichPlayer returns nothing
     local integer totalCount = 0
     local integer exemptCount = 0
     local integer eligibleHiddenCount = 0
+    local integer managedShownCount = 0
     local integer foreignHiddenCount = 0
     local integer nearVisibleCount = 0
     local integer farVisibleCount = 0
@@ -861,7 +903,9 @@ public function DebugAudit takes player whichPlayer returns nothing
             set isAlive = FallenHeroState_IsAlive(whichUnit)
             set isLoaded = IsUnitLoaded(whichUnit)
             set isAutomaticReference = IsAutomaticReference(whichUnit, isAlive, isLoaded)
-            if not isAlive or isLoaded or IsProtected(whichUnit, isAutomaticReference) then
+            if IsManagedHidden(whichUnit) and not IsUnitHidden(whichUnit) then
+                set managedShownCount = managedShownCount + 1
+            elseif not isAlive or isLoaded or IsProtected(whichUnit, isAutomaticReference) then
                 set exemptCount = exemptCount + 1
             elseif IsManagedHidden(whichUnit) then
                 set eligibleHiddenCount = eligibleHiddenCount + 1
@@ -883,10 +927,11 @@ public function DebugAudit takes player whichPlayer returns nothing
         set state = state + ", cinematic compatibility suspension"
     endif
     call DisplayTextToPlayer(whichPlayer, 0.00, 0.00, "|cffffcc00[UnitHider audit]|r " + state + " | references=" + I2S(referenceCount) + " (full=" + I2S(referenceCount - aiReferenceCount) + ", AI=" + I2S(aiReferenceCount) + ")")
-    call DisplayTextToPlayer(whichPlayer, 0.00, 0.00, "Inventory=" + I2S(totalCount) + " | known=" + I2S(BlzGroupGetSize(knownUnits)) + " | exempt=" + I2S(exemptCount) + " | managed hidden=" + I2S(eligibleHiddenCount) + " | foreign hidden=" + I2S(foreignHiddenCount))
+    call DisplayTextToPlayer(whichPlayer, 0.00, 0.00, "Inventory=" + I2S(totalCount) + " | known=" + I2S(BlzGroupGetSize(knownUnits)) + " | exempt=" + I2S(exemptCount) + " | managed hidden=" + I2S(eligibleHiddenCount) + " | managed shown mismatch=" + I2S(managedShownCount) + " | foreign hidden=" + I2S(foreignHiddenCount))
     call DisplayTextToPlayer(whichPlayer, 0.00, 0.00, "Visible near references=" + I2S(nearVisibleCount) + " | visible outside hide range=" + I2S(farVisibleCount) + " | pending=" + I2S(BlzGroupGetSize(pendingUnits)))
     call DisplayTextToPlayer(whichPlayer, 0.00, 0.00, "Ranges: full=" + I2S(R2I(fullShowDistance)) + "/" + I2S(R2I(fullHideDistance)) + " | autonomous AI=" + I2S(R2I(AI_SHOW_DISTANCE)) + "/" + I2S(R2I(AI_HIDE_DISTANCE)) + " (show/hide)")
     call DisplayTextToPlayer(whichPlayer, 0.00, 0.00, "Last cinematic: begin hidden=" + I2S(lastCinematicBeginHiddenBefore) + "->" + I2S(lastCinematicBeginHiddenAfter) + " visible=" + I2S(lastCinematicBeginVisibleAfter) + " | end candidates=" + I2S(lastCinematicEndCandidates) + " hidden=" + I2S(lastCinematicEndHiddenBefore) + "->" + I2S(lastCinematicEndHiddenAfter) + " visible=" + I2S(lastCinematicEndVisibleAfter))
+    call DisplayTextToPlayer(whichPlayer, 0.00, 0.00, "Last managed-hidden verification: checked=" + I2S(lastManagedVisibilityChecked) + " | repaired=" + I2S(lastManagedVisibilityRepaired))
     loop
         exitwhen referenceIndex >= referenceCount or referenceIndex >= DEBUG_REFERENCE_LIMIT
         set whichUnit = cachedReferenceUnit[referenceIndex]
@@ -1143,9 +1188,9 @@ private function OnSetUnitPositionLoc takes unit whichUnit, location whichLocati
 endfunction
 hook SetUnitPositionLoc OnSetUnitPositionLoc
 
-// Foreign ShowUnit calls transfer visibility ownership. A shown unit is
-// reclassified after the native call has completed on the next active update.
-private function OnShowUnit takes unit whichUnit, boolean show returns nothing
+// Foreign visibility calls transfer ownership. A shown unit is reclassified
+// after the original native or BJ call completes on the next active update.
+private function TrackExternalVisibilityChange takes unit whichUnit, boolean show returns nothing
     if internalShowDepth == 0 and whichUnit != null then
         call RemoveHiddenTracking(whichUnit)
         call GroupRemoveUnit(visibleUnits, whichUnit)
@@ -1160,7 +1205,26 @@ private function OnShowUnit takes unit whichUnit, boolean show returns nothing
         endif
     endif
 endfunction
+
+private function OnShowUnit takes unit whichUnit, boolean show returns nothing
+    call TrackExternalVisibilityChange(whichUnit, show)
+endfunction
 hook ShowUnit OnShowUnit
+
+// GUI Unit - Show/Hide actions call these Blizzard wrappers. Their internal
+// native ShowUnit calls live in blizzard.j and are not rewritten by the hook
+// above, so observe the wrappers explicitly.
+private function OnShowUnitShow takes unit whichUnit returns nothing
+    if whichUnit != null and not (IsUnitType(whichUnit, UNIT_TYPE_HERO) and IsUnitDeadBJ(whichUnit)) then
+        call TrackExternalVisibilityChange(whichUnit, true)
+    endif
+endfunction
+hook ShowUnitShow OnShowUnitShow
+
+private function OnShowUnitHide takes unit whichUnit returns nothing
+    call TrackExternalVisibilityChange(whichUnit, false)
+endfunction
+hook ShowUnitHide OnShowUnitHide
 
 private function OnUnitEnter takes nothing returns nothing
     local unit whichUnit = GetTriggerUnit()
