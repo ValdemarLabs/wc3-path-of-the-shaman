@@ -18,10 +18,31 @@
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
 
+## [12.10.2026]
+
+### Player-Facing Updates
+
+- Updated the post-preload startup flow with a first `New Game` / `Load Saved` choice. New Game continues to the existing game-mode and difficulty choices, while Load Saved lists six local PotS slots before gameplay begins.
+- Added a `Save / Load` entry to the Game menu. Party saves now preserve Nazgrek and an owned Zul'kis independently, including each hero's level/XP, learned persistent abilities, normal inventory, custom bag layout/items, equipped items, charges, base attributes, skill points, ability points, and vitals.
+
+### Technical Updates
+
+- Added `SaveLoad/PotSSaveUI.j` and updated `Preload/Start.j`, `Preload/Preloader.j`, `UI/GameMode.j`, and `UI/MasterUI.j` with saved-mode startup coordination, delayed current-map initialization, fixed-slot selection, and in-game access.
+- Updated `SaveLoad/PotSSaveConfig.j`, `SaveLoad/PotSStateData.j`, `SaveLoad/PotSStateScanner.j`, `SaveLoad/PotSStateSerializer.j`, `SaveLoad/PotSStateMigration.j`, `SaveLoad/PotSMaxouNSLAdapter.j`, and `SaveLoad/PotSSaveLoad.j` to schema 2.1 with exact DInventory/DEquipment slot records, two-character party-file suffix handling, whole-party prevalidation, a cached validated Zul'kis snapshot before Nazgrek mutation, staged party files, and a manifest published only after all required files succeed.
+- Updated `SaveLoad/PotSSaveLoadTests.j`, `SaveLoad/tests/PotSSaveLoadCompile.j`, `SaveLoad/tests/PotSSaveUICompile.j`, `SaveLoad/README.md`, and `SaveLoad/NSL_SHA256.txt` with custom-storage fixtures, current 1,000-integer capacity measurements, startup/UI compile coverage, FileIO path limitations, and fresh immutable-vendor verification.
+- Configured the unchanged Maxou NSL FileIO backend to use the relative `Pots` folder. Warcraft III still owns the physical custom-map storage location; the backend does not expose arbitrary absolute Windows paths.
+
+### Actions Remaining
+
+- Import `SaveLoad/PotSSaveUI.j` after its documented UI dependencies, retain the required 50-level `Z000` FileIO buffer ability in World Editor, compile the focused test map and full map, and runtime-test all six slots with Nazgrek alone and the two-hero party.
+- Runtime-test catalog/tracked/temporary abilities, charged normal/custom/equipped items, equipment bonuses and set counters, bad or wrong-profile files, repeated loads, vA-to-vB migration, current-map quest overlays, and save-file persistence across a map update. Private in-progress story-scene globals outside `QuestMaster` remain intentionally outside automatic coverage.
+
+
 ## [11.10.2026]
 
 ### Technical Updates
 
+- Added the isolated `SaveLoad/` 2.0.0 stack on top of the byte-unchanged Maxou NSL core: bounded automatic hero/stat/resource/normal-inventory scanning, catalog and event-assisted permanent-ability provenance, tagged schema-1/schema-2 migration, staged guarded restoration, completed-quest overlay, distinct `-pots-save`/`-pots-load` commands, source-derived capacity checks, fixtures, integration documentation, and a complete vendor SHA-256 manifest. No existing PotS gameplay library was changed.
 - Updated `UnitSystems/UnitHider4.j` to 4.10 with Bribe's Table v6 for handle-keyed hidden ownership and spatial-cell state, one delayed UnitHider 1.0-style bootstrap snapshot, and event-driven lifecycle tracking through `Events`, `UnitDeathEvent`, and Unit Event.
 - Replaced the recurring known-unit and `udg_UDexUnits` recovery scans with exact pending callbacks for world entry, creation finalization, owner changes, cargo load/unload, transforms, death, revival, removal, foreign `ShowUnit` changes, and scripted relocation. Normal timer work now covers only tracked references, pending units, nearby hidden cells, and the currently visible candidate set.
 - Updated cinematic visibility restoration so begin/end reclassifies the managed visible and exact cinematic-visible sets without another full-world enumeration or a global unhide step.
@@ -36,6 +57,7 @@
 
 ### Actions Remaining
 
+- Import the documented immutable NSL core and new `SaveLoad/*.j` libraries in the specified order, copy/verify FileIO's 50-level `Z000` buffer ability in World Editor, compile `PotSSaveLoadTests.j` in a focused test map and then compile the full map through current World Editor/JassHelper. Run the documented vA-to-vB, provenance, charged-item, bad-code, repeated-load, quest-overlay, gameplay-regression, payload-size/time, and vendor-hash tests before enabling the player commands in production.
 - Import Table v6, `Events`, `UnitDeathEvent`, Unit Event, and `FallenHeroState` before `UnitSystems/UnitHider4.j`, then compile a focused test map and the full map through World Editor/JassHelper.
 - Runtime-test the initial bootstrap; created, killed, removed, transformed, revived, loaded, unloaded, owner-changed, and scripted-relocated units; all required player/basic-AI/companion/pet references; the Zul'kis arrival ship; and normal, skipped, and repeated cinematics.
 - Run `/debug unithider audit` after bootstrap and after each cinematic. `Visible outside hide range` should be zero by the next 0.50-second visible-candidate sweep, and cinematic exit must not produce a whole-map unhide/re-hide wave or corresponding lag spike.
