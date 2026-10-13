@@ -2,13 +2,13 @@
     DragonfirePeaksDragons
 
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.2.0
 
     Description:
     Owns the high-altitude dragons in Dragonfire Peaks. Existing preplaced
     dragons are reused first, missing dragons are created up to the configured
     count, and all managed dragons wander and occasionally cast Flame Strike
-    at random living units inside the zone.
+    at nearby player/hostile units or random nearby points inside the zone.
 
     Credits:
     - Emberpeak ambient dragon behavior used as the gameplay reference
@@ -29,11 +29,12 @@ library DragonfirePeaksDragons initializer Init requires DragonBehavior, Table, 
         private constant real WANDER_PERIOD = 7.00
         private constant real CAST_DELAY_MIN = 10.00
         private constant real CAST_DELAY_MAX = 20.00
+        private constant real CAST_TARGET_RADIUS = 1200.00
+        private constant real RANDOM_CAST_RADIUS = 800.00
 
         private group DragonGroup = null
         private group WorkGroup = null
         private group CastWorkGroup = null
-        private group TargetGroup = null
         private timer WanderTimer = null
         private timer CastTimer = null
         private trigger ZoneEnterTrigger = null
@@ -111,37 +112,16 @@ library DragonfirePeaksDragons initializer Init requires DragonBehavior, Table, 
             exitwhen dragon == null
             call GroupRemoveUnit(CastWorkGroup, dragon)
             if CanWander(dragon) then
-                call IssuePointOrder(dragon, "move", GetRandomReal(GetRectMinX(gg_rct_04DragonfirePeaks), GetRectMaxX(gg_rct_04DragonfirePeaks)), GetRandomReal(GetRectMinY(gg_rct_04DragonfirePeaks), GetRectMaxY(gg_rct_04DragonfirePeaks)))
-                call DragonBehavior_TryPlayAmbientSound(dragon, gg_rct_04DragonfirePeaks)
+                if IssuePointOrder(dragon, "move", GetRandomReal(GetRectMinX(gg_rct_04DragonfirePeaks), GetRectMaxX(gg_rct_04DragonfirePeaks)), GetRandomReal(GetRectMinY(gg_rct_04DragonfirePeaks), GetRectMaxY(gg_rct_04DragonfirePeaks))) then
+                    call DragonBehavior_TryPlayAmbientSound(dragon, gg_rct_04DragonfirePeaks)
+                endif
             endif
         endloop
         set dragon = null
     endfunction
 
-    private function PickRandomZoneTarget takes unit dragon returns unit
-        local unit picked = null
-        local unit target = null
-
-        call GroupClear(WorkGroup)
-        call GroupClear(TargetGroup)
-        call GroupEnumUnitsInRect(WorkGroup, gg_rct_04DragonfirePeaks, null)
-        loop
-            set picked = FirstOfGroup(WorkGroup)
-            exitwhen picked == null
-            call GroupRemoveUnit(WorkGroup, picked)
-            if picked != dragon and IsAlive(picked) and GetUnitTypeId(picked) != UNIT_HIGH_DRAGON and GetUnitAbilityLevel(picked, 'Aloc') == 0 then
-                call GroupAddUnit(TargetGroup, picked)
-            endif
-        endloop
-        set target = GroupPickRandomUnit(TargetGroup)
-        call GroupClear(TargetGroup)
-        set picked = null
-        return target
-    endfunction
-
     private function RunFlameStrikePass takes nothing returns nothing
         local unit dragon = null
-        local unit target = null
 
         if not DragonBehavior_HasAudience(gg_rct_04DragonfirePeaks) then
             return
@@ -152,16 +132,11 @@ library DragonfirePeaksDragons initializer Init requires DragonBehavior, Table, 
             set dragon = FirstOfGroup(CastWorkGroup)
             exitwhen dragon == null
             call GroupRemoveUnit(CastWorkGroup, dragon)
-            if IsAlive(dragon) and GetRandomInt(1, 3) == 1 then
-                set target = PickRandomZoneTarget(dragon)
-                if target != null then
-                    call StartCasting(dragon)
-                    call IssuePointOrder(dragon, "flamestrike", GetUnitX(target), GetUnitY(target))
-                    call DragonBehavior_TryPlayAmbientSound(dragon, gg_rct_04DragonfirePeaks)
-                endif
+            if IsAlive(dragon) and GetRandomInt(1, 3) == 1 and DragonBehavior_TryAmbientFlameStrike(dragon, gg_rct_04DragonfirePeaks, CAST_TARGET_RADIUS, RANDOM_CAST_RADIUS) then
+                call StartCasting(dragon)
+                call DragonBehavior_TryPlayAmbientSound(dragon, gg_rct_04DragonfirePeaks)
             endif
         endloop
-        set target = null
         set dragon = null
     endfunction
 
@@ -235,7 +210,6 @@ library DragonfirePeaksDragons initializer Init requires DragonBehavior, Table, 
         set DragonGroup = CreateGroup()
         set WorkGroup = CreateGroup()
         set CastWorkGroup = CreateGroup()
-        set TargetGroup = CreateGroup()
         set WanderTimer = CreateTimer()
         set CastTimer = CreateTimer()
         set CastingTimerToSlot = Table.create()

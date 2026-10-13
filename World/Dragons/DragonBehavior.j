@@ -2,11 +2,12 @@
     DragonBehavior
 
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.2.0
 
     Description:
     Implements shared red/scorching dragon combat animations, opportunistic
-    spell casts, and reusable ambient dragon sounds.
+    spell casts, high-dragon ambient Flame Strike targeting, and reusable
+    ambient dragon sounds.
 
     Credits:
     - World/_oldGUI/Dragons
@@ -19,6 +20,7 @@
     - DragonBehavior_IsDragonType(unitTypeId) returns boolean
     - DragonBehavior_IsAudienceHero(whichUnit) returns boolean
     - DragonBehavior_HasAudience(audienceRect) returns boolean
+    - DragonBehavior_TryAmbientFlameStrike(dragon, areaRect, targetRadius, randomRadius) returns boolean
     - DragonBehavior_TryPlayAmbientSound(whichUnit, audienceRect)
 
 **/
@@ -31,6 +33,7 @@ library DragonBehavior initializer Init requires optional AI
         private constant integer UNIT_SCORCHING_DRAGON_10 = 'n63F'
         private constant integer UNIT_SCORCHING_DRAGON_20 = 'n656'
         private constant integer UNIT_MORDRAX = 'n645'
+        private constant integer ABILITY_HIGH_DRAGON_FLAME_STRIKE = 'A6CO'
 
         private trigger AttackedTrigger = null
         private group SearchGroup = null
@@ -109,6 +112,61 @@ library DragonBehavior initializer Init requires optional AI
         else
             call PlaySoundOnUnitBJ(gg_snd_DragonYesAttack3, 100.00, whichUnit)
         endif
+    endfunction
+
+    private function IsAmbientFlameStrikeTarget takes unit dragon, unit target, rect areaRect returns boolean
+        if target == dragon or not IsAlive(target) or IsDragonType(GetUnitTypeId(target)) or GetUnitAbilityLevel(target, 'Aloc') > 0 or not RectContainsUnit(areaRect, target) then
+            return false
+        endif
+        return IsPlayerInForce(GetOwningPlayer(target), udg_PlayerGroup) or IsAudienceHero(target) or IsUnitEnemy(target, GetOwningPlayer(dragon))
+    endfunction
+
+    public function TryAmbientFlameStrike takes unit dragon, rect areaRect, real targetRadius, real randomRadius returns boolean
+        local unit picked = null
+        local unit target = null
+        local real angle
+        local real distance
+        local real x
+        local real y
+
+        if not IsAlive(dragon) or areaRect == null or GetUnitAbilityLevel(dragon, ABILITY_HIGH_DRAGON_FLAME_STRIKE) <= 0 then
+            return false
+        endif
+        call GroupClear(SearchGroup)
+        call GroupClear(TargetGroup)
+        call GroupEnumUnitsInRange(SearchGroup, GetUnitX(dragon), GetUnitY(dragon), targetRadius, null)
+        loop
+            set picked = FirstOfGroup(SearchGroup)
+            exitwhen picked == null
+            call GroupRemoveUnit(SearchGroup, picked)
+            if IsAmbientFlameStrikeTarget(dragon, picked, areaRect) then
+                call GroupAddUnit(TargetGroup, picked)
+            endif
+        endloop
+        if BlzGroupGetSize(TargetGroup) > 0 and GetRandomInt(1, 2) == 1 then
+            set target = GroupPickRandomUnit(TargetGroup)
+            set x = GetUnitX(target)
+            set y = GetUnitY(target)
+        else
+            set angle = GetRandomReal(0.00, 360.00) * bj_DEGTORAD
+            set distance = GetRandomReal(250.00, randomRadius)
+            set x = GetUnitX(dragon) + distance * Cos(angle)
+            set y = GetUnitY(dragon) + distance * Sin(angle)
+            if x < GetRectMinX(areaRect) then
+                set x = GetRectMinX(areaRect)
+            elseif x > GetRectMaxX(areaRect) then
+                set x = GetRectMaxX(areaRect)
+            endif
+            if y < GetRectMinY(areaRect) then
+                set y = GetRectMinY(areaRect)
+            elseif y > GetRectMaxY(areaRect) then
+                set y = GetRectMaxY(areaRect)
+            endif
+        endif
+        call GroupClear(TargetGroup)
+        set picked = null
+        set target = null
+        return IssuePointOrder(dragon, "flamestrike", x, y)
     endfunction
 
     private function PickRandomEnemy takes unit dragon, real radius returns unit
