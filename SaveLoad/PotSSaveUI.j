@@ -2,7 +2,7 @@
     PotSSaveUI
 
     Author: Valdemar
-    Version: 1.0.0
+    Version: 1.1.0
 
     Description:
     Provides the first-run New Game / Load Saved choice and the in-game
@@ -21,12 +21,13 @@
     - PotSSaveUI_Hide()
 
 **/
-library PotSSaveUI initializer AutoInit requires PotSSaveLoad, GameMode, ImagesUI, Interface, MasterUI
+library PotSSaveUI initializer AutoInit requires PotSSaveLoad, GameMode, Start, ImagesUI, Interface, MasterUI
     globals
         private constant integer PSU_SLOT_COUNT = 6
         private boolean PSU_Initialized = false
         private boolean PSU_StartupMode = false
         private boolean PSU_ShowingSlots = false
+        private boolean PSU_StartupRecoveryBlocked = false
         private framehandle PSU_Parent = null
         private framehandle PSU_Title = null
         private framehandle PSU_Body = null
@@ -100,6 +101,8 @@ library PotSSaveUI initializer AutoInit requires PotSSaveLoad, GameMode, ImagesU
 
         call PSU_SetVisible(PSU_NewGameButton, choiceView)
         call PSU_SetVisible(PSU_LoadSavedButton, choiceView)
+        call BlzFrameSetEnable(PSU_NewGameButton, not PSU_StartupRecoveryBlocked)
+        call BlzFrameSetEnable(PSU_LoadSavedButton, not PSU_StartupRecoveryBlocked)
         call PSU_SetVisible(PSU_Body, choiceView)
         call PSU_SetVisible(PSU_BackButton, PSU_StartupMode and PSU_ShowingSlots)
         call PSU_SetVisible(PSU_ReturnButton, not PSU_StartupMode)
@@ -112,7 +115,11 @@ library PotSSaveUI initializer AutoInit requires PotSSaveLoad, GameMode, ImagesU
         endloop
         if choiceView then
             call BlzFrameSetText(PSU_Title, "|cffffe4a3Path of the Shaman|r")
-            call BlzFrameSetText(PSU_Body, "Begin a new adventure, or restore Nazgrek and Zul'kis from a local PotS save.")
+            if PSU_StartupRecoveryBlocked then
+                call BlzFrameSetText(PSU_Body, "The load failed after restoration began. Restart the map before starting or loading another game.")
+            else
+                call BlzFrameSetText(PSU_Body, "Begin a new adventure, or restore Nazgrek and Zul'kis from a local PotS save.")
+            endif
         else
             call BlzFrameSetText(PSU_Title, "|cffffe4a3Saved Games|r")
             call PSU_RefreshSlots()
@@ -130,6 +137,7 @@ library PotSSaveUI initializer AutoInit requires PotSSaveLoad, GameMode, ImagesU
     public function ShowStartup takes nothing returns nothing
         set PSU_StartupMode = true
         set PSU_ShowingSlots = false
+        set PSU_StartupRecoveryBlocked = false
         call PSU_ApplyView()
         call EnableUserControl(true)
         call PSU_SetVisible(PSU_Parent, true)
@@ -154,15 +162,16 @@ library PotSSaveUI initializer AutoInit requires PotSSaveLoad, GameMode, ImagesU
     endfunction
 
     private function PSU_NewGameAction takes nothing returns nothing
-        if GetTriggerPlayer() == Player(0) then
+        if GetTriggerPlayer() == Player(0) and not PSU_StartupRecoveryBlocked then
             call Interface_PlayEventSoundForPlayer(Interface_EVENT_CONFIRM, GetTriggerPlayer())
+            call PotSSaveLoad_SetLoadAllowed(GetTriggerPlayer(), false)
             call PSU_HideInternal()
             call GameMode_Show()
         endif
     endfunction
 
     private function PSU_LoadSavedAction takes nothing returns nothing
-        if GetTriggerPlayer() == Player(0) then
+        if GetTriggerPlayer() == Player(0) and not PSU_StartupRecoveryBlocked then
             call Interface_PlayEventSoundForPlayer(Interface_EVENT_BUTTON_CLICK, GetTriggerPlayer())
             set PSU_ShowingSlots = true
             call PSU_ApplyView()
@@ -203,7 +212,12 @@ library PotSSaveUI initializer AutoInit requires PotSSaveLoad, GameMode, ImagesU
                     // The startup choice remains valid even if the player spent
                     // longer than the command-oriented initial load window here.
                     call PotSSaveLoad_SetLoadAllowed(GetTriggerPlayer(), true)
-                    call GameMode_StartSavedGame(slot, PotSSaveLoad_GetSlotMode(slot), PotSSaveLoad_GetSlotDifficulty(slot))
+                    if Start_IsAwaitingLoad() then
+                        call GameMode_StartSavedGame(slot, PotSSaveLoad_GetSlotMode(slot), PotSSaveLoad_GetSlotDifficulty(slot))
+                        call PotSSaveLoad_RequestLoad(GetTriggerPlayer(), slot)
+                    else
+                        call GameMode_StartSavedGame(slot, PotSSaveLoad_GetSlotMode(slot), PotSSaveLoad_GetSlotDifficulty(slot))
+                    endif
                 else
                     call PotSSaveLoad_RequestLoad(GetTriggerPlayer(), slot)
                     call PSU_RefreshSlots()
@@ -214,6 +228,18 @@ library PotSSaveUI initializer AutoInit requires PotSSaveLoad, GameMode, ImagesU
 
     private function PSU_OnOperationFinished takes nothing returns nothing
         call PSU_RefreshSlots()
+    endfunction
+
+    private function PSU_OnLoadFailed takes nothing returns nothing
+        if PSU_StartupMode and Start_IsAwaitingLoad() then
+            set PSU_StartupRecoveryBlocked = not PotSSaveLoad_CanRecoverFromLoadFailure(Player(0))
+            set PSU_ShowingSlots = false
+            call PSU_ApplyView()
+            call EnableUserControl(true)
+            call PSU_SetVisible(PSU_Parent, true)
+        else
+            call PSU_RefreshSlots()
+        endif
     endfunction
 
     private function PSU_CreateButton takes string name, string label, real x, real y, real width, trigger eventTrigger returns framehandle
@@ -294,7 +320,7 @@ library PotSSaveUI initializer AutoInit requires PotSSaveLoad, GameMode, ImagesU
         call TriggerAddAction(PSU_ClearFocusTrigger, function PSU_ClearFocusAction)
         call PotSSaveLoad_AddSaveCompleteAction(function PSU_OnOperationFinished)
         call PotSSaveLoad_AddSaveFailedAction(function PSU_OnOperationFinished)
-        call PotSSaveLoad_AddLoadFailedAction(function PSU_OnOperationFinished)
+        call PotSSaveLoad_AddLoadFailedAction(function PSU_OnLoadFailed)
         set PSU_InitTrigger = CreateTrigger()
         call TriggerRegisterTimerEvent(PSU_InitTrigger, 0.20, false)
         call TriggerAddAction(PSU_InitTrigger, function PSU_DelayedInit)

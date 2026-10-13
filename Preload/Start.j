@@ -2,7 +2,7 @@
     Start
 
     Author: Valdemar
-    Version: 1.3.0
+    Version: 1.3.1
 
     Description:
     Runs the player start flow after a new-game mode choice or a saved-game
@@ -23,6 +23,7 @@
     call Start_SetStartingGoldBonus(integer amount)
     call Start_SetPendingLoadSlot(string slot)
     call Start_GetPendingLoadSlot()
+    call Start_IsAwaitingLoad()
     call Start_ContinueAfterLoad()
 
 **/
@@ -310,6 +311,10 @@ library Start requires ZonesCore, DInventory, DEquipment, WeatherSystem, Terrain
 
     public function GetPendingLoadSlot takes nothing returns string
         return ST_PendingLoadSlot
+    endfunction
+
+    public function IsAwaitingLoad takes nothing returns boolean
+        return ST_AwaitingLoad
     endfunction
 
     public function ContinueAfterLoad takes nothing returns nothing

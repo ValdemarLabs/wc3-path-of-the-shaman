@@ -2,7 +2,7 @@
     PotSSaveLoad
 
     Author: Valdemar
-    Version: 2.1.2
+    Version: 2.2.0
 
     Description:
     Public single-player party save/load facade, fixed-slot metadata, safe-load
@@ -22,6 +22,7 @@
     - PotSSaveLoad_SetHero(player, hero)
     - PotSSaveLoad_SetLoadAllowed(player, allowed)
     - PotSSaveLoad_IsRestoring()
+    - PotSSaveLoad_CanRecoverFromLoadFailure(player)
     - PotSSaveLoad_SlotExists/GetSlotTitle/GetSlotMode/GetSlotDifficulty(...)
     - PotSSaveLoad_StartPendingLoad()
     - PotSSaveLoad_AddSaveCompleteAction/SaveFailedAction(...)
@@ -47,6 +48,8 @@ library PotSSaveLoad initializer Init requires PotSSaveConfig, PotSStateData, Po
         private integer array PSS_SavedZulkisLevel
         private integer array PSS_ApplyFailureStage
         private string array PSS_ApplyFailureHero
+        private integer array PSS_PreflightFailureStage
+        private string array PSS_PreflightFailureHero
         private integer PSS_ZulkisStreamCount = 0
         private integer array PSS_ZulkisStreamValue
 
@@ -61,6 +64,12 @@ library PotSSaveLoad initializer Init requires PotSSaveConfig, PotSStateData, Po
         private constant integer PSS_APPLY_STAGE_INVENTORY = 2
         private constant integer PSS_APPLY_STAGE_CUSTOM_STORAGE = 3
         private constant integer PSS_APPLY_STAGE_ZULKIS_STREAM = 4
+        private constant integer PSS_PREFLIGHT_STAGE_NONE = 0
+        private constant integer PSS_PREFLIGHT_STAGE_HERO = 1
+        private constant integer PSS_PREFLIGHT_STAGE_ABILITIES = 2
+        private constant integer PSS_PREFLIGHT_STAGE_INVENTORY = 3
+        private constant integer PSS_PREFLIGHT_STAGE_CUSTOM_STORAGE = 4
+        private constant integer PSS_PREFLIGHT_STAGE_WORLD = 5
         private constant string PSS_META_PREFIX = "pots_meta_"
 
         public trigger OnSaveComplete = CreateTrigger()
@@ -89,7 +98,7 @@ library PotSSaveLoad initializer Init requires PotSSaveConfig, PotSStateData, Po
         elseif errorCode == PotSSaveConfig_ERROR_FILE_NOT_FOUND then
             return "No PotS save exists in that slot."
         elseif errorCode == PotSSaveConfig_ERROR_INVALID_CODE then
-            return "The save is invalid, truncated, tampered with, or belongs to another profile."
+            return "NSL rejected the save integrity or player-profile binding. Keep the same player name, NSL key, and NSL code version. Ordinary map edits do not invalidate a code."
         elseif errorCode == PotSSaveConfig_ERROR_UNSUPPORTED_SCHEMA then
             return "The PotS save schema is not supported by this map version."
         elseif errorCode == PotSSaveConfig_ERROR_INVALID_DATA then
@@ -99,6 +108,17 @@ library PotSSaveLoad initializer Init requires PotSSaveConfig, PotSStateData, Po
         elseif errorCode == PotSSaveConfig_ERROR_ALREADY_LOADED then
             return "A character has already been loaded in this session."
         elseif errorCode == PotSSaveConfig_ERROR_PREFLIGHT then
+            if PSS_PreflightFailureStage[playerId] == PSS_PREFLIGHT_STAGE_HERO then
+                return "The saved " + PSS_PreflightFailureHero[playerId] + " unit rawcode no longer matches the current hero. Register a hero rawcode migration if it was renamed."
+            elseif PSS_PreflightFailureStage[playerId] == PSS_PREFLIGHT_STAGE_ABILITIES then
+                return "A saved " + PSS_PreflightFailureHero[playerId] + " catalog ability is missing or now has a lower maximum level. Restore it or register an ability rawcode migration."
+            elseif PSS_PreflightFailureStage[playerId] == PSS_PREFLIGHT_STAGE_INVENTORY then
+                return "A saved " + PSS_PreflightFailureHero[playerId] + " inventory item is unavailable, or the current hero has fewer native inventory slots."
+            elseif PSS_PreflightFailureStage[playerId] == PSS_PREFLIGHT_STAGE_CUSTOM_STORAGE then
+                return "A saved " + PSS_PreflightFailureHero[playerId] + " custom-inventory/equipment item or required storage system is unavailable."
+            elseif PSS_PreflightFailureStage[playerId] == PSS_PREFLIGHT_STAGE_WORLD then
+                return "Saved world progression could not be mapped safely. Register a quest identity migration for renamed quest data."
+            endif
             return "The current map cannot safely apply required saved content."
         elseif errorCode == PotSSaveConfig_ERROR_APPLY_FAILED then
             if PSS_ApplyFailureStage[playerId] == PSS_APPLY_STAGE_ABILITIES then
@@ -141,7 +161,13 @@ library PotSSaveLoad initializer Init requires PotSSaveConfig, PotSStateData, Po
         if loading then
             call PSS_Fire(OnLoadFailed, playerId, errorCode)
             if errorCode != PotSSaveConfig_ERROR_BUSY then
-                call ExecuteFunc("Start_ContinueAfterLoad")
+                static if LIBRARY_Start then
+                    if not Start_IsAwaitingLoad() then
+                        call ExecuteFunc("Start_ContinueAfterLoad")
+                    endif
+                else
+                    call ExecuteFunc("Start_ContinueAfterLoad")
+                endif
             endif
         else
             call PSS_Fire(OnSaveFailed, playerId, errorCode)
@@ -316,14 +342,39 @@ library PotSSaveLoad initializer Init requires PotSSaveConfig, PotSStateData, Po
     endfunction
 
     private function PSS_Preflight takes unit hero returns boolean
-        if hero == null or GetUnitTypeId(hero) != PotSStateData_GetHeroType() then
+        local integer playerId
+
+        if hero == null then
             return false
         endif
-        if not PSS_PreflightAbilities() or not PSS_PreflightInventory(hero) or not PSS_PreflightCustomItems(hero) then
+        set playerId = GetPlayerId(GetOwningPlayer(hero))
+        set PSS_PreflightFailureStage[playerId] = PSS_PREFLIGHT_STAGE_NONE
+        if hero == udg_Zulkis then
+            set PSS_PreflightFailureHero[playerId] = "Zul'kis"
+        else
+            set PSS_PreflightFailureHero[playerId] = "Nazgrek"
+        endif
+        if hero == null or GetUnitTypeId(hero) != PotSStateData_GetHeroType() then
+            set PSS_PreflightFailureStage[playerId] = PSS_PREFLIGHT_STAGE_HERO
+            return false
+        endif
+        if not PSS_PreflightAbilities() then
+            set PSS_PreflightFailureStage[playerId] = PSS_PREFLIGHT_STAGE_ABILITIES
+            call PSS_ClearPreparedItems()
+            return false
+        endif
+        if not PSS_PreflightInventory(hero) then
+            set PSS_PreflightFailureStage[playerId] = PSS_PREFLIGHT_STAGE_INVENTORY
+            call PSS_ClearPreparedItems()
+            return false
+        endif
+        if not PSS_PreflightCustomItems(hero) then
+            set PSS_PreflightFailureStage[playerId] = PSS_PREFLIGHT_STAGE_CUSTOM_STORAGE
             call PSS_ClearPreparedItems()
             return false
         endif
         if not PotSWorldProgression_Preflight() then
+            set PSS_PreflightFailureStage[playerId] = PSS_PREFLIGHT_STAGE_WORLD
             call PSS_ClearPreparedItems()
             return false
         endif
@@ -828,6 +879,13 @@ library PotSSaveLoad initializer Init requires PotSSaveConfig, PotSStateData, Po
             set hero = null
             return false
         endif
+        // Publish the level from the exact snapshot being encoded rather than
+        // from mutable hero handles retained across the two async saves.
+        if PSS_PartyPhase[playerId] == PSS_PHASE_SAVE_NAZGREK then
+            set PSS_SavedNazgrekLevel[playerId] = PotSStateData_GetHeroLevel()
+        elseif PSS_PartyPhase[playerId] == PSS_PHASE_SAVE_ZULKIS then
+            set PSS_SavedZulkisLevel[playerId] = PotSStateData_GetHeroLevel()
+        endif
         set PSS_OperationHero[playerId] = hero
         if not PotSMaxouNSLAdapter_Save(playerId, physicalSlot) then
             set PSS_LastError[playerId] = PotSSaveConfig_ERROR_INVALID_SLOT
@@ -1014,6 +1072,8 @@ library PotSSaveLoad initializer Init requires PotSSaveConfig, PotSStateData, Po
         set playerId = GetPlayerId(whichPlayer)
         set PSS_ApplyFailureStage[playerId] = PSS_APPLY_STAGE_NONE
         set PSS_ApplyFailureHero[playerId] = "character"
+        set PSS_PreflightFailureStage[playerId] = PSS_PREFLIGHT_STAGE_NONE
+        set PSS_PreflightFailureHero[playerId] = "character"
         if not PSS_IsSinglePlayer() then
             call PSS_Fail(playerId, PotSSaveConfig_ERROR_SINGLE_PLAYER_ONLY, false)
             set whichPlayer = null
@@ -1032,6 +1092,11 @@ library PotSSaveLoad initializer Init requires PotSSaveConfig, PotSStateData, Po
         if not PSS_IsPartyHeroValid(hero, whichPlayer) then
             set hero = PSS_ResolveHero(whichPlayer)
         endif
+        // Never let the generic fallback publish Zul'kis under Nazgrek's
+        // physical party slot while Nazgrek is temporarily unavailable.
+        if hero == udg_Zulkis then
+            set hero = null
+        endif
         if hero == null then
             if PSS_ResolveAmbiguous then
                 call PSS_Fail(playerId, PotSSaveConfig_ERROR_AMBIGUOUS_HERO, false)
@@ -1043,14 +1108,10 @@ library PotSSaveLoad initializer Init requires PotSSaveConfig, PotSStateData, Po
         endif
         set PSS_LogicalSlot[playerId] = slot
         set PSS_PartyPhase[playerId] = PSS_PHASE_SAVE_NAZGREK
-        set PSS_SavedNazgrekLevel[playerId] = GetHeroLevel(hero)
+        set PSS_SavedNazgrekLevel[playerId] = 0
+        set PSS_SavedZulkisLevel[playerId] = 0
         set zulkis = udg_Zulkis
-        set PSS_PartyHasZulkis[playerId] = PSS_IsPartyHeroValid(zulkis, whichPlayer)
-        if PSS_PartyHasZulkis[playerId] then
-            set PSS_SavedZulkisLevel[playerId] = GetHeroLevel(zulkis)
-        else
-            set PSS_SavedZulkisLevel[playerId] = 0
-        endif
+        set PSS_PartyHasZulkis[playerId] = zulkis != hero and PSS_IsPartyHeroValid(zulkis, whichPlayer)
         if PSS_PartyHasZulkis[playerId] and not PSS_PrepareHeroStream(playerId, zulkis) then
             set hero = null
             set zulkis = null
@@ -1083,6 +1144,8 @@ library PotSSaveLoad initializer Init requires PotSSaveConfig, PotSStateData, Po
         set playerId = GetPlayerId(whichPlayer)
         set PSS_ApplyFailureStage[playerId] = PSS_APPLY_STAGE_NONE
         set PSS_ApplyFailureHero[playerId] = "character"
+        set PSS_PreflightFailureStage[playerId] = PSS_PREFLIGHT_STAGE_NONE
+        set PSS_PreflightFailureHero[playerId] = "character"
         if not PSS_IsSinglePlayer() then
             call PSS_Fail(playerId, PotSSaveConfig_ERROR_SINGLE_PLAYER_ONLY, true)
             set whichPlayer = null
@@ -1112,6 +1175,9 @@ library PotSSaveLoad initializer Init requires PotSSaveConfig, PotSStateData, Po
         set hero = udg_Nazgrek
         if not PSS_IsPartyHeroValid(hero, whichPlayer) then
             set hero = PSS_ResolveHero(whichPlayer)
+        endif
+        if hero == udg_Zulkis then
+            set hero = null
         endif
         if hero == null then
             if PSS_ResolveAmbiguous then
@@ -1194,6 +1260,15 @@ library PotSSaveLoad initializer Init requires PotSSaveConfig, PotSStateData, Po
 
     public function IsRestoring takes nothing returns boolean
         return PSS_Restoring
+    endfunction
+
+    public function CanRecoverFromLoadFailure takes player whichPlayer returns boolean
+        local boolean result = false
+        if whichPlayer != null then
+            set result = not PSS_Loaded[GetPlayerId(whichPlayer)]
+        endif
+        set whichPlayer = null
+        return result
     endfunction
 
     public function GetLastError takes player whichPlayer returns integer
