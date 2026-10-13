@@ -2,13 +2,14 @@
     VendorDialogs
 
     Author: Valdemar
-    Version: 1.0.1
+    Version: 1.1.0
 
     Description:
     Selectable-NPC dialogue entry for PotS shop vendors. Registered vendor
     units greet the player, offer quests and an eligible Trade button, and
     open ShopUI for the selected hero. Vendor escorts may lock Trade until
-    the merchant reaches safety.
+    the merchant reaches safety. Speaking with an active escort pauses its
+    route until five seconds after dialogue closes.
 
     Credits:
 
@@ -162,7 +163,11 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
 
     private function VDI_EndDialog takes boolean startCooldown returns nothing
         local unit hero = VDI_SelectedHero
+        local unit vendor = VDI_SelectedVendor
 
+        static if LIBRARY_QuestsVendor then
+            call QuestsVendor_EndEscortDialog(vendor)
+        endif
         call DialogInteraction_EndCombatSensitiveInteraction()
         call DialogSystem_ClearEscapeAction()
         call DialogSystem_HideDialog(VDI_Dialog, Player(0))
@@ -180,6 +185,7 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
 
         set VDI_SelectedVendor = null
         set VDI_SelectedHero = null
+        set vendor = null
         set hero = null
     endfunction
 
@@ -196,6 +202,10 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
         endif
         set VDI_DeferredEndStartCooldown = startCooldown
         call TimerStart(VDI_DeferredEndTimer, 0.01, false, function VDI_EndDialogDeferred)
+    endfunction
+
+    private function VDI_OnTradeInterrupted takes nothing returns nothing
+        call VDI_EndDialog(true)
     endfunction
 
     private function VDI_OnTrade takes nothing returns nothing
@@ -244,9 +254,7 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
         call VendorLines_PlayTradeLine(vendor)
         call ShowUnit(hero, true)
         set VDI_DialogCooldown = DialogInteraction_StartCooldown(VDI_DialogCooldown, VDI_DIALOG_COOLDOWN)
-        call ShopUI_ShowForVendorWithReturnEx(vendor, hero, VDI_END_ON_COMBAT)
-        set VDI_SelectedVendor = null
-        set VDI_SelectedHero = null
+        call ShopUI_ShowForVendorWithReturnAndInterrupt(vendor, hero, VDI_END_ON_COMBAT, function VDI_OnTradeInterrupted)
 
         set vendor = null
         set hero = null
@@ -417,6 +425,9 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
             set returnHandler = null
             return false
         endif
+        static if LIBRARY_QuestsVendor then
+            call QuestsVendor_BeginEscortDialog(vendor)
+        endif
         call PauseUnit(hero, true)
         call VDI_BuildDialog()
         call DialogSystem_SetContext(vendor, GetOwningPlayer(hero))
@@ -553,6 +564,9 @@ library VendorDialogs initializer Init requires Table, DialogInteraction, Dialog
             set vendor = null
             set hero = null
             return
+        endif
+        static if LIBRARY_QuestsVendor then
+            call QuestsVendor_BeginEscortDialog(vendor)
         endif
         call VDI_ConfigureVendorCamera(vendor, hero)
         call DialogInteraction_StartConfiguredDialogEntryTransition(vendor, hero, false, VDI_USE_DIALOG_CAMERA, VDI_CINEMATIC, "VendorDialogs_ContinueToDialogAfterSelection")

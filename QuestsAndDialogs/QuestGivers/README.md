@@ -76,8 +76,18 @@ not be routed through vendor greetings or Trade UI.
 
 For an autonomous Escort objective, use the shared QuestsVendor escort adapter
 even when the giver is not a shop. EscortMovement sends the NPC toward its
-destination, waits when the accepting hero leaves range, and supports optional
-ordered point or rect waypoints without changing the NPC into a vendor.
+destination at a configurable speed (200 by default), waits when the accepting
+hero leaves the 900-unit default leash, and supports up to 128 ordered point or
+rect waypoints without changing the NPC into a vendor. Speaking with the active
+escort pauses travel; closing dialogue starts a five-second resume delay. The
+active quest dialogue also exposes Wait here / Let's move without requiring a
+new recorded line.
+
+Nazgrek and Zul'kis generic hero replies are resolved by hero, quest objective,
+dialogue stage, and any definition-scoped override. Kill, Fetch, Talk, and
+Escort acceptance/progress use distinct line-type pools, while completion
+already uses objective-specific pools. Random selection avoids immediately
+repeating the previous line when a pool has more than one existing recording.
 
 The repository cannot choose the final giver from role text alone. Before
 adding a planned regional quest, select or create the exact World Editor unit,

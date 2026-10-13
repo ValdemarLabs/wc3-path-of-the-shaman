@@ -47,9 +47,11 @@ Vendor escorts are always one-time Normal quests. The escorted giver now walks
 toward the configured destination through `EscortMovement`; the accepting hero
 protects and accompanies it instead of leading it by trial and error. The giver
 stops when that hero leaves its configured range, displays the stopped route
-marker, and resumes automatically when the hero returns. It also stops when
-attacked by an ordinary hostile or scripted ambush and resumes only after
-combat ends. `QuestsVendor_SetEscortCombatBehavior` may instead make vulnerable
+marker, and resumes automatically when the hero returns. The default leash is
+900 units, so the hero must remain near the escort. It also stops whenever
+the assigned hero or escorted NPC is attacked or remains in `ThreatSystem`
+combat, and resumes only after both are out of combat and any scripted ambush
+has ended. `QuestsVendor_SetEscortCombatBehavior` may instead make vulnerable
 escorts retreat to a point behind the protecting hero before waiting; Cedran,
 Giznak, and Rixit use this behavior. A destination may be
 an NPC unit type, a point and radius, an existing rect, or a `ZonesCore` zone;
@@ -67,7 +69,12 @@ Routes that need to remain on a road or avoid a bad path may append up to 128
 ordered points with `QuestsVendor_AddEscortWaypoint` or rect centers with
 `QuestsVendor_AddEscortWaypointRect`; round trips traverse those points in
 reverse on the return leg. `QuestsVendor_SetEscortLeaderRange` overrides the
-default 2400-unit leash for exceptional routes. A route may finish at its
+default leash for exceptional routes, and
+`QuestsVendor_SetEscortMovementSpeed` overrides the default 200 movement
+speed. Speaking with the active escort stops route movement; travel remains
+stopped during Trade and resumes five seconds after the conversation fully
+closes. Active escort dialogue adds a stateful Wait here / Let's move choice
+without playing a new voice asset. A route may finish at its
 destination or begin a second leg back to the giver's recorded start. The giver
 is temporarily invulnerable while travelling and returns to the
 unit's prior invulnerability state on safe arrival, abandonment, or another
@@ -193,10 +200,12 @@ one follow-up from a three-line objective/voice pool: Orc `1035-1043`, Satyr
 `1019-1027`, Human `1029-1037`, Goblin `1027-1035`, Bonecrusher `1017-1025`,
 Elarindor male/female `1017-1025`, and Tauren `1009-1014`.
 Nazgrek and Zul'kis use `NazgrekGeneric_0001-0062` and
-`ZulkisGeneric_0001-0062`. Four randomized personality-specific replies are
-registered for each accept, kill completion, talk completion, fetch completion,
-shared progress, supply-handoff, quest-purchase, and escort-completion
-interaction. Each vendor escort additionally registers three activity-specific
+`ZulkisGeneric_0001-0062`. Four personality-specific replies are registered
+for each accept, kill completion, talk completion, fetch completion, progress,
+supply-handoff, quest-purchase, and escort-completion interaction. Accept and
+progress selection now resolves separate Kill, Fetch, Talk, and Escort line
+types, honors definition-specific overrides, and avoids an immediate repeat
+when several recordings fit. Each vendor escort additionally registers three activity-specific
 progress replies per player hero from indices `0033-0062`.
 Missing files fall back to ExSound's text-duration estimation until recordings
 are imported.
