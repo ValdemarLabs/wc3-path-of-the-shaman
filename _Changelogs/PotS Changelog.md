@@ -18,6 +18,58 @@
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
 
+## [14.10.2026]
+
+### Player-Facing Updates
+
+- Failed startup loads now return to the `New Game` / `Load Saved` choice without advancing world startup. Decode, schema, and compatibility failures can retry another slot or continue as a new game; failures after state mutation began remain locked and request a map restart.
+- Escort NPCs now travel at a calmer 200 default speed and require the protecting hero to remain within a much closer 900-unit default range.
+- Speaking or trading with an active escort pauses its route. After dialogue closes, it waits five seconds before moving again; the dialogue also offers Wait here / Let's move controls for voluntary stops.
+- Nazgrek and Zul'kis now vary their reusable quest replies without immediately repeating the same line, with separate selection contexts for Kill, Fetch, Talk, and Escort quests.
+
+### Technical Updates
+
+- Updated `SaveLoad/PotSSaveLoad.j`, `SaveLoad/PotSSaveUI.j`, `Preload/Start.j`, `UI/GameMode.j`, both SaveLoad compile harnesses, and `SaveLoad/README.md` with snapshot-derived two-hero manifest levels, deferred-start recovery, retry-safe saved-mode setup, and hero/category-specific map-compatibility diagnostics.
+- Updated `PatrolFollowSystems/EscortMovement.j`, `QuestsAndDialogs/QuestsVendor.j`, and `Vendors/VendorDialogs.j` so active escorts pause for dialogue and Trade, wait five seconds after dialogue closes, support a stateful Wait here / Let's move choice, move at a configurable 200 default speed, restore their original speed afterward, and use a much closer 900-unit default hero leash.
+- Updated `QuestsAndDialogs/QuestsVendor.j` so escort arrival queues quest completion outside the periodic route scan before state callbacks tear down route and minimap-icon state, hardening the shared completion path reported to crash on Giznak Edgeprice.
+- Updated `QuestsAndDialogs/QuestsGeneric.j` so Nazgrek and Zul'kis replies resolve definition overrides and objective-specific Kill, Fetch, Talk, and Escort accept/progress pools, with non-repeating random selection when multiple existing recordings fit. No new voice assets were added.
+- Updated `DungeonsAndBosses/Boss.j` and the ten boss libraries whose legacy GUI initialization named an exact preplaced unit. They now bind that generated unit first, retain the GUI compatibility variable and safe type/area discovery as fallbacks, and report a registration error only if all three paths fail.
+- Audited every active `Boss*.j` library against current encounter identities, quest integrations, zones, and recovered GUI exports, treating the old GUI as draft evidence rather than canonical behavior. All active libraries declare an initializer; restored Scorchion's exact four-shaman setup, allied `attackonce` torture order, and two-second pre-event delay, Morthun's and Mountain Giant's delayed patrol starts, Rol'jin's opening/reset lines and 25-45 second support interval, Jinvorrak's exact statue/two-second freeze, and Unknown Entity's exact Circle of Power marker.
+- Updated `DungeonsAndBosses/OpenWorld/Roljin/BossRoljin.j` so the encounter registers from the shared unit-enter event when the legacy quest creates Rol'jin, while retaining initial lookup for test maps or already-existing units.
+
+### Actions Remaining
+
+- Reimport the changed SaveLoad, Start, and GameMode scripts; compile the full map; then save Nazgrek at a different level from Zul'kis and verify both slot-title levels and restored states. Test a wrong-profile/truncated file, a missing saved item rawcode, retrying a second slot, choosing New Game after a pre-apply failure, and the restart-only path after a forced apply-stage failure.
+- Reimport `EscortMovement.j`, `QuestsGeneric.j`, `QuestsVendor.j`, and `VendorDialogs.j`, then compile the full map through World Editor/JassHelper. Runtime-test Giznak's arrival repeatedly, dialogue/Trade interruption and five-second resume, Wait here / Let's move during combat and leash breaks, speed restoration, all 128-waypoint bounds, and Nazgrek/Zul'kis reply variation across Kill, Fetch, Talk, and Escort quests.
+- Reimport `DungeonsAndBosses/Boss.j` before the updated encounter libraries, compile the full map through World Editor/JassHelper, and runtime-test Colossus sleep/wake, Scorchion's pre-event and fight gate, every exact placed-unit/marker binding, both delayed patrols, Jinvorrak's freeze, Unknown Entity's lure marker, and Rol'jin's start/reset cycle. Keep the replaced legacy GUI triggers disabled during these tests.
+
+### Resolved Issues
+
+- Fixed two-hero slot manifests being able to display Zul'kis's level for both Nazgrek and Zul'kis by publishing each level from the corresponding encoded snapshot and rejecting an aliased hero handle.
+- Fixed failed startup loads automatically leaving the title flow and continuing gameplay instead of returning to the startup choice.
+- Fixed Colossus skipping its initial sleep state and attack-triggered birth sequence when the conversion failed to resolve GUI unit 1903.
+- Fixed Scorchion failing to initialize and its same-owner Dark Shamans refusing the converted normal attack order against him.
+- Fixed Rol'jin never registering in the normal quest flow because his converted library searched only once at map initialization even though the legacy quest creates him later.
+- Fixed `BossVoidEntity.j` inheriting draft Mad Blix text and Boom Will Be Back quest completion from its old GUI trigger. Void Entity now contains no Mad Blix or Boom Mine integration; Mad Blix completion remains exclusively in `BossMadBlix.j`.
+
+## [13.10.2026]
+
+### Player-Facing Updates
+
+- Escort NPCs now stop travelling whenever either the assigned player hero or escort NPC is attacked or remains in combat, and resume only after both are out of combat and the active ambush has ended.
+
+### Technical Updates
+
+- Runtime-tested the current `UnitSystems/UnitHider4.j` 4.11 implementation in the full map. Initial classification hides all eligible distant units, cinematic transitions preserve the managed visibility state without a whole-map unhide/re-hide wave, and distant units no longer require a reference hero to approach and leave before they are hidden.
+- Updated `PatrolFollowSystems/EscortMovement.j` to 1.2.0 so each route checks both participants' `ThreatSystem` combat state and immediately pauses when either participant is attacked.
+- Updated `World/Dragons/DragonBehavior.j`, `World/Dragons/DragonfirePeaksDragons.j`, and `World/Dragons/EmberpeakDragons.j` so managed high dragons reliably receive random movement orders and cast their `A6CO` Flame Strike either at nearby player/hostile units or random nearby points. Emberpeak casting now iterates the managed highlands group, and casting locks begin only after Warcraft accepts the spell order.
+
+### Actions Remaining
+
+- Compile `PatrolFollowSystems/EscortMovement.j` and the full map through World Editor/JassHelper, then runtime-test attacks against the player hero and escort NPC, player-initiated combat, escort-initiated combat, combat timeout/death cleanup, cover movement, and route resumption.
+- Compile the affected libraries and full map through World Editor/JassHelper, then runtime-test player and configured AI hero entry in Emberpeak Highlands and Dragonfire Peaks. Confirm random movement, hostile/player targeting, random-area Flame Strikes, cooldown recovery, and UnitHider visibility transitions.
+
+
 ## [12.10.2026]
 
 ### Player-Facing Updates
