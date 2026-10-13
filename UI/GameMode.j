@@ -2,7 +2,7 @@
     GameMode
 
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.1.1
 
     Description:
     Shows the pre-start game mode and difficulty selection UI. The selected
@@ -295,7 +295,11 @@ library GameMode initializer AutoInit requires Difficulty, Start, Interface, Ima
         call GM_HideInternal()
         call ImagesUI_HidePreload()
         call EnableUserControl(false)
-        call Start_Start()
+        if Start_IsAwaitingLoad() then
+            call Start_ContinueAfterLoad()
+        else
+            call Start_Start()
+        endif
     endfunction
 
     private function GM_DifficultyAction takes nothing returns nothing
