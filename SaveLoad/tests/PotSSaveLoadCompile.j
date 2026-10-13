@@ -142,6 +142,9 @@ library GameMode
 endlibrary
 
 library Start
+    public function IsAwaitingLoad takes nothing returns boolean
+        return false
+    endfunction
     public function GetPendingLoadSlot takes nothing returns string
         return ""
     endfunction

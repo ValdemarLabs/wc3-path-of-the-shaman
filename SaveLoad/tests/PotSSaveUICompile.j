@@ -193,6 +193,10 @@ library PotSSaveLoad
     function PotSSaveLoad_SetLoadAllowed takes player whichPlayer, boolean allowed returns nothing
         set whichPlayer = null
     endfunction
+    function PotSSaveLoad_CanRecoverFromLoadFailure takes player whichPlayer returns boolean
+        set whichPlayer = null
+        return true
+    endfunction
     function PotSSaveLoad_AddSaveCompleteAction takes code actionFunc returns triggeraction
         return null
     endfunction

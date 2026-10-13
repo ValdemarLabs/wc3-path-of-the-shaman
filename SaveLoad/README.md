@@ -1,6 +1,6 @@
-# PotS Maxou NSL SaveLoad 2.1.2
+# PotS Maxou NSL SaveLoad 2.2.0
 
-This directory contains the PotS-owned automatic character-state layer described by `PotS_MaxouNSL_AutoSaveLoad_Codex.json`. It uses the existing Maxou New Save Load (NSL) codec and FileIO stack as an immutable backend. No file under `_CoreSystems/MaxouNSL/` is modified or copied.
+This directory contains the PotS-owned automatic character-state layer described by `PotS_MaxouNSL_AutoSaveLoad_Codex.json`. It uses the existing Maxou New Save Load (NSL) codec and FileIO stack as an immutable backend. The PotS SaveLoad implementation does not edit or copy files under `_CoreSystems/MaxouNSL/`.
 
 The implementation is single-player only. Local file reads are deliberately separated in `PotSMaxouNSLAdapter`; all game-state scanning and mutation lives in the other PotS libraries. Multiplayer synchronization is not implemented or claimed.
 
@@ -28,7 +28,7 @@ Import the scripts in this dependency order:
 
 `PotSSaveLoadTests.j` is test-map-only and has no initializer.
 
-Retain the complete original vendor stack unchanged. `NSLImpl` is the sole owner of `NSL_CodeVersion`, `NSL_Key`, and `NSL_FolderName`; `PotSSaveConfig.j` deliberately does not redeclare them. The original example continues to own `-save`/`-load`, while PotS owns only `-pots-save`/`-pots-load` and its UI slots. Do not import a second copy of any vendor script or configuration trigger.
+Retain the vendor implementation stack unchanged. `NSLImpl` is the sole owner of `NSL_CodeVersion`, `NSL_Key`, and `NSL_FolderName`; `PotSSaveConfig.j` deliberately does not redeclare them. The original example continues to own `-save`/`-load`, while PotS owns only `-pots-save`/`-pots-load` and its UI slots. Do not import a second copy of any vendor script or configuration trigger.
 
 The PotS ability, quest, and item integrations are optional vJASS dependencies. For full PotS behavior, import the existing `AbilitiesPlayer`, `Abilities`, `AbilityPoints`, `QuestMaster`, `DInventory`, and `DEquipment` libraries before the relevant SaveLoad modules. `Start`, `GameMode`, `Preloader`, and `MasterUI` contain only the narrow startup/menu wiring for this feature.
 
@@ -47,7 +47,7 @@ The adapter uses only these source-verified public APIs:
 
 NSL remains responsible for its player-name binding, integrity check, NSL code version, integer encoding, and FileIO transport. PotS adds an application-schema header inside the NSL integer payload. The inspected package matches the published Maxou NSL resource updated 13 November 2025.
 
-The inspected original `NSLImpl` supplies `NSL_CodeVersion = 1`, `NSL_Key = 19`, and `NSL_FolderName = "MaxouNSL"`. Keeping it as the single configuration owner prevents duplicate globals and preserves original NSL behavior without modifying vendor code.
+The imported `NSLImpl` remains the single owner of `NSL_CodeVersion`, `NSL_Key`, and `NSL_FolderName`, preventing duplicate globals. The current project configuration uses code version `1`, key `19`, and folder `Path of the Shaman`; changing only the folder relocates files but does not alter their encoded contents.
 
 ## Player workflow
 
@@ -57,10 +57,15 @@ The inspected original `NSLImpl` supplies `NSL_CodeVersion = 1`, `NSL_Key = 19`,
 - A party slot writes authenticated `pots_<slot>_n` and, when owned, `pots_<slot>_z` character files. A small `pots_meta_<slot>` manifest publishes the title, hero count, game mode, and difficulty only after every required character file succeeds.
 - The startup panel restores the saved mode/difficulty before `Start` creates Nazgrek, then loads Nazgrek followed by Zul'kis when the manifest contains both heroes.
 - The startup slot choice explicitly reopens and owns the safe-load window, so waiting on the title panel does not invalidate a selected save.
+- A decode, schema, or preflight failure returns to the startup `New Game` / `Load Saved` choice without advancing the deferred world start. The player may choose another save or continue through the normal new-game mode/difficulty flow. A failure after gameplay mutation began still requires restarting the map because no safe rollback exists.
 
-The unchanged FileIO backend accepts only a relative folder. With the immutable original `NSLImpl`, its generated paths are `MaxouNSL\SaveChar_<characterId>.pld` inside Warcraft III's permitted custom-map/FileIO storage. JASS cannot force these files into the literal installation directory `C:\Program Files (x86)\Warcraft III\_retail_\Pots`; changing the vendor folder constant would also violate the immutable-dependency requirement.
+The unchanged FileIO backend accepts only a relative folder. With the current `NSLImpl` configuration, its generated paths are `Path of the Shaman\SaveChar_<characterId>.pld` inside Warcraft III's permitted custom-map/FileIO storage. JASS cannot force these files into the literal installation directory `C:\Program Files (x86)\Warcraft III\_retail_\Pots`.
 
 Party saves prefer `udg_Nazgrek` and include `udg_Zulkis` when Zul'kis is a valid player-owned hero. The registered/selected-hero resolver remains as a safe fallback when Nazgrek is unavailable.
+
+Zul'kis is never accepted as the fallback for Nazgrek's primary party slot. Saving is rejected while Nazgrek is temporarily unavailable or not player-owned during a split story phase, preventing one Zul'kis snapshot from being labeled and written as both heroes.
+
+The manifest title takes each displayed hero level from that hero's serialized snapshot. It does not reuse a live unit level after the asynchronous Nazgrek/Zul'kis save sequence, and the same unit handle cannot be published as both heroes.
 
 Only one operation per player can run at once. A second load is rejected. An unexpected apply-stage failure locks further loading for that session and tells the player to reload the map, because Warcraft III does not provide a transactional rollback for arbitrary unit mutations.
 
@@ -104,6 +109,18 @@ Rawcode renames are explicit and bounded:
 - `PotSStateMigration_RegisterQuestIdentity(oldNameHash, oldGiverType, newNameHash, newGiverType)`
 
 Existing rawcodes should remain stable whenever possible.
+
+## Map-update compatibility
+
+The save is not tied to Warcraft III's native saved-game map checksum. Terrain edits, doodad or region changes, added units/items/abilities/quests, trigger refactors, balancing changes that retain IDs, and unrelated imported assets do not invalidate an NSL code.
+
+Compatibility depends on three layers:
+
+- NSL authentication requires the same player name, `NSL_Key`, supported `NSL_CodeVersion`, and intact 50-level `Z000` FileIO buffer. A truncated/edited file, profile-name change, key change, unsupported NSL code version, or broken/truncated FileIO buffer is rejected before PotS records are decoded. Changing `NSL_FolderName` only changes where files are found; existing files must be moved to the new relative folder.
+- The PotS application schema must remain readable. Schema 1.x, 2.0, and 2.1 are currently migrated to 2.1; a future format change must keep the old decoder/migration path instead of reusing record tags.
+- Current content must be able to represent the snapshot. Renamed hero, ability, or item rawcodes need explicit `PotSStateMigration` registrations. Removing saved item types, shrinking native inventory capacity, removing DInventory/DEquipment support, changing the hero type, removing a catalog ability, or lowering its maximum below the saved level can reject preflight. The runtime error now names the affected hero and category.
+
+Completed quests missing from the current map are skipped with a warning rather than rejecting the character. Renamed quest identity can be preserved with `PotSStateMigration_RegisterQuestIdentity`.
 
 ## Load stages and safety
 
