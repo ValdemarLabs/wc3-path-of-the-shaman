@@ -1,7 +1,7 @@
 /**
     BossMordrax
     Author: Valdemar
-    Version: 1.0.0
+    Version: 1.1.0
     Description:
     Replaces Mordrax's patrol, combat, fire-orb, loot, dialogue, death-flight,
     and respawn flow.
@@ -181,10 +181,7 @@ library BossMordrax initializer Init requires Boss, BossMordraxDialogue, PatrolS
     endfunction
     private function Register takes nothing returns nothing
         local timer initTimer = GetExpiredTimer()
-        local unit whichUnit = udg_BossMordrax
-        if whichUnit == null or GetUnitTypeId(whichUnit) != UNIT_MORDRAX then
-            set whichUnit = Boss_FindUnitByType(UNIT_MORDRAX, null)
-        endif
+        local unit whichUnit = Boss_ResolvePlacedUnit(gg_unit_n645_0422, udg_BossMordrax, UNIT_MORDRAX, gg_rct_MordraxWP01)
         if whichUnit != null then
             set udg_BossMordrax = whichUnit
             set BossId = Boss_Register(whichUnit, "Mordrax")

@@ -1,7 +1,7 @@
 /**
     BossChimairo
     Author: Valdemar
-    Version: 1.0.0
+    Version: 1.1.0
     Description:
     Registers Chimairo and replaces its recoverable venom and frenzy triggers.
     Credits:
@@ -65,10 +65,7 @@ library BossChimairo initializer Init requires Boss, DamageEngine
 
     private function Register takes nothing returns nothing
         local timer initTimer = GetExpiredTimer()
-        local unit whichUnit = udg_BossChimairo
-        if whichUnit == null or GetUnitTypeId(whichUnit) != UNIT_CHIMAIRO then
-            set whichUnit = Boss_FindUnitByType(UNIT_CHIMAIRO, null)
-        endif
+        local unit whichUnit = Boss_ResolvePlacedUnit(gg_unit_e609_0398, udg_BossChimairo, UNIT_CHIMAIRO, null)
         if whichUnit != null then
             set udg_BossChimairo = whichUnit
             set BossId = Boss_Register(whichUnit, "Chimairo")

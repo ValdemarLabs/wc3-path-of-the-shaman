@@ -1,7 +1,7 @@
 /**
     BossMountainGiant
     Author: Valdemar
-    Version: 1.0.0
+    Version: 1.1.0
     Description:
     Registers the Mountain Giant and restores its patrol route.
     Credits:
@@ -16,6 +16,7 @@ library BossMountainGiant initializer Init requires Boss, PatrolSystem
         private constant integer UNIT_MOUNTAIN_GIANT = 'e002'
         private integer BossId = 0
         private timer RespawnTimer = null
+        private timer PatrolStartTimer = null
     endglobals
 
     private function StartPatrol takes unit whichUnit returns nothing
@@ -40,6 +41,14 @@ library BossMountainGiant initializer Init requires Boss, PatrolSystem
         call PatrolSystem_StartConfigured(whichUnit, 17, 30.00, PATROL_STYLE_LOOP, true, "attack", 120.00)
     endfunction
 
+    private function StartInitialPatrol takes nothing returns nothing
+        local unit whichUnit = Boss_GetUnit(BossId)
+        if whichUnit != null and GetUnitTypeId(whichUnit) == UNIT_MOUNTAIN_GIANT and GetWidgetLife(whichUnit) > 0.405 then
+            call StartPatrol(whichUnit)
+        endif
+        set whichUnit = null
+    endfunction
+
     private function Respawn takes nothing returns nothing
         local unit boss = Boss_Respawn(BossId)
         if boss != null then
@@ -50,6 +59,7 @@ library BossMountainGiant initializer Init requires Boss, PatrolSystem
     endfunction
 
     private function OnDeath takes nothing returns nothing
+        call PauseTimer(PatrolStartTimer)
         call TimerStart(RespawnTimer, GetRandomReal(120.00, 320.00), false, function Respawn)
     endfunction
 
@@ -59,17 +69,14 @@ library BossMountainGiant initializer Init requires Boss, PatrolSystem
 
     private function Register takes nothing returns nothing
         local timer initTimer = GetExpiredTimer()
-        local unit whichUnit = udg_BossMountainGiant
-        if whichUnit == null or GetUnitTypeId(whichUnit) != UNIT_MOUNTAIN_GIANT then
-            set whichUnit = Boss_FindUnitByType(UNIT_MOUNTAIN_GIANT, null)
-        endif
+        local unit whichUnit = Boss_ResolvePlacedUnit(gg_unit_e002_2326, udg_BossMountainGiant, UNIT_MOUNTAIN_GIANT, null)
 
         if whichUnit != null then
             set udg_BossMountainGiant = whichUnit
             set BossId = Boss_Register(whichUnit, "Mountain Giant")
             call Boss_SetDescription(BossId, "A roaming mountain giant.", "No combat phases were recovered.", "No boss-only abilities were recovered.", "Watch the mountain path and avoid starting a fight without room to maneuver.")
             call Boss_SetEventCallback(BossId, BOSS_EVENT_DEATH, function OnDeath)
-            call StartPatrol(whichUnit)
+            call TimerStart(PatrolStartTimer, 7.00, false, function StartInitialPatrol)
         else
             call BJDebugMsg("|cffff8080[BossMountainGiant] ERROR:|r Could not find placed Mountain Giant unit 'e002'.")
         endif
@@ -81,6 +88,7 @@ library BossMountainGiant initializer Init requires Boss, PatrolSystem
     private function Init takes nothing returns nothing
         local timer initTimer = CreateTimer()
         set RespawnTimer = CreateTimer()
+        set PatrolStartTimer = CreateTimer()
         call TimerStart(initTimer, 0.00, false, function Register)
         set initTimer = null
     endfunction

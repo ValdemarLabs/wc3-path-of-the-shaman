@@ -1,7 +1,7 @@
 /**
     BossVorkatha
     Author: Valdemar
-    Version: 1.0.0
+    Version: 1.1.0
     Description:
     Catalog registration for Vorkatha until encounter mechanics are recovered.
     Credits:
@@ -36,10 +36,7 @@ library BossVorkatha initializer Init requires Boss
 
     private function Register takes nothing returns nothing
         local timer initTimer = GetExpiredTimer()
-        local unit whichUnit = udg_BossVorkatha
-        if whichUnit == null or GetUnitTypeId(whichUnit) != UNIT_VORKATHA then
-            set whichUnit = Boss_FindPlacedUnitByType(UNIT_VORKATHA, gg_rct_DevilsaurWP1)
-        endif
+        local unit whichUnit = Boss_ResolvePlacedUnit(gg_unit_n63N_1910, udg_BossVorkatha, UNIT_VORKATHA, gg_rct_DevilsaurWP1)
 
         if whichUnit != null then
             set udg_BossVorkatha = whichUnit

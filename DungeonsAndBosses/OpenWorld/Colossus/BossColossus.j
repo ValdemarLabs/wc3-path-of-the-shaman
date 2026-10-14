@@ -1,7 +1,7 @@
 /**
     BossColossus
     Author: Valdemar
-    Version: 1.0.0
+    Version: 1.1.0
     Description:
     Replaces the Emberpeak Colossus encounter, including its slam sequence,
     boulders, healing-golem intermission, dragonfire reversal, damage rules,
@@ -387,10 +387,7 @@ library BossColossus initializer Init requires Boss, EmberpeakDragonfire, Damage
     endfunction
     private function Register takes nothing returns nothing
         local timer initTimer = GetExpiredTimer()
-        local unit whichUnit = udg_BossColossus
-        if whichUnit == null or GetUnitTypeId(whichUnit) != UNIT_COLOSSUS then
-            set whichUnit = Boss_FindPlacedUnitByType(UNIT_COLOSSUS, gg_rct_DragonFireSpam01)
-        endif
+        local unit whichUnit = Boss_ResolvePlacedUnit(gg_unit_n646_1903, udg_BossColossus, UNIT_COLOSSUS, gg_rct_ColossusSpot)
         if whichUnit != null then
             set udg_BossColossus = whichUnit
             set BossId = Boss_Register(whichUnit, "Colossus")

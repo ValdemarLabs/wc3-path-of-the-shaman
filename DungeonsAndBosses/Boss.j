@@ -2,7 +2,7 @@
     Boss
 
     Author: Valdemar
-    Version: 0.6.0
+    Version: 0.7.0
 
     Description:
     Shared foundation for PotS boss encounters. The library registers
@@ -36,6 +36,7 @@
     - set bossId = Boss_Register(whichUnit, displayName)
     - set whichUnit = Boss_FindUnitByType(unitTypeId, searchRect)
     - set whichUnit = Boss_FindPlacedUnitByType(unitTypeId, preferredRect)
+    - set whichUnit = Boss_ResolvePlacedUnit(placedUnit, compatibilityUnit, unitTypeId, preferredRect)
     - set whichUnit = Boss_FindUnitByName(unitName, searchRect)
     - call Boss_Unregister(bossId)
     - call Boss_ReplaceUnit(bossId, newUnit, true)
@@ -438,6 +439,18 @@ library Boss initializer Init requires Table, Events, UnitDeathEvent, DamageEngi
         call GroupClear(Boss_FindGroup)
         set pickedUnit = null
         return Boss_FindResult
+    endfunction
+
+    // Preserve the exact preplaced-unit identity used by legacy GUI triggers.
+    // Compatibility globals and area/type discovery remain migration fallbacks.
+    public function ResolvePlacedUnit takes unit placedUnit, unit compatibilityUnit, integer unitTypeId, rect preferredRect returns unit
+        if placedUnit != null and GetUnitTypeId(placedUnit) == unitTypeId then
+            return placedUnit
+        endif
+        if compatibilityUnit != null and GetUnitTypeId(compatibilityUnit) == unitTypeId then
+            return compatibilityUnit
+        endif
+        return FindPlacedUnitByType(unitTypeId, preferredRect)
     endfunction
 
     public function FindUnitByName takes string unitName, rect searchRect returns unit

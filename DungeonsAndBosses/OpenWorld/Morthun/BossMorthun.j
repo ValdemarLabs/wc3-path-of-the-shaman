@@ -1,7 +1,7 @@
 /**
     BossMorthun
     Author: Valdemar
-    Version: 1.0.0
+    Version: 1.1.0
     Description:
     Registers Morthun and restores the recovered open-world patrol.
     Credits:
@@ -16,6 +16,7 @@ library BossMorthun initializer Init requires Boss, PatrolSystem
         private constant integer UNIT_MORTHUN = 'n020'
         private integer BossId = 0
         private timer RespawnTimer = null
+        private timer PatrolStartTimer = null
     endglobals
 
     private function StartPatrol takes unit whichUnit returns nothing
@@ -36,6 +37,14 @@ library BossMorthun initializer Init requires Boss, PatrolSystem
         call PatrolSystem_StartConfigured(whichUnit, 13, 30.00, PATROL_STYLE_PINGPONG, true, "attack", 120.00)
     endfunction
 
+    private function StartInitialPatrol takes nothing returns nothing
+        local unit whichUnit = Boss_GetUnit(BossId)
+        if whichUnit != null and GetUnitTypeId(whichUnit) == UNIT_MORTHUN and GetWidgetLife(whichUnit) > 0.405 then
+            call StartPatrol(whichUnit)
+        endif
+        set whichUnit = null
+    endfunction
+
     private function Respawn takes nothing returns nothing
         local unit boss = Boss_Respawn(BossId)
         if boss != null then
@@ -46,6 +55,7 @@ library BossMorthun initializer Init requires Boss, PatrolSystem
     endfunction
 
     private function OnDeath takes nothing returns nothing
+        call PauseTimer(PatrolStartTimer)
         call TimerStart(RespawnTimer, GetRandomReal(120.00, 320.00), false, function Respawn)
     endfunction
 
@@ -55,17 +65,14 @@ library BossMorthun initializer Init requires Boss, PatrolSystem
 
     private function Register takes nothing returns nothing
         local timer initTimer = GetExpiredTimer()
-        local unit whichUnit = udg_BossMorthun
-        if whichUnit == null or GetUnitTypeId(whichUnit) != UNIT_MORTHUN then
-            set whichUnit = Boss_FindPlacedUnitByType(UNIT_MORTHUN, gg_rct_MorthunWP02)
-        endif
+        local unit whichUnit = Boss_ResolvePlacedUnit(gg_unit_n020_2281, udg_BossMorthun, UNIT_MORTHUN, gg_rct_MorthunWP02)
 
         if whichUnit != null then
             set udg_BossMorthun = whichUnit
             set BossId = Boss_Register(whichUnit, "Morthun")
             call Boss_SetDescription(BossId, "Morthun is an aggressive open-world patrol.", "No combat phases were recovered.", "No boss-only abilities were recovered.", "Expect him along the lake and mountain route.")
             call Boss_SetEventCallback(BossId, BOSS_EVENT_DEATH, function OnDeath)
-            call StartPatrol(whichUnit)
+            call TimerStart(PatrolStartTimer, 8.00, false, function StartInitialPatrol)
         else
             call BJDebugMsg("|cffff8080[BossMorthun] ERROR:|r Could not find placed Morthun unit 'n020'.")
         endif
@@ -77,6 +84,7 @@ library BossMorthun initializer Init requires Boss, PatrolSystem
     private function Init takes nothing returns nothing
         local timer initTimer = CreateTimer()
         set RespawnTimer = CreateTimer()
+        set PatrolStartTimer = CreateTimer()
         call TimerStart(initTimer, 0.00, false, function Register)
         set initTimer = null
     endfunction

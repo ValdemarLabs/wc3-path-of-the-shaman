@@ -2,7 +2,7 @@
     BossScorchion
 
     Author: Valdemar
-    Version: 1.0.0
+    Version: 1.1.0
 
     Description:
     Replaces Scorchion's recoverable Dark Shaman gate, timed fire attacks,
@@ -54,6 +54,7 @@ library BossScorchion initializer Init requires Boss, DamageEngine, ExSound, Cre
         private timer RespawnTimer = null
         private timer ShamanLineTimer = null
         private timer TortureTimer = null
+        private timer PreEventInitTimer = null
         private timer PreFightResetTimer = null
         private timer ShamanRespawnTimer = null
         private timer ShamanFacingTimer = null
@@ -90,13 +91,17 @@ library BossScorchion initializer Init requires Boss, DamageEngine, ExSound, Cre
         set picked = null
     endfunction
 
-    private function CreateShaman takes rect spawnRect, real facing returns nothing
-        local unit shaman = CreateUnit(Player(11), UNIT_DARK_SHAMAN, GetRectCenterX(spawnRect), GetRectCenterY(spawnRect), facing)
-        if shaman != null then
+    private function AddShaman takes unit shaman returns nothing
+        if IsAlive(shaman) and GetUnitTypeId(shaman) == UNIT_DARK_SHAMAN and not IsUnitInGroup(shaman, ShamanGroup) then
             call CreepRespawn_DiscardUnit(shaman)
             call AIRegister_ExcludeUnit(shaman)
             call GroupAddUnit(ShamanGroup, shaman)
         endif
+    endfunction
+
+    private function CreateShaman takes rect spawnRect, real facing returns nothing
+        local unit shaman = CreateUnit(Player(11), UNIT_DARK_SHAMAN, GetRectCenterX(spawnRect), GetRectCenterY(spawnRect), facing)
+        call AddShaman(shaman)
         set shaman = null
     endfunction
 
@@ -117,17 +122,18 @@ library BossScorchion initializer Init requires Boss, DamageEngine, ExSound, Cre
 
     private function RegisterExistingShamans takes nothing returns nothing
         local unit picked = null
+
+        call AddShaman(gg_unit_n00I_1992)
+        call AddShaman(gg_unit_n00I_1988)
+        call AddShaman(gg_unit_n00I_1989)
+        call AddShaman(gg_unit_n00I_1990)
         call GroupClear(WorkGroup)
         call GroupEnumUnitsInRect(WorkGroup, gg_rct_BossScorchionArea, null)
         loop
             set picked = FirstOfGroup(WorkGroup)
             exitwhen picked == null
             call GroupRemoveUnit(WorkGroup, picked)
-            if GetUnitTypeId(picked) == UNIT_DARK_SHAMAN and IsAlive(picked) then
-                call CreepRespawn_DiscardUnit(picked)
-                call AIRegister_ExcludeUnit(picked)
-                call GroupAddUnit(ShamanGroup, picked)
-            endif
+            call AddShaman(picked)
         endloop
         set picked = null
     endfunction
@@ -187,13 +193,23 @@ library BossScorchion initializer Init requires Boss, DamageEngine, ExSound, Cre
         if Boss_GetState(BossId) == BOSS_STATE_IDLE and not ShamanEncounterActive and CountLivingGroup(ShamanGroup) > 0 then
             set shaman = GroupPickRandomUnit(ShamanGroup)
             if IsAlive(shaman) and IsAlive(boss) then
-                call IssueTargetOrder(shaman, "attack", boss)
+                call IssueTargetOrder(shaman, "attackonce", boss)
                 call SetUnitFacingTimed(boss, Atan2(GetUnitY(shaman) - GetUnitY(boss), GetUnitX(shaman) - GetUnitX(boss)) * bj_RADTODEG, 0.20)
             endif
             call TimerStart(TortureTimer, GetRandomReal(1.00, 4.00), false, function TortureScorchion)
         endif
         set boss = null
         set shaman = null
+    endfunction
+
+    private function StartPreEvent takes nothing returns nothing
+        if BossId > 0 and Boss_GetState(BossId) == BOSS_STATE_IDLE then
+            call RegisterExistingShamans()
+            if CountLivingGroup(ShamanGroup) != 4 then
+                call ResetShamans()
+            endif
+            call TimerStart(TortureTimer, 10.00, false, function TortureScorchion)
+        endif
     endfunction
 
     private function UpdateShamanFacing takes nothing returns nothing
@@ -732,10 +748,7 @@ library BossScorchion initializer Init requires Boss, DamageEngine, ExSound, Cre
 
     private function Register takes nothing returns nothing
         local timer initTimer = GetExpiredTimer()
-        local unit boss = udg_BossScorchion
-        if boss == null or GetUnitTypeId(boss) != UNIT_SCORCHION then
-            set boss = Boss_FindPlacedUnitByType(UNIT_SCORCHION, gg_rct_BossScorchionArea)
-        endif
+        local unit boss = Boss_ResolvePlacedUnit(gg_unit_n00E_0109, udg_BossScorchion, UNIT_SCORCHION, gg_rct_BossScorchionUp)
         if boss != null then
             set udg_BossScorchion = boss
             set BossId = Boss_Register(boss, "Scorchion")
@@ -750,12 +763,8 @@ library BossScorchion initializer Init requires Boss, DamageEngine, ExSound, Cre
             call SetUnitInvulnerable(boss, true)
             call BlzSetUnitRealField(boss, UNIT_RF_HIT_POINTS_REGENERATION_RATE, 1000.00)
             call SetUnitPropWindow(boss, 0.00)
-            call RegisterExistingShamans()
-            if CountLivingGroup(ShamanGroup) != 4 then
-                call ResetShamans()
-            endif
             call RegisterDamageEngine(function OnDamage, "Modifier", 1.00)
-            call TimerStart(TortureTimer, 10.00, false, function TortureScorchion)
+            call TimerStart(PreEventInitTimer, 2.00, false, function StartPreEvent)
         else
             call BJDebugMsg("|cffff8080[BossScorchion] ERROR:|r Could not find placed Scorchion unit 'n00E'.")
         endif
@@ -781,6 +790,7 @@ library BossScorchion initializer Init requires Boss, DamageEngine, ExSound, Cre
         set RespawnTimer = CreateTimer()
         set ShamanLineTimer = CreateTimer()
         set TortureTimer = CreateTimer()
+        set PreEventInitTimer = CreateTimer()
         set PreFightResetTimer = CreateTimer()
         set ShamanRespawnTimer = CreateTimer()
         set ShamanFacingTimer = CreateTimer()

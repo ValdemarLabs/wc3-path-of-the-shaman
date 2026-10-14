@@ -1,21 +1,22 @@
 /**
     BossRoljin
     Author: Valdemar
-    Version: 1.0.0
+    Version: 1.2.0
     Description:
     Registers Rol'jin and his recovered reinforcement encounter.
     Credits:
     - Legacy Roljin GUI exports.
     How to install:
-    Import after Boss and the Bloodtusk map rects.
+    Import after Boss, CreepRespawn, Events, and the Bloodtusk map rects.
     API:
     - BossRoljin_GetId()
 */
-library BossRoljin initializer Init requires Boss, CreepRespawn
+library BossRoljin initializer Init requires Boss, CreepRespawn, Events
     globals
         private constant integer UNIT_ROLJIN = 'n605'
         private integer BossId = 0
         private timer MoveTimer = null
+        private timer StartTimer = null
         private timer SupportTimer = null
         private timer RespawnTimer = null
         private group SupportGroup = null
@@ -107,7 +108,7 @@ library BossRoljin initializer Init requires Boss, CreepRespawn
             endif
         endif
         if Boss_IsActive(BossId) then
-            call TimerStart(SupportTimer, GetRandomReal(20.00, 100.00), false, function SpawnSupport)
+            call TimerStart(SupportTimer, GetRandomReal(25.00, 45.00), false, function SpawnSupport)
         endif
     endfunction
 
@@ -136,14 +137,33 @@ library BossRoljin initializer Init requires Boss, CreepRespawn
         endif
         set whichUnit = null
     endfunction
+    private function BeginFight takes nothing returns nothing
+        if Boss_IsActive(BossId) then
+            call TimerStart(MoveTimer, GetRandomReal(30.00, 45.00), false, function MoveRandomly)
+            call TimerStart(SupportTimer, GetRandomReal(25.00, 45.00), false, function SpawnSupport)
+        endif
+    endfunction
+
     private function OnStart takes nothing returns nothing
-        call TimerStart(MoveTimer, GetRandomReal(30.00, 45.00), false, function MoveRandomly)
-        call TimerStart(SupportTimer, GetRandomReal(20.00, 100.00), false, function SpawnSupport)
+        local unit boss = Boss_GetUnit(BossId)
+        if boss != null then
+            call PlaySoundOnUnitBJ(gg_snd_ForestTrollWarcry1, 100.00, boss)
+            call DisplayTimedTextToForce(bj_FORCE_ALL_PLAYERS, 2.00, "|cffffcc00Rol'jin:|r I kill you!")
+        endif
+        call TimerStart(StartTimer, 2.00, false, function BeginFight)
+        set boss = null
     endfunction
     private function OnEnd takes nothing returns nothing
+        local unit boss = Boss_GetUnit(BossId)
+        call PauseTimer(StartTimer)
         call PauseTimer(MoveTimer)
         call PauseTimer(SupportTimer)
         call ClearSupports()
+        if Boss_EventType == BOSS_EVENT_RESET and boss != null then
+            call PlaySoundOnUnitBJ(gg_snd_ForestTrollPissed6, 100.00, boss)
+            call DisplayTimedTextToForce(bj_FORCE_ALL_PLAYERS, 4.00, "|cffffcc00Rol'jin:|r Oh, just like that,....")
+        endif
+        set boss = null
     endfunction
 
     private function Respawn takes nothing returns nothing
@@ -161,27 +181,37 @@ library BossRoljin initializer Init requires Boss, CreepRespawn
     public function GetId takes nothing returns integer
         return BossId
     endfunction
+    private function RegisterUnit takes unit whichUnit returns nothing
+        if BossId > 0 or whichUnit == null or GetUnitTypeId(whichUnit) != UNIT_ROLJIN then
+            return
+        endif
+        set udg_Roljin = whichUnit
+        set BossId = Boss_Register(whichUnit, "Rol'jin")
+        if BossId > 0 then
+            call Boss_SetAutoStartOnAttack(BossId, true)
+            call Boss_SetCombatArea(BossId, gg_rct_BloodtuskTribe, Player(0), true)
+            call Boss_SetDescription(BossId, "The Bloodtusk chieftain calls troll support while roaming his grounds.", "One recovered phase: periodic movement and reinforcements.", "Support packs include trappers, berserkers, high priests, and shadow priests.", "Prioritize healers and keep his escort group under control.")
+            call Boss_SetEventCallback(BossId, BOSS_EVENT_START, function OnStart)
+            call Boss_SetEventCallback(BossId, BOSS_EVENT_RESET, function OnEnd)
+            call Boss_SetEventCallback(BossId, BOSS_EVENT_DEATH, function OnDeath)
+        endif
+    endfunction
+
+    private function OnUnitEnter takes nothing returns nothing
+        local unit whichUnit = GetTriggerUnit()
+        if GetUnitTypeId(whichUnit) == UNIT_ROLJIN then
+            call RegisterUnit(whichUnit)
+        endif
+        set whichUnit = null
+    endfunction
+
     private function Register takes nothing returns nothing
         local timer initTimer = GetExpiredTimer()
         local unit whichUnit = udg_Roljin
         if whichUnit == null or GetUnitTypeId(whichUnit) != UNIT_ROLJIN then
             set whichUnit = Boss_FindPlacedUnitByType(UNIT_ROLJIN, gg_rct_BloodtuskTribe)
         endif
-        if whichUnit == null then
-            call BJDebugMsg("|cffff8080[BossRoljin] ERROR:|r Could not find placed Rol'jin unit 'n605'.")
-            call DestroyTimer(initTimer)
-            set whichUnit = null
-            set initTimer = null
-            return
-        endif
-        set udg_Roljin = whichUnit
-        set BossId = Boss_Register(whichUnit, "Rol'jin")
-        call Boss_SetAutoStartOnAttack(BossId, true)
-        call Boss_SetCombatArea(BossId, gg_rct_BloodtuskTribe, Player(0), true)
-        call Boss_SetDescription(BossId, "The Bloodtusk chieftain calls troll support while roaming his grounds.", "One recovered phase: periodic movement and reinforcements.", "Support packs include trappers, berserkers, high priests, and shadow priests.", "Prioritize healers and keep his escort group under control.")
-        call Boss_SetEventCallback(BossId, BOSS_EVENT_START, function OnStart)
-        call Boss_SetEventCallback(BossId, BOSS_EVENT_RESET, function OnEnd)
-        call Boss_SetEventCallback(BossId, BOSS_EVENT_DEATH, function OnDeath)
+        call RegisterUnit(whichUnit)
         call DestroyTimer(initTimer)
         set initTimer = null
         set whichUnit = null
@@ -190,6 +220,7 @@ library BossRoljin initializer Init requires Boss, CreepRespawn
         local timer initTimer = CreateTimer()
 
         set MoveTimer = CreateTimer()
+        set StartTimer = CreateTimer()
         set SupportTimer = CreateTimer()
         set RespawnTimer = CreateTimer()
         if udg_RoljinGroup == null then
@@ -197,6 +228,7 @@ library BossRoljin initializer Init requires Boss, CreepRespawn
         endif
         set SupportGroup = udg_RoljinGroup
         set WorkGroup = CreateGroup()
+        call Events_RegisterUnitEnter(function OnUnitEnter)
         call TimerStart(initTimer, 0.00, false, function Register)
         set initTimer = null
     endfunction

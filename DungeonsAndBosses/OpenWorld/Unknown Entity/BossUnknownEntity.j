@@ -2,7 +2,7 @@
     BossUnknownEntity
 
     Author: Valdemar
-    Version: 1.0.0
+    Version: 1.1.0
 
     Description:
     Implements the Unknown Entity lake encounter without legacy GUI triggers.
@@ -471,6 +471,9 @@ library BossUnknownEntity initializer Init requires Boss, ExSound, VoicelinesNaz
         call TriggerRegisterPlayerUnitEvent(LureDropTrigger, Player(0), EVENT_PLAYER_UNIT_DROP_ITEM, null)
         call TriggerAddAction(LureDropTrigger, function OnLureDropped)
 
+        if MarkerUnit == null or GetUnitTypeId(MarkerUnit) == 0 then
+            set MarkerUnit = gg_unit_ncop_1172
+        endif
         call FindMarkerUnit()
         call SetMarkerVisible(false)
         call DestroyTimer(initTimer)

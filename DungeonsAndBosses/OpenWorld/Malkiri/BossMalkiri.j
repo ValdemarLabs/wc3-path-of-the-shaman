@@ -1,7 +1,7 @@
 /**
     BossMalkiri
     Author: Valdemar
-    Version: 1.0.0
+    Version: 1.1.0
     Description:
     Catalog registration for Mal'kiri until source encounter data is available.
     Credits:
@@ -36,10 +36,7 @@ library BossMalkiri initializer Init requires Boss
 
     private function Register takes nothing returns nothing
         local timer initTimer = GetExpiredTimer()
-        local unit whichUnit = udg_BossMalkiri
-        if whichUnit == null or GetUnitTypeId(whichUnit) != UNIT_MALKIRI then
-            set whichUnit = Boss_FindUnitByType(UNIT_MALKIRI, null)
-        endif
+        local unit whichUnit = Boss_ResolvePlacedUnit(gg_unit_n012_2014, udg_BossMalkiri, UNIT_MALKIRI, null)
 
         if whichUnit != null then
             set udg_BossMalkiri = whichUnit

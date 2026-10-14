@@ -1,43 +1,40 @@
 /**
     BossVoidEntity
     Author: Valdemar
-    Version: 1.0.0
+    Version: 1.3.0
     Description:
-    Replaces the quest-gated Void Entity lifecycle, reveal state, scripted
-    defeat, quest requirement completion, and combat dialogue integration.
+    Replaces the hidden Void Entity lifecycle, reveal state, scripted defeat,
+    and combat dialogue integration. Quest state remains owned by qXXX code
+    through an optional defeat callback.
     Credits:
-    - Legacy Void Entity GUI exports.
+    - Draft legacy Void Entity GUI exports, used only for encounter mechanics.
     How to install:
     Import after Boss, BossVoidEntityDialogue, and the ElvenTown map rect.
+    A current qXXX quest may register the optional defeat callback.
     API:
     - BossVoidEntity_GetId()
     - BossVoidEntity_Hide()
     - BossVoidEntity_Reveal()
-    - BossVoidEntity_RegisterCompletionCallback(callback)
+    - BossVoidEntity_SetQuestCallback(onBossDefeated)
 */
 library BossVoidEntity initializer Init requires Boss, BossVoidEntityDialogue
     globals
         private constant integer UNIT_VOID_ENTITY = 'n01Z'
         private integer BossId = 0
         private timer DefeatTimer = null
-        private trigger CompletionCallback = null
+        private trigger BossDefeatedCallback = null
         private boolean Revealed = false
     endglobals
 
-    private function CompleteQuest takes nothing returns nothing
-        if udg_QuestBoomWillBeBackReq1 != null then
-            call QuestItemSetCompleted(udg_QuestBoomWillBeBackReq1, true)
-            call DisplayTimedTextToForce(bj_FORCE_ALL_PLAYERS, 8.00, "|cffffcc00QUEST UPDATE|r")
-            call DisplayTimedTextToForce(bj_FORCE_ALL_PLAYERS, 8.00, "Mad Blix has been defeated.")
-        endif
-        if CompletionCallback != null then
-            call TriggerExecute(CompletionCallback)
+    private function RunQuestCallback takes nothing returns nothing
+        if BossDefeatedCallback != null then
+            call TriggerExecute(BossDefeatedCallback)
         endif
     endfunction
 
     private function FinishDefeat takes nothing returns nothing
         call Boss_FinishScriptedDefeat(BossId)
-        call CompleteQuest()
+        call RunQuestCallback()
     endfunction
 
     public function Hide takes nothing returns nothing
@@ -65,11 +62,16 @@ library BossVoidEntity initializer Init requires Boss, BossVoidEntityDialogue
         set boss = null
     endfunction
 
-    public function RegisterCompletionCallback takes code callback returns nothing
-        if CompletionCallback == null then
-            set CompletionCallback = CreateTrigger()
+    // The owning qXXX library performs QuestData updates inside this callback.
+    public function SetQuestCallback takes code onBossDefeated returns nothing
+        if BossDefeatedCallback != null then
+            call DestroyTrigger(BossDefeatedCallback)
+            set BossDefeatedCallback = null
         endif
-        call TriggerAddAction(CompletionCallback, callback)
+        if onBossDefeated != null then
+            set BossDefeatedCallback = CreateTrigger()
+            call TriggerAddAction(BossDefeatedCallback, onBossDefeated)
+        endif
     endfunction
 
     private function OnStart takes nothing returns nothing
@@ -98,10 +100,7 @@ library BossVoidEntity initializer Init requires Boss, BossVoidEntityDialogue
     endfunction
     private function Register takes nothing returns nothing
         local timer initTimer = GetExpiredTimer()
-        local unit whichUnit = udg_BossVoidEntity
-        if whichUnit == null or GetUnitTypeId(whichUnit) != UNIT_VOID_ENTITY then
-            set whichUnit = Boss_FindPlacedUnitByType(UNIT_VOID_ENTITY, gg_rct_ElvenTown)
-        endif
+        local unit whichUnit = Boss_ResolvePlacedUnit(gg_unit_n01Z_2102, udg_BossVoidEntity, UNIT_VOID_ENTITY, gg_rct_ElvenTown)
         if whichUnit != null then
             set udg_BossVoidEntity = whichUnit
             set BossId = Boss_Register(whichUnit, "Void Entity")
@@ -111,7 +110,7 @@ library BossVoidEntity initializer Init requires Boss, BossVoidEntityDialogue
             call Boss_SetEventCallback(BossId, BOSS_EVENT_START, function OnStart)
             call Boss_SetEventCallback(BossId, BOSS_EVENT_RESET, function OnReset)
             call Boss_SetEventCallback(BossId, BOSS_EVENT_DEFEAT, function OnDefeat)
-            call Boss_SetDescription(BossId, "A hidden void manifestation tied to Mad Blix's quest in ElvenTown.", "One recovered phase; its death is a scripted quest sequence.", "No recoverable combat abilities exist; its legacy triggers provide proximity-limited combat dialogue.", "Keep the fight in ElvenTown or it resets. The last hit must remain scripted so the quest can complete.")
+            call Boss_SetDescription(BossId, "A hidden Void Entity manifestation.", "The current library runs one combat phase and delays defeat so the death dialogue can finish.", "No encounter-specific combat abilities are defined here; the dialogue library handles proximity-limited combat lines.", "Stay inside the configured combat area or the encounter resets. The final blow resolves after the death dialogue.")
             call BossVoidEntityDialogue_Bind(whichUnit)
             call Hide()
         else

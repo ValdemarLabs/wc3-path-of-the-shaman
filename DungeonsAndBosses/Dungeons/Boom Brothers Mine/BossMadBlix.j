@@ -2,7 +2,7 @@
     BossMadBlix
 
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.2.0
 
     Description:
     Implements Mad Blix's only recoverable exported combat mechanic and
@@ -73,10 +73,7 @@ library BossMadBlix initializer Init requires Boss, DungeonBoomBrothersMine
 
     private function Register takes nothing returns nothing
         local timer initTimer = GetExpiredTimer()
-        local unit boss = udg_BossMadBlix
-        if boss == null or GetUnitTypeId(boss) != UNIT_MAD_BLIX then
-            set boss = Boss_FindPlacedUnitByType(UNIT_MAD_BLIX, gg_rct_BoomBrothersMine)
-        endif
+        local unit boss = Boss_ResolvePlacedUnit(gg_unit_n01B_2169, udg_BossMadBlix, UNIT_MAD_BLIX, gg_rct_BoomBrothersMine)
 
         if boss != null then
             set udg_BossMadBlix = boss
