@@ -18,6 +18,18 @@
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
 
+## [15.10.2026]
+
+### Technical Updates
+
+- Added `QuestsAndDialogs/QuestGivers/WantedPosts.j` with twelve inert, exact-unit-bound **draft** quest definitions across the proposed Mok'natha, Ironspine Post, Sereneglade mountain-camp, and Thornwoods scout-base wanted posts. The library registers no content automatically; each regional set must be reviewed against its actual World Editor location before its setup API is called.
+- Updated the quest-giver guide and story/quest implementation ledger with an explicit wanted-post review gate covering local target and drop feasibility, travel, receiver ownership, cadence and rotation, prerequisites, overlap, rewards, save/reset behavior, and shared-target progress. All twelve candidate quests are marked Draft rather than Implemented.
+
+### Actions Remaining
+
+- Review each proposed wanted-post quest set in its actual World Editor zone. Approve, replace, or retune its targets, counts, drops, receiver, missing-person target, cadence, unlocks, and rewards; decide whether the shared quest systems need per-post availability, prerequisites, rotating offers, or stronger receiver ownership before integrating any draft.
+- After approval, preplace/select the four `'n05N'` wanted posts, remote receivers, and any missing-person targets; call only the approved `WantedPosts_Register...` APIs with exact generated unit handles, then compile and runtime-test the focused flows and full map through World Editor/JassHelper.
+
 ## [14.10.2026]
 
 ### Player-Facing Updates
@@ -29,6 +41,7 @@
 
 ### Technical Updates
 
+- Added `QuestsAndDialogs/QuestsGenericDialog.j` and updated `QuestMaster.j`, `QuestGiver.j`, `QuestsGeneric.j`, `QuestsVendor.j`, the generic test harness, and quest-giver documentation with Shop-independent NPC/notice-board dialogs, canonical wanted-post unit type `'n05N'`, exact binding for preplaced wanted-post units, separately registered turn-in receivers, proximity-Find objectives, and up to seven combined Kill/Fetch/Talk/Find objectives. Separate posts sharing `'n05N'` can own different quest lists. Combined quests now become ready for turn-in only after every authored objective is complete; vendor supply handoffs retain their existing item-consumption behavior through an explicit delivery objective.
 - Updated `SaveLoad/PotSSaveLoad.j`, `SaveLoad/PotSSaveUI.j`, `Preload/Start.j`, `UI/GameMode.j`, both SaveLoad compile harnesses, and `SaveLoad/README.md` with snapshot-derived two-hero manifest levels, deferred-start recovery, retry-safe saved-mode setup, and hero/category-specific map-compatibility diagnostics.
 - Updated `PatrolFollowSystems/EscortMovement.j`, `QuestsAndDialogs/QuestsVendor.j`, and `Vendors/VendorDialogs.j` so active escorts pause for dialogue and Trade, wait five seconds after dialogue closes, support a stateful Wait here / Let's move choice, move at a configurable 200 default speed, restore their original speed afterward, and use a much closer 900-unit default hero leash.
 - Updated `QuestsAndDialogs/QuestsVendor.j` so escort arrival queues quest completion outside the periodic route scan before state callbacks tear down route and minimap-icon state, hardening the shared completion path reported to crash on Giznak Edgeprice.
@@ -39,6 +52,7 @@
 
 ### Actions Remaining
 
+- Preplace each wanted-post `'n05N'` unit in World Editor, pass its exact generated handle to its quest definitions and dialog registration, import `QuestsGenericDialog.j` after its documented dependencies, then compile the focused harness and full map through World Editor/JassHelper. Runtime-test that separate posts expose only their own quest lists, plus standalone NPC selection, remote receiver markers/turn-in, kill-one and kill-many objectives, item gathering/removal, missing-person discovery, combined-objective gating, ESC/combat interruption, daily reset behavior, and vendor quest regressions. Select exact generic giver and receiver rawcodes and placements before authoring production definitions.
 - Reimport the changed SaveLoad, Start, and GameMode scripts; compile the full map; then save Nazgrek at a different level from Zul'kis and verify both slot-title levels and restored states. Test a wrong-profile/truncated file, a missing saved item rawcode, retrying a second slot, choosing New Game after a pre-apply failure, and the restart-only path after a forced apply-stage failure.
 - Reimport `EscortMovement.j`, `QuestsGeneric.j`, `QuestsVendor.j`, and `VendorDialogs.j`, then compile the full map through World Editor/JassHelper. Runtime-test Giznak's arrival repeatedly, dialogue/Trade interruption and five-second resume, Wait here / Let's move during combat and leash breaks, speed restoration, all 128-waypoint bounds, and Nazgrek/Zul'kis reply variation across Kill, Fetch, Talk, and Escort quests.
 - Reimport `DungeonsAndBosses/Boss.j` before the updated encounter libraries, compile the full map through World Editor/JassHelper, and runtime-test Colossus sleep/wake, Scorchion's pre-event and fight gate, every exact placed-unit/marker binding, both delayed patrols, Jinvorrak's freeze, Unknown Entity's lure marker, and Rol'jin's start/reset cycle. Keep the replaced legacy GUI triggers disabled during these tests.
@@ -50,7 +64,7 @@
 - Fixed Colossus skipping its initial sleep state and attack-triggered birth sequence when the conversion failed to resolve GUI unit 1903.
 - Fixed Scorchion failing to initialize and its same-owner Dark Shamans refusing the converted normal attack order against him.
 - Fixed Rol'jin never registering in the normal quest flow because his converted library searched only once at map initialization even though the legacy quest creates him later.
-- Fixed `BossVoidEntity.j` inheriting draft Mad Blix text and Boom Will Be Back quest completion from its old GUI trigger. Void Entity now contains no Mad Blix or Boom Mine integration; Mad Blix completion remains exclusively in `BossMadBlix.j`.
+- Fixed `BossVoidEntity.j` inheriting draft Mad Blix text and Boom Will Be Back quest completion from its old GUI trigger. Void Entity now contains no Mad Blix or Boom Mine integration; its optional defeat hook is a no-op until a current qXXX library registers a `QuestData`-aware callback, while Mad Blix completion remains exclusively in `BossMadBlix.j`.
 
 ## [13.10.2026]
 
