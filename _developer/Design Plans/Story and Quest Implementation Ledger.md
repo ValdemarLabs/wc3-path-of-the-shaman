@@ -239,8 +239,26 @@ the fallback. Candidate lists are mandatory safety filters—automatic selection
 from every unit in a region is rejected because it can choose allies, bosses,
 critters, summons, or quest actors.
 
-Pure non-vendor definitions remain planned until the exact placed NPC/rawcode,
-faction, zone, and active GUI ownership are selected in World Editor.
+The pure non-vendor architecture is implemented. `QuestsGenericDialog` can be
+attached explicitly to a standalone NPC or text-only notice-board unit without
+Shop/VendorDialogs, while custom qXXX dialogs can embed the shared buttons and
+action lifecycle. Definitions may turn in at a separately registered receiver,
+defer creation until that receiver and any Find target exist, and combine up
+to seven Kill, Fetch, Talk, or proximity-Find objectives. Shared requirement
+completion now reaches ready-for-turn-in only after every authored objective
+is complete. Wanted posts are preplaced World Editor units of canonical type
+`'n05N'`, exposed by `QuestsGenericDialog_WANTED_POST_UNIT_TYPE`; they are
+registered by exact handle and are never spawned or discovered by rawcode.
+Definitions can bind to one exact giver unit so multiple posts of the same type
+do not inherit one another's quest lists. The focused registration helper
+rejects other unit types. `QuestsGeneric_testing.j` contains a wanted-post
+harness with a remote receiver and combined kill/gather/find objectives.
+
+Actual pure non-vendor quest content remains planned until the exact placed
+NPC identity, preplaced wanted-post handle, receiver, faction, zone, and active
+GUI ownership are selected in World Editor. Type-based receiver/Find lookup
+requires a unique unit type; shared rawcodes must use exact placed-unit
+registration.
 
 `QuestsAndDialogs/QuestGivers/Vendors/README.md` is the implementation ledger for the vendor quest set. It currently records 68 quests across 51 qVendor libraries: 43 Daily and 25 Normal. Keep that README authoritative for exact vendor quest titles, rawcodes, objectives, and setup.
 
@@ -569,16 +587,20 @@ These are candidates, not promises. Before implementation, search the vendor REA
 
 “Existing generic WE role” means a suitable guard, scout, hunter, worker, vendor, or resident is expected in the map but its exact placed instance must be selected in World Editor. “New” means the NPC may be created if no existing unit fits.
 
+The twelve entries backed by `QuestGivers/WantedPosts.j` are **Draft JASS definitions**, not approved or integrated quests. Their post location and current surrounding zone must drive the final portfolio. Review local targets and drops, density and respawn feasibility, travel distance, exact remote receiver and missing-person ownership, repetition cadence, prerequisites/rotation, cross-quest overlap, rewards/progression, save/reset behavior, and shared-target progress before any `WantedPosts_Register...` call is added to the production map. If that review exposes a need for per-post availability, prerequisites, rotating offers, or stronger receiver ownership, design the shared quest API before approving the content.
+
 ### Sereneglade and Twilight Grove
 
 | Plan ID | Working title | Type + category | Giver | Objective location | Connection |
 |---|---|---|---|---|---|
 | GQ-001 | Lake Without Ripples | Normal | Existing fisher or new Sereneglade net-mender | Sereneglade lake | Investigate poisoned fish and refer the player to Jin'Zun; early environmental foreshadowing. |
-| GQ-002 | Scales and Stingers | Daily | Existing hunter | Sereneglade salamander/crab areas | Cull local threats; purely optional hub upkeep. |
+| GQ-002 | Scales and Stingers | Daily | Sereneglade mountain-camp wanted post | Sereneglade slopes | **Draft JASS definition; not approved or WE-integrated.** Kill six Salamander Hatchlings `n02K` and turn in four Shed Snake Scales `j0b0` to a separate preplaced receiver. |
 | GQ-003 | Shoreline Provisions | Repeatable | Existing cook/vendor | Sereneglade shore | Turn in common meat or shellfish; check vendor quests first. |
 | GQ-004 | Roots That Remember | Normal | New Twilight spirit tender | Twilight Grove ancient trees | Place wards or listen at roots; hints that beasts are reacting to distant corruption. |
 | GQ-005 | Predators in the Mist | Daily | Existing Grove sentinel | Twilight Grove wolf/bear areas | Rescue travelers or kill marked predators without targeting Shadowclaw's pack identity. |
 | GQ-006 | Twilight Samples | Repeatable | Existing herbalist | Twilight Grove | Gather non-unique samples used by Garthork/Jin'Zun research. |
+| GQ-052 | Frenzy Below the Camp | Daily | Sereneglade mountain-camp wanted post | Lower Sereneglade water | **Draft JASS definition; not approved or WE-integrated.** Kill eight level-3 Frenzy `n62G`; turn in at the post's remote receiver. |
+| GQ-053 | Lost on the North Slope | Normal | Sereneglade mountain-camp wanted post | Mountain camp north slope | **Draft JASS definition; not approved or WE-integrated.** Kill four Salamander Hatchlings `n02K`, find one exact preplaced missing scout, and report elsewhere. |
 | GQ-017 | Wolf Hunt I–III | Normal + Story chain | Nazgrek (self-discovered) | Sereneglade / `gg_rct_WolfAttack` / Wolf Den `12111` | Promoted into Act I-A, Nazgrek's intro. Wolf Hunt I is initially unavailable and undiscovered; after the intro returns control, two spawned Timber Wolves `nwlt` attack Nazgrek from `gg_rct_WolfAttack`, causing discovery. Wolf Hunt I and the interposed Nazgrek's Flask quest are implemented in `qNazgrek`; Wolf Hunt II targets Wolf Mother `n648`, and optional Wolf Hunt III crafts the Shamanic Cowl once its trophy and recipe objects are defined. |
 
 ### Thornwoods and Gnoll Hideout
@@ -588,11 +610,13 @@ These are candidates, not promises. Before implementation, search the vendor REA
 | GQ-007 | Murloc Fins | Daily | Krezgrel | Thornwoods shore | **Implemented JASS.** Gather ten Murloc Fins `I6AE`; no duplicate title exists in the vendor ledger. |
 | GQ-008 | Rescue The Grunts | Daily | Krezgrel | Thornwoods murloc waters | **Implemented JASS.** Rescue three living grunts through eight randomized effect/proxy targets; some selected grunts have already drowned. |
 | GQ-009 | Big Bear Tooth | Daily | Grim | Thornwoods wildlife area | **Implemented JASS.** Bring one Big Bear Tooth `I6AB`; the existing bear loot definitions provide the item. |
-| GQ-010 | The Road to the Scout Base | Normal | Granis or existing scout | Route to Horde Scout Base `8810` | Clear ambush points and unlock safe travel/patrol visibility. |
+| GQ-010 | The Road to the Scout Base | Normal | Horde Scout Base wanted post | Route to Horde Scout Base `8810` | **Draft JASS definition; not approved or WE-integrated.** Kill eight locally present standard gnolls, find one exact preplaced missing courier, and turn in at a separate receiver. Patrol/travel visibility remains future work. |
 | GQ-011 | Teeth Beneath the Hill | Normal + Dungeon | Granis | Gnoll camp → Gnoll Hideout `101` | Breadcrumb quest for the dungeon and its stolen-resource clue. |
 | GQ-012 | Deathlord Fel'Dok | Normal + Dungeon | Granis or dungeon survivor | Gnoll Hideout `101` | Kill the dungeon boss; spelling must match current object/boss data. |
 | GQ-013 | Stolen Horde Stores | Daily + Dungeon | Horde quartermaster | Gnoll Hideout `101` | Recover supplies after the first clear; never gates story progress. |
 | GQ-014 | The Stolen Ledger | Normal + Story + Dungeon | Garthork | Gnoll Hideout `101` | One-time evidence objective feeding the Act I conspiracy reveal. |
+| GQ-054 | Tidecallers at the Ford | Daily | Horde Scout Base wanted post | Thornwoods ford | **Draft JASS definition; not approved or WE-integrated.** Kill six locally present Murloc Sorcerers `n62A` or Tidecallers `n62B`. |
+| GQ-055 | Stolen Scout Supplies | Repeatable | Horde Scout Base wanted post | Thornwoods gnoll territory | **Draft JASS definition; not approved or WE-integrated.** Recover and turn in five Gnoll Pillage `I6A4`. |
 
 ### Ghostwalk Ridge, Ironspine, Deadwoods, and Crypt
 
@@ -605,6 +629,9 @@ These are candidates, not promises. Before implementation, search the vendor REA
 | GQ-020 | Restless Souls | Daily + Dungeon | Spirit speaker | Crypt `102` | Release marked spirits; rotate targets only if the objective system supports it cleanly. |
 | GQ-021 | Secrets of the Necromancer | Normal + Story + Dungeon | Garthork / Dawnhold contact | Crypt `102` | Recover evidence connecting undead work to the wider corruption. |
 | GQ-022 | Grave Wax | Repeatable | Existing alchemist | Deadwoods / Crypt `102` | Optional reagent turn-in; must not compete with a unique story drop. |
+| GQ-056 | Antlers in the Fog | Daily | Ironspine wanted post | Ghostwalk Ridge approaches | **Draft JASS definition; not approved or WE-integrated.** Kill six Diseased Stags `n65D`. |
+| GQ-057 | Ichor for Ironspine | Repeatable | Ironspine wanted post | Ghostwalk Ridge / spider nests | **Draft JASS definition; not approved or WE-integrated.** Gather and turn in five Spider Ichor `I66Q`. |
+| GQ-058 | Lost Beyond the Watchfires | Normal | Ironspine wanted post | Ironspine outer trail | **Draft JASS definition; not approved or WE-integrated.** Kill five Diseased Stags `n65D`, find one exact preplaced missing watcher, and report elsewhere. |
 
 ### Havenwoods, Bonecrush Stronghold, and Riverbane
 
@@ -634,7 +661,7 @@ These are candidates, not promises. Before implementation, search the vendor REA
 
 | Plan ID | Working title | Type + category | Giver | Objective location | Connection |
 |---|---|---|---|---|---|
-| GQ-037 | Songs Beneath the Surf | Normal | Existing Mok'natha shaman | Sirensong / Serpentshore `1404` | Investigate enthralled scouts and foreshadow Kelziss. |
+| GQ-037 | Songs Beneath the Surf | Normal | Mok'natha wanted post | Sirensong / Serpentshore `1404` | **Draft JASS definition; not approved or WE-integrated.** Break through six locally present naga or naga beasts, find one exact preplaced missing scout, and report to the post's remote receiver. The scout's report foreshadows the Serpentshore threat without resolving Kelziss. |
 | GQ-038 | Serpentshore Venom | Daily | Existing healer | Serpentshore `1404` | Gather antidote components or kill marked venomous creatures. |
 | GQ-039 | Totems of Zul'Garok | Repeatable | Existing historian | Ruins of Zul'Garok `1402` | Recover common fragments; unique inscription reserved for story. |
 | GQ-040 | Shadowmaw Bounty | Normal | Existing Urgmar hunter | Shadowmaw Cave `12112` | Clear a named threat and make the cave a deliberate destination. |
@@ -645,6 +672,8 @@ These are candidates, not promises. Before implementation, search the vendor REA
 | GQ-045 | Wraith Control | Daily | Existing Vanguard ranger | Vanguard Vale `9` | Contain residual wraiths after Fading Sparks; unlock only after that story beat. |
 | GQ-046 | Relics of Elarindor | Repeatable | Existing Elarindor archivist | Vanguard/Verdant ruins | Recover common fragments; do not reuse quest-critical mana crystals. |
 | GQ-047 | Chimairo's Challenge | Normal | Existing Verdant hunter | Chimairo's Roost `1701` | Optional world-boss introduction with a non-repeatable narrative reward. |
+| GQ-059 | Raiders of Zul'Garok | Daily | Mok'natha wanted post | Ruins of Zul'Garok `1402` | **Draft JASS definition; not approved or WE-integrated.** Kill nine locally present Forest Trolls `nftr`, Trappers `nftt`, or Berserkers `nftb`. |
+| GQ-060 | Serpentshore Patrol | Daily | Mok'natha wanted post | Serpentshore `1404` | **Draft JASS definition; not approved or WE-integrated.** Kill eight locally present Naga Myrmidons `nmyr`, Sirens `nnsw`, or Snap Dragons `nsnp`. |
 
 ### Arenas
 

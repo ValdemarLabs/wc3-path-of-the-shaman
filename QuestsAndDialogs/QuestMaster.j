@@ -2,7 +2,7 @@
     QuestMaster
 
     Author: Valdemar
-    Version: 1.3.11
+    Version: 1.3.12
 
     Description:
     Owns PotS quest data, state transitions, rewards, availability, custom
@@ -32,6 +32,8 @@
     - QuestMaster_AddDailyResetAction(handler) listens for daily resets.
     - QuestMaster_ResetDailyQuests() manually resets completed daily quests.
     - QuestMaster_SetEvaluationEnabled(enabled) controls periodic availability evaluation.
+    - QuestData.areObjectivesComplete() checks every authored requirement while
+      excluding the generated return objective.
 
 **/
 library QuestMaster initializer Init requires Table, SpeciFX, Reputation, IconQuery, optional GameMode, optional HintsUI
@@ -1365,6 +1367,40 @@ struct QuestData
 			return this.requirement8
 		endif
 		return ""
+	endmethod
+
+	method isRequirementCompleted takes integer index returns boolean
+		if index == 1 then
+			return this.req1Completed
+		elseif index == 2 then
+			return this.req2Completed
+		elseif index == 3 then
+			return this.req3Completed
+		elseif index == 4 then
+			return this.req4Completed
+		elseif index == 5 then
+			return this.req5Completed
+		elseif index == 6 then
+			return this.req6Completed
+		elseif index == 7 then
+			return this.req7Completed
+		elseif index == 8 then
+			return this.req8Completed
+		endif
+		return false
+	endmethod
+
+	method areObjectivesComplete takes nothing returns boolean
+		local integer index = 1
+
+		loop
+			exitwhen index > 8
+			if (not this.hasReturnReq or index != this.returnReqIndex) and this.getRequirementText(index) != "" and not this.isRequirementCompleted(index) then
+				return false
+			endif
+			set index = index + 1
+		endloop
+		return true
 	endmethod
 
 	method createQuestLog takes nothing returns nothing

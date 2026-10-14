@@ -2,12 +2,13 @@
     QuestsGeneric
 
     Author: Valdemar
-    Version: 1.6.0
+    Version: 2.0.1
 
     Description:
-    Reusable kill, fetch, talk, purchase, and escort quest templates built on
-    QuestGiver and QuestMaster. Any NPC integration can instantiate templates,
-    add contextual dialog buttons, and run interrupt-safe quest sequences.
+    Reusable kill, fetch, find, talk, purchase, and escort quest templates built
+    on QuestGiver and QuestMaster. Templates support separate quest receivers
+    and up to seven combined objectives. Vendor and non-vendor integrations can
+    instantiate the same definitions and run interrupt-safe quest sequences.
 
     Credits:
 
@@ -23,7 +24,13 @@
     - QuestsGeneric_SetKillTargetZone(...) limits candidate discovery by zone.
     - QuestsGeneric_GetQuestTargetType(...) returns an instance's chosen target.
     - QuestsGeneric_RegisterTalkQuest(...) registers a manual talk template.
+    - QuestsGeneric_RegisterFindQuest(...) registers a proximity-find template.
     - QuestsGeneric_RegisterEscortQuest(...) registers an escort template.
+    - QuestsGeneric_AddFetchObjective/AddKillObjective/AddFindObjective(...)
+      compose up to seven authored objectives before instantiation.
+    - QuestsGeneric_SetReceiverUnit/SetReceiverUnitType(...) routes turn-in to
+      an NPC other than the giver, including quests offered by notice boards.
+    - QuestsGeneric_SetGiverUnit(...) binds a definition to one placed unit.
     - QuestsGeneric_SetObjective(...) changes an uninstantiated definition.
     - QuestsGeneric_SetQuestCategory(...) assigns story/content grouping.
     - QuestsGeneric_SetFactionReward(...) configures reputation rewards.
@@ -51,6 +58,7 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
         public constant integer OBJECTIVE_TALK = 3
         public constant integer OBJECTIVE_PURCHASE = 4
         public constant integer OBJECTIVE_ESCORT = 5
+        public constant integer OBJECTIVE_FIND = 6
 
         public constant integer HERO_LINE_ACCEPT = 1
         public constant integer HERO_LINE_COMPLETE_KILL = 2
@@ -75,12 +83,16 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
         private constant integer QG_MAX_PROGRESS_VARIANTS = 64
         private constant integer QG_MAX_HERO_VOICE_VARIANTS = 256
         private constant integer QG_MAX_KILL_CANDIDATES_PER_DEFINITION = 8
+        private constant integer QG_MAX_OBJECTIVES_PER_DEFINITION = 7
+        private constant integer QG_OBJECTIVE_SLOT_STRIDE = 8
+        private constant integer QG_MAX_REGISTERED_UNITS = 256
         private constant integer QG_ACTION_BASE = 10000
         private constant integer QG_PENDING_ACCEPT = 1
         private constant integer QG_PENDING_COMPLETE = 2
 
         private integer QG_DefinitionCount = 0
         private integer array QG_GiverUnitType
+        private unit array QG_GiverUnit
         private string array QG_QuestName
         private string array QG_QuestType
         private string array QG_QuestCategory
@@ -107,6 +119,19 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
         private integer array QG_KillCandidateCount
         private integer array QG_KillCandidateUnitType
         private integer array QG_KillCandidateZoneId
+        private integer array QG_ObjectiveCount
+        private integer array QG_ObjectiveTypeBySlot
+        private integer array QG_ObjectiveTargetType
+        private integer array QG_ObjectiveTargetAmount
+        private string array QG_ObjectiveTargetName
+        private unit array QG_ObjectiveTargetUnit
+        private boolean array QG_ObjectiveConsumesItem
+        private integer array QG_ReceiverUnitType
+        private unit array QG_ReceiverUnit
+        private string array QG_ReceiverName
+        private string array QG_ReceiverVoiceType
+        private integer array QG_ReceiverCompleteVoiceIndex
+        private string array QG_ReceiverCompleteText
 
         private integer QG_QuestCount = 0
         private integer array QG_QuestIds
@@ -114,6 +139,11 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
         private Table QG_TargetTypeByQuest = 0
         private Table QG_InstantiatedByUnit = 0
         private Table QG_LastHeroVoiceChoice = 0
+        private Table QG_RegisteredUnitByType = 0
+        private Table QG_RegisteredUnitHandle = 0
+        private Table QG_RegisteredUnitName = 0
+        private integer QG_RegisteredUnitCount = 0
+        private unit array QG_RegisteredUnit
 
         private integer QG_DailyVariantCount = 0
         private string array QG_DailyVariantVoiceType
@@ -180,6 +210,22 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
         set QG_ZulkisVoiceType = zulkisVoiceType
     endfunction
 
+    private function QG_GetObjectiveSlot takes integer definitionId, integer objectiveIndex returns integer
+        return definitionId * QG_OBJECTIVE_SLOT_STRIDE + objectiveIndex
+    endfunction
+
+    private function QG_SetObjectiveSlot takes integer definitionId, integer objectiveIndex, integer objectiveType, integer targetType, integer targetAmount, string targetName, unit targetUnit returns nothing
+        local integer slot = QG_GetObjectiveSlot(definitionId, objectiveIndex)
+
+        set QG_ObjectiveTypeBySlot[slot] = objectiveType
+        set QG_ObjectiveTargetType[slot] = targetType
+        set QG_ObjectiveTargetAmount[slot] = targetAmount
+        set QG_ObjectiveTargetName[slot] = targetName
+        set QG_ObjectiveTargetUnit[slot] = targetUnit
+        set QG_ObjectiveConsumesItem[slot] = false
+        set targetUnit = null
+    endfunction
+
     private function QG_RegisterDefinition takes integer giverUnitTypeId, string questName, string questType, integer questLevel, string title, string iconPath, string description, integer objectiveType, integer targetType, integer targetAmount, string targetName, integer goldBonus, string voiceType, integer voiceIndex, string introText, string completeText returns integer
         local integer definitionId
 
@@ -210,6 +256,8 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
         set QG_TargetType[definitionId] = targetType
         set QG_TargetAmount[definitionId] = targetAmount
         set QG_TargetName[definitionId] = targetName
+        set QG_ObjectiveCount[definitionId] = 1
+        call QG_SetObjectiveSlot(definitionId, 1, objectiveType, targetType, targetAmount, targetName, null)
         set QG_GoldBonus[definitionId] = goldBonus
         set QG_VoiceType[definitionId] = voiceType
         set QG_VoiceIndex[definitionId] = voiceIndex
@@ -256,6 +304,10 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
         return QG_RegisterDefinition(giverUnitTypeId, questName, questType, questLevel, title, iconPath, description, OBJECTIVE_TALK, 0, 1, targetName, goldBonus, voiceType, voiceIndex, introText, completeText)
     endfunction
 
+    public function RegisterFindQuest takes integer giverUnitTypeId, string questName, string questType, integer questLevel, string title, string iconPath, string description, integer targetUnitTypeId, string targetName, integer goldBonus, string voiceType, integer voiceIndex, string introText, string completeText returns integer
+        return QG_RegisterDefinition(giverUnitTypeId, questName, questType, questLevel, title, iconPath, description, OBJECTIVE_FIND, targetUnitTypeId, 1, targetName, goldBonus, voiceType, voiceIndex, introText, completeText)
+    endfunction
+
     public function RegisterEscortQuest takes integer giverUnitTypeId, string questName, string questType, integer questLevel, string title, string iconPath, string description, string destinationName, integer goldBonus, string voiceType, integer voiceIndex, string introText, string completeText returns integer
         return QG_RegisterDefinition(giverUnitTypeId, questName, questType, questLevel, title, iconPath, description, OBJECTIVE_ESCORT, 0, 1, destinationName, goldBonus, voiceType, voiceIndex, introText, completeText)
     endfunction
@@ -264,7 +316,7 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
         if definitionId <= 0 or definitionId > QG_DefinitionCount then
             return
         endif
-        if objectiveType < OBJECTIVE_FETCH or objectiveType > OBJECTIVE_ESCORT then
+        if objectiveType < OBJECTIVE_FETCH or objectiveType > OBJECTIVE_FIND then
             return
         endif
         if targetAmount < 1 then
@@ -274,6 +326,113 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
         set QG_TargetType[definitionId] = targetType
         set QG_TargetAmount[definitionId] = targetAmount
         set QG_TargetName[definitionId] = targetName
+        call QG_SetObjectiveSlot(definitionId, 1, objectiveType, targetType, targetAmount, targetName, null)
+    endfunction
+
+    public function SetDeliveryObjective takes integer definitionId, integer itemTypeId, integer amount, string targetName returns nothing
+        call SetObjective(definitionId, OBJECTIVE_TALK, itemTypeId, amount, targetName)
+        if definitionId > 0 and definitionId <= QG_DefinitionCount then
+            set QG_ObjectiveConsumesItem[QG_GetObjectiveSlot(definitionId, 1)] = true
+        endif
+    endfunction
+
+    private function QG_AddObjective takes integer definitionId, integer objectiveType, integer targetType, integer targetAmount, string targetName, unit targetUnit returns boolean
+        local integer objectiveIndex
+
+        if definitionId <= 0 or definitionId > QG_DefinitionCount or objectiveType < OBJECTIVE_FETCH or objectiveType > OBJECTIVE_FIND then
+            set targetUnit = null
+            return false
+        endif
+        set objectiveIndex = QG_ObjectiveCount[definitionId] + 1
+        if objectiveIndex > QG_MAX_OBJECTIVES_PER_DEFINITION then
+            set targetUnit = null
+            return false
+        endif
+        if targetAmount < 1 then
+            set targetAmount = 1
+        endif
+        set QG_ObjectiveCount[definitionId] = objectiveIndex
+        call QG_SetObjectiveSlot(definitionId, objectiveIndex, objectiveType, targetType, targetAmount, targetName, targetUnit)
+        set targetUnit = null
+        return true
+    endfunction
+
+    public function AddFetchObjective takes integer definitionId, integer itemTypeId, integer amount returns boolean
+        return QG_AddObjective(definitionId, OBJECTIVE_FETCH, itemTypeId, amount, "", null)
+    endfunction
+
+    public function AddKillObjective takes integer definitionId, integer unitTypeId, integer amount returns boolean
+        return QG_AddObjective(definitionId, OBJECTIVE_KILL, unitTypeId, amount, "", null)
+    endfunction
+
+    public function AddTalkObjective takes integer definitionId, unit targetNPC, string targetName returns boolean
+        local integer targetUnitTypeId = 0
+        local boolean added
+
+        if targetNPC != null then
+            set targetUnitTypeId = GetUnitTypeId(targetNPC)
+        endif
+        set added = QG_AddObjective(definitionId, OBJECTIVE_TALK, targetUnitTypeId, 1, targetName, targetNPC)
+        set targetNPC = null
+        return added
+    endfunction
+
+    public function AddFindObjective takes integer definitionId, integer targetUnitTypeId, string targetName returns boolean
+        return QG_AddObjective(definitionId, OBJECTIVE_FIND, targetUnitTypeId, 1, targetName, null)
+    endfunction
+
+    public function SetObjectiveTargetUnit takes integer definitionId, integer objectiveIndex, unit targetUnit returns nothing
+        local integer slot
+
+        if definitionId <= 0 or definitionId > QG_DefinitionCount or objectiveIndex < 1 or objectiveIndex > QG_ObjectiveCount[definitionId] then
+            set targetUnit = null
+            return
+        endif
+        set slot = QG_GetObjectiveSlot(definitionId, objectiveIndex)
+        set QG_ObjectiveTargetUnit[slot] = targetUnit
+        if targetUnit != null then
+            set QG_ObjectiveTargetType[slot] = GetUnitTypeId(targetUnit)
+        endif
+        set targetUnit = null
+    endfunction
+
+    public function SetGiverUnit takes integer definitionId, unit giver returns nothing
+        if definitionId <= 0 or definitionId > QG_DefinitionCount or giver == null or GetUnitTypeId(giver) != QG_GiverUnitType[definitionId] then
+            set giver = null
+            return
+        endif
+        set QG_GiverUnit[definitionId] = giver
+        set giver = null
+    endfunction
+
+    public function SetReceiverUnit takes integer definitionId, unit receiver, string receiverName returns nothing
+        if definitionId <= 0 or definitionId > QG_DefinitionCount then
+            set receiver = null
+            return
+        endif
+        set QG_ReceiverUnit[definitionId] = receiver
+        if receiver != null then
+            set QG_ReceiverUnitType[definitionId] = GetUnitTypeId(receiver)
+        endif
+        set QG_ReceiverName[definitionId] = receiverName
+        set receiver = null
+    endfunction
+
+    public function SetReceiverUnitType takes integer definitionId, integer receiverUnitTypeId, string receiverName returns nothing
+        if definitionId <= 0 or definitionId > QG_DefinitionCount then
+            return
+        endif
+        set QG_ReceiverUnitType[definitionId] = receiverUnitTypeId
+        set QG_ReceiverName[definitionId] = receiverName
+    endfunction
+
+    public function SetReceiverDialogue takes integer definitionId, string voiceType, integer completeVoiceIndex, string completeText returns nothing
+        if definitionId <= 0 or definitionId > QG_DefinitionCount then
+            return
+        endif
+        set QG_ReceiverVoiceType[definitionId] = voiceType
+        set QG_ReceiverCompleteVoiceIndex[definitionId] = completeVoiceIndex
+        set QG_ReceiverCompleteText[definitionId] = completeText
     endfunction
 
     public function SetQuestCategory takes integer definitionId, string category returns nothing
@@ -351,7 +510,7 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
     endfunction
 
     public function RegisterProgressVariant takes integer objectiveType, string text, string soundKey returns nothing
-        if objectiveType < OBJECTIVE_FETCH or objectiveType > OBJECTIVE_ESCORT or text == null or text == "" or QG_ProgressVariantCount >= QG_MAX_PROGRESS_VARIANTS then
+        if objectiveType < OBJECTIVE_FETCH or objectiveType > OBJECTIVE_FIND or text == null or text == "" or QG_ProgressVariantCount >= QG_MAX_PROGRESS_VARIANTS then
             return
         endif
         set QG_ProgressVariantCount = QG_ProgressVariantCount + 1
@@ -464,18 +623,101 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
         return selectedType
     endfunction
 
-    private function QG_CreateQuest takes integer definitionId, unit giver, string giverName returns nothing
+    private function QG_ResolveReceiver takes integer definitionId, unit giver returns unit
+        local unit receiver = QG_ReceiverUnit[definitionId]
+
+        if receiver != null and DialogInteraction_IsUnitAlive(receiver) then
+            set giver = null
+            return receiver
+        endif
+        if QG_ReceiverUnitType[definitionId] == 0 then
+            set receiver = giver
+        else
+            set receiver = QG_RegisteredUnitByType.unit[QG_ReceiverUnitType[definitionId]]
+        endif
+        set giver = null
+        return receiver
+    endfunction
+
+    private function QG_ResolveObjectiveTarget takes integer definitionId, integer objectiveIndex returns unit
+        local integer slot = QG_GetObjectiveSlot(definitionId, objectiveIndex)
+        local unit target = QG_ObjectiveTargetUnit[slot]
+
+        if target != null and DialogInteraction_IsUnitAlive(target) then
+            return target
+        endif
+        if QG_ObjectiveTargetType[slot] != 0 then
+            set target = QG_RegisteredUnitByType.unit[QG_ObjectiveTargetType[slot]]
+        endif
+        return target
+    endfunction
+
+    private function QG_CanCreateQuest takes integer definitionId, unit giver returns boolean
+        local integer objectiveIndex = 1
+        local integer slot
+        local integer objectiveType
+        local unit target
+        local unit receiver
+
+        if definitionId <= 0 or definitionId > QG_DefinitionCount or giver == null then
+            set giver = null
+            return false
+        endif
+        set receiver = QG_ResolveReceiver(definitionId, giver)
+        if receiver == null or not DialogInteraction_IsUnitAlive(receiver) then
+            set giver = null
+            set receiver = null
+            return false
+        endif
+        loop
+            exitwhen objectiveIndex > QG_ObjectiveCount[definitionId]
+            set slot = QG_GetObjectiveSlot(definitionId, objectiveIndex)
+            set objectiveType = QG_ObjectiveTypeBySlot[slot]
+            if objectiveType == OBJECTIVE_FIND then
+                set target = QG_ResolveObjectiveTarget(definitionId, objectiveIndex)
+                if target == null or not DialogInteraction_IsUnitAlive(target) then
+                    set giver = null
+                    set receiver = null
+                    set target = null
+                    return false
+                endif
+            endif
+            set objectiveIndex = objectiveIndex + 1
+        endloop
+        set giver = null
+        set receiver = null
+        set target = null
+        return true
+    endfunction
+
+    private function QG_CreateQuest takes integer definitionId, unit giver, string giverName returns boolean
         local QuestData q
         local string info2Text
         local string factionName
+        local string receiverName
+        local integer objectiveIndex = 1
+        local integer slot
+        local integer objectiveType
         local integer targetType
+        local integer targetAmount
+        local string targetName
+        local unit targetUnit
+        local unit receiver
 
-        if definitionId <= 0 or definitionId > QG_DefinitionCount or giver == null or QG_QuestCount >= QG_MAX_QUESTS then
+        if definitionId <= 0 or definitionId > QG_DefinitionCount or giver == null or QG_QuestCount >= QG_MAX_QUESTS or not QG_CanCreateQuest(definitionId, giver) then
             set giver = null
-            return
+            return false
         endif
         if giverName == null or giverName == "" then
             set giverName = GetUnitName(giver)
+        endif
+        set receiver = QG_ResolveReceiver(definitionId, giver)
+        set receiverName = QG_ReceiverName[definitionId]
+        if receiverName == null or receiverName == "" then
+            set receiverName = GetUnitName(receiver)
+        endif
+        if not QuestMaster_IsRegisteredGiver(receiver) then
+            call QuestGiver_Register(receiver)
         endif
 
         set factionName = QG_FactionName[definitionId]
@@ -483,14 +725,11 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
             set factionName = Reputation_GetUnitFactionName(giver)
         endif
         set info2Text = "|cffffcc00Recommended level:|r " + I2S(QG_QuestLevel[definitionId]) + "\n\n"
-        set targetType = QG_TargetType[definitionId]
-        if QG_ObjectiveType[definitionId] == OBJECTIVE_KILL then
-            set targetType = QG_SelectKillTarget(definitionId, giver)
-        endif
-        set q = QuestGiver_CreateConfiguredQuest(QG_QuestName[definitionId], giver, QG_QuestType[definitionId], QG_QuestLevel[definitionId], null, QG_Title[definitionId], QG_IconPath[definitionId], QG_Description[definitionId] + "\n\n", QG_GetInfoText(QG_QuestType[definitionId]), info2Text, QG_QuestLevel[definitionId], true, true, true, factionName, giverName)
+        set q = QuestGiver_CreateConfiguredQuest(QG_QuestName[definitionId], giver, QG_QuestType[definitionId], QG_QuestLevel[definitionId], receiver, QG_Title[definitionId], QG_IconPath[definitionId], QG_Description[definitionId] + "\n\n", QG_GetInfoText(QG_QuestType[definitionId]), info2Text, QG_QuestLevel[definitionId], true, true, true, factionName, receiverName)
         if q == 0 then
             set giver = null
-            return
+            set receiver = null
+            return false
         endif
         call QuestGiver_SetQuestCategory(q, QG_QuestCategory[definitionId])
         if factionName != null and factionName != "" then
@@ -498,20 +737,42 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
         endif
         call QuestGiver_SetQuestRewards(q, true, 0, true, QG_GoldBonus[definitionId], false, 0, QG_ReputationBonus[definitionId] != 0, QG_ReputationBonus[definitionId], QG_ReputationLinked[definitionId])
 
-        if QG_ObjectiveType[definitionId] == OBJECTIVE_FETCH or QG_ObjectiveType[definitionId] == OBJECTIVE_PURCHASE then
-            call QuestGiver_RegisterItemRequirement(q.id, giver, 1, targetType, QG_TargetAmount[definitionId])
-        elseif QG_ObjectiveType[definitionId] == OBJECTIVE_KILL then
-            call QuestGiver_RegisterUnitKillRequirement(q.id, giver, 1, targetType, QG_TargetAmount[definitionId])
-        elseif QG_ObjectiveType[definitionId] == OBJECTIVE_TALK then
-            call QuestGiver_RegisterTalkToRequirement(q.id, giver, 1, null, QG_TargetName[definitionId])
-        endif
+        loop
+            exitwhen objectiveIndex > QG_ObjectiveCount[definitionId]
+            set slot = QG_GetObjectiveSlot(definitionId, objectiveIndex)
+            set objectiveType = QG_ObjectiveTypeBySlot[slot]
+            set targetType = QG_ObjectiveTargetType[slot]
+            set targetAmount = QG_ObjectiveTargetAmount[slot]
+            set targetName = QG_ObjectiveTargetName[slot]
+            if objectiveIndex == 1 and objectiveType == OBJECTIVE_KILL then
+                set targetType = QG_SelectKillTarget(definitionId, giver)
+            endif
+            if objectiveType == OBJECTIVE_FETCH or objectiveType == OBJECTIVE_PURCHASE then
+                call QuestGiver_RegisterItemRequirement(q.id, giver, objectiveIndex, targetType, targetAmount)
+            elseif objectiveType == OBJECTIVE_KILL then
+                call QuestGiver_RegisterUnitKillRequirement(q.id, giver, objectiveIndex, targetType, targetAmount)
+            elseif objectiveType == OBJECTIVE_TALK then
+                set targetUnit = QG_ResolveObjectiveTarget(definitionId, objectiveIndex)
+                call QuestGiver_RegisterTalkToRequirement(q.id, giver, objectiveIndex, targetUnit, targetName)
+            elseif objectiveType == OBJECTIVE_FIND then
+                set targetUnit = QG_ResolveObjectiveTarget(definitionId, objectiveIndex)
+                call QuestGiver_RegisterFindNPCRequirement(q.id, giver, objectiveIndex, targetUnit, targetName)
+                call QuestGiver_SetObjectiveTarget(q.id, objectiveIndex, targetUnit)
+            endif
+            if objectiveIndex == 1 then
+                set QG_TargetTypeByQuest.integer[q.id] = targetType
+            endif
+            set objectiveIndex = objectiveIndex + 1
+        endloop
 
         set QG_QuestCount = QG_QuestCount + 1
         set QG_QuestIds[QG_QuestCount] = q.id
         set QG_DefinitionByQuest.integer[q.id] = definitionId
-        set QG_TargetTypeByQuest.integer[q.id] = targetType
         call QuestMaster_RefreshAvailabilityForGiver(giver)
         set giver = null
+        set receiver = null
+        set targetUnit = null
+        return true
     endfunction
 
     public function HasDefinitionForUnitType takes integer unitTypeId returns boolean
@@ -530,33 +791,118 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
         return false
     endfunction
 
-    public function RegisterUnit takes unit giver, string giverName returns nothing
+    public function HasReceiverDefinitionForUnitType takes integer unitTypeId returns boolean
         local integer definitionId = 1
+
+        if unitTypeId == 0 then
+            return false
+        endif
+        loop
+            exitwhen definitionId > QG_DefinitionCount
+            if QG_ReceiverUnitType[definitionId] == unitTypeId then
+                return true
+            endif
+            set definitionId = definitionId + 1
+        endloop
+        return false
+    endfunction
+
+    public function HasInteractionForUnitType takes integer unitTypeId returns boolean
+        return HasDefinitionForUnitType(unitTypeId) or HasReceiverDefinitionForUnitType(unitTypeId)
+    endfunction
+
+    private function QG_DefinitionMatchesGiver takes integer definitionId, unit giver returns boolean
+        if definitionId <= 0 or definitionId > QG_DefinitionCount or giver == null or QG_GiverUnitType[definitionId] != GetUnitTypeId(giver) then
+            set giver = null
+            return false
+        endif
+        if QG_GiverUnit[definitionId] != null and QG_GiverUnit[definitionId] != giver then
+            set giver = null
+            return false
+        endif
+        set giver = null
+        return true
+    endfunction
+
+    private function QG_IsRelevantUnitType takes integer unitTypeId returns boolean
+        local integer definitionId = 1
+        local integer objectiveIndex
+        local integer slot
+
+        if HasInteractionForUnitType(unitTypeId) then
+            return true
+        endif
+        loop
+            exitwhen definitionId > QG_DefinitionCount
+            set objectiveIndex = 1
+            loop
+                exitwhen objectiveIndex > QG_ObjectiveCount[definitionId]
+                set slot = QG_GetObjectiveSlot(definitionId, objectiveIndex)
+                if QG_ObjectiveTypeBySlot[slot] == OBJECTIVE_FIND and QG_ObjectiveTargetType[slot] == unitTypeId then
+                    return true
+                endif
+                set objectiveIndex = objectiveIndex + 1
+            endloop
+            set definitionId = definitionId + 1
+        endloop
+        return false
+    endfunction
+
+    private function QG_CreateRegisteredQuests takes nothing returns nothing
+        local integer unitIndex = 1
+        local integer definitionId
         local integer handleId
+        local unit giver
         local Table instantiated
+
+        loop
+            exitwhen unitIndex > QG_RegisteredUnitCount
+            set giver = QG_RegisteredUnit[unitIndex]
+            if giver != null and DialogInteraction_IsUnitAlive(giver) then
+                set handleId = GetHandleId(giver)
+                set instantiated = QG_InstantiatedByUnit.link(handleId)
+                set definitionId = 1
+                loop
+                    exitwhen definitionId > QG_DefinitionCount
+                    if QG_DefinitionMatchesGiver(definitionId, giver) and not instantiated.boolean[definitionId] and QG_CanCreateQuest(definitionId, giver) then
+                        if QG_CreateQuest(definitionId, giver, QG_RegisteredUnitName.string[handleId]) then
+                            set instantiated.boolean[definitionId] = true
+                        endif
+                    endif
+                    set definitionId = definitionId + 1
+                endloop
+            endif
+            set unitIndex = unitIndex + 1
+        endloop
+        set giver = null
+    endfunction
+
+    public function RegisterUnit takes unit giver, string giverName returns nothing
+        local integer handleId
 
         if giver == null or GetUnitTypeId(giver) == 0 then
             set giver = null
             return
         endif
-        if not HasDefinitionForUnitType(GetUnitTypeId(giver)) then
+        if not QG_IsRelevantUnitType(GetUnitTypeId(giver)) then
             set giver = null
             return
         endif
         set handleId = GetHandleId(giver)
-        set instantiated = QG_InstantiatedByUnit.link(handleId)
-        if not QuestMaster_IsRegisteredGiver(giver) then
+        set QG_RegisteredUnitByType.unit[GetUnitTypeId(giver)] = giver
+        set QG_RegisteredUnitName.string[handleId] = giverName
+        if not QG_RegisteredUnitHandle.boolean[handleId] and QG_RegisteredUnitCount < QG_MAX_REGISTERED_UNITS then
+            set QG_RegisteredUnitHandle.boolean[handleId] = true
+            set QG_RegisteredUnitCount = QG_RegisteredUnitCount + 1
+            set QG_RegisteredUnit[QG_RegisteredUnitCount] = giver
+        endif
+        if HasInteractionForUnitType(GetUnitTypeId(giver)) and not QuestMaster_IsRegisteredGiver(giver) then
             call QuestGiver_Register(giver)
         endif
-        loop
-            exitwhen definitionId > QG_DefinitionCount
-            if QG_GiverUnitType[definitionId] == GetUnitTypeId(giver) and not instantiated.boolean[definitionId] then
-                set instantiated.boolean[definitionId] = true
-                call QG_CreateQuest(definitionId, giver, giverName)
-            endif
-            set definitionId = definitionId + 1
-        endloop
-        call QuestMaster_RefreshAvailabilityForGiver(giver)
+        call QG_CreateRegisteredQuests()
+        if QuestMaster_IsRegisteredGiver(giver) then
+            call QuestMaster_RefreshAvailabilityForGiver(giver)
+        endif
         set giver = null
     endfunction
 
@@ -592,7 +938,6 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
     endfunction
 
     public function AddDialogButtons takes dialog d, unit giver, code actionFunc returns integer
-        local integer count
         local integer index = 1
         local integer added = 0
         local integer questId
@@ -605,12 +950,11 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
             set b = null
             return 0
         endif
-        set count = QuestMaster_GetGiverQuestCount(giver)
         loop
-            exitwhen index > count
-            set questId = QuestMaster_GetGiverQuestIdByIndex(giver, index)
-            if QG_DefinitionByQuest.integer.has(questId) then
-                set q = QuestMaster_GetById(questId)
+            exitwhen index > QG_QuestCount
+            set questId = QG_QuestIds[index]
+            set q = QuestMaster_GetById(questId)
+            if q != 0 and ((q.giver == giver and (q.state != QUEST_STATE_READY_TURNIN or q.receiver == giver)) or (q.receiver == giver and q.state == QUEST_STATE_READY_TURNIN)) then
                 set b = DialogSystem_AddButtonQuestState(d, q.title, q.state, QG_ACTION_BASE + questId)
                 if b != null then
                     call DialogSystem_BindButtonCode(b, actionFunc)
@@ -636,17 +980,75 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
         return actionId - QG_ACTION_BASE
     endfunction
 
+    private function QG_IsItemObjective takes integer slot returns boolean
+        return QG_ObjectiveTypeBySlot[slot] == OBJECTIVE_FETCH or QG_ObjectiveTypeBySlot[slot] == OBJECTIVE_PURCHASE or QG_ObjectiveConsumesItem[slot]
+    endfunction
+
+    private function QG_IsFirstItemObjective takes integer definitionId, integer objectiveIndex returns boolean
+        local integer slot = QG_GetObjectiveSlot(definitionId, objectiveIndex)
+        local integer earlierIndex = 1
+        local integer earlierSlot
+
+        loop
+            exitwhen earlierIndex >= objectiveIndex
+            set earlierSlot = QG_GetObjectiveSlot(definitionId, earlierIndex)
+            if QG_IsItemObjective(earlierSlot) and QG_ObjectiveTargetType[earlierSlot] == QG_ObjectiveTargetType[slot] then
+                return false
+            endif
+            set earlierIndex = earlierIndex + 1
+        endloop
+        return true
+    endfunction
+
+    private function QG_GetRequiredItemTotal takes integer definitionId, integer itemTypeId returns integer
+        local integer objectiveIndex = 1
+        local integer slot
+        local integer total = 0
+
+        loop
+            exitwhen objectiveIndex > QG_ObjectiveCount[definitionId]
+            set slot = QG_GetObjectiveSlot(definitionId, objectiveIndex)
+            if QG_IsItemObjective(slot) and QG_ObjectiveTargetType[slot] == itemTypeId then
+                set total = total + QG_ObjectiveTargetAmount[slot]
+            endif
+            set objectiveIndex = objectiveIndex + 1
+        endloop
+        return total
+    endfunction
+
     private function QG_HasTurnInItems takes integer definitionId returns boolean
-        if QG_ObjectiveType[definitionId] == OBJECTIVE_FETCH or QG_ObjectiveType[definitionId] == OBJECTIVE_PURCHASE or (QG_ObjectiveType[definitionId] == OBJECTIVE_TALK and QG_TargetType[definitionId] != 0) then
-            return HeroItemCheckBoth(QG_TargetType[definitionId], QG_TargetAmount[definitionId])
-        endif
+        local integer objectiveIndex = 1
+        local integer slot
+        local integer requiredAmount
+
+        loop
+            exitwhen objectiveIndex > QG_ObjectiveCount[definitionId]
+            set slot = QG_GetObjectiveSlot(definitionId, objectiveIndex)
+            if QG_IsItemObjective(slot) and QG_IsFirstItemObjective(definitionId, objectiveIndex) then
+                set requiredAmount = QG_GetRequiredItemTotal(definitionId, QG_ObjectiveTargetType[slot])
+                if not HeroItemCheckBoth(QG_ObjectiveTargetType[slot], requiredAmount) then
+                    return false
+                endif
+            endif
+            set objectiveIndex = objectiveIndex + 1
+        endloop
         return true
     endfunction
 
     private function QG_RemoveTurnInItems takes integer definitionId returns nothing
-        if QG_ObjectiveType[definitionId] == OBJECTIVE_FETCH or QG_ObjectiveType[definitionId] == OBJECTIVE_PURCHASE or (QG_ObjectiveType[definitionId] == OBJECTIVE_TALK and QG_TargetType[definitionId] != 0) then
-            call HeroItemCheckBothAndRemove(QG_TargetType[definitionId], QG_TargetAmount[definitionId])
-        endif
+        local integer objectiveIndex = 1
+        local integer slot
+        local integer requiredAmount
+
+        loop
+            exitwhen objectiveIndex > QG_ObjectiveCount[definitionId]
+            set slot = QG_GetObjectiveSlot(definitionId, objectiveIndex)
+            if QG_IsItemObjective(slot) and QG_IsFirstItemObjective(definitionId, objectiveIndex) then
+                set requiredAmount = QG_GetRequiredItemTotal(definitionId, QG_ObjectiveTargetType[slot])
+                call HeroItemCheckBothAndRemove(QG_ObjectiveTargetType[slot], requiredAmount)
+            endif
+            set objectiveIndex = objectiveIndex + 1
+        endloop
     endfunction
 
     private function QG_ClearPendingAction takes nothing returns nothing
@@ -663,7 +1065,7 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
     private function QG_GetHeroCompleteText takes integer definitionId returns string
         if QG_ObjectiveType[definitionId] == OBJECTIVE_KILL then
             return QG_HeroCompleteKillText
-        elseif QG_ObjectiveType[definitionId] == OBJECTIVE_TALK then
+        elseif QG_ObjectiveType[definitionId] == OBJECTIVE_TALK or QG_ObjectiveType[definitionId] == OBJECTIVE_FIND then
             return QG_HeroCompleteTalkText
         elseif QG_ObjectiveType[definitionId] == OBJECTIVE_ESCORT then
             return QG_HeroCompleteEscortText
@@ -674,7 +1076,7 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
     private function QG_GetHeroCompleteVoiceIndex takes integer definitionId returns integer
         if QG_ObjectiveType[definitionId] == OBJECTIVE_KILL then
             return 5
-        elseif QG_ObjectiveType[definitionId] == OBJECTIVE_TALK then
+        elseif QG_ObjectiveType[definitionId] == OBJECTIVE_TALK or QG_ObjectiveType[definitionId] == OBJECTIVE_FIND then
             return 9
         elseif QG_ObjectiveType[definitionId] == OBJECTIVE_ESCORT then
             return 29
@@ -685,7 +1087,7 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
     private function QG_GetAcceptHeroLineType takes integer definitionId returns integer
         if QG_ObjectiveType[definitionId] == OBJECTIVE_KILL then
             return HERO_LINE_ACCEPT_KILL
-        elseif QG_ObjectiveType[definitionId] == OBJECTIVE_TALK then
+        elseif QG_ObjectiveType[definitionId] == OBJECTIVE_TALK or QG_ObjectiveType[definitionId] == OBJECTIVE_FIND then
             return HERO_LINE_ACCEPT_TALK
         elseif QG_ObjectiveType[definitionId] == OBJECTIVE_ESCORT then
             return HERO_LINE_ACCEPT_ESCORT
@@ -696,7 +1098,7 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
     private function QG_GetProgressHeroLineType takes integer definitionId returns integer
         if QG_ObjectiveType[definitionId] == OBJECTIVE_KILL then
             return HERO_LINE_PROGRESS_KILL
-        elseif QG_ObjectiveType[definitionId] == OBJECTIVE_TALK then
+        elseif QG_ObjectiveType[definitionId] == OBJECTIVE_TALK or QG_ObjectiveType[definitionId] == OBJECTIVE_FIND then
             return HERO_LINE_PROGRESS_TALK
         elseif QG_ObjectiveType[definitionId] == OBJECTIVE_ESCORT then
             return HERO_LINE_PROGRESS_ESCORT
@@ -896,12 +1298,17 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
     private function QG_CreateActionSequence takes unit giver, string giverName, unit hero, integer definitionId, QuestData q, integer pendingAction returns integer
         local integer seq = DialogSystem_CreateSequence()
         local string soundKey
+        local string completeText
+        local string completeVoiceType
+        local integer completeVoiceIndex
 
         call DialogSystem_SetSequenceDefaultSpeaker(seq, giver, giverName)
         call DialogSystem_AddMakeFaceEachOther(seq, giver, hero, 0.45, 0.00)
         if pendingAction == QG_PENDING_ACCEPT then
             set soundKey = QG_FormatSoundKey(QG_VoiceType[definitionId], QG_VoiceIndex[definitionId])
-            call DialogSystem_AddLine(seq, giver, giverName, QG_IntroText[definitionId], soundKey, true)
+            if QG_IntroText[definitionId] != "" or soundKey != "" then
+                call DialogSystem_AddLine(seq, giver, giverName, QG_IntroText[definitionId], soundKey, true)
+            endif
             call QG_AddHeroVoiceVariantLine(seq, hero, giver, definitionId, QG_GetAcceptHeroLineType(definitionId), HERO_LINE_ACCEPT, QG_HeroAcceptText, 1)
             if QG_QuestType[definitionId] == "daily" then
                 call QG_AddDailyAcceptanceVariant(seq, giver, giverName, definitionId)
@@ -912,16 +1319,28 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
         elseif pendingAction == QG_PENDING_COMPLETE then
             if QG_ObjectiveType[definitionId] == OBJECTIVE_KILL then
                 call QG_AddHeroVoiceVariantLine(seq, hero, giver, definitionId, HERO_LINE_COMPLETE_KILL, HERO_LINE_COMPLETE_KILL, QG_GetHeroCompleteText(definitionId), QG_GetHeroCompleteVoiceIndex(definitionId))
-            elseif QG_ObjectiveType[definitionId] == OBJECTIVE_TALK then
+            elseif QG_ObjectiveType[definitionId] == OBJECTIVE_TALK or QG_ObjectiveType[definitionId] == OBJECTIVE_FIND then
                 call QG_AddHeroVoiceVariantLine(seq, hero, giver, definitionId, HERO_LINE_COMPLETE_TALK, HERO_LINE_COMPLETE_TALK, QG_GetHeroCompleteText(definitionId), QG_GetHeroCompleteVoiceIndex(definitionId))
             elseif QG_ObjectiveType[definitionId] == OBJECTIVE_ESCORT then
                 call QG_AddHeroVoiceVariantLine(seq, hero, giver, definitionId, HERO_LINE_COMPLETE_ESCORT, HERO_LINE_COMPLETE_ESCORT, QG_GetHeroCompleteText(definitionId), QG_GetHeroCompleteVoiceIndex(definitionId))
             else
                 call QG_AddHeroVoiceVariantLine(seq, hero, giver, definitionId, HERO_LINE_COMPLETE_FETCH, HERO_LINE_COMPLETE_FETCH, QG_GetHeroCompleteText(definitionId), QG_GetHeroCompleteVoiceIndex(definitionId))
             endif
-            set soundKey = QG_FormatSoundKey(QG_VoiceType[definitionId], QG_VoiceIndex[definitionId] + 1)
-            call DialogSystem_AddLine(seq, giver, giverName, QG_CompleteText[definitionId], soundKey, true)
-            if QG_CompleteExtraText[definitionId] != "" then
+            set completeText = QG_CompleteText[definitionId]
+            set completeVoiceType = QG_VoiceType[definitionId]
+            set completeVoiceIndex = QG_VoiceIndex[definitionId] + 1
+            if q.receiver != q.giver then
+                if QG_ReceiverCompleteText[definitionId] != "" then
+                    set completeText = QG_ReceiverCompleteText[definitionId]
+                endif
+                set completeVoiceType = QG_ReceiverVoiceType[definitionId]
+                set completeVoiceIndex = QG_ReceiverCompleteVoiceIndex[definitionId]
+            endif
+            set soundKey = QG_FormatSoundKey(completeVoiceType, completeVoiceIndex)
+            if completeText != "" or soundKey != "" then
+                call DialogSystem_AddLine(seq, giver, giverName, completeText, soundKey, true)
+            endif
+            if q.receiver == q.giver and QG_CompleteExtraText[definitionId] != "" then
                 set soundKey = QG_FormatSoundKey(QG_VoiceType[definitionId], QG_CompleteExtraVoiceIndex[definitionId])
                 call DialogSystem_AddLine(seq, giver, giverName, QG_CompleteExtraText[definitionId], soundKey, true)
             endif
@@ -942,7 +1361,12 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
         local integer seq
 
         call QG_ClearPendingAction()
-        if definitionId <= 0 or q == 0 or giver == null or hero == null or q.giver != giver then
+        if definitionId <= 0 or q == 0 or giver == null or hero == null then
+            set giver = null
+            set hero = null
+            return 0
+        endif
+        if (q.state == QUEST_STATE_READY_TURNIN and q.receiver != giver) or (q.state != QUEST_STATE_READY_TURNIN and q.giver != giver) then
             set giver = null
             set hero = null
             return 0
@@ -955,7 +1379,7 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
             set pendingAction = QG_PENDING_ACCEPT
         elseif q.state == QUEST_STATE_READY_TURNIN then
             if not QG_HasTurnInItems(definitionId) then
-                call DisplayTextToPlayer(Player(0), 0.00, 0.00, "|cffff8040You no longer have the required " + GetObjectName(QG_TargetType[definitionId]) + ".|r")
+                call DisplayTextToPlayer(Player(0), 0.00, 0.00, "|cffff8040You no longer have all required quest items.|r")
                 set giver = null
                 set hero = null
                 return 0
@@ -982,10 +1406,10 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
     public function FinishPendingAction takes nothing returns nothing
         local QuestData q = QuestMaster_GetById(QG_PendingQuestId)
 
-        if q != 0 and q.giver == QG_PendingGiver then
-            if QG_PendingAction == QG_PENDING_ACCEPT and q.state == QUEST_STATE_AVAILABLE then
+        if q != 0 then
+            if QG_PendingAction == QG_PENDING_ACCEPT and q.giver == QG_PendingGiver and q.state == QUEST_STATE_AVAILABLE then
                 call QuestGiver_AcceptQuest(QG_PendingQuestId)
-            elseif QG_PendingAction == QG_PENDING_COMPLETE and q.state == QUEST_STATE_READY_TURNIN and QG_HasTurnInItems(QG_PendingDefinitionId) then
+            elseif QG_PendingAction == QG_PENDING_COMPLETE and q.receiver == QG_PendingGiver and q.state == QUEST_STATE_READY_TURNIN and QG_HasTurnInItems(QG_PendingDefinitionId) then
                 call QG_RemoveTurnInItems(QG_PendingDefinitionId)
                 call QuestGiver_CompleteQuest(QG_PendingQuestId)
             endif
@@ -998,5 +1422,8 @@ library QuestsGeneric initializer Init requires QuestGiver, QuestMaster, DialogS
         set QG_TargetTypeByQuest = Table.create()
         set QG_InstantiatedByUnit = Table.create()
         set QG_LastHeroVoiceChoice = Table.create()
+        set QG_RegisteredUnitByType = Table.create()
+        set QG_RegisteredUnitHandle = Table.create()
+        set QG_RegisteredUnitName = Table.create()
     endfunction
 endlibrary

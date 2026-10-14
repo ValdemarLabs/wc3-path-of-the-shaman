@@ -2,11 +2,12 @@
     QuestGiver
 
     Author: Valdemar
-    Version: 1.3.1
+    Version: 1.3.2
 
     Description:
     Provides PotS quest creation helpers, objective tracking, quest-item
-    handling, dialogue buttons, and requirement resets for daily quests.
+    handling, dialogue buttons, combined-objective completion, and requirement
+    resets for daily quests.
 
     Credits:
 
@@ -1163,6 +1164,14 @@ public function CreateFarewellSequence takes unit giver, string giverName, unit 
 	return DialogInteraction_CreateFarewellSequence(giver, giverName, hero, heroName, dialogRange, allowNazgrek, allowZulkis)
 endfunction
 
+private function MarkReadyIfObjectivesComplete takes QuestData q, unit giver returns nothing
+	if q != 0 and q.areObjectivesComplete() then
+		call QuestMaster_SetStateByNameAndGiver(q.name, giver, QUEST_STATE_READY_TURNIN)
+		call q.addReturnRequirement()
+	endif
+	set giver = null
+endfunction
+
 //===========================================================================
 // Item requirement tracking
 //===========================================================================
@@ -1212,35 +1221,14 @@ private function CheckItemProgress takes integer itemTypeId returns nothing
 					if HeroItemCheckBoth(itemTypeId, ItemReqAmount[i]) then
 						call DebugMsg("CheckItemProgress: Requirement COMPLETE! Setting quest to ready for turn-in")
 						call QuestMaster_SetRequirementCompleted(ItemReqQuestId[i], ItemReqIndex[i], true)
-						call QuestMaster_SetStateByNameAndGiver(q.name, ItemReqGiver[i], QUEST_STATE_READY_TURNIN)
-						// Add "Return to questgiver" requirement when quest complete
-						call q.addReturnRequirement()
+						call MarkReadyIfObjectivesComplete(q, ItemReqGiver[i])
 					else
-						// If quest was previously ready for turn-in, revert to IN_PROGRESS
-						// Don't call SetRequirementCompleted(false) as it triggers "failed" messages
+						// Reset silently; losing one item must also block combined objectives.
+						call q.markRequirementCompleted(ItemReqIndex[i], false)
 						if QuestMaster_GetStateByNameAndGiver(q.name, ItemReqGiver[i]) == QUEST_STATE_READY_TURNIN then
 							call DebugMsg("CheckItemProgress: Items dropped below requirement - reverting quest to IN_PROGRESS")
+							call q.removeReturnRequirement()
 							call QuestMaster_SetStateByNameAndGiver(q.name, ItemReqGiver[i], QUEST_STATE_IN_PROGRESS)
-							// Mark "Return to questgiver" requirement as incomplete using native function (no message)
-							if q.hasReturnReq and q.returnReqIndex > 0 then
-								if q.returnReqIndex == 1 and q.req1 != null then
-									call QuestItemSetCompleted(q.req1, false)
-								elseif q.returnReqIndex == 2 and q.req2 != null then
-									call QuestItemSetCompleted(q.req2, false)
-								elseif q.returnReqIndex == 3 and q.req3 != null then
-									call QuestItemSetCompleted(q.req3, false)
-								elseif q.returnReqIndex == 4 and q.req4 != null then
-									call QuestItemSetCompleted(q.req4, false)
-								elseif q.returnReqIndex == 5 and q.req5 != null then
-									call QuestItemSetCompleted(q.req5, false)
-								elseif q.returnReqIndex == 6 and q.req6 != null then
-									call QuestItemSetCompleted(q.req6, false)
-								elseif q.returnReqIndex == 7 and q.req7 != null then
-									call QuestItemSetCompleted(q.req7, false)
-								elseif q.returnReqIndex == 8 and q.req8 != null then
-									call QuestItemSetCompleted(q.req8, false)
-								endif
-							endif
 						else
 							call DebugMsg("CheckItemProgress: Requirement still in progress (" + I2S(current) + "/" + I2S(ItemReqAmount[i]) + ")")
 						endif
@@ -1808,9 +1796,7 @@ private function CheckUnitKillProgress takes integer unitTypeId returns nothing
 				call QuestMaster_UpdateRequirementText(UnitReqQuestId[i], UnitReqIndex[i], reqText)
 				if UnitReqCurrent[i] >= UnitReqAmount[i] then
 					call QuestMaster_SetRequirementCompleted(UnitReqQuestId[i], UnitReqIndex[i], true)
-					call QuestMaster_SetStateByNameAndGiver(q.name, UnitReqGiver[i], QUEST_STATE_READY_TURNIN)
-					// Add "Return to questgiver" requirement when quest complete
-					call q.addReturnRequirement()
+					call MarkReadyIfObjectivesComplete(q, UnitReqGiver[i])
 				endif
 			endif
 		endif
@@ -1919,8 +1905,7 @@ private function CheckEscortProgress takes nothing returns nothing
 						endif
 						call QuestMaster_UpdateRequirementText(EscortReqQuestId[i], EscortReqIndex[i], reqText)
 						call QuestMaster_SetRequirementCompleted(EscortReqQuestId[i], EscortReqIndex[i], true)
-						call QuestMaster_SetStateByNameAndGiver(q.name, EscortReqGiver[i], QUEST_STATE_READY_TURNIN)
-						call q.addReturnRequirement()
+						call MarkReadyIfObjectivesComplete(q, EscortReqGiver[i])
 					endif
 				else
 					call DebugMsg("CheckEscortProgress: Escort unit null or dead - quest may need to fail")
@@ -2143,8 +2128,7 @@ public function CompleteTalkToRequirement takes integer questId, integer reqInde
 			set q = QuestMaster_GetById(questId)
 			if q != 0 then
 				call QuestMaster_SetRequirementCompleted(questId, reqIndex, true)
-				call QuestMaster_SetStateByNameAndGiver(q.name, TalkToReqGiver[i], QUEST_STATE_READY_TURNIN)
-				call q.addReturnRequirement()
+				call MarkReadyIfObjectivesComplete(q, TalkToReqGiver[i])
 				call DebugMsg("CompleteTalkToRequirement: Marked complete for quest " + I2S(questId))
 			endif
 			return
@@ -2208,14 +2192,10 @@ private function CheckFindNPCProgress takes nothing returns nothing
 					set reqText = "Find " + GetUnitName(npc) + " (Complete)"
 					call QuestMaster_UpdateRequirementText(FindNPCReqQuestId[i], FindNPCReqIndex[i], reqText)
 					call QuestMaster_SetRequirementCompleted(FindNPCReqQuestId[i], FindNPCReqIndex[i], true)
-					call QuestMaster_SetStateByNameAndGiver(q.name, FindNPCReqGiver[i], QUEST_STATE_READY_TURNIN)
-					call q.addReturnRequirement()
+					call MarkReadyIfObjectivesComplete(q, FindNPCReqGiver[i])
 					call DebugMsg("CheckFindNPCProgress: Found " + GetUnitName(npc))
-					set removeReq = true
 				endif
 			endif
-		else
-			set removeReq = true
 		endif
 
 		if removeReq then
@@ -2342,8 +2322,7 @@ private function CheckGoToPlaceProgress takes nothing returns nothing
 						set reqText = "Go to " + GoToPlaceReqName[i] + " (Complete)"
 						call QuestMaster_UpdateRequirementText(GoToPlaceReqQuestId[i], GoToPlaceReqIndex[i], reqText)
 						call QuestMaster_SetRequirementCompleted(GoToPlaceReqQuestId[i], GoToPlaceReqIndex[i], true)
-						call QuestMaster_SetStateByNameAndGiver(q.name, GoToPlaceReqGiver[i], QUEST_STATE_READY_TURNIN)
-						call q.addReturnRequirement()
+						call MarkReadyIfObjectivesComplete(q, GoToPlaceReqGiver[i])
 						call DebugMsg("CheckGoToPlaceProgress: Reached " + GoToPlaceReqName[i])
 						set removeReq = true
 					endif
@@ -2356,8 +2335,7 @@ private function CheckGoToPlaceProgress takes nothing returns nothing
 						set reqText = "Go to " + GoToPlaceReqName[i] + " (Complete)"
 						call QuestMaster_UpdateRequirementText(GoToPlaceReqQuestId[i], GoToPlaceReqIndex[i], reqText)
 						call QuestMaster_SetRequirementCompleted(GoToPlaceReqQuestId[i], GoToPlaceReqIndex[i], true)
-						call QuestMaster_SetStateByNameAndGiver(q.name, GoToPlaceReqGiver[i], QUEST_STATE_READY_TURNIN)
-						call q.addReturnRequirement()
+						call MarkReadyIfObjectivesComplete(q, GoToPlaceReqGiver[i])
 						call DebugMsg("CheckGoToPlaceProgress: Reached " + GoToPlaceReqName[i])
 						set removeReq = true
 					endif
@@ -2513,8 +2491,7 @@ private function CheckReputationProgress takes nothing returns nothing
 					set reqText = "Gain " + GetReputationLevelName(RepReqLevel[i]) + " with " + RepReqFaction[i] + " (Complete)"
 					call QuestMaster_UpdateRequirementText(RepReqQuestId[i], RepReqIndex[i], reqText)
 					call QuestMaster_SetRequirementCompleted(RepReqQuestId[i], RepReqIndex[i], true)
-					call QuestMaster_SetStateByNameAndGiver(q.name, RepReqGiver[i], QUEST_STATE_READY_TURNIN)
-					call q.addReturnRequirement()
+					call MarkReadyIfObjectivesComplete(q, RepReqGiver[i])
 					call DebugMsg("CheckReputationProgress: Reached " + GetReputationLevelName(RepReqLevel[i]) + " with " + RepReqFaction[i])
 					set removeReq = true
 				endif
@@ -2621,8 +2598,7 @@ public function CompleteInvestigateRequirement takes integer questId, integer re
 			set q = QuestMaster_GetById(questId)
 			if q != 0 then
 				call QuestMaster_SetRequirementCompleted(questId, reqIndex, true)
-				call QuestMaster_SetStateByNameAndGiver(q.name, InvestigateReqGiver[i], QUEST_STATE_READY_TURNIN)
-				call q.addReturnRequirement()
+				call MarkReadyIfObjectivesComplete(q, InvestigateReqGiver[i])
 				call DebugMsg("CompleteInvestigateRequirement: Marked complete for quest " + I2S(questId))
 			endif
 			return

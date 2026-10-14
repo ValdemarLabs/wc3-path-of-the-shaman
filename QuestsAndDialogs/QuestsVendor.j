@@ -2,7 +2,7 @@
     QuestsVendor
 
     Author: Valdemar
-    Version: 2.0.1
+    Version: 2.0.2
 
     Description:
     Shop-vendor adapter for QuestsGeneric. Generic giver quests are delegated
@@ -24,6 +24,7 @@
     API:
     - QuestsVendor_RegisterFetchQuest/RegisterKillQuest register generic quests.
     - QuestsVendor_RegisterSupplyQuest registers a target-vendor objective.
+      Its handoff is encoded as an explicit consumable delivery objective.
     - QuestsVendor_RegisterEscortQuest registers a one-time Normal escort.
     - QuestsVendor_SetSupplyRequiresPurchase overrides stock detection.
     - QuestsVendor_SetEscortTradeLocked gates Trade until escort completion.
@@ -531,7 +532,7 @@ library QuestsVendor initializer Init requires QuestsGeneric, VoicelinesQuests, 
                 if targetName == null or targetName == "" then
                     set targetName = QV_TargetVendorName[supplyIndex]
                 endif
-                call QuestsGeneric_SetObjective(QV_SupplyDefinitionId[supplyIndex], QuestsGeneric_OBJECTIVE_TALK, QV_SupplyItemType[supplyIndex], 1, targetName)
+                call QuestsGeneric_SetDeliveryObjective(QV_SupplyDefinitionId[supplyIndex], QV_SupplyItemType[supplyIndex], 1, targetName)
             endif
             set supplyIndex = supplyIndex + 1
         endloop
