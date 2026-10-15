@@ -22,10 +22,12 @@
 
 ### Technical Updates
 
+- Updated `_CoreSystems/Imported/DestructibleHider.j` with clamped differential camera-tile updates, preserving the initial visibility bootstrap while limiting movement work to entering and exiting strips. Added disabled-by-default resettable work counters and `/debug perf` commands in `Debug/Warcraft300TestHarness.j` and `Debug/DebugCommands.j` for isolated PERF-001 captures.
 - Added the `_developer/PerformanceImprovements/` implementation-plan set, splitting the Warcraft III DE performance audit into independent benchmark-gated plans with shared dependency bundles, regression tests, acceptance criteria, and rollback procedures. No gameplay source or functionality was changed.
 
 ### Actions Remaining
 
+- Reimport the updated hider and debug libraries, compile the full map through World Editor/JassHelper, and run the documented edge, movement, teleport, runtime registration, tree lifecycle, gate, save/load, cinematic, and multiplayer regressions. Capture the PERF-001 control/candidate AB/BA frame-time runs before accepting or rejecting the candidate.
 - Establish the external frame-time capture baseline, then implement and measure one performance candidate at a time in the documented rollout order. Update hard-coupled systems in the same atomic bundle and reject any candidate that does not meet its isolated performance and correctness gates.
 
 
