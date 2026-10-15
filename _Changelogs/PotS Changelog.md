@@ -22,13 +22,16 @@
 
 ### Technical Updates
 
-- Added `QuestsAndDialogs/QuestGivers/WantedPosts.j` with twelve inert, exact-unit-bound **draft** quest definitions across the proposed Mok'natha, Ironspine Post, Sereneglade mountain-camp, and Thornwoods scout-base wanted posts. The library registers no content automatically; each regional set must be reviewed against its actual World Editor location before its setup API is called.
+- Updated `Preload/Start.j` so successful startup loads and other no-intro starts explicitly leave the preload fullscreen presentation, bind and center the camera on restored Nazgrek, select him, and restore player control before gameplay continues.
+- Added `QuestsAndDialogs/QuestGivers/WantedPosts.j` with twelve inactive **draft** quest definitions across the proposed Mok'natha, Ironspine Post, Sereneglade mountain-camp, and Thornwoods scout-base wanted posts. The library now discovers every preplaced `'n05N'` sign automatically, resolves its most-specific `ZonesCore` zone, and registers its notice-board dialog; regional quest definitions remain inactive until their approved exact sign and receiver configuration is supplied.
+- Updated `WantedPosts.j` so every discovered sign remains an exact, unique quest giver. `ZonesCore` location now classifies and validates the regional package without sharing definitions, availability, acceptance, or progress between signs, including multiple signs inside the same subzone.
+- Updated `Zones/ZonesCore.j` with Horde Mountain Camp subzone `201` over the existing `gg_rct_HordeMountainCamp` rect so its wanted signs resolve separately from signs elsewhere in Sereneglade `2`.
 - Updated the quest-giver guide and story/quest implementation ledger with an explicit wanted-post review gate covering local target and drop feasibility, travel, receiver ownership, cadence and rotation, prerequisites, overlap, rewards, save/reset behavior, and shared-target progress. All twelve candidate quests are marked Draft rather than Implemented.
 
 ### Actions Remaining
 
 - Review each proposed wanted-post quest set in its actual World Editor zone. Approve, replace, or retune its targets, counts, drops, receiver, missing-person target, cadence, unlocks, and rewards; decide whether the shared quest systems need per-post availability, prerequisites, rotating offers, or stronger receiver ownership before integrating any draft.
-- After approval, preplace/select the four `'n05N'` wanted posts, remote receivers, and any missing-person targets; call only the approved `WantedPosts_Register...` APIs with exact generated unit handles, then compile and runtime-test the focused flows and full map through World Editor/JassHelper.
+- After approval, supply each regional `WantedPosts_Configure...` call with its exact wanted-sign handle, remote receiver, and any missing-person target. Compile and runtime-test zero, one, and multiple signs in a configured subzone, signs in unconfigured zones, child-versus-parent resolution, independent lists and progress across same-zone signs, remote turn-in, and the full map through World Editor/JassHelper.
 
 ## [14.10.2026]
 
