@@ -1,0 +1,604 @@
+{
+  "schema_version": "1.0.0",
+  "document_type": "codex_repository_audit_and_planning_specification",
+  "title": "Path of the Shaman — Warcraft III DE Performance Audit and Optimization Plan",
+  "created": "2026-10-16",
+  "repository": {
+    "url": "https://github.com/ValdemarLabs/wc3-path-of-the-shaman",
+    "owner": "ValdemarLabs",
+    "name": "wc3-path-of-the-shaman",
+    "branch": "dev",
+    "read_instructions_first": [
+      "AGENTS.md",
+      "_Blizzard/common.j",
+      "_Blizzard/Blizzard.j"
+    ],
+    "source_of_truth": "Actual dev checkout and active game installation, rather than historical documentation, main-branch search results, or assistant assumptions",
+    "jass_api_baseline": "Warcraft III 3.0.0 / build 24268 according to AGENTS.md; verify against installed game files and current build before implementing",
+    "installation_expected_to_be_accessible_to_codex": true
+  },
+  "mission": {
+    "primary": "Analyze whether PotS can obtain meaningful FPS/frame-time gains in Warcraft III DE graphics through already-available natives, script optimizations, smarter visibility management and asset/renderer changes; produce a benchmarkable, risk-ranked implementation roadmap.",
+    "secondary": "Identify improvements to existing systems without losing gameplay, saved-state, visual or multiplayer compatibility.",
+    "execution_mode": "AUDIT_AND_PLAN_ONLY",
+    "do_not_implement_without_follow_up_authorization": true,
+    "desired_outputs": [
+      "Detailed code-evidenced analysis of current performance systems and all actionable native API opportunities",
+      "Prioritized optimization backlog with per-file implementation designs (no edits yet)",
+      "Proposed isolated benchmarks and acceptance criteria",
+      "Regression-test and rollback strategies",
+      "Confirmed non-opportunities and reasons to avoid them"
+    ]
+  },
+  "critical_rules": [
+    "Do not edit or commit existing source code, object data, imports, World Editor content, libraries or configuration in this audit phase.",
+    "Do not replace proven existing systems wholesale. Prefer small compatible changes preserving public APIs, behavior, initialized data and active dependencies.",
+    "Read AGENTS.md and all relevant local guidelines before interpreting files. Historical analysis reports are clues, not proof of current defects.",
+    "Verify every proposed native's exact spelling, signature, availability and semantics in active _Blizzard/common.j and relevant _Blizzard/Blizzard.j wrappers; cross-check with game installation/PTR only when relevant.",
+    "Distinguish confirmed source facts, untested hypotheses, measured results and unknowns explicitly; never fabricate measurements or assert FPS gains based only on algorithmic complexity.",
+    "Preserve SD and DE modes, cutscenes, special cameras, camera locality, map transitions, gameplay AI/combat/quests, pathing, interactive doodads/destructables, persistent units, saved state and normal multiplayer synchronization.",
+    "Do not create, destroy, hide or modify synced game objects inside a GetLocalPlayer guard without proof that the operation is local-safe. Camera and UI operations may be local; simulation state normally is not.",
+    "Visual hiding is not proof of reduced AI, physics, pathfinding, animation or trigger processing. Identify which costs a proposed change actually affects.",
+    "ShowUnit and ShowDestructable can have gameplay and trigger interactions: test visibility, pathing, selection, interactions, resurrection and ownership carefully.",
+    "Do not assume setting effect alpha to zero or frame visibility false removes simulation or draw-call cost; benchmark.",
+    "Do not confuse reducing native call count with reducing GPU rendering cost.",
+    "Exclude deprecated, unknown or non-existent APIs. Do not invent renderer controls absent from common.j.",
+    "Maintain present NPC simulation and world continuity unless explicit alternative LOD policies are specified with testable gameplay semantics.",
+    "Keep JASS/vJASS and JassHelper compatibility; compile with the normal World Editor/JassHelper pipeline, not pjass alone.",
+    "Respect World Editor export boundaries in AGENTS.md: document WE-only follow-ups without changing exported map data or _MISC/war3map.wts.",
+    "Do not use strong benchmark claims from historic documents without rerunning measurements on the current dev build."
+  ],
+  "known_source_observations": [
+    {
+      "id": "E01",
+      "status": "confirmed_from_dev_source",
+      "path": "_CoreSystems/Imported/DestructibleHider.j",
+      "observation": "INTERVAL=0.2, DRAW_DISTANCE=5120, TILE_RESOLUTION=10 (512-unit tiles). ChangeTiles hides the previous (21x21) tile window and re-shows the new window, including overlap; native ShowDestructable calls can repeat unnecessarily.",
+      "impact_model": "With a one-cell horizontal move in interior terrain, up to 441 old + 441 new tile visits occur rather than 21 leaving + 21 entering; actual number of destructable toggles depends on content and state.",
+      "hypothesis": "Differential tile-window updates reduce update spikes/camera-pan stutter.",
+      "source_url": "https://github.com/ValdemarLabs/wc3-path-of-the-shaman/blob/dev/_CoreSystems/Imported/DestructibleHider.j"
+    },
+    {
+      "id": "E02",
+      "status": "confirmed_from_dev_source",
+      "path": "UnitSystems/UnitHider4.j",
+      "observation": "Current implementation is v4.11.0; 64x64 hidden-unit grid, 0.10-second updates, 0.50-second visible sweeps, mostly event-driven discovery and full-map bootstrap rather than the obsolete UnitHider3 periodic world scans. Some recurring GroupAddGroup calls copy groups through a Blizzard.j wrapper.",
+      "hypothesis": "Native fast group copying may reduce JASS overhead at hotspots; UnitHider4 is not an automatic rewrite candidate.",
+      "source_url": "https://github.com/ValdemarLabs/wc3-path-of-the-shaman/blob/dev/UnitSystems/UnitHider4.j"
+    },
+    {
+      "id": "E03",
+      "status": "confirmed_from_dev_source",
+      "path": "UI/DynamicFarZ.j",
+      "observation": "Angle interpolation increases FarZ toward full base distance at horizon angle >=345 degrees even for Heavy profile; baseline base FarZ is 10000 in CameraControl, and Medium at natural/default 304 degrees is approximately 6500 without zone cap.",
+      "hypothesis": "A profile-specific hard cap or jointly managed culling distances could reduce GPU workload at low camera pitches while preserving cinematics.",
+      "source_url": "https://github.com/ValdemarLabs/wc3-path-of-the-shaman/blob/dev/UI/DynamicFarZ.j"
+    },
+    {
+      "id": "E04",
+      "status": "confirmed_from_dev_source",
+      "path": "UI/CameraControl.j",
+      "observation": "Camera control includes 0.03-second keyboard/drift loops, local middle-mouse orbit and per-player camera field updates; effective FarZ is applied locally. Camera mode/cinematic compatibility matters.",
+      "hypothesis": "Reduce redundant camera field native calls and recalculate only on meaningful parameter changes if profiling finds the loop costly.",
+      "source_url": "https://github.com/ValdemarLabs/wc3-path-of-the-shaman/blob/dev/UI/CameraControl.j"
+    },
+    {
+      "id": "E05",
+      "status": "confirmed_from_dev_source",
+      "path": "EnvironmentSystems/WeatherSystemV4.j",
+      "observation": "Rain impacts run every 0.15 seconds in active weather, recycle a ring of 16 special-effect slots through DestroyEffect/AddSpecialEffect and perform position, terrain and water checks. Weather also has existing FPS flags for ripple, clouds and steam suppression.",
+      "hypothesis": "Profiling may justify reducing creation, terrain samples or effects; local camera effects require strict sync-safe handling.",
+      "source_url": "https://github.com/ValdemarLabs/wc3-path-of-the-shaman/blob/dev/EnvironmentSystems/WeatherSystemV4.j"
+    },
+    {
+      "id": "E06",
+      "status": "confirmed_from_dev_source",
+      "path": "UnitSystems/UnitStats.j",
+      "observation": "UnitStats presently performs a ONE-TIME map scan and then event-driven updates. The older 2025 lag analysis incorrectly describes an ongoing 3-second whole-map scan as if still present.",
+      "hypothesis": "Do not blindly apply the historical recommendation to disable or slow UnitStats.",
+      "source_url": "https://github.com/ValdemarLabs/wc3-path-of-the-shaman/blob/dev/UnitSystems/UnitStats.j"
+    },
+    {
+      "id": "E07",
+      "status": "confirmed_from_dev_source",
+      "path": "_Blizzard/Blizzard.j",
+      "observation": "GroupAddGroup(sourceGroup,destGroup) uses a ForGroup-based JASS wrapper, and may destroy source group via bj_wantDestroyGroup. GetUnitsInRectMatching and GetUnitsInRangeOfLocMatching allocate fresh groups and destroy passed filter expressions.",
+      "hypothesis": "Fast natives and reusable groups/coordinate enumerations may improve hotspots if lifetime and argument semantics are preserved.",
+      "source_url": "https://github.com/ValdemarLabs/wc3-path-of-the-shaman/blob/dev/_Blizzard/Blizzard.j"
+    },
+    {
+      "id": "E08",
+      "status": "confirmed_from_dev_source",
+      "path": "_Blizzard/common.j",
+      "observation": "Active baseline declares BlzGroupAddGroupFast, BlzGroupRemoveGroupFast, BlzGetNumDoodads, BlzGetDoodadX/Y/Id, BlzSetSingleDoodadAnimation, SetDoodadAnimation/Rect, BlzSetSpecialEffectPosition, BlzFrameSetVisible, SetHDWaterParamsEx and BlzSetHDWaterReflectivity.",
+      "hypothesis": "Several APIs enable more direct operations; they are not guaranteed to improve graphics performance merely by existing.",
+      "source_url": "https://github.com/ValdemarLabs/wc3-path-of-the-shaman/blob/dev/_Blizzard/common.j"
+    },
+    {
+      "id": "E09",
+      "status": "partly_confirmed_requires_repo_discovery",
+      "path": "DoodadRender (unknown path / potentially World Editor-embedded or external)",
+      "observation": "WeatherSystemV4 refers to DoodadRender, but the expected standalone library was not located in inspected dev paths.",
+      "hypothesis": "Search complete checkout, imports and World Editor sources before claiming any implementation or integration details."
+    },
+    {
+      "id": "E10",
+      "status": "external_release_context",
+      "path": "Blizzard 3.0.0 live state",
+      "observation": "Official Blizzard notice dated 2026-10-08 says live was reverted to 3.0.0 while 3.0.1 remained on PTR for more testing. Confirm latest installed build during audit.",
+      "source_url": "https://us.forums.blizzard.com/en/warcraft3/t/version-300-restored-october-8/39672/1"
+    }
+  ],
+  "native_api_candidate_inventory": [
+    {
+      "id": "N01",
+      "names": [
+        "BlzGetNumDoodads",
+        "BlzGetDoodadX",
+        "BlzGetDoodadY",
+        "BlzGetDoodadId",
+        "BlzSetSingleDoodadAnimation"
+      ],
+      "priority": "P0-inventory-and-prototype",
+      "use_case": "Build an immutable indexed doodad grid once; toggle presentation for only newly entered/exited visible tiles by doodad index instead of broad repeated searches",
+      "mandatory_verification": [
+        "Test whether indexes start at 0 and the enumeration stable over load/save and gameplay",
+        "Test whether animation tokens 'show' and 'hide' behave on each relevant DE/SD doodad type",
+        "Benchmark a prototype against existing DoodadRender, and check near/far camera shifts, teleport and cinematic restore",
+        "Confirm doodad non-pathing behavior and effect on particles, lights and variation models"
+      ],
+      "classification": "promising-but-unverified-runtime-benefit"
+    },
+    {
+      "id": "N02",
+      "names": [
+        "BlzGroupAddGroupFast",
+        "BlzGroupRemoveGroupFast"
+      ],
+      "priority": "P0-small-source-change",
+      "use_case": "Where appropriate replace JASS ForGroup-based GroupAddGroup copies in UnitHider4/other hot loops",
+      "mandatory_verification": [
+        "Blizzard.j GroupAddGroup(source,destination) differs from native BlzGroupAddGroupFast(destination,source)",
+        "Check bj_wantDestroyGroup, group aliasing, membership, iteration stability, returned size and side effects",
+        "A/B test microbenchmark and real scenes; skip if negligible"
+      ]
+    },
+    {
+      "id": "N03",
+      "names": [
+        "BlzSetSpecialEffectPosition",
+        "BlzSetSpecialEffectOrientation"
+      ],
+      "priority": "P1",
+      "use_case": "Replace clusters of separate X/Y/Z or yaw/pitch/roll updates for the same effect, where equivalent",
+      "mandatory_verification": [
+        "Search actual project call sites",
+        "Preserve z terrain alignment and local camera semantics",
+        "Benchmark per-effect CPU time and visible artifacts",
+        "Avoid speculative changes to animated effects whose transform semantics differ"
+      ]
+    },
+    {
+      "id": "N04",
+      "names": [
+        "SetDoodadAnimation",
+        "SetDoodadAnimationRect",
+        "BlzSetSingleDoodadAnimation"
+      ],
+      "priority": "P1",
+      "use_case": "Investigate show/hide animation behavior for scenery; do not confuse doodads and destructables",
+      "mandatory_verification": [
+        "Verify show/hide on target game version and all model classes",
+        "Compare per-item and area-based work",
+        "Check whether hide actually reduces rendering costs and whether pathing and visibility restore work"
+      ]
+    },
+    {
+      "id": "N05",
+      "names": [
+        "GroupEnumUnitsInRange",
+        "GroupEnumUnitsInRect",
+        "GroupEnumUnitsInRangeCounted",
+        "BlzGroupGetSize",
+        "BlzGroupUnitAt"
+      ],
+      "priority": "P1",
+      "use_case": "Replace repeated GetUnits... BJ allocation or unnecessary world scans with cached/reused groups and localized event-based tracking when safe",
+      "mandatory_verification": [
+        "Do not impose counted-unit caps on combat/quest mechanics",
+        "Account for mutation during iteration",
+        "Free only owned groups/filters/locations"
+      ]
+    },
+    {
+      "id": "N06",
+      "names": [
+        "SetCameraField",
+        "GetCameraField",
+        "SetCameraFieldControlledByInput"
+      ],
+      "priority": "P1",
+      "use_case": "Avoid redundant CameraControl/FarZ setter invocations and cache calculated fields only if this demonstrably affects CPU or stutter",
+      "mandatory_verification": [
+        "Respect per-player local rendering",
+        "No changes to synchronized state behind GetLocalPlayer",
+        "Preserve smoothing, mouse orbit, cutscenes and scripted camera priority"
+      ]
+    },
+    {
+      "id": "N07",
+      "names": [
+        "BlzFrameSetVisible",
+        "BlzFrameIsVisible",
+        "BlzFrameSetText"
+      ],
+      "priority": "P2",
+      "use_case": "Audit expensive UI frame updates and strings generated while hidden; gate scripted work by actual panel state",
+      "mandatory_verification": [
+        "Hiding frames is not equivalent to stopping their JASS update loop",
+        "Avoid breaking input focus, tooltips, inventory and custom UI"
+      ]
+    },
+    {
+      "id": "N08",
+      "names": [
+        "SetHDWaterParamsEx",
+        "BlzSetHDWaterReflectivity",
+        "BlzSetHDWaterWaveStrength",
+        "SetWaterDeforms"
+      ],
+      "priority": "P3-experimental",
+      "use_case": "Test whether limiting water visual complexity actually improves DE GPU timings",
+      "mandatory_verification": [
+        "These are quality/state controls, not documented FPS toggles",
+        "Retain environmental appearance and water physics",
+        "Only pursue if A/B benchmark confirms gains"
+      ]
+    },
+    {
+      "id": "N09",
+      "names": [
+        "BlzSetSpecialEffectAlpha",
+        "BlzRemoveEffect",
+        "DestroyEffect"
+      ],
+      "priority": "P2-risk-review",
+      "use_case": "Review effect lifecycle and actual renderer cost instead of blindly setting alpha to zero",
+      "mandatory_verification": [
+        "Determine BlzRemoveEffect vs DestroyEffect semantics for current client before considering substitution",
+        "Retain synchronized creation/destruction ordering",
+        "Test effect attachment and animation behavior in DE/SD"
+      ]
+    },
+    {
+      "id": "N10",
+      "names": [
+        "BlzShowTerrain",
+        "BlzSetTerrainFogStyle",
+        "BlzSetTerrainFogDensity"
+      ],
+      "priority": "P3-candidate-to-reject",
+      "use_case": "Assess and generally reject as generalized renderer optimizers: terrain hiding and fog appearance controls are not safe automatic object culling",
+      "mandatory_verification": [
+        "Do not claim fog is frustum culling",
+        "Do not hide terrain as an ordinary FPS solution"
+      ]
+    }
+  ],
+  "audit_workstreams": [
+    {
+      "id": "WS01",
+      "title": "Map baseline and bottleneck separation",
+      "priority": "P0",
+      "files": [
+        "AGENTS.md",
+        "_Blizzard/common.j",
+        "_Blizzard/Blizzard.j"
+      ],
+      "investigate": [
+        "Identify active DE/SD mode, Rebirth overrides, installed client build and active DLL/graphics API",
+        "Classify GPU-bound vs main-thread/AI/script bottleneck vs loading/streaming spikes",
+        "Inventory FPS settings and existing optimization toggles"
+      ],
+      "deliverable": "baseline-and-constraint-report.md"
+    },
+    {
+      "id": "WS02",
+      "title": "Doodad visibility and native 3.0 index-based control",
+      "priority": "P0",
+      "files": [
+        "EnvironmentSystems/WeatherSystemV4.j",
+        "_Blizzard/common.j"
+      ],
+      "investigate": [
+        "Locate all DoodadRender code and integration even if source lives outside repository or WE GUI",
+        "Assess static doodad count/type distribution and high-cost draw/material/particle models",
+        "Prototype design only: one-time doodad registry by index, spatial partition, differential reveal/hide, hysteresis, index stability",
+        "Examine BlzSetSingleDoodadAnimation and show/hide tokens with minimal reproducible test map",
+        "Compare index-based operations to SetDoodadAnimationRect and existing system; check seasonal animation states"
+      ],
+      "deliverable": "doodad-render-audit.md"
+    },
+    {
+      "id": "WS03",
+      "title": "DestructibleHider differential tile updates",
+      "priority": "P0",
+      "files": [
+        "_CoreSystems/Imported/DestructibleHider.j"
+      ],
+      "investigate": [
+        "Derive exactly overlapping previous/next tile rectangles and minimal exited/entered strips",
+        "Handle large teleports, map edges, initial (-1) origin, repeated same cell, runtime register/unregister, dead trees, gates and dynamic destructables",
+        "Measure ShowDestructable calls/frame, actual toggles/frame, 95th/99th-percentile camera-pan frame time",
+        "Preserve public API, hashtable layout and save/load stability",
+        "Propose safe opt-in debug counters and a reversible patch"
+      ],
+      "deliverable": "destructible-hider-change-design.md"
+    },
+    {
+      "id": "WS04",
+      "title": "UnitHider4 scheduling and group-native efficiency",
+      "priority": "P1",
+      "files": [
+        "UnitSystems/UnitHider4.j",
+        "_Blizzard/Blizzard.j",
+        "_Blizzard/common.j"
+      ],
+      "investigate": [
+        "Measure periodic 0.10s work, 0.50s visible sweeps, reference cache size, hidden cell visitation and large reference sets",
+        "Identify each GroupAddGroup call whose semantics allow BlzGroupAddGroupFast and verify order/destroy flag",
+        "Check movement relocation hooks and whether hidden references or cinematic sweeps cause bursts",
+        "Keep current event-driven v4.11.0 structure and ownership model",
+        "Distinguish rendered-unit savings from AI/order/pathfinding savings"
+      ],
+      "deliverable": "unit-hider-native-and-cpu-audit.md"
+    },
+    {
+      "id": "WS05",
+      "title": "DynamicFarZ/camera/unified visibility distances",
+      "priority": "P1",
+      "files": [
+        "UI/DynamicFarZ.j",
+        "UI/CameraControl.j",
+        "UI/CameraUI.j",
+        "Camera/DialogCamera.j"
+      ],
+      "investigate": [
+        "Measure frame cost for FarZ/zoom/pitch across Light/Medium/Heavy and specific camera contexts",
+        "Design optional profile hard-caps at the horizon and optional distance coordination with unit/doodad/destructable culling",
+        "Analyze local camera frequency, redundant SetCameraField calls and threshold/hysteresis methods",
+        "Preserve all free camera, developer mode, cutscene and special-area visibility authoring"
+      ],
+      "deliverable": "camera-distance-policy-audit.md"
+    },
+    {
+      "id": "WS06",
+      "title": "Special effects and projectile/particle lifecycles",
+      "priority": "P1",
+      "files": [
+        "SpecialEffects/SpeciFX.j",
+        "EnvironmentSystems/Stormv2.j",
+        "EnvironmentSystems/WeatherSystemV4.j"
+      ],
+      "investigate": [
+        "Inventory AddSpecialEffect*/DestroyEffect counts, update loops, persistent effects, dummy units and expensive particle models",
+        "Identify opportunities for combined transform natives and deferred updates",
+        "Test LOD/visibility/particle simplification for off-screen decorative effects without touching combat semantics",
+        "Investigate effects whose visible complexity is disproportionately expensive in DE",
+        "Do not assume effect pooling or invisible alpha necessarily saves draw calls"
+      ],
+      "deliverable": "effects-and-projectiles-audit.md"
+    },
+    {
+      "id": "WS07",
+      "title": "Weather visual budget",
+      "priority": "P1",
+      "files": [
+        "EnvironmentSystems/WeatherSystemV4.j",
+        "EnvironmentSystems/SteamBreath.j",
+        "EnvironmentSystems/Stormv2.j"
+      ],
+      "investigate": [
+        "Measure rain-impact ring buffer, terrain sampling and precipitation during actual storms",
+        "Measure snow unit waves and steam attachments by zone",
+        "Check current FPS toggles, local camera anchoring and effect creation/destruction symmetry across clients",
+        "Define optional weather-budget profiles with same narrative intensity and stable gameplay"
+      ],
+      "deliverable": "weather-budget-audit.md"
+    },
+    {
+      "id": "WS08",
+      "title": "AI, ambient entities, movement and pathfinding",
+      "priority": "P1",
+      "files": [
+        "AI/AI.j",
+        "AI/AIRoutines.j",
+        "UnitSystems/UnitHider4.j",
+        "PatrolFollowSystems/"
+      ],
+      "investigate": [
+        "Detect expensive pathfinding/order storms with many off-screen units",
+        "Investigate AI tick batching, state-aware update rates and movement order deduplication",
+        "Design a SEPARATE simulation-LOD policy for NPCs only where gameplay semantics permit",
+        "Protect live combat, quest triggers, patrols requiring progression, persistent state and independent AI heroes",
+        "Benchmark CPU main-thread improvement in DE and SD"
+      ],
+      "deliverable": "ai-pathfinding-and-simulation-lod-audit.md"
+    },
+    {
+      "id": "WS09",
+      "title": "UI, dynamic minimap and text updates",
+      "priority": "P2",
+      "files": [
+        "UI/MasterUI.j",
+        "UI/CameraUI.j",
+        "DynamicMinimap/",
+        "Texts/FloatingTT.j"
+      ],
+      "investigate": [
+        "Inventory frequent frame text/texture updates, inactive/hidden UI loops, minimap updates and 0.03125s floating text updates",
+        "Check BlzFrameSetVisible and update gating, caching of formatted strings and camera distance checks",
+        "Design visibility-driven execution gates without changing UX, tooltip or input behavior"
+      ],
+      "deliverable": "ui-and-text-render-cost-audit.md"
+    },
+    {
+      "id": "WS10",
+      "title": "Native/BJ wrapper and allocation audit across active sources",
+      "priority": "P1",
+      "files": [
+        "_Blizzard/common.j",
+        "_Blizzard/Blizzard.j",
+        "all active JASS/vJASS excluding generated/history unless imported"
+      ],
+      "investigate": [
+        "Search high-frequency GetUnitsInRectMatching/GetUnitsInRangeOfLocMatching calls allocating groups; GroupAddGroup/GroupRemoveGroup loops",
+        "Search repeated Location/GetUnitLoc/GetDestructableLoc/GetRandomLocInRect and repeated DestroyBoolExpr allocation",
+        "Search repeat timers, period <=0.10s, WorldBounds scans and nested enumerations",
+        "Search duplicate SetCameraField, effects setters, multi-native transforms, needless string concatenation and frame updates",
+        "For each candidate show exact code location, measured hot-path evidence and correctness constraints"
+      ],
+      "deliverable": "native-opportunity-matrix.md"
+    },
+    {
+      "id": "WS11",
+      "title": "Graphics asset complexity / Rebirth / DE-specific rendering",
+      "priority": "P1",
+      "files": [
+        "map imports if accessible",
+        "_retail/Rebirth overrides if accessible",
+        "WC3_Database asset mappings if relevant",
+        "World Editor object and doodad data (read-only)"
+      ],
+      "investigate": [
+        "Identify high-frequency models/materials, particles, light sources, transparent layers, shadows and heavy trees",
+        "Examine DE-specific geometry and Rebirth replacements compared to original SD/DE assets",
+        "Evaluate static decoration cluster strategies only if draw-call-bound",
+        "Determine whether changing object models or reducing particle counts beats script micro-optimization",
+        "Provide WE/manual asset tasks without editing locked exports"
+      ],
+      "deliverable": "asset-and-render-pipeline-audit.md"
+    },
+    {
+      "id": "WS12",
+      "title": "Historical reports and regression hazards",
+      "priority": "P2",
+      "files": [
+        "_MISC/LAG_ANALYSIS_Report.md",
+        "UnitSystems/UnitStats.j",
+        "AGENTS.md"
+      ],
+      "investigate": [
+        "Mark historical references to UnitHider3 and periodic UnitStats as stale where current code differs",
+        "Assess save/load from older map revisions, cached handle/group rebuild and index stability",
+        "Check deindex/revive/remove/cinematics/quests/destructable resurrection and World Editor backups",
+        "Create per-change rollback and validation gates"
+      ],
+      "deliverable": "regression-risk-register.md"
+    }
+  ],
+  "audit_search_patterns": [
+    "rg -n --glob '*.j' --glob '!**/_Old*/**' --glob '!**/Archive/**' 'GroupAddGroup|GroupRemoveGroup|BlzGroupAddGroupFast|GroupEnumUnitsInRect|GroupEnumUnitsInRange|GetUnitsInRect|GetUnitsInRange' .",
+    "rg -n --glob '*.j' 'GetWorldBounds|GetUnitLoc|GetDestructableLoc|GetRandomLocInRect|Location\\(|RemoveLocation|DestroyBoolExpr' .",
+    "rg -n --glob '*.j' 'TimerStart|TriggerSleepAction|PolledWait|0\\.0(1|2|3|5)|0\\.10|0\\.03125' .",
+    "rg -n --glob '*.j' 'BlzSetSpecialEffect|AddSpecialEffect|DestroyEffect|BlzRemoveEffect|CreateUnit|RemoveUnit' .",
+    "rg -n --glob '*.j' 'DoodadRender|BlzGetDoodad|BlzGetNumDoodads|SetDoodadAnimation|ShowDestructable|ShowUnit|FPS_OptimizationEnabled' .",
+    "rg -n --glob '*.j' 'SetCameraField|GetCameraField|GetLocalPlayer|BlzFrameSetVisible|BlzFrameSetText|SetHDWaterParamsEx' ."
+  ],
+  "measurement_protocol": {
+    "instrumentation_preference": "Use external capture (PresentMon/CapFrameX or comparable) for FPS, frametime and 1% lows. Add optional JASS debug instrumentation only in a separately authorized experiment; the current audit is read-only.",
+    "controlled_variables": [
+      "Exact map build and game build",
+      "same location/seed/date/weather/number of units",
+      "same camera location, pitch and FarZ",
+      "SD vs DE comparison",
+      "Rebirth on/off where available",
+      "same resolution, renderer (DX11/DX12), V-Sync state and graphics settings",
+      "same hardware, drivers and run duration"
+    ],
+    "scenes": [
+      "empty/open terrain",
+      "densely wooded area",
+      "high-density destructables",
+      "village/settlement",
+      "ambient NPC area with many moving units",
+      "intense combat with effects",
+      "rain/storm/snow",
+      "rapid horizontal/vertical camera panning",
+      "teleport and cinematic transition",
+      "long-duration gameplay session"
+    ],
+    "metrics": [
+      "average FPS",
+      "median frame time (ms)",
+      "95th/99th percentile frame time (ms)",
+      "1% low FPS",
+      "frame-time spikes during camera tile crossings",
+      "GPU utilization and GPU frame time where available",
+      "CPU main-thread utilization / frame time where available",
+      "active units, visible units, hidden units, doodads, destructables, effects",
+      "per-tick toggles, effect creation/destruction, expensive group operation counts"
+    ],
+    "ab_test_policy": "One isolated reversible candidate at a time. Repeat trials and compare frame-time distributions. Report hardware/settings/measurement noise. Do not infer significance from single runs.",
+    "priority_formula": "Rank by expected measurable impact x confidence x implementation safety, adjusted downward for regression risk and maintenance cost; disclose the chosen scoring rubric.",
+    "test_capabilities": "If the Codex environment cannot launch game or record frametimes, provide a reproducible human-run test matrix and report results as NOT_MEASURED."
+  },
+  "regression_matrix": [
+    "Regular SD graphics and Warcraft III DE/HD graphics",
+    "Singleplayer map, multiplayer-safe synchronized execution and per-player local camera",
+    "Save/load and map version changes; never rely on volatile doodad indexes in saved user data without proof",
+    "UnitHider enable/disable, fresh map bootstrap, move/teleport, cinematic begin/end and refresh",
+    "Quest NPCs, vendors, companions, tamed units, neutral units and AI hero revealers",
+    "Destructable harvest, death, resurrection, bridges/gates, collision/pathing and dynamic registration",
+    "Terrain/world visibility, sky, water, fog and scripted camera angles",
+    "Rain/snow/steam/clouds/lightning and special-effect cleanup",
+    "UI frame focus, minimap, tooltip, inventory, settings panels and mouse orbit",
+    "Continuous gameplay for 30+ minutes, forced teleport/reveal/hide cycles and load-state recovery"
+  ],
+  "expected_codex_deliverables": {
+    "path_suggestion": "_developer/PerformanceAudit/ (create only with user permission; otherwise return report contents in chat)",
+    "files": [
+      "00_EXECUTIVE_FINDINGS.md",
+      "01_API_NATIVE_OPPORTUNITIES.md",
+      "02_SYSTEM_BOTTLENECK_AUDIT.md",
+      "03_DE_GRAPHICS_ASSET_AUDIT.md",
+      "04_BENCHMARK_PLAN.md",
+      "05_PRIORITIZED_IMPLEMENTATION_BACKLOG.json",
+      "06_REGRESSION_MATRIX.md",
+      "07_OPEN_QUESTIONS_AND_UNVERIFIED_HYPOTHESES.md"
+    ],
+    "required_structure_for_each_backlog_item": [
+      "id",
+      "priority",
+      "problem_and_mechanism",
+      "specific_file_paths_and_line_ranges",
+      "evidence_type",
+      "native_apis_and_exact_signatures_if_relevant",
+      "proposed_minimal_design",
+      "estimated_complexity",
+      "expected_perf_mechanism",
+      "risk_to_existing_functionality",
+      "test_plan",
+      "acceptance_criteria",
+      "rollback_plan",
+      "dependencies"
+    ],
+    "response_in_chat": "Summarize five highest-priority code-evidenced findings, list the strongest 3.0-native opportunities, identify any missing/externally managed source, and name the first 3 isolated experiments. Do not claim completion of runtime tests that were not executed."
+  },
+  "completion_gates": [
+    "All cited code matches actual dev branch current files, not search-index main or obsolete reports.",
+    "Each native optimization identifies whether the gain is JASS/CPU work reduction, draw-call/GPU work reduction, simulation reduction, allocation reduction or merely a visual-quality tradeoff.",
+    "Each higher-priority recommendation supplies a minimal backwards-compatible patch design without editing it yet.",
+    "No proposal modifies simulation or local/synchronized behavior without an explicit safety argument.",
+    "All unclear APIs, especially per-index doodad 'show'/'hide', have an executable micro-test design.",
+    "The plan includes baseline and A/B benchmark protocol, observable thresholds, rollout order and rollback path.",
+    "Any repository-generated artifact complies with AGENTS.md and World Editor export constraints."
+  ],
+  "sources": [
+    "https://github.com/ValdemarLabs/wc3-path-of-the-shaman/blob/dev/_Blizzard/common.j",
+    "https://github.com/ValdemarLabs/wc3-path-of-the-shaman/blob/dev/_Blizzard/Blizzard.j",
+    "https://github.com/ValdemarLabs/wc3-path-of-the-shaman/blob/dev/UnitSystems/UnitHider4.j",
+    "https://github.com/ValdemarLabs/wc3-path-of-the-shaman/blob/dev/_CoreSystems/Imported/DestructibleHider.j",
+    "https://us.forums.blizzard.com/en/warcraft3/t/version-300-restored-october-8/39672/1"
+  ]
+}
