@@ -2,24 +2,26 @@
     Warcraft300TestHarness
 
     Author: Valdemar
-    Version: 0.7.0
+    Version: 0.8.0
 
     Description:
     Provides explicit Warcraft III 3.0 diagnostics and resettable camera, fog,
-    and doodad probes inside the complete PotS map. No probe runs at startup.
+    doodad, and performance-candidate probes inside the complete PotS map.
 
     Credits:
 
     How to install:
-    Import CameraControl, FogSystem, DoodadRender, DoodadManager, and Ascii
-    before this library, then import this library before DebugCommands.
+    Import CameraControl, FogSystem, DoodadRender, DoodadManager,
+    DestructableHider, and Ascii before this library, then import this library
+    before DebugCommands.
 
     API:
     - Warcraft300TestHarness_Execute(player, command) -> boolean
     - /debug wc3 help
+    - /debug perf help
 
 **/
-library Warcraft300TestHarness requires CameraControl, FogSystem, DoodadRender, DoodadManager, Ascii
+library Warcraft300TestHarness requires CameraControl, FogSystem, DoodadRender, DoodadManager, DestructableHider, Ascii
     globals
         private constant string W3T_PREFIX = "|cff80dfff[WC3 3.0]|r "
         private constant string W3T_GAME_BUILD = "3.0.0.24268"
@@ -111,6 +113,17 @@ library Warcraft300TestHarness requires CameraControl, FogSystem, DoodadRender, 
         call W3T_Message(whichPlayer, "Doodads: doodads scan|cancel | doodads inspect <index> | doodads probe hide <index>|reset")
         call W3T_Message(whichPlayer, "Doodad renderer: doodads renderer status|area|indexed|on|off|refresh|reset")
         call W3T_Message(whichPlayer, "P2: effects help | minimap help")
+    endfunction
+
+    private function W3T_ShowPerformanceHelp takes player whichPlayer returns nothing
+        call W3T_Message(whichPlayer, "Performance: perf status | perf reset")
+        call W3T_Message(whichPlayer, "PERF-001: perf destructable status|candidate|control|counters on|off")
+    endfunction
+
+    private function W3T_ShowDestructablePerformance takes player whichPlayer returns nothing
+        call W3T_Message(whichPlayer, "PERF-001: variant=candidate differential, counters=" + W3T_BooleanText(DestructableHider_IsDiagnosticsEnabled()) + ".")
+        call W3T_Message(whichPlayer, "Destructable work: tiles=" + I2S(DestructableHider_GetTileCellCount()) + ", considered=" + I2S(DestructableHider_GetDestructableConsideredCount()) + ", ShowDestructable=" + I2S(DestructableHider_GetShowCallCount()) + ".")
+        call W3T_Message(whichPlayer, "Destructable updates: same-cell=" + I2S(DestructableHider_GetSameCellUpdateCount()) + ", overlap=" + I2S(DestructableHider_GetOverlappingTransitionCount()) + ", non-overlap=" + I2S(DestructableHider_GetNonOverlappingTransitionCount()) + ".")
     endfunction
 
     private function W3T_ShowCamera takes player whichPlayer returns nothing
@@ -393,7 +406,7 @@ library Warcraft300TestHarness requires CameraControl, FogSystem, DoodadRender, 
     endfunction
 
     private function W3T_ShowStatus takes player whichPlayer returns nothing
-        call W3T_Message(whichPlayer, "Harness 0.7.0 for game build " + W3T_GAME_BUILD + "; camera mouse-look is production input, while test mutations still require explicit commands.")
+        call W3T_Message(whichPlayer, "Harness 0.8.0 for game build " + W3T_GAME_BUILD + "; camera mouse-look is production input, while test mutations still require explicit commands.")
         call W3T_ShowCamera(whichPlayer)
         call W3T_ShowFog(whichPlayer)
         call W3T_ShowDoodads(whichPlayer)
@@ -442,7 +455,27 @@ library Warcraft300TestHarness requires CameraControl, FogSystem, DoodadRender, 
         local string lowerCommand = StringCase(command, false)
         local string argument
 
-        if lowerCommand == "wc3" or lowerCommand == "wc3 help" then
+        if lowerCommand == "perf" or lowerCommand == "perf help" then
+            call W3T_ShowPerformanceHelp(whichPlayer)
+        elseif lowerCommand == "perf status" or lowerCommand == "perf destructable" or lowerCommand == "perf destructable status" or lowerCommand == "perf destructible" or lowerCommand == "perf destructible status" then
+            call W3T_ShowDestructablePerformance(whichPlayer)
+        elseif lowerCommand == "perf reset" then
+            call DestructableHider_ResetDiagnostics()
+            call W3T_Message(whichPlayer, "Performance counters reset.")
+        elseif lowerCommand == "perf destructable candidate" or lowerCommand == "perf destructible candidate" then
+            call DestructableHider_SetDiagnosticsEnabled(true)
+            call DestructableHider_ResetDiagnostics()
+            call W3T_Message(whichPlayer, "PERF-001 candidate is active; counters enabled and reset.")
+        elseif lowerCommand == "perf destructable control" or lowerCommand == "perf destructible control" then
+            call W3T_Message(whichPlayer, "PERF-001 control requires a control map build and reload; runtime switching is unavailable.")
+        elseif lowerCommand == "perf destructable counters on" or lowerCommand == "perf destructible counters on" then
+            call DestructableHider_SetDiagnosticsEnabled(true)
+            call DestructableHider_ResetDiagnostics()
+            call W3T_Message(whichPlayer, "PERF-001 counters enabled and reset.")
+        elseif lowerCommand == "perf destructable counters off" or lowerCommand == "perf destructible counters off" then
+            call DestructableHider_SetDiagnosticsEnabled(false)
+            call W3T_Message(whichPlayer, "PERF-001 counters disabled.")
+        elseif lowerCommand == "wc3" or lowerCommand == "wc3 help" then
             call W3T_ShowHelp(whichPlayer)
         elseif lowerCommand == "wc3 status" then
             call W3T_ShowStatus(whichPlayer)

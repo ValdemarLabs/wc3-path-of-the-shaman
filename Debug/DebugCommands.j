@@ -864,6 +864,7 @@ library DebugCommands initializer Init requires DebugObjectRegistry, Ascii, Gath
         call DBG_Message(whichPlayer, "/debug unithider audit")
         call DBG_Message(whichPlayer, "/debug doodadrender distance <distance> (sets tiny, short, medium, and long)")
         call DBG_Message(whichPlayer, "/debug performance disable (one-way; disables 11 heavy systems every 5 seconds)")
+        call DBG_Message(whichPlayer, "/debug perf help (isolated performance-candidate counters)")
         call DBG_Message(whichPlayer, "/debug wc3 help (baseline, camera, fog, and doodad probes)")
         call DBG_Message(whichPlayer, "/debug wc3 effects help (P2 special-effect animation probes)")
         call DBG_Message(whichPlayer, "/debug wc3 minimap help (P2 native/imported minimap probes)")

@@ -4,7 +4,7 @@
 
 - **Candidate ID:** PERF-001
 - **Priority:** P0
-- **Status:** planned; performance `NOT_MEASURED`
+- **Status:** implemented; performance `NOT_MEASURED`
 - **Bundle ID:** DESTRUCTABLE-01
 - **Prerequisite:** shared benchmark protocol and candidate counters
 - **Hard dependencies:** `_CoreSystems/Imported/DestructibleHider.j`
@@ -96,4 +96,11 @@ Reject the performance candidate if work counters improve but external frame-tim
 Restore the original two `EnumGrid` calls in `ChangeTiles`, remove candidate-only helpers/counters and verify the old window behavior in a focused map and the full map.
 
 Suggested commit: `Use differential destructable visibility updates`.
+
+## Implementation record
+
+- Implemented the clamped differential-strip update in `_CoreSystems/Imported/DestructibleHider.j`.
+- Added disabled-by-default, resettable counters and `/debug perf` status/reset/candidate controls through `Debug/Warcraft300TestHarness.j`.
+- Audited active direct `ShowDestructable` calls; only Jin'Zun's plague ritual setup shows managed ritual trees directly.
+- World Editor/JassHelper, multiplayer, functional regression, and external frame-time acceptance tests remain pending.
 
