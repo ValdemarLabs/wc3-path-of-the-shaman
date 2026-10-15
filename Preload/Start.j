@@ -2,7 +2,7 @@
     Start
 
     Author: Valdemar
-    Version: 1.3.1
+    Version: 1.3.2
 
     Description:
     Runs the player start flow after a new-game mode choice or a saved-game
@@ -27,7 +27,7 @@
     call Start_ContinueAfterLoad()
 
 **/
-library Start requires ZonesCore, DInventory, DEquipment, WeatherSystem, TerrainDamage, BridgeSystem
+library Start requires ZonesCore, DInventory, DEquipment, WeatherSystem, TerrainDamage, BridgeSystem, FullscreenUI, optional CameraControl
     globals
         // Configuration
         private constant integer ST_PLAYER_ID = 0
@@ -238,17 +238,35 @@ library Start requires ZonesCore, DInventory, DEquipment, WeatherSystem, Terrain
         call SetPlayerState(Player(ST_PLAYER_ID), PLAYER_STATE_RESOURCE_GOLD, gold)
     endfunction
 
+    private function ST_EnterPlayableState takes nothing returns nothing
+        local player whichPlayer = Player(ST_PLAYER_ID)
+
+        call FullscreenUI_SetEnabled(false)
+        if ST_HasNazgrek() then
+            static if LIBRARY_CameraControl then
+                call CameraControl_SetTargetUnit(whichPlayer, udg_Nazgrek)
+                call CameraControl_PanToTarget(whichPlayer, 0.00)
+            else
+                call PanCameraToTimedForPlayer(whichPlayer, GetUnitX(udg_Nazgrek), GetUnitY(udg_Nazgrek), 0.00)
+            endif
+            call SelectUnitForPlayerSingle(udg_Nazgrek, whichPlayer)
+        endif
+        call EnableUserControl(true)
+
+        set whichPlayer = null
+    endfunction
+
     // Phase 3: start intro cinematic, then enable world systems that need player units.
     private function ST_PhaseIntroAndWorldSystems takes nothing returns nothing
         call ST_StopTimer()
 
         if not ST_RunIntroCinematic then
-            call EnableUserControl(true)
+            call ST_EnterPlayableState()
         elseif gg_trg_Intro_Cinematic_Orc_Q != null then
             call ConditionalTriggerExecute(gg_trg_Intro_Cinematic_Orc_Q)
         else
             call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, "|cffff8080Start: gg_trg_Intro_Cinematic_Orc_Q is missing.|r")
-            call EnableUserControl(true)
+            call ST_EnterPlayableState()
         endif
 
         call WeatherSystem_EnableSeasonalWeather(true)

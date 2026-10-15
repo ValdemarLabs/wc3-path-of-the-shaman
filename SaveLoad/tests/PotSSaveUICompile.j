@@ -51,6 +51,13 @@ library CameraControl
     function CameraControl_SetMouseOrbitBlockReason takes player whichPlayer, integer reason, boolean blocked returns nothing
         set whichPlayer = null
     endfunction
+    function CameraControl_SetTargetUnit takes player whichPlayer, unit whichUnit returns nothing
+        set whichPlayer = null
+        set whichUnit = null
+    endfunction
+    function CameraControl_PanToTarget takes player whichPlayer, real duration returns nothing
+        set whichPlayer = null
+    endfunction
 endlibrary
 
 library ZonesCore
