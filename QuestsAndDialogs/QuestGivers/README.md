@@ -78,9 +78,11 @@ qXXX character's custom selection handler.
 
 The canonical wanted-post unit type is `'n05N'`, exposed as
 `QuestsGenericDialog_WANTED_POST_UNIT_TYPE`. All wanted posts are preplaced in
-World Editor. Pass each exact generated unit handle to
-`QuestsGenericDialog_RegisterWantedPost`; the system neither creates posts nor
-discovers them by rawcode, and the function ignores units of another type.
+World Editor. Individual authored boards may pass an exact generated handle to
+`QuestsGenericDialog_RegisterWantedPost`; the function ignores units of another
+type. `WantedPosts.j` instead discovers all preplaced `'n05N'` units and
+classifies them by their most-specific `ZonesCore` zone. Neither path creates
+signs.
 Keep `RegisterNoticeBoard` for any other sign model.
 
 If a generic quest belongs in an existing custom NPC dialog, register the unit
@@ -94,9 +96,11 @@ Notice-board quests normally turn in elsewhere. After creating the definition,
 bind it to its exact preplaced post with `QuestsGeneric_SetGiverUnit` before
 registering any wanted posts. This prevents different `'n05N'` signs from
 sharing every wanted-post definition merely because they use the same unit
-type. Then call `QuestsGeneric_SetReceiverUnit` for an exact placed NPC or
-`QuestsGeneric_SetReceiverUnitType` for a unique unit type, then optionally
-configure its completion line with `QuestsGeneric_SetReceiverDialogue`.
+type. Every board is a distinct giver; definitions and state are never
+inherited from another sign. Then call `QuestsGeneric_SetReceiverUnit` for an
+exact placed NPC or `QuestsGeneric_SetReceiverUnitType` for a unique unit type,
+then optionally configure its completion line with
+`QuestsGeneric_SetReceiverDialogue`.
 Register the receiver before or alongside the board. The quest is not
 instantiated until its giver, receiver, and any Find target are available, so a
 missing placed unit cannot produce a quest that has no valid completion path.
@@ -126,25 +130,43 @@ share a type.
 ### Regional wanted posts
 
 `WantedPosts.j` contains **draft, unapproved content**: three candidate quests
-for each requested Horde posting. The library does not register them
-automatically. Do not call a `WantedPosts_Register...` function in the
-production map until that post's quest set has completed the review gate below.
+for each requested Horde posting. It automatically discovers every preplaced
+`'n05N'` unit, resolves the most-specific zone at the sign's coordinates through
+`ZonesCore_GetZoneIdAtPoint`, and registers its notice-board dialog. Quest
+definitions remain inactive until the matching `WantedPosts_Configure...`
+function is called after content approval.
 
 | Preplaced post | Quest set |
 |---|---|
 | Mok'natha, Sirensong | Raiders of Zul'Garok; Serpentshore Patrol; Songs Beneath the Surf |
 | Ironspine Post, Ghostwalk Ridge | Antlers in the Fog; Ichor for Ironspine; Lost Beyond the Watchfires |
-| Horde mountain camp, Sereneglade | Scales and Stingers; Frenzy Below the Camp; Lost on the North Slope |
+| Horde mountain camp `201`, Sereneglade | Scales and Stingers; Frenzy Below the Camp; Lost on the North Slope |
 | Horde Scout Base, Thornwoods | Tidecallers at the Ford; Stolen Scout Supplies; The Road to the Scout Base |
 
-Call the matching `WantedPosts_Register...` function with the exact preplaced
-`'n05N'` post, its remote receiver, and the optional preplaced missing-person
-target. The two local daily/repeatable jobs are always created; the one-time
-Find quest is omitted when its target is null. Pass
+Every wanted sign is a unique exact giver. `ZonesCore` classifies the sign by
+its placed location and validates which regional draft package may be assigned,
+but it never merges signs or their quest state. A sign in a child zone uses
+that child instead of its parent. Multiple signs in the same zone or subzone
+must each be authored and configured separately, and may have entirely
+different quest lists.
+
+Call the matching `WantedPosts_Configure...` function with the exact preplaced
+wanted-sign handle, remote receiver, and optional preplaced missing-person
+target. Auto-discovery registers the sign's dialog but does not assign a quest
+package by zone alone. The two local daily/repeatable jobs in the selected
+draft package are always created; the one-time Find quest is omitted when its
+target is null. Pass
 `registerReceiverDialog = true` only for a generic receiver with no existing
 selection handler. When it is false, the function registers quest state but
 the receiver's bespoke qXXX dialog must add and route the shared
 `QuestsGeneric` buttons.
+
+Signs in zones without a configured quest package still receive the generic
+notice-board interaction but show no quest choices. This allows posts to be
+placed before their regional content is authored. `WantedPosts_GetSignCountForZone`
+reports how many signs were found in a zone, while
+`WantedPosts_GetSignZoneId` and `WantedPosts_IsRegisteredSign` expose each
+exact sign's resolved registration for focused tests and setup diagnostics.
 
 #### Wanted-post draft review gate
 
@@ -165,15 +187,15 @@ World Editor area and decide:
 - whether reputation, gold, level requirements, save/load state, and daily
   reset behavior fit the zone's progression;
 - how exact missing-person targets behave when dead, hidden, moved, or absent;
-- whether accepting quests from more than one post may safely share progress
-  against the same unit types or items.
+- whether independent quests accepted from more than one post may safely count
+  progress against the same unit types or items.
 
 If those decisions require prerequisites, per-post availability, rotation, or
 stronger receiver ownership, design the shared quest-system API first. Do not
 encode a one-location workaround into `WantedPosts.j`. After approval, update
 the implementation ledger from **Draft** to **Implemented**, add the exact WE
-post/receiver/target handles, and validate the focused flow and full map through
-World Editor/JassHelper.
+post/receiver/target handles, and validate the focused flow and full map
+through World Editor/JassHelper.
 
 For an autonomous Escort objective, use the shared QuestsVendor escort adapter
 even when the giver is not a shop. EscortMovement sends the NPC toward its

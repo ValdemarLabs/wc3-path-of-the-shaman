@@ -2,41 +2,161 @@
     WantedPosts
 
     Author: Valdemar
-    Version: 1.0.1
+    Version: 1.2.0
     Status: Draft content - to be revisited and refined by zone and quest overall design.
 
     Description:
-    Defines draft regional quest sets for the preplaced wanted posts at
-    Mok'natha, Ironspine Post, the Sereneglade Horde mountain camp, and the
-    Thornwoods Horde Scout Base. Every definition binds to one exact
-    wanted-post unit and turns in at a separate preplaced receiver. The quest
-    names, objectives, counts, rewards, cadence, and receivers remain subject
-    to location-led design review.
+    Automatically discovers every preplaced wanted sign, resolves its most
+    specific ZonesCore zone, and registers its standalone dialog. Every sign
+    remains a unique exact giver and owns its quest definitions and state.
+    Draft regional quest sets are supplied for Mok'natha, Ironspine Post, the
+    Sereneglade Horde mountain camp, and the Thornwoods Horde Scout Base; all
+    turn in at separate preplaced receivers and remain subject to location-led
+    design review.
 
     Credits:
 
     How to install:
-    Import after QuestsGenericDialog and Table. Do not call these draft
-    registration functions in the production map until the regional quest set
-    has been reviewed and approved. In World Editor, preplace one 'n05N'
-    wanted post, one receiver, and the optional missing-person target for each
-    approved location. Call the matching registration function after generated
-    unit globals exist. Pass true for registerReceiverDialog only when the
-    receiver has no bespoke qXXX selection handler; custom dialogs must embed
-    the QuestsGeneric button/action lifecycle themselves.
+    Import after QuestsGenericDialog, ZonesCore, and Table. Preplace any number
+    of 'n05N' signs inside configured zone/subzone rects; discovery is
+    automatic. Do not call the draft configuration functions in the production
+    map until the regional content has been reviewed and approved. Supply the
+    exact wanted sign, remote receiver, and optional missing-person target
+    after generated unit globals exist. The sign's resolved zone validates the
+    selected regional package but never merges it with another sign. Pass true
+    for registerReceiverDialog only when the receiver has no bespoke qXXX
+    selection handler; custom dialogs must embed the QuestsGeneric
+    button/action lifecycle themselves.
 
     API:
-    - WantedPosts_RegisterMoknatha(...)
-    - WantedPosts_RegisterIronspine(...)
-    - WantedPosts_RegisterSerenegladeMountainCamp(...)
-    - WantedPosts_RegisterThornwoodsScoutBase(...)
+    - WantedPosts_AutoRegisterPreplacedSigns()
+    - WantedPosts_GetSignCountForZone(zoneId)
+    - WantedPosts_GetSignZoneId(wantedPost)
+    - WantedPosts_IsRegisteredSign(wantedPost)
+    - WantedPosts_ConfigureMoknatha(...)
+    - WantedPosts_ConfigureIronspine(...)
+    - WantedPosts_ConfigureSerenegladeMountainCamp(...)
+    - WantedPosts_ConfigureThornwoodsScoutBase(...)
 
 **/
-library WantedPosts initializer Init requires QuestsGenericDialog, Table
+library WantedPosts initializer Init requires QuestsGenericDialog, ZonesCore, Table
     globals
-        // Prevents duplicate definitions when map setup is invoked twice.
-        private Table RegisteredPost = 0
+        private constant integer MAX_WANTED_SIGNS = 256
+        private constant string WANTED_POST_NAME = "Wanted Post"
+        private constant integer ZONE_SERENGLADE_MOUNTAIN_CAMP = 201
+        private constant integer ZONE_MOKNATHA = 1401
+        private constant integer ZONE_IRONSPINE_POST = 1901
+        private constant integer ZONE_HORDE_SCOUT_BASE = 8810
+
+        private Table DiscoveredSign = 0
+        private Table SignZone = 0
+        private Table SignCountByZone = 0
+        private Table ConfiguredSign = 0
+        private unit array WantedSign
+        private integer WantedSignCount = 0
+        private boolean SignsScanned = false
     endglobals
+
+    private function DiscoverSign takes unit wantedPost returns nothing
+        local integer handleId
+        local integer zoneId
+
+        if wantedPost == null or GetUnitTypeId(wantedPost) != QuestsGenericDialog_WANTED_POST_UNIT_TYPE then
+            set wantedPost = null
+            return
+        endif
+        set handleId = GetHandleId(wantedPost)
+        if DiscoveredSign.boolean[handleId] or WantedSignCount >= MAX_WANTED_SIGNS then
+            set wantedPost = null
+            return
+        endif
+        set zoneId = ZonesCore_GetZoneIdAtPoint(GetUnitX(wantedPost), GetUnitY(wantedPost))
+        set DiscoveredSign.boolean[handleId] = true
+        set SignZone.integer[handleId] = zoneId
+        set WantedSignCount = WantedSignCount + 1
+        set WantedSign[WantedSignCount] = wantedPost
+        if zoneId > 0 then
+            set SignCountByZone.integer[zoneId] = SignCountByZone.integer[zoneId] + 1
+        endif
+        set wantedPost = null
+    endfunction
+
+    private function FinalizeSigns takes nothing returns nothing
+        local integer index = 1
+        local unit wantedPost
+
+        loop
+            exitwhen index > WantedSignCount
+            set wantedPost = WantedSign[index]
+            call QuestsGenericDialog_RegisterWantedPost(wantedPost, WANTED_POST_NAME)
+            set index = index + 1
+        endloop
+        set wantedPost = null
+    endfunction
+
+    private function ScanPreplacedSigns takes nothing returns nothing
+        local group worldUnits
+        local rect worldBounds
+        local unit enumUnit
+
+        if SignsScanned then
+            set worldUnits = null
+            set worldBounds = null
+            set enumUnit = null
+            return
+        endif
+        set SignsScanned = true
+        set worldUnits = CreateGroup()
+        set worldBounds = GetWorldBounds()
+        call GroupEnumUnitsInRect(worldUnits, worldBounds, null)
+        loop
+            set enumUnit = FirstOfGroup(worldUnits)
+            exitwhen enumUnit == null
+            call GroupRemoveUnit(worldUnits, enumUnit)
+            call DiscoverSign(enumUnit)
+        endloop
+        call FinalizeSigns()
+        call DestroyGroup(worldUnits)
+        call RemoveRect(worldBounds)
+        set worldUnits = null
+        set worldBounds = null
+        set enumUnit = null
+    endfunction
+
+    public function AutoRegisterPreplacedSigns takes nothing returns nothing
+        call ScanPreplacedSigns()
+    endfunction
+
+    public function GetSignCountForZone takes integer zoneId returns integer
+        call ScanPreplacedSigns()
+        return SignCountByZone.integer[zoneId]
+    endfunction
+
+    public function GetSignZoneId takes unit wantedPost returns integer
+        local integer zoneId
+
+        call ScanPreplacedSigns()
+        if wantedPost == null then
+            set wantedPost = null
+            return 0
+        endif
+        set zoneId = SignZone.integer[GetHandleId(wantedPost)]
+        set wantedPost = null
+        return zoneId
+    endfunction
+
+    public function IsRegisteredSign takes unit wantedPost returns boolean
+        local boolean isRegistered
+
+        call ScanPreplacedSigns()
+        if wantedPost == null then
+            set wantedPost = null
+            return false
+        endif
+        set isRegistered = DiscoveredSign.boolean[GetHandleId(wantedPost)]
+        set wantedPost = null
+        return isRegistered
+    endfunction
 
     private function ResolveName takes unit whichUnit, string configuredName returns string
         if configuredName != null and configuredName != "" then
@@ -50,21 +170,22 @@ library WantedPosts initializer Init requires QuestsGenericDialog, Table
         return configuredName
     endfunction
 
-    private function CanRegister takes unit wantedPost, unit receiver returns boolean
+    private function CanConfigureSign takes unit wantedPost, integer expectedZoneId, unit receiver returns boolean
         local integer handleId
 
-        if wantedPost == null or receiver == null or wantedPost == receiver or GetUnitTypeId(wantedPost) != QuestsGenericDialog_WANTED_POST_UNIT_TYPE then
+        call ScanPreplacedSigns()
+        if wantedPost == null or receiver == null or wantedPost == receiver then
             set wantedPost = null
             set receiver = null
             return false
         endif
         set handleId = GetHandleId(wantedPost)
-        if RegisteredPost.boolean[handleId] then
+        if GetUnitTypeId(wantedPost) != QuestsGenericDialog_WANTED_POST_UNIT_TYPE or not DiscoveredSign.boolean[handleId] or SignZone.integer[handleId] != expectedZoneId or ConfiguredSign.boolean[handleId] then
             set wantedPost = null
             set receiver = null
             return false
         endif
-        set RegisteredPost.boolean[handleId] = true
+        set ConfiguredSign.boolean[handleId] = true
         set wantedPost = null
         set receiver = null
         return true
@@ -93,16 +214,16 @@ library WantedPosts initializer Init requires QuestsGenericDialog, Table
         else
             call QuestsGeneric_RegisterUnit(receiver, receiverName)
         endif
-        call QuestsGenericDialog_RegisterWantedPost(wantedPost, "Wanted Post")
+        call QuestsGeneric_RegisterUnit(wantedPost, WANTED_POST_NAME)
         set wantedPost = null
         set receiver = null
         set missingPerson = null
     endfunction
 
-    public function RegisterMoknatha takes unit wantedPost, unit receiver, string receiverName, unit missingScout, string missingScoutName, boolean registerReceiverDialog returns nothing
+    public function ConfigureMoknatha takes unit wantedPost, unit receiver, string receiverName, unit missingScout, string missingScoutName, boolean registerReceiverDialog returns nothing
         local integer definitionId
 
-        if not CanRegister(wantedPost, receiver) then
+        if not CanConfigureSign(wantedPost, ZONE_MOKNATHA, receiver) then
             set wantedPost = null
             set receiver = null
             set missingScout = null
@@ -142,10 +263,10 @@ library WantedPosts initializer Init requires QuestsGenericDialog, Table
         set missingScout = null
     endfunction
 
-    public function RegisterIronspine takes unit wantedPost, unit receiver, string receiverName, unit missingWatcher, string missingWatcherName, boolean registerReceiverDialog returns nothing
+    public function ConfigureIronspine takes unit wantedPost, unit receiver, string receiverName, unit missingWatcher, string missingWatcherName, boolean registerReceiverDialog returns nothing
         local integer definitionId
 
-        if not CanRegister(wantedPost, receiver) then
+        if not CanConfigureSign(wantedPost, ZONE_IRONSPINE_POST, receiver) then
             set wantedPost = null
             set receiver = null
             set missingWatcher = null
@@ -173,10 +294,10 @@ library WantedPosts initializer Init requires QuestsGenericDialog, Table
         set missingWatcher = null
     endfunction
 
-    public function RegisterSerenegladeMountainCamp takes unit wantedPost, unit receiver, string receiverName, unit missingScout, string missingScoutName, boolean registerReceiverDialog returns nothing
+    public function ConfigureSerenegladeMountainCamp takes unit wantedPost, unit receiver, string receiverName, unit missingScout, string missingScoutName, boolean registerReceiverDialog returns nothing
         local integer definitionId
 
-        if not CanRegister(wantedPost, receiver) then
+        if not CanConfigureSign(wantedPost, ZONE_SERENGLADE_MOUNTAIN_CAMP, receiver) then
             set wantedPost = null
             set receiver = null
             set missingScout = null
@@ -205,10 +326,10 @@ library WantedPosts initializer Init requires QuestsGenericDialog, Table
         set missingScout = null
     endfunction
 
-    public function RegisterThornwoodsScoutBase takes unit wantedPost, unit receiver, string receiverName, unit missingCourier, string missingCourierName, boolean registerReceiverDialog returns nothing
+    public function ConfigureThornwoodsScoutBase takes unit wantedPost, unit receiver, string receiverName, unit missingCourier, string missingCourierName, boolean registerReceiverDialog returns nothing
         local integer definitionId
 
-        if not CanRegister(wantedPost, receiver) then
+        if not CanConfigureSign(wantedPost, ZONE_HORDE_SCOUT_BASE, receiver) then
             set wantedPost = null
             set receiver = null
             set missingCourier = null
@@ -244,7 +365,22 @@ library WantedPosts initializer Init requires QuestsGenericDialog, Table
         set missingCourier = null
     endfunction
 
+    private function InitDelayed takes nothing returns nothing
+        local timer expiredTimer = GetExpiredTimer()
+
+        call ScanPreplacedSigns()
+        call DestroyTimer(expiredTimer)
+        set expiredTimer = null
+    endfunction
+
     private function Init takes nothing returns nothing
-        set RegisteredPost = Table.create()
+        local timer initTimer = CreateTimer()
+
+        set DiscoveredSign = Table.create()
+        set SignZone = Table.create()
+        set SignCountByZone = Table.create()
+        set ConfiguredSign = Table.create()
+        call TimerStart(initTimer, 0.00, false, function InitDelayed)
+        set initTimer = null
     endfunction
 endlibrary

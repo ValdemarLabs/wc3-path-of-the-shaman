@@ -2,7 +2,7 @@
     ZonesCore
 
     Author: Valdemar
-    Version: 1.2.0
+    Version: 1.3.0
 
     Description:
     Defines authoritative zone metadata, lookup state, weather configuration,
@@ -678,6 +678,34 @@ private function ConfigureZones takes nothing returns nothing
     call z.addFishRect(gg_rct_Fish0021)
     call z.addFishRect(gg_rct_Fish0022)
     call z.addFishRect(gg_rct_Fish0023)
+    call RegisterZone(z)
+
+    // Zone 0201: Horde Mountain Camp
+    set z = ZoneData.create(201, "Horde Mountain Camp")
+    set z.musicTrack = 9
+    set z.dncName = "Outdoors"
+    set z.environmentType = "Forest, Mountainous Settlement"
+    set z.fogDay[0] = 500.0
+    set z.fogDay[1] = 5000.0
+    set z.fogDay[2] = 75.0
+    set z.fogDay[3] = 75.0
+    set z.fogDay[4] = 75.0
+    set z.fogNight[0] = 500.0
+    set z.fogNight[1] = 5000.0
+    set z.fogNight[2] = 15.0
+    set z.fogNight[3] = 15.0
+    set z.fogNight[4] = 50.0
+    set z.ambientDaySound = "gg_snd_Ambient_ForestDay"
+    set z.ambientNightSound = "gg_snd_Ambient_ForestNight"
+    set z.ambientRegion = "02SereneGlade"
+    set z.questDescription = "A fortified Horde mountain camp overlooking southern Sereneglade."
+    call z.setLevelRange(1, 9)
+    set z.factions = "Horde"
+    set z.notableEntities = "Salamander, Snake, Frenzy, Gnoll"
+    set z.notableCharacters = "Ragno"
+    set z.iconPath = "zones\\zone02_sereneglade.blp"
+    call z.setParentZone(2)
+    call z.addEnterRegion(gg_rct_HordeMountainCamp)
     call RegisterZone(z)
     
     // Zone 03: Emberpeak Highlands
@@ -2438,11 +2466,26 @@ public function GetEffectiveZoneRewardLevel takes integer zoneId returns integer
     return (minLevel + maxLevel) / 2
 endfunction
 
+private function GetZoneDepth takes integer zoneId returns integer
+    local integer depth = 0
+    local ZoneData z
+
+    loop
+        exitwhen zoneId <= 0 or depth >= 16
+        set z = GetZoneData(zoneId)
+        exitwhen z == 0 or z.parentZoneId <= 0
+        set zoneId = z.parentZoneId
+        set depth = depth + 1
+    endloop
+    return depth
+endfunction
+
 public function GetZoneIdAtPoint takes real x, real y returns integer
     local integer i = 0
     local integer rectIndex
     local integer bestZoneId = 0
-    local boolean bestIsChild = false
+    local integer bestZoneDepth = -1
+    local integer candidateDepth
     local ZoneData z
     local rect r
 
@@ -2455,9 +2498,10 @@ public function GetZoneIdAtPoint takes real x, real y returns integer
                 exitwhen rectIndex >= z.enterRegionCount
                 set r = z.enterRegions[rectIndex]
                 if r != null and RectContainsCoords(r, x, y) then
-                    if not bestIsChild or z.parentZoneId > 0 then
+                    set candidateDepth = GetZoneDepth(z.zoneId)
+                    if candidateDepth > bestZoneDepth then
                         set bestZoneId = z.zoneId
-                        set bestIsChild = z.parentZoneId > 0
+                        set bestZoneDepth = candidateDepth
                     endif
                     set rectIndex = z.enterRegionCount
                 endif

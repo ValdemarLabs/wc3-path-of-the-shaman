@@ -152,7 +152,7 @@ Valeria and other characters still have unexported GUI triggers in the map. Reco
 
 | Level band | Zone IDs and hubs | Narrative and quest use |
 |---|---|---|
-| 1–9 | Sereneglade `2`, Twilight Grove `1` | Act I-A Nazgrek intro, Ragno, Jin'Zun, Kribugs, early Horde contact, wildlife and local-threat quests |
+| 1–9 | Sereneglade `2`, Horde Mountain Camp `201`, Twilight Grove `1` | Act I-A Nazgrek intro, Ragno, Jin'Zun, Kribugs, early Horde contact, wildlife and local-threat quests |
 | 1–10 | Thornwoods `6`, Stonetooth Camp `601`, Bloodtusk Tribe `602`, Horde Scout Base `8810` | Chieftain Thork, Granis, Garthork, Rol'jin, murloc and gnoll pressure, Horde acceptance |
 | 1–5 | Bramblehide Village `701` | Bloodtusk forest-troll village in Havenwoods; Zul'kis rescues Zul'karak here during the parallel prologue |
 | 5–15 | Havenwoods `7`, Bonecrush Stronghold `8`, Riverbane `10`, inns/cellars `12010`–`12021` | Alliance/Ogre/Bonecrusher relations, patrols, trade, and faction consequences |
@@ -247,16 +247,19 @@ defer creation until that receiver and any Find target exist, and combine up
 to seven Kill, Fetch, Talk, or proximity-Find objectives. Shared requirement
 completion now reaches ready-for-turn-in only after every authored objective
 is complete. Wanted posts are preplaced World Editor units of canonical type
-`'n05N'`, exposed by `QuestsGenericDialog_WANTED_POST_UNIT_TYPE`; they are
-registered by exact handle and are never spawned or discovered by rawcode.
-Definitions can bind to one exact giver unit so multiple posts of the same type
-do not inherit one another's quest lists. The focused registration helper
-rejects other unit types. `QuestsGeneric_testing.j` contains a wanted-post
-harness with a remote receiver and combined kill/gather/find objectives.
+`'n05N'`, exposed by `QuestsGenericDialog_WANTED_POST_UNIT_TYPE`; they are never
+spawned by the quest system. `WantedPosts.j` discovers every preplaced sign,
+resolves its most-specific zone through `ZonesCore_GetZoneIdAtPoint`, and
+registers its notice-board interaction. Every sign remains a unique exact giver
+with separately bound definitions and quest state. Zone and subzone identity
+classify and validate a regional package but never merge signs; multiple signs
+inside one subzone may therefore carry different postings.
+`QuestsGeneric_testing.j` contains a wanted-post harness with a remote receiver
+and combined kill/gather/find objectives.
 
 Actual pure non-vendor quest content remains planned until the exact placed
-NPC identity, preplaced wanted-post handle, receiver, faction, zone, and active
-GUI ownership are selected in World Editor. Type-based receiver/Find lookup
+NPC identity, wanted-post zone/subzone, receiver, faction, and active GUI
+ownership are selected in World Editor. Type-based receiver/Find lookup
 requires a unique unit type; shared rawcodes must use exact placed-unit
 registration.
 
@@ -587,20 +590,20 @@ These are candidates, not promises. Before implementation, search the vendor REA
 
 “Existing generic WE role” means a suitable guard, scout, hunter, worker, vendor, or resident is expected in the map but its exact placed instance must be selected in World Editor. “New” means the NPC may be created if no existing unit fits.
 
-The twelve entries backed by `QuestGivers/WantedPosts.j` are **Draft JASS definitions**, not approved or integrated quests. Their post location and current surrounding zone must drive the final portfolio. Review local targets and drops, density and respawn feasibility, travel distance, exact remote receiver and missing-person ownership, repetition cadence, prerequisites/rotation, cross-quest overlap, rewards/progression, save/reset behavior, and shared-target progress before any `WantedPosts_Register...` call is added to the production map. If that review exposes a need for per-post availability, prerequisites, rotating offers, or stronger receiver ownership, design the shared quest API before approving the content.
+The twelve entries backed by `QuestGivers/WantedPosts.j` are **Draft JASS definitions**, not approved or integrated quests. Their exact post location and current surrounding zone must drive the final portfolio. Preplaced `'n05N'` signs are discovered automatically, but every sign owns separate definitions and state even when several resolve to one zone; the quest definitions remain inactive until the matching `WantedPosts_Configure...` call supplies that exact sign and its remote actors. Review local targets and drops, density and respawn feasibility, travel distance, exact remote receiver and missing-person ownership, repetition cadence, prerequisites/rotation, cross-quest overlap, rewards/progression, save/reset behavior, and overlapping-target progress before any configuration call is added to the production map. If that review exposes a need for per-post availability, prerequisites, rotating offers, or stronger receiver ownership, design the shared quest API before approving the content.
 
 ### Sereneglade and Twilight Grove
 
 | Plan ID | Working title | Type + category | Giver | Objective location | Connection |
 |---|---|---|---|---|---|
 | GQ-001 | Lake Without Ripples | Normal | Existing fisher or new Sereneglade net-mender | Sereneglade lake | Investigate poisoned fish and refer the player to Jin'Zun; early environmental foreshadowing. |
-| GQ-002 | Scales and Stingers | Daily | Sereneglade mountain-camp wanted post | Sereneglade slopes | **Draft JASS definition; not approved or WE-integrated.** Kill six Salamander Hatchlings `n02K` and turn in four Shed Snake Scales `j0b0` to a separate preplaced receiver. |
+| GQ-002 | Scales and Stingers | Daily | Sereneglade mountain-camp wanted post `201` | Sereneglade slopes | **Draft JASS definition; not approved or WE-integrated.** Kill six Salamander Hatchlings `n02K` and turn in four Shed Snake Scales `j0b0` to a separate preplaced receiver. |
 | GQ-003 | Shoreline Provisions | Repeatable | Existing cook/vendor | Sereneglade shore | Turn in common meat or shellfish; check vendor quests first. |
 | GQ-004 | Roots That Remember | Normal | New Twilight spirit tender | Twilight Grove ancient trees | Place wards or listen at roots; hints that beasts are reacting to distant corruption. |
 | GQ-005 | Predators in the Mist | Daily | Existing Grove sentinel | Twilight Grove wolf/bear areas | Rescue travelers or kill marked predators without targeting Shadowclaw's pack identity. |
 | GQ-006 | Twilight Samples | Repeatable | Existing herbalist | Twilight Grove | Gather non-unique samples used by Garthork/Jin'Zun research. |
-| GQ-052 | Frenzy Below the Camp | Daily | Sereneglade mountain-camp wanted post | Lower Sereneglade water | **Draft JASS definition; not approved or WE-integrated.** Kill eight level-3 Frenzy `n62G`; turn in at the post's remote receiver. |
-| GQ-053 | Lost on the North Slope | Normal | Sereneglade mountain-camp wanted post | Mountain camp north slope | **Draft JASS definition; not approved or WE-integrated.** Kill four Salamander Hatchlings `n02K`, find one exact preplaced missing scout, and report elsewhere. |
+| GQ-052 | Frenzy Below the Camp | Daily | Sereneglade mountain-camp wanted post `201` | Lower Sereneglade water | **Draft JASS definition; not approved or WE-integrated.** Kill eight level-3 Frenzy `n62G`; turn in at the post's remote receiver. |
+| GQ-053 | Lost on the North Slope | Normal | Sereneglade mountain-camp wanted post `201` | Mountain camp north slope | **Draft JASS definition; not approved or WE-integrated.** Kill four Salamander Hatchlings `n02K`, find one exact preplaced missing scout, and report elsewhere. |
 | GQ-017 | Wolf Hunt I–III | Normal + Story chain | Nazgrek (self-discovered) | Sereneglade / `gg_rct_WolfAttack` / Wolf Den `12111` | Promoted into Act I-A, Nazgrek's intro. Wolf Hunt I is initially unavailable and undiscovered; after the intro returns control, two spawned Timber Wolves `nwlt` attack Nazgrek from `gg_rct_WolfAttack`, causing discovery. Wolf Hunt I and the interposed Nazgrek's Flask quest are implemented in `qNazgrek`; Wolf Hunt II targets Wolf Mother `n648`, and optional Wolf Hunt III crafts the Shamanic Cowl once its trophy and recipe objects are defined. |
 
 ### Thornwoods and Gnoll Hideout
