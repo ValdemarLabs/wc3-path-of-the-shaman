@@ -26,8 +26,8 @@
 /_WC3Rebirth/Assets/
 
 # WC3 FK scripts as inspiration
-/_ForgottenHollow/
-/_ForgottenHollowUI/
+/DungeonsAndBosses/_ForgottenHollow/
+/UI/_ForgottenHollowUI/
 
 # Dynamic Minimap
 /DynamicMinimap/war3mapBLP/
