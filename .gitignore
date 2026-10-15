@@ -25,6 +25,10 @@
 # WC3 Rebirth Mod - Large Assets
 /_WC3Rebirth/Assets/
 
+# WC3 FK scripts as inspiration
+/_ForgottenHollow/
+/_ForgottenHollowUI/
+
 # Dynamic Minimap
 /DynamicMinimap/war3mapBLP/
 /DynamicMinimap/war3mapImported_256x256/
