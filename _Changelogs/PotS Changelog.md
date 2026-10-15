@@ -18,6 +18,17 @@
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
 
+## [16.10.2026]
+
+### Technical Updates
+
+- Added the `_developer/PerformanceImprovements/` implementation-plan set, splitting the Warcraft III DE performance audit into independent benchmark-gated plans with shared dependency bundles, regression tests, acceptance criteria, and rollback procedures. No gameplay source or functionality was changed.
+
+### Actions Remaining
+
+- Establish the external frame-time capture baseline, then implement and measure one performance candidate at a time in the documented rollout order. Update hard-coupled systems in the same atomic bundle and reject any candidate that does not meet its isolated performance and correctness gates.
+
+
 ## [15.10.2026]
 
 ### Technical Updates
