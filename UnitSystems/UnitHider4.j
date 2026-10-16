@@ -2,7 +2,7 @@
     UnitHider
 
     Author: Valdemar
-    Version: 4.11.0
+    Version: 4.11.1
 
     Description:
     Hides the ordinary map population outside tracked-unit reveal ranges.
@@ -140,19 +140,24 @@ private function IsManagedHidden takes unit whichUnit returns boolean
     return managedHidden.boolean[GetHandleId(whichUnit)]
 endfunction
 
+private function CopyGroupFast takes group sourceGroup, group destinationGroup returns nothing
+    // The native's destination/source order is the reverse of GroupAddGroup.
+    call BlzGroupAddGroupFast(destinationGroup, sourceGroup)
+endfunction
+
 private function PrepareWorldScan takes nothing returns nothing
     // This disposable group is the authoritative v1-style visible-world pass.
     // Never traverse the persistent known group while changing visibility.
     call GroupClear(worldScanUnits)
     call GroupEnumUnitsInRect(worldScanUnits, mapBounds, null)
-    call GroupAddGroup(worldScanUnits, knownUnits)
+    call CopyGroupFast(worldScanUnits, knownUnits)
 endfunction
 
 private function PrepareInventoryScan takes nothing returns nothing
     // Debug inventory may include units currently hidden by another system.
     // It is diagnostic only and is never the normal hiding traversal.
     call PrepareWorldScan()
-    call GroupAddGroup(knownUnits, worldScanUnits)
+    call CopyGroupFast(knownUnits, worldScanUnits)
 endfunction
 
 private function IsLegacyCompanionReference takes unit whichUnit returns boolean
@@ -306,7 +311,7 @@ private function RevalidateAutomaticReferences takes nothing returns nothing
     // Party membership can change without creating, killing, or transferring
     // the unit. Revalidate only the small revealer set, never unit inventory.
     call GroupClear(automaticReferenceScan)
-    call GroupAddGroup(automaticReferences, automaticReferenceScan)
+    call CopyGroupFast(automaticReferences, automaticReferenceScan)
     loop
         set whichUnit = FirstOfGroup(automaticReferenceScan)
         exitwhen whichUnit == null
@@ -333,15 +338,15 @@ private function UpdateReferenceCache takes nothing returns nothing
         // During a cinematic only the active scene and explicit scripted
         // references reveal surrounding population. Automatic references stay
         // protected themselves without keeping unrelated map areas active.
-        call GroupAddGroup(cinematicReferences, referenceCacheGroup)
+        call CopyGroupFast(cinematicReferences, referenceCacheGroup)
         if cinematicSceneReference != null then
             call GroupAddUnit(referenceCacheGroup, cinematicSceneReference)
         endif
-        call GroupAddGroup(registeredReferences, referenceCacheGroup)
+        call CopyGroupFast(registeredReferences, referenceCacheGroup)
     endif
     if cinematicDepth == 0 or BlzGroupGetSize(referenceCacheGroup) == 0 then
-        call GroupAddGroup(automaticReferences, referenceCacheGroup)
-        call GroupAddGroup(registeredReferences, referenceCacheGroup)
+        call CopyGroupFast(automaticReferences, referenceCacheGroup)
+        call CopyGroupFast(registeredReferences, referenceCacheGroup)
         call AddPartyReferences(udg_Companion_Group)
         call AddPartyReferences(udg_TamedUnits)
         // The legacy group often contains obsolete NPC/dummy entries. Only its
@@ -363,8 +368,8 @@ private function RefreshAutomaticReferences takes nothing returns nothing
     // snapshot. This keeps ownership/death changes current without walking the
     // entire persistent inventory.
     call GroupClear(automaticReferenceScan)
-    call GroupAddGroup(automaticReferences, automaticReferenceScan)
-    call GroupAddGroup(worldScanUnits, automaticReferenceScan)
+    call CopyGroupFast(automaticReferences, automaticReferenceScan)
+    call CopyGroupFast(worldScanUnits, automaticReferenceScan)
     loop
         set whichUnit = FirstOfGroup(automaticReferenceScan)
         exitwhen whichUnit == null
@@ -573,7 +578,7 @@ private function ReconcileManagedHiddenVisibility takes nothing returns nothing
     set lastManagedVisibilityChecked = 0
     set lastManagedVisibilityRepaired = 0
     call GroupClear(worldScanUnits)
-    call GroupAddGroup(hiddenUnits, worldScanUnits)
+    call CopyGroupFast(hiddenUnits, worldScanUnits)
     loop
         set whichUnit = FirstOfGroup(worldScanUnits)
         exitwhen whichUnit == null
@@ -689,7 +694,7 @@ private function ReclassifyVisibleUnits takes nothing returns nothing
     local unit whichUnit
 
     call GroupClear(visibleScanUnits)
-    call GroupAddGroup(visibleUnits, visibleScanUnits)
+    call CopyGroupFast(visibleUnits, visibleScanUnits)
     loop
         set whichUnit = FirstOfGroup(visibleScanUnits)
         exitwhen whichUnit == null

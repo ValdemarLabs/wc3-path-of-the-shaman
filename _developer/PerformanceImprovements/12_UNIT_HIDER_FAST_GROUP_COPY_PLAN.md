@@ -4,7 +4,7 @@
 
 - **Candidate ID:** PERF-003
 - **Priority:** P1
-- **Status:** planned; performance `NOT_MEASURED`
+- **Status:** implemented; performance `NOT_MEASURED`
 - **Bundle ID:** UNIT-HIDER-01
 - **Prerequisite:** fast-group semantic micro-test
 - **Hard dependencies:** `UnitSystems/UnitHider4.j`, active `common.j` signature
@@ -75,4 +75,11 @@ Do not depend on aliasing if the test shows undefined or version-specific behavi
 Replace the private fast helper calls with their original `GroupAddGroup(source, destination)` calls and remove candidate diagnostics. Re-run bootstrap and cinematic visibility tests.
 
 Suggested commit: `Use native fast group copies in UnitHider`.
+
+## Implementation record
+
+- Added the private source-to-destination `CopyGroupFast` helper in `UnitSystems/UnitHider4.j`; it reverses arguments only at the native boundary for `BlzGroupAddGroupFast(destinationGroup, sourceGroup)`.
+- Converted all eleven audited persistent-group copies. Every source and destination is distinct, owned by UnitHider, and not intentionally subject to `bj_wantDestroyGroup` destruction.
+- Preserved every `GroupClear`, individual group membership operation, public API, and GUI global contract.
+- Retail 24342/PTR 24360 semantic checks, World Editor/JassHelper compilation, functional and multiplayer regressions, the 30-minute soak, and external performance acceptance measurements remain pending.
 
