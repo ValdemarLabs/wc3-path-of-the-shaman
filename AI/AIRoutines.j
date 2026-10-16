@@ -26,6 +26,7 @@
     call AIRoutines_CreateRoutine(familyName)
     call AIRoutines_SetRoutineLoop(routineId, enabled)
     call AIRoutines_SetRoutineAIRegistration(routineId, enabled)
+    call AIRoutines_SetRoutinePauseWhileHidden(routineId, enabled)
     call AIRoutines_AddWaitStep(routineId, minDuration, maxDuration)
     call AIRoutines_AddWorkStep(routineId, animationName, effectPath, attachPoint, minDuration, maxDuration)
     call AIRoutines_AddPointOrderStep(routineId, order, x, y, minDuration, maxDuration)
@@ -67,6 +68,17 @@
     call AIRoutines_CreateBlacksmithRoutine(familyName, workRect)
     call AIRoutines_CreatePeonLumberSleepRoutine(familyName, lumberRect, sleepRect, harvestDuration, sleepDuration, hideDuringSleep)
 
+    Diagnostics:
+    call AIRoutines_SetDiagnosticsEnabled(enabled)
+    set enabled = AIRoutines_IsDiagnosticsEnabled()
+    call AIRoutines_ResetDiagnostics()
+    set count = AIRoutines_GetUnitsProcessedCount()
+    set count = AIRoutines_GetHiddenUnitsProcessedCount()
+    set count = AIRoutines_GetHiddenSkipCount()
+    set count = AIRoutines_GetStepTransitionCount()
+    set count = AIRoutines_GetOrderCount()
+    set count = AIRoutines_GetCallbackCount()
+
     Callback globals:
     AIRoutines_EventUnit
     AIRoutines_EventRoutineId
@@ -88,6 +100,9 @@
       dialog barks, spawning props, changing facing, buying/selling, or calling
       another local system. Read AIRoutines_EventUnit and AIRoutines_EventStepId
       inside the callback.
+    - Hidden-unit pausing is opt-in and only safe for decorative routines whose
+      timing may stop. Do not enable it for callbacks, quests, patrols, escorts,
+      shopkeepers, turnover timing, or other persistent gameplay behavior.
     - Target steps are for props and actors: face/use a forge, anvil, fishing
       node, bed, chair, shop counter, door, training dummy, or another NPC.
     - Other routine ideas use the same blocks: tavern patrons sit/wander/talk,
@@ -170,6 +185,7 @@ globals
     private constant boolean AIR_DEBUG = false
     private constant boolean AIR_DEFAULT_LOOP = true
     private constant boolean AIR_DEFAULT_USE_AI_REGISTRY = false
+    private constant boolean AIR_DEFAULT_PAUSE_WHILE_HIDDEN = false
     private constant integer AIR_SLEEP_ABILITY_ID = 'Asla'
     private constant integer AIR_MAX_ROUTINES = 512
     private constant integer AIR_MAX_STEPS = 4096
@@ -194,6 +210,13 @@ globals
     private integer AIR_AIClassId = 0
     private boolean AIR_TickRunning = false
     private boolean AIR_SystemEnabled = true
+    private boolean AIR_DiagnosticsEnabled = false
+    private integer AIR_DiagnosticUnitsProcessed = 0
+    private integer AIR_DiagnosticHiddenUnitsProcessed = 0
+    private integer AIR_DiagnosticHiddenSkips = 0
+    private integer AIR_DiagnosticStepTransitions = 0
+    private integer AIR_DiagnosticOrders = 0
+    private integer AIR_DiagnosticCallbacks = 0
     private timer AIR_ClockTimer = null
     private timer AIR_TickTimer = null
     private trigger AIR_TickTrigger = null
@@ -209,6 +232,7 @@ globals
     private integer array AIR_RoutineStepCount
     private boolean array AIR_RoutineLoop
     private boolean array AIR_RoutineAIEnabled
+    private boolean array AIR_RoutinePauseWhileHidden
     private unit array AIR_ActiveUnit
 
     private integer array AIR_StepType
@@ -553,6 +577,9 @@ private function AIR_SetZoneActiveInternal takes integer zoneId, boolean active 
                 call AIR_RemoveActiveUnit(unitKey)
                 if AIR_UnitRoutine[unitKey] > 0 and not AIR_UnitSleeping.boolean[unitKey] then
                     call IssueImmediateOrder(whichUnit, "stop")
+                    if AIR_DiagnosticsEnabled then
+                        set AIR_DiagnosticOrders = AIR_DiagnosticOrders + 1
+                    endif
                     call SetUnitAnimation(whichUnit, "stand")
                 endif
             endif
@@ -612,6 +639,9 @@ private function AIR_BeginSleep takes unit whichUnit, integer unitKey, boolean h
     set AIR_UnitSleeping.boolean[unitKey] = true
     set AIR_UnitSleepHidden.boolean[unitKey] = hideDuringSleep
     call IssueImmediateOrder(whichUnit, "stop")
+    if AIR_DiagnosticsEnabled then
+        set AIR_DiagnosticOrders = AIR_DiagnosticOrders + 1
+    endif
     if not AIR_UnitHadSleepAbility.boolean[unitKey] then
         call UnitAddAbility(whichUnit, AIR_SLEEP_ABILITY_ID)
     endif
@@ -1118,6 +1148,9 @@ private function AIR_StartManagedUnitTurnover takes unit whichUnit, integer unit
     else
         call IssueImmediateOrder(whichUnit, "stop")
     endif
+    if AIR_DiagnosticsEnabled then
+        set AIR_DiagnosticOrders = AIR_DiagnosticOrders + 1
+    endif
 
     set removeTimer = CreateTimer()
     set AIR_TurnoverTimerUnit.unit[GetHandleId(removeTimer)] = whichUnit
@@ -1148,6 +1181,7 @@ function AIRoutines_CreateRoutine takes string familyName returns integer
     set AIR_RoutineName[routineId] = familyName
     set AIR_RoutineLoop[routineId] = AIR_DEFAULT_LOOP
     set AIR_RoutineAIEnabled[routineId] = AIR_DEFAULT_USE_AI_REGISTRY
+    set AIR_RoutinePauseWhileHidden[routineId] = AIR_DEFAULT_PAUSE_WHILE_HIDDEN
     return routineId
 endfunction
 
@@ -1168,6 +1202,53 @@ function AIRoutines_SetRoutineAIRegistration takes integer routineId, boolean en
     if AIR_RoutineExists(routineId) then
         set AIR_RoutineAIEnabled[routineId] = enabled
     endif
+endfunction
+
+function AIRoutines_SetRoutinePauseWhileHidden takes integer routineId, boolean enabled returns nothing
+    if AIR_RoutineExists(routineId) then
+        set AIR_RoutinePauseWhileHidden[routineId] = enabled
+    endif
+endfunction
+
+function AIRoutines_SetDiagnosticsEnabled takes boolean enabled returns nothing
+    set AIR_DiagnosticsEnabled = enabled
+endfunction
+
+function AIRoutines_IsDiagnosticsEnabled takes nothing returns boolean
+    return AIR_DiagnosticsEnabled
+endfunction
+
+function AIRoutines_ResetDiagnostics takes nothing returns nothing
+    set AIR_DiagnosticUnitsProcessed = 0
+    set AIR_DiagnosticHiddenUnitsProcessed = 0
+    set AIR_DiagnosticHiddenSkips = 0
+    set AIR_DiagnosticStepTransitions = 0
+    set AIR_DiagnosticOrders = 0
+    set AIR_DiagnosticCallbacks = 0
+endfunction
+
+function AIRoutines_GetUnitsProcessedCount takes nothing returns integer
+    return AIR_DiagnosticUnitsProcessed
+endfunction
+
+function AIRoutines_GetHiddenUnitsProcessedCount takes nothing returns integer
+    return AIR_DiagnosticHiddenUnitsProcessed
+endfunction
+
+function AIRoutines_GetHiddenSkipCount takes nothing returns integer
+    return AIR_DiagnosticHiddenSkips
+endfunction
+
+function AIRoutines_GetStepTransitionCount takes nothing returns integer
+    return AIR_DiagnosticStepTransitions
+endfunction
+
+function AIRoutines_GetOrderCount takes nothing returns integer
+    return AIR_DiagnosticOrders
+endfunction
+
+function AIRoutines_GetCallbackCount takes nothing returns integer
+    return AIR_DiagnosticCallbacks
 endfunction
 
 function AIRoutines_AddWaitStep takes integer routineId, real minDuration, real maxDuration returns integer
@@ -1677,35 +1758,59 @@ private function AIR_StartStep takes unit whichUnit, integer unitKey, integer ro
 
     if AIR_StepType[stepId] == AIR_STEP_POINT_ORDER then
         call IssuePointOrder(whichUnit, order, AIR_StepX[stepId], AIR_StepY[stepId])
+        if AIR_DiagnosticsEnabled then
+            set AIR_DiagnosticOrders = AIR_DiagnosticOrders + 1
+        endif
     elseif AIR_StepType[stepId] == AIR_STEP_RECT_ORDER then
         if whichRect != null then
             if order == "harvest" then
                 set targetDest = AIR_GetRandomDestructableInRect(whichRect)
                 if targetDest != null then
                     call IssueTargetOrder(whichUnit, order, targetDest)
+                    if AIR_DiagnosticsEnabled then
+                        set AIR_DiagnosticOrders = AIR_DiagnosticOrders + 1
+                    endif
                 else
                     set x = GetRandomReal(GetRectMinX(whichRect), GetRectMaxX(whichRect))
                     set y = GetRandomReal(GetRectMinY(whichRect), GetRectMaxY(whichRect))
                     call IssuePointOrder(whichUnit, order, x, y)
+                    if AIR_DiagnosticsEnabled then
+                        set AIR_DiagnosticOrders = AIR_DiagnosticOrders + 1
+                    endif
                 endif
             else
                 set x = GetRandomReal(GetRectMinX(whichRect), GetRectMaxX(whichRect))
                 set y = GetRandomReal(GetRectMinY(whichRect), GetRectMaxY(whichRect))
                 call IssuePointOrder(whichUnit, order, x, y)
+                if AIR_DiagnosticsEnabled then
+                    set AIR_DiagnosticOrders = AIR_DiagnosticOrders + 1
+                endif
             endif
         endif
     elseif AIR_StepType[stepId] == AIR_STEP_TARGET_UNIT_ORDER then
         if targetUnit != null then
             call IssueTargetOrder(whichUnit, order, targetUnit)
+            if AIR_DiagnosticsEnabled then
+                set AIR_DiagnosticOrders = AIR_DiagnosticOrders + 1
+            endif
         endif
     elseif AIR_StepType[stepId] == AIR_STEP_TARGET_DESTRUCTABLE_ORDER then
         if targetDest != null then
             call IssueTargetOrder(whichUnit, order, targetDest)
+            if AIR_DiagnosticsEnabled then
+                set AIR_DiagnosticOrders = AIR_DiagnosticOrders + 1
+            endif
         endif
     elseif AIR_StepType[stepId] == AIR_STEP_IMMEDIATE_ORDER then
         call IssueImmediateOrder(whichUnit, order)
+        if AIR_DiagnosticsEnabled then
+            set AIR_DiagnosticOrders = AIR_DiagnosticOrders + 1
+        endif
     elseif AIR_StepType[stepId] == AIR_STEP_WORK then
         call IssueImmediateOrder(whichUnit, "stop")
+        if AIR_DiagnosticsEnabled then
+            set AIR_DiagnosticOrders = AIR_DiagnosticOrders + 1
+        endif
         call AIR_ApplyStepAnimation(whichUnit, stepId)
         call AIR_PlayStepEffect(whichUnit, stepId)
     elseif AIR_StepType[stepId] == AIR_STEP_SLEEP then
@@ -1713,6 +1818,9 @@ private function AIR_StartStep takes unit whichUnit, integer unitKey, integer ro
     elseif AIR_StepType[stepId] == AIR_STEP_CALLBACK then
         if callbackTrigger != null then
             call TriggerExecute(callbackTrigger)
+            if AIR_DiagnosticsEnabled then
+                set AIR_DiagnosticCallbacks = AIR_DiagnosticCallbacks + 1
+            endif
         endif
     endif
 
@@ -1757,13 +1865,21 @@ private function AIR_StartNextStep takes unit whichUnit, integer unitKey, real n
         return
     endif
     set AIR_UnitStep[unitKey] = stepIndex
+    if AIR_DiagnosticsEnabled then
+        set AIR_DiagnosticStepTransitions = AIR_DiagnosticStepTransitions + 1
+    endif
     call AIR_StartStep(whichUnit, unitKey, routineId, stepIndex, stepId, now)
 endfunction
 
 private function AIR_ProcessUnit takes unit whichUnit, real now returns nothing
     local integer unitKey
+    local integer routineId
+    local boolean hidden = false
     if whichUnit == null then
         return
+    endif
+    if AIR_DiagnosticsEnabled then
+        set AIR_DiagnosticUnitsProcessed = AIR_DiagnosticUnitsProcessed + 1
     endif
     set unitKey = GetHandleId(whichUnit)
     if GetUnitTypeId(whichUnit) == 0 then
@@ -1771,8 +1887,15 @@ private function AIR_ProcessUnit takes unit whichUnit, real now returns nothing
         call AIR_ClearUnitRegistration(whichUnit, false)
         return
     endif
-    if AIR_UnitRoutine[unitKey] <= 0 then
+    set routineId = AIR_UnitRoutine[unitKey]
+    if routineId <= 0 then
         return
+    endif
+    if AIR_DiagnosticsEnabled or AIR_RoutinePauseWhileHidden[routineId] then
+        set hidden = IsUnitHidden(whichUnit)
+    endif
+    if AIR_DiagnosticsEnabled and hidden then
+        set AIR_DiagnosticHiddenUnitsProcessed = AIR_DiagnosticHiddenUnitsProcessed + 1
     endif
     if not AIR_IsAliveUnit(whichUnit) then
         if AIR_UnitSleeping.boolean[unitKey] then
@@ -1793,7 +1916,23 @@ private function AIR_ProcessUnit takes unit whichUnit, real now returns nothing
     if AIR_UnitSleeping.boolean[unitKey] then
         if now >= AIR_UnitNextTime.real[unitKey] then
             call AIR_WakeUnitByKey(whichUnit, unitKey)
-            call AIR_StartNextStep(whichUnit, unitKey, now)
+            if AIR_RoutinePauseWhileHidden[routineId] then
+                set hidden = IsUnitHidden(whichUnit)
+            endif
+            if AIR_RoutinePauseWhileHidden[routineId] and hidden then
+                if AIR_DiagnosticsEnabled then
+                    set AIR_DiagnosticHiddenSkips = AIR_DiagnosticHiddenSkips + 1
+                endif
+            else
+                call AIR_StartNextStep(whichUnit, unitKey, now)
+            endif
+        endif
+        return
+    endif
+    // Sleep and managed turnover remain authoritative even for opted-in routines.
+    if AIR_RoutinePauseWhileHidden[routineId] and hidden then
+        if AIR_DiagnosticsEnabled then
+            set AIR_DiagnosticHiddenSkips = AIR_DiagnosticHiddenSkips + 1
         endif
         return
     endif

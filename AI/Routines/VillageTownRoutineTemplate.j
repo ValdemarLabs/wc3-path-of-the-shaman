@@ -43,10 +43,18 @@ globals
 endglobals
 
 public function CreateRandomGroup takes string familyName, player owner, rect spawnRect, rect walkRect, rect exitRect, integer zoneId, integer count, real respawnDelay, real turnoverMin, real turnoverMax returns integer
+    local integer existingRoutineId = AIRoutines_GetRoutineByName(familyName)
     local integer routineId = AIRoutines_CreateVillageWanderRoutine(familyName, walkRect, VTT_MOVE_MIN, VTT_MOVE_MAX, VTT_IDLE_MIN, VTT_IDLE_MAX)
     local integer spawnGroupId
     if routineId <= 0 then
         return 0
+    endif
+
+    // Existing author policy is preserved unless turnover requires a safe opt-out.
+    if turnoverMin > 0.00 or turnoverMax > 0.00 then
+        call AIRoutines_SetRoutinePauseWhileHidden(routineId, false)
+    elseif existingRoutineId <= 0 then
+        call AIRoutines_SetRoutinePauseWhileHidden(routineId, true)
     endif
 
     if zoneId > 0 then

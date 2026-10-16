@@ -4,7 +4,7 @@
 
 - **Candidate ID:** PERF-008
 - **Priority:** P3 conditional
-- **Status:** planned; blocked on AIRoutines isolation showing material CPU cost
+- **Status:** implemented; performance `NOT_MEASURED`
 - **Bundle ID:** AI-LOD-01
 - **Prerequisite:** isolated AI/AIRoutines benchmark and routine classification
 - **Hard dependencies:** `AI/AIRoutines.j`, `AI/AI.j` only if shared contracts change
@@ -14,13 +14,13 @@
 
 ## Evidence and scope
 
-AIRoutines uses a 0.50-second tick (`AIR_TICK_INTERVAL` near line 185) and already starts/stops its timer based on active registrations around lines 355-424. The periodic loop at lines 1805-1814 processes every active unit. `AIR_ProcessUnit` skips missing, dead, leaving, paused and sleeping units but does not generally skip units hidden by UnitHider.
+AIRoutines uses a 0.50-second tick (`AIR_TICK_INTERVAL` near line 201) and already starts/stops its timer based on active registrations around lines 379-395. The periodic loop near line 1944 processes every active unit. `AIR_ProcessUnit` near line 1874 skips missing, dead, leaving, paused and sleeping units and now applies the opt-in hidden policy.
 
 Main `AI.j` already rejects hidden units in important processing paths, including the heavy and lightweight instance loops around lines 6863 and 7070. A broad AI rewrite is therefore out of scope.
 
 This plan may reduce ambient simulation/order CPU work. Hiding alone does not prove that pausing a routine is safe or that Warcraft pathfinding/animation cost has stopped.
 
-Relevant active build 24342 contract:
+Relevant active Warcraft III 3.0.0 build 24268 contract:
 
 ```jass
 constant native IsUnitHidden takes unit whichUnit returns boolean
@@ -36,6 +36,14 @@ constant native IsUnitHidden takes unit whichUnit returns boolean
    - gameplay/quest/patrol/escort/persistent and never pausable;
    - unknown, defaulting to never pausable.
 4. Stop if the isolated cost does not meet the shared threshold.
+
+### Production routine classification
+
+- `VillageTownRoutineTemplate` groups without turnover: decorative walk-and-idle behavior; opted in.
+- `VillageTownRoutineTemplate` groups with turnover: persistent managed timing; default false.
+- `StormhavenCity`: callback-driven chat, movement and ambient actions with managed turnover; default false.
+- `MountainPeons` and `HordeMainBasePeons`: callback, sleep and day/night state; default false.
+- Shopkeepers, quest receivers, patrols, escorts and unclassified future routines: default false.
 
 ## Minimal opt-in design
 
@@ -72,4 +80,13 @@ If a routine must preserve elapsed timing, it is not eligible for this first imp
 Remove all opt-ins, setter and hidden check; because default is false, a staged rollback may first disable every opt-in before reverting source.
 
 Suggested commit: `Pause opted-in ambient routines while hidden`.
+
+## Implementation record
+
+- Added per-routine hidden pausing in `AI/AIRoutines.j`, defaulting to false and exposed only through `AIRoutines_SetRoutinePauseWhileHidden`.
+- Death, leaving, managed-turnover and explicit pause handling remain authoritative. Sleep still ends on schedule; when a unit remains externally hidden after waking, only its next step waits. Stored step and next-time state are retained, so reveal can advance at most one step per normal tick.
+- Added no UnitHider dependency; the policy uses the active `IsUnitHidden` native.
+- Opted in only turnover-free `VillageTownRoutineTemplate` walk-and-idle groups. Callback, sleep, day/night, quest, patrol, escort and managed-turnover routines remain at the default false policy.
+- Added disabled-by-default counters for processed units, hidden units processed, hidden skips, step transitions, issued orders and authored callbacks, exposed through `/debug perf airoutines` in `Debug/Warcraft300TestHarness.j`.
+- World Editor/JassHelper compilation, the full safety matrix, two-client validation and the 5% CPU frame-time or 1%-low acceptance measurement remain pending.
 
