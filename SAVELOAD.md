@@ -32,6 +32,8 @@ After loading, the player party and companions begin at Nazgrek's hut. The curre
 
 New content and current map defaults remain active after loading an older save.
 
+A yellow warning about a skipped completed quest is non-fatal. It means that quest could not be matched uniquely in the current map version; the rest of the supported saved state was still restored.
+
 ## Loading saves after a map update
 
 Older saves should normally continue to work after terrain changes, new content, balance updates, and script changes. They are not tied to Warcraft III's native map checksum.

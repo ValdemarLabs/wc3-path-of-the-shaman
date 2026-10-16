@@ -2,7 +2,7 @@
     PotSSaveLoad
 
     Author: Valdemar
-    Version: 2.2.0
+    Version: 2.2.1
 
     Description:
     Public single-player party save/load facade, fixed-slot metadata, safe-load
@@ -933,8 +933,11 @@ library PotSSaveLoad initializer Init requires PotSSaveConfig, PotSStateData, Po
         set PSS_PartyPhase[playerId] = PSS_PHASE_NONE
         set PSS_ZulkisStreamCount = 0
         set EventWarningCount = PotSWorldProgression_GetSkippedCount()
-        if EventWarningCount > 0 then
-            call PSS_Message(playerId, "|cffffcc00[PotS SaveLoad]|r ", "Skipped " + I2S(EventWarningCount) + " saved quest entries that are not uniquely present in this map version.")
+        if EventWarningCount == 1 then
+            call PSS_Message(playerId, "|cffffcc00[PotS SaveLoad]|r ", "One completed quest could not be matched uniquely in this map version and was skipped. Other saved state was restored.")
+            call PSS_Fire(OnWarning, playerId, PotSSaveConfig_ERROR_NONE)
+        elseif EventWarningCount > 1 then
+            call PSS_Message(playerId, "|cffffcc00[PotS SaveLoad]|r ", I2S(EventWarningCount) + " completed quests could not be matched uniquely in this map version and were skipped. Other saved state was restored.")
             call PSS_Fire(OnWarning, playerId, PotSSaveConfig_ERROR_NONE)
         endif
         call PSS_Message(playerId, "|cff33ff33[PotS SaveLoad]|r ", "Load completed.")

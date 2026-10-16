@@ -2,7 +2,7 @@
     Start
 
     Author: Valdemar
-    Version: 1.3.4
+    Version: 1.3.5
 
     Description:
     Runs the player start flow after a new-game mode choice or a saved-game
@@ -12,9 +12,10 @@
     - Old GUI "Game Start" trigger
 
     How to install:
-    Import with GameMode.j and the required systems below. GameMode.j calls
-    Start_Start() after mode and difficulty are selected. Disable the old Game
-    Start GUI trigger's startup event so this library owns player start setup.
+    Import after ImagesUI.j and with GameMode.j plus the required systems below.
+    GameMode.j calls Start_Start() after mode and difficulty are selected.
+    Disable the old Game Start GUI trigger's startup event so this library owns
+    player start setup.
 
     API:
     call Start_Start()
@@ -27,7 +28,7 @@
     call Start_ContinueAfterLoad()
 
 **/
-library Start requires ZonesCore, DInventory, DEquipment, WeatherSystem, TerrainDamage, BridgeSystem, FullscreenUI, optional CameraControl
+library Start requires ZonesCore, DInventory, DEquipment, WeatherSystem, TerrainDamage, BridgeSystem, FullscreenUI, ImagesUI, optional CameraControl
     globals
         // Configuration
         private constant integer ST_PLAYER_ID = 0
@@ -239,6 +240,16 @@ library Start requires ZonesCore, DInventory, DEquipment, WeatherSystem, Terrain
         call SetPlayerState(Player(ST_PLAYER_ID), PLAYER_STATE_RESOURCE_GOLD, gold)
     endfunction
 
+    private function ST_ClearLoadedGamePresentation takes nothing returns nothing
+        // A saved-game start skips the intro that normally clears the map's
+        // opening black cine filter. Cancel both that filter and the preload
+        // frame before returning control to the player.
+        call AbortCinematicFadeBJ()
+        call DisplayCineFilter(false)
+        call EnableUserUI(true)
+        call ImagesUI_HidePreload()
+    endfunction
+
     private function ST_EnterPlayableState takes nothing returns nothing
         local player whichPlayer = Player(ST_PLAYER_ID)
 
@@ -246,6 +257,7 @@ library Start requires ZonesCore, DInventory, DEquipment, WeatherSystem, Terrain
         call ExecuteFunc("MasterUI_ShowGameButton")
         if ST_LoadedGamePresentationPending then
             set ST_LoadedGamePresentationPending = false
+            call ST_ClearLoadedGamePresentation()
             call ExecuteFunc("PotSSaveUI_RelocateLoadedPartyToHut")
         endif
         if ST_HasNazgrek() then

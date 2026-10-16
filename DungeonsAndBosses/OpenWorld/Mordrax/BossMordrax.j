@@ -1,7 +1,7 @@
 /**
     BossMordrax
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.1.1
     Description:
     Replaces Mordrax's patrol, combat, fire-orb, loot, dialogue, death-flight,
     and respawn flow.
@@ -181,7 +181,12 @@ library BossMordrax initializer Init requires Boss, BossMordraxDialogue, PatrolS
     endfunction
     private function Register takes nothing returns nothing
         local timer initTimer = GetExpiredTimer()
-        local unit whichUnit = Boss_ResolvePlacedUnit(gg_unit_n645_0422, udg_BossMordrax, UNIT_MORDRAX, gg_rct_MordraxWP01)
+        local unit whichUnit = gg_unit_n645_0422
+        // The exact World Editor placement remains authoritative even when
+        // its Object Editor unit type was changed after this script was made.
+        if whichUnit == null or GetUnitTypeId(whichUnit) == 0 then
+            set whichUnit = Boss_ResolvePlacedUnit(null, udg_BossMordrax, UNIT_MORDRAX, gg_rct_MordraxWP01)
+        endif
         if whichUnit != null then
             set udg_BossMordrax = whichUnit
             set BossId = Boss_Register(whichUnit, "Mordrax")
@@ -200,7 +205,7 @@ library BossMordrax initializer Init requires Boss, BossMordraxDialogue, PatrolS
             call SetUnitFlyHeight(whichUnit, 600.00, 5.00)
             call StartPatrol(whichUnit)
         else
-            call BJDebugMsg("|cffff8080[BossMordrax] ERROR:|r Could not find placed Mordrax unit 'n645'.")
+            call BJDebugMsg("|cffff8080[BossMordrax] ERROR:|r Could not find the exact placed Mordrax unit or a unique fallback of type 'n645'.")
         endif
         call DestroyTimer(initTimer)
         set initTimer = null
