@@ -20,8 +20,15 @@
 
 ## [16.10.2026]
 
+### Player-Facing Updates
+
+- Added a Talents entry to the main Game menu and a hero-only Talents button between Abilities and Professions in Stats. The talent panel now follows the currently selected player-owned Nazgrek or Zul'kis and returns to the panel that opened it.
+- Split minimap marker controls into a dedicated Minimap Settings page. The main Settings page now groups difficulty, UI sounds, AI unit cap, Dynamic Far Z profile, doodad culling, and full/reduced weather detail controls.
+
 ### Technical Updates
 
+- Added `UI/MinimapSettingsUI.j`; updated `UI/MasterUI.j`, `UI/AbilitiesLiteUI.j`, `UI/AbilitiesUI.j`, `UI/TalentsUI.j`, `UI/StatsUI.j`, `UI/SettingsUI.j`, `UI/CameraUI.j`, and `EnvironmentSystems/WeatherSystemV4.j` for the new navigation and settings ownership. Weather optimization now exposes its state and immediately removes or restores optional clouds, rain impacts, steam breath, and thunder when its detail mode changes.
+- Added the repository-root `SAVELOAD.md` player guide covering local save slots, restored and intentionally unsupported state, map-update compatibility, common old-save failures, and safe recovery instructions.
 - Updated `Preload/Start.j`, `SaveLoad/PotSSaveUI.j`, and the SaveLoad UI compile harness so successful startup loads restore the MasterUI Game and Quest buttons and relocate Nazgrek, Zul'kis, active companions, pets, and controlled followers to spaced positions around `gg_rct_NazgrekIntroPoint` before gameplay resumes. The downstream no-argument handoff keeps Start free of the Companions/GameMode dependency cycle.
 - Updated `AI/AIRoutines.j` and `AI/Routines/VillageTownRoutineTemplate.j` with a default-off per-routine hidden-unit pause policy. Only turnover-free decorative village walk-and-idle groups opt in; callbacks, sleep, day/night behavior, quests, patrols, escorts, and managed turnover remain unchanged. Added disabled-by-default AIRoutines work counters and `/debug perf airoutines` commands in `Debug/Warcraft300TestHarness.j`; marked PERF-008 implemented but not measured in `_developer/PerformanceImprovements/`.
 - Updated `EnvironmentSystems/Stormv2.j` so its reusable 0.03125-second timer starts with the first active storm and pauses after the final storm completes fog restoration, eliminating idle callbacks while preserving overlapping-storm cleanup and restart behavior. Added disabled-by-default callback counters and `/debug perf storm` commands in `Debug/Warcraft300TestHarness.j`; marked PERF-005 implemented but not measured in `_developer/PerformanceImprovements/`.
@@ -32,10 +39,14 @@
 
 ### Resolved Issues
 
+- Fixed successful custom loads leaving the startup cinematic filter or preload frame visible over otherwise controllable gameplay. The saved-game handoff now explicitly clears both presentation layers before restoring the camera and player control.
+- Fixed BossMordrax.j rejecting its exact World Editor placed-unit handle solely because the placement's current Object Editor type no longer matched legacy rawcode n645; rawcode and area discovery remain fallbacks when the exact unit is actually missing.
+- Clarified the non-fatal SaveLoad quest compatibility warning so it states that unmatched completed quests were skipped while all other saved state was restored.
 - Fixed the UnitHider 4.11.1 fast-copy regression that prevented player and automatic AI hero references from revealing nearby hidden units. The initial helper reversed the native's actual source/destination order, leaving reference-copy destinations empty; companion-party references appeared to work because they are also inserted individually. UnitHider 4.11.2 restores the engine's source-first, destination-second order.
 
 ### Actions Remaining
 
+- Import the new `UI/MinimapSettingsUI.j` after its documented dependencies, reimport the changed UI and weather libraries, and compile the full map through World Editor/JassHelper. Runtime-test selected Nazgrek/Zul'kis talent routing and return paths, non-hero Stats layouts, every settings control, ESC/close behavior, weather detail restoration, doodad culling, camera Far Z refresh, and two-client frame/synchronization behavior.
 - Reimport `AI/AIRoutines.j`, `AI/Routines/VillageTownRoutineTemplate.j`, and `Debug/Warcraft300TestHarness.j`, compile the full map through World Editor/JassHelper, and run the PERF-008 hidden/reveal safety matrix for decorative villagers, default-false callback/sleep/turnover routines, combat wake, death/removal, zone activation, UnitHider enable/disable, cinematics, teleport, persistence, and two-client synchronization. Use `/debug perf airoutines` during separate-reload control/candidate captures and accept only if the documented 5% CPU frame-time or 1%-low threshold passes.
 - Reimport `EnvironmentSystems/Stormv2.j` and `Debug/Warcraft300TestHarness.j`, compile the full map through World Editor/JassHelper, and test overlapping storms, local and synchronized variants, final fog restoration, weather transitions, and repeated idle/start/stop cycles. Use `/debug perf storm` to confirm zero idle callbacks, then run the documented five-minute control/candidate frame-time captures before accepting or rejecting PERF-005.
 - Reimport `UnitSystems/UnitHider4.j`, compile through World Editor/JassHelper, and run the PERF-003 fast-group semantic matrix on retail 24342 and PTR 24360 before acceptance. Validate bootstrap, player and AI hero revealing, reference registration and removal, cinematics, relocation, disable/re-enable, refresh, quest NPCs, companions, pets, neutral units, direct GUI-group changes, two-client parity, and a 30-minute soak; accept only if the operation microbenchmark and scene-level frame-time gates pass.
