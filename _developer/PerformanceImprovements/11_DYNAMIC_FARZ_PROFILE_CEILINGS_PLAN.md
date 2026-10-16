@@ -4,7 +4,7 @@
 
 - **Candidate ID:** PERF-002
 - **Priority:** P1
-- **Status:** planned; performance and visual limits `NOT_MEASURED`
+- **Status:** implemented; performance and visual limits `NOT_MEASURED`
 - **Bundle ID:** CAMERA-01
 - **Prerequisite:** shared benchmark protocol; fixed-value Far Z sweep
 - **Hard dependencies:** `UI/DynamicFarZ.j`, `UI/CameraControl.j`
@@ -20,7 +20,7 @@
 
 This is a GPU/draw-distance and visual-quality candidate. It does not reduce AI, triggers, pathfinding or other simulation.
 
-Relevant native contracts from active build 24342:
+Relevant native contracts from active build 24268:
 
 ```jass
 native SetCameraField takes camerafield whichField, real value, real duration returns nothing
@@ -49,13 +49,17 @@ Proceed only when the sweep passes the candidate threshold.
 4. Preserve Light at the current uncapped behavior unless its own sweep independently passes.
 5. Preserve explicit special-area context maximums.
 6. Preserve cinematic behavior: a scripted/suspended camera that currently receives base Far Z must not be capped unless the cinematic is explicitly opted into DynamicFarZ.
-7. Keep the public API unchanged. CameraUI continues to expose Auto and profile selection without new controls.
+7. Keep the player-facing/gameplay API unchanged. CameraUI continues to expose Auto and profile selection without new controls; debug-only diagnostic getters remain outside normal gameplay workflows.
+
+Implemented candidate configuration (pending acceptance measurements): Light `1.00`, Medium `0.80`, and Heavy `0.65`. With the default base Far Z of 10000 these produce horizon ceilings of 10000, 8000, and 6500. These are provisional sweep values, not accepted performance or visual results.
 
 Do not automatically tie camera Far Z to UnitHider, DoodadRender or DestructableHider distances. Their semantics and safety margins differ. Coordinated distances require a separate measured design.
 
 ## Instrumentation
 
 Expose debug-only calculated factor, profile ceiling, context maximum, final effective Far Z and applied/avoided `SetCameraField` counts. Do not add synchronized state or network traffic; camera data remains per-player/local.
+
+Implemented commands: `/debug perf farz status`, `/debug perf farz candidate`, `/debug perf farz control`, and `/debug perf farz counters on|off`. The control variant requires a separate control build and reload.
 
 ## Test plan
 

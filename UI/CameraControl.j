@@ -2,7 +2,7 @@
     CameraControl
     
     Author: [Valdemar]
-    Version: 1.8.2
+    Version: 1.9.0
 
     Description: Keeps each player's camera behavior consistent, including modes, target tracking, local middle-drag mouse-look, DynamicFarZ, basic movement controls, and optional DynamicMinimap safety turns. Experimental camera-type and input-ownership APIs remain disabled by default.
 
@@ -43,6 +43,13 @@
     call CameraControl_ResetExperimentalInputOwnership(whichPlayer)
     call CameraControl_IsExperimentalInputOwnershipEnabled(whichPlayer) returns boolean
     call CameraControl_IsExperimentalInputOwnershipApplied(whichPlayer) returns boolean
+
+    Debug API:
+    call CameraControl_SetFarZDiagnosticsEnabled(whichPlayer, enabled)
+    call CameraControl_IsFarZDiagnosticsEnabled(whichPlayer) returns boolean
+    call CameraControl_ResetFarZDiagnostics(whichPlayer)
+    call CameraControl_GetFarZSetAppliedCount(whichPlayer) returns integer
+    call CameraControl_GetFarZSetAvoidedCount(whichPlayer) returns integer
 
 **/
 library CameraControl initializer AutoInit requires DynamicFarZ, FixedCameraLock, AdvancedCameraSystem, ArrowKeyMovement, FallenHeroState, optional DynamicMinimap
@@ -196,6 +203,9 @@ globals
     private integer array CC_MouseOrbitUpdateCount
     private integer array CC_MouseOrbitSampleCount
     private integer array CC_MouseOrbitHeldCancelCount
+    private boolean array CC_FarZDiagnosticsEnabled
+    private integer array CC_FarZSetAppliedCount
+    private integer array CC_FarZSetAvoidedCount
     private boolean array CC_CameraTypeSnapshotValid
     private integer array CC_CameraTypeSnapshot
     private boolean array CC_InputOwnershipEnabled
@@ -895,10 +905,18 @@ private function CC_GetCurrentEffectiveFarZ takes player whichPlayer returns rea
     return CC_GetDynamicFarZ(whichPlayer, CC_FarZ[pid], CC_Angle[pid], CAMERA_SPECIAL_MODE_NONE)
 endfunction
 
+private function CC_SetFarZField takes player whichPlayer, real value, real duration returns nothing
+    local integer pid = CC_GetPlayerIndex(whichPlayer)
+    call SetCameraField(CAMERA_FIELD_FARZ, value, duration)
+    if CC_FarZDiagnosticsEnabled[pid] then
+        set CC_FarZSetAppliedCount[pid] = CC_FarZSetAppliedCount[pid] + 1
+    endif
+endfunction
+
 private function CC_ApplySharedFields takes player whichPlayer, real duration, real angle returns nothing
     local integer pid = CC_GetPlayerIndex(whichPlayer)
     if GetLocalPlayer() == whichPlayer then
-        call SetCameraField(CAMERA_FIELD_FARZ, CC_GetDynamicFarZ(whichPlayer, CC_FarZ[pid], angle, CAMERA_SPECIAL_MODE_NONE), duration)
+        call CC_SetFarZField(whichPlayer, CC_GetDynamicFarZ(whichPlayer, CC_FarZ[pid], angle, CAMERA_SPECIAL_MODE_NONE), duration)
         call SetCameraField(CAMERA_FIELD_FIELD_OF_VIEW, CC_Fov[pid], duration)
     endif
 endfunction
@@ -906,7 +924,7 @@ endfunction
 private function CC_ApplySpecialFields takes player whichPlayer, real duration returns nothing
     local integer pid = CC_GetPlayerIndex(whichPlayer)
     if GetLocalPlayer() == whichPlayer then
-        call SetCameraField(CAMERA_FIELD_FARZ, CC_GetDynamicFarZ(whichPlayer, CC_GetSpecialFarZ(pid), CC_GetSpecialAngle(pid), CC_GetResolvedSpecialMode(pid)), duration)
+        call CC_SetFarZField(whichPlayer, CC_GetDynamicFarZ(whichPlayer, CC_GetSpecialFarZ(pid), CC_GetSpecialAngle(pid), CC_GetResolvedSpecialMode(pid)), duration)
         call SetCameraField(CAMERA_FIELD_FIELD_OF_VIEW, CC_GetSpecialFov(pid), duration)
         call SetCameraField(CAMERA_FIELD_TARGET_DISTANCE, CC_GetSpecialDistance(pid), duration)
         call SetCameraField(CAMERA_FIELD_ANGLE_OF_ATTACK, CC_GetSpecialAngle(pid), duration)
@@ -1541,7 +1559,9 @@ private function CC_MaintainFarZ takes nothing returns nothing
 
     set effectiveFarZ = CC_GetCurrentEffectiveFarZ(whichPlayer)
     if CC_Abs(GetCameraField(CAMERA_FIELD_FARZ) - effectiveFarZ) > CAMERA_FIELD_TOLERANCE then
-        call SetCameraField(CAMERA_FIELD_FARZ, effectiveFarZ, 0.00)
+        call CC_SetFarZField(whichPlayer, effectiveFarZ, 0.00)
+    elseif CC_FarZDiagnosticsEnabled[pid] then
+        set CC_FarZSetAvoidedCount[pid] = CC_FarZSetAvoidedCount[pid] + 1
     endif
     set whichPlayer = null
 endfunction
@@ -1704,8 +1724,32 @@ public function RefreshFarZ takes player whichPlayer returns nothing
     local integer pid = CC_GetPlayerIndex(whichPlayer)
     if not CC_Suspended[pid] and not CC_ResumePending[pid] and GetLocalPlayer() == whichPlayer then
         // CameraUI clears frame focus with StopCamera after clicks, so preference changes apply immediately.
-        call SetCameraField(CAMERA_FIELD_FARZ, CC_GetCurrentEffectiveFarZ(whichPlayer), 0.00)
+        call CC_SetFarZField(whichPlayer, CC_GetCurrentEffectiveFarZ(whichPlayer), 0.00)
     endif
+endfunction
+
+public function SetFarZDiagnosticsEnabled takes player whichPlayer, boolean enabled returns nothing
+    set CC_FarZDiagnosticsEnabled[CC_GetPlayerIndex(whichPlayer)] = enabled
+    call DynamicFarZ_SetDiagnosticsEnabled(whichPlayer, enabled)
+endfunction
+
+public function IsFarZDiagnosticsEnabled takes player whichPlayer returns boolean
+    return CC_FarZDiagnosticsEnabled[CC_GetPlayerIndex(whichPlayer)]
+endfunction
+
+public function ResetFarZDiagnostics takes player whichPlayer returns nothing
+    local integer pid = CC_GetPlayerIndex(whichPlayer)
+    set CC_FarZSetAppliedCount[pid] = 0
+    set CC_FarZSetAvoidedCount[pid] = 0
+    call DynamicFarZ_ResetDiagnostics(whichPlayer)
+endfunction
+
+public function GetFarZSetAppliedCount takes player whichPlayer returns integer
+    return CC_FarZSetAppliedCount[CC_GetPlayerIndex(whichPlayer)]
+endfunction
+
+public function GetFarZSetAvoidedCount takes player whichPlayer returns integer
+    return CC_FarZSetAvoidedCount[CC_GetPlayerIndex(whichPlayer)]
 endfunction
 
 public function GetAngle takes player whichPlayer returns real

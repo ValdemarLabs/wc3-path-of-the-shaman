@@ -2,7 +2,7 @@
     Warcraft300TestHarness
 
     Author: Valdemar
-    Version: 0.8.0
+    Version: 0.9.0
 
     Description:
     Provides explicit Warcraft III 3.0 diagnostics and resettable camera, fog,
@@ -11,9 +11,9 @@
     Credits:
 
     How to install:
-    Import CameraControl, FogSystem, DoodadRender, DoodadManager,
-    DestructableHider, and Ascii before this library, then import this library
-    before DebugCommands.
+    Import DynamicFarZ, CameraControl, FogSystem, DoodadRender,
+    DoodadManager, DestructableHider, and Ascii before this library, then
+    import this library before DebugCommands.
 
     API:
     - Warcraft300TestHarness_Execute(player, command) -> boolean
@@ -21,7 +21,7 @@
     - /debug perf help
 
 **/
-library Warcraft300TestHarness requires CameraControl, FogSystem, DoodadRender, DoodadManager, DestructableHider, Ascii
+library Warcraft300TestHarness requires DynamicFarZ, CameraControl, FogSystem, DoodadRender, DoodadManager, DestructableHider, Ascii
     globals
         private constant string W3T_PREFIX = "|cff80dfff[WC3 3.0]|r "
         private constant string W3T_GAME_BUILD = "3.0.0.24268"
@@ -118,12 +118,27 @@ library Warcraft300TestHarness requires CameraControl, FogSystem, DoodadRender, 
     private function W3T_ShowPerformanceHelp takes player whichPlayer returns nothing
         call W3T_Message(whichPlayer, "Performance: perf status | perf reset")
         call W3T_Message(whichPlayer, "PERF-001: perf destructable status|candidate|control|counters on|off")
+        call W3T_Message(whichPlayer, "PERF-002: perf farz status, candidate, control, counters on/off")
     endfunction
 
     private function W3T_ShowDestructablePerformance takes player whichPlayer returns nothing
         call W3T_Message(whichPlayer, "PERF-001: variant=candidate differential, counters=" + W3T_BooleanText(DestructableHider_IsDiagnosticsEnabled()) + ".")
         call W3T_Message(whichPlayer, "Destructable work: tiles=" + I2S(DestructableHider_GetTileCellCount()) + ", considered=" + I2S(DestructableHider_GetDestructableConsideredCount()) + ", ShowDestructable=" + I2S(DestructableHider_GetShowCallCount()) + ".")
         call W3T_Message(whichPlayer, "Destructable updates: same-cell=" + I2S(DestructableHider_GetSameCellUpdateCount()) + ", overlap=" + I2S(DestructableHider_GetOverlappingTransitionCount()) + ", non-overlap=" + I2S(DestructableHider_GetNonOverlappingTransitionCount()) + ".")
+    endfunction
+
+    private function W3T_ShowFarZPerformance takes player whichPlayer returns nothing
+        local real calculatedFarZ
+
+        // Far Z and camera-field reads are local presentation state.
+        if GetLocalPlayer() == whichPlayer then
+            set calculatedFarZ = CameraControl_GetEffectiveFarZ(whichPlayer)
+            call W3T_Message(whichPlayer, "PERF-002: variant=candidate ceilings Light/Medium/Heavy=1.00/0.80/0.65, counters=" + W3T_BooleanText(CameraControl_IsFarZDiagnosticsEnabled(whichPlayer)) + ".")
+            call W3T_Message(whichPlayer, "Far Z state: auto=" + W3T_BooleanText(DynamicFarZ_IsAuto(whichPlayer)) + ", profile=" + DynamicFarZ_GetProfileName(whichPlayer) + ", context=" + I2S(CameraControl_GetSpecialMode(whichPlayer)) + ".")
+            call W3T_Message(whichPlayer, "Far Z calculation: interpolatedFactor=" + R2S(DynamicFarZ_GetLastCalculatedFactor(whichPlayer)) + ", profileCeiling=" + R2S(DynamicFarZ_GetLastProfileCeilingFactor(whichPlayer)) + ", contextMaximum=" + R2S(DynamicFarZ_GetLastContextMaximum(whichPlayer)) + ".")
+            call W3T_Message(whichPlayer, "Far Z values: calculated=" + R2S(calculatedFarZ) + ", recorded=" + R2S(DynamicFarZ_GetLastEffectiveFarZ(whichPlayer)) + ", applied=" + R2S(GetCameraField(CAMERA_FIELD_FARZ)) + ".")
+            call W3T_Message(whichPlayer, "Far Z setters: applied=" + I2S(CameraControl_GetFarZSetAppliedCount(whichPlayer)) + ", avoided=" + I2S(CameraControl_GetFarZSetAvoidedCount(whichPlayer)) + ".")
+        endif
     endfunction
 
     private function W3T_ShowCamera takes player whichPlayer returns nothing
@@ -457,10 +472,16 @@ library Warcraft300TestHarness requires CameraControl, FogSystem, DoodadRender, 
 
         if lowerCommand == "perf" or lowerCommand == "perf help" then
             call W3T_ShowPerformanceHelp(whichPlayer)
-        elseif lowerCommand == "perf status" or lowerCommand == "perf destructable" or lowerCommand == "perf destructable status" or lowerCommand == "perf destructible" or lowerCommand == "perf destructible status" then
+        elseif lowerCommand == "perf status" then
             call W3T_ShowDestructablePerformance(whichPlayer)
+            call W3T_ShowFarZPerformance(whichPlayer)
+        elseif lowerCommand == "perf destructable" or lowerCommand == "perf destructable status" or lowerCommand == "perf destructible" or lowerCommand == "perf destructible status" then
+            call W3T_ShowDestructablePerformance(whichPlayer)
+        elseif lowerCommand == "perf farz" or lowerCommand == "perf farz status" then
+            call W3T_ShowFarZPerformance(whichPlayer)
         elseif lowerCommand == "perf reset" then
             call DestructableHider_ResetDiagnostics()
+            call CameraControl_ResetFarZDiagnostics(whichPlayer)
             call W3T_Message(whichPlayer, "Performance counters reset.")
         elseif lowerCommand == "perf destructable candidate" or lowerCommand == "perf destructible candidate" then
             call DestructableHider_SetDiagnosticsEnabled(true)
@@ -475,6 +496,19 @@ library Warcraft300TestHarness requires CameraControl, FogSystem, DoodadRender, 
         elseif lowerCommand == "perf destructable counters off" or lowerCommand == "perf destructible counters off" then
             call DestructableHider_SetDiagnosticsEnabled(false)
             call W3T_Message(whichPlayer, "PERF-001 counters disabled.")
+        elseif lowerCommand == "perf farz candidate" then
+            call CameraControl_SetFarZDiagnosticsEnabled(whichPlayer, true)
+            call CameraControl_ResetFarZDiagnostics(whichPlayer)
+            call W3T_Message(whichPlayer, "PERF-002 candidate is active; local counters enabled and reset.")
+        elseif lowerCommand == "perf farz control" then
+            call W3T_Message(whichPlayer, "PERF-002 control requires a control map build and reload; runtime switching is unavailable.")
+        elseif lowerCommand == "perf farz counters on" then
+            call CameraControl_SetFarZDiagnosticsEnabled(whichPlayer, true)
+            call CameraControl_ResetFarZDiagnostics(whichPlayer)
+            call W3T_Message(whichPlayer, "PERF-002 local counters enabled and reset.")
+        elseif lowerCommand == "perf farz counters off" then
+            call CameraControl_SetFarZDiagnosticsEnabled(whichPlayer, false)
+            call W3T_Message(whichPlayer, "PERF-002 local counters disabled.")
         elseif lowerCommand == "wc3" or lowerCommand == "wc3 help" then
             call W3T_ShowHelp(whichPlayer)
         elseif lowerCommand == "wc3 status" then

@@ -22,7 +22,7 @@ No candidate is considered successful until its isolated benchmark passes. Algor
 | 0 | Active API baseline correction | P0 | planned | FOUNDATION-01 | Yes | [02_ACTIVE_API_BASELINE_24342_PLAN.md](02_ACTIVE_API_BASELINE_24342_PLAN.md) |
 | 0 | Performance diagnostics harness | P0 enabling | planned | DIAGNOSTICS-01 | Yes, but extend atomically with consumers | [03_PERFORMANCE_DIAGNOSTICS_HARNESS_PLAN.md](03_PERFORMANCE_DIAGNOSTICS_HARNESS_PLAN.md) |
 | 1 | PERF-001 Destructable differential updates | P0 | implemented; `NOT_MEASURED` | DESTRUCTABLE-01 | Yes | [10_DESTRUCTIBLE_HIDER_DIFFERENTIAL_PLAN.md](10_DESTRUCTIBLE_HIDER_DIFFERENTIAL_PLAN.md) |
-| 2 | PERF-002 Dynamic Far Z ceilings | P1 | planned | CAMERA-01 | Yes as a complete camera bundle | [11_DYNAMIC_FARZ_PROFILE_CEILINGS_PLAN.md](11_DYNAMIC_FARZ_PROFILE_CEILINGS_PLAN.md) |
+| 2 | PERF-002 Dynamic Far Z ceilings | P1 | implemented; `NOT_MEASURED` | CAMERA-01 | Yes as a complete camera bundle | [11_DYNAMIC_FARZ_PROFILE_CEILINGS_PLAN.md](11_DYNAMIC_FARZ_PROFILE_CEILINGS_PLAN.md) |
 | 3 | PERF-004 Doodad backend evaluation | P1 experiment | planned | DOODAD-01 | Yes as a complete doodad bundle | [13_DOODAD_RENDER_BACKEND_EVALUATION_PLAN.md](13_DOODAD_RENDER_BACKEND_EVALUATION_PLAN.md) |
 | 4 | PERF-003 UnitHider fast group copying | P1 | planned | UNIT-HIDER-01 | Yes | [12_UNIT_HIDER_FAST_GROUP_COPY_PLAN.md](12_UNIT_HIDER_FAST_GROUP_COPY_PLAN.md) |
 | 5 | PERF-005 Storm idle timer gating | P2 | planned | STORM-01 | Yes while public behavior is unchanged | [14_STORM_IDLE_TIMER_GATING_PLAN.md](14_STORM_IDLE_TIMER_GATING_PLAN.md) |
