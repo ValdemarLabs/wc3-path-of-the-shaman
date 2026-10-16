@@ -18,6 +18,8 @@
     API:
         WeatherSystem_SetZoneWeatherById(integer zoneId, string weatherType, real duration)
         WeatherSystem_StopZoneWeatherById(integer zoneId)
+        WeatherSystem_SetFPSOptimization(boolean enable)
+        WeatherSystem_IsFPSOptimizationEnabled() -> boolean
         WeatherSystem_SetRipplesEnabled(boolean enable)
         WeatherSystem_EnableSeasonalWeather(boolean enable)
 **/
@@ -1686,14 +1688,41 @@ endfunction
 
 // Enable/disable FPS optimization mode (disables all optional effects)
 public function SetFPSOptimization takes boolean enable returns nothing
+    local integer i = 0
+    local string weatherType
+
     set FPS_OptimizationEnabled = enable
-    call UpdateRainImpactTimer()
-    
     if enable then
+        loop
+            exitwhen i >= RegionCount
+            call DisableCloudsInRegion(i)
+            call DisableSteamBreathInRegion(i)
+            set i = i + 1
+        endloop
+        set i = 0
+        loop
+            exitwhen i >= MasterZoneCount
+            call DisableThunderInZone(i)
+            set i = i + 1
+        endloop
         call Debug("FPS Optimization: Enabled (all optional effects disabled)")
     else
+        call ApplyWeatherPresentationState()
+        loop
+            exitwhen i >= RegionCount
+            set weatherType = RegionWeatherType[i]
+            if weatherType == WEATHER_RAIN_LIGHT or weatherType == WEATHER_RAIN_MEDIUM or weatherType == WEATHER_RAIN_HEAVY or weatherType == WEATHER_STORM then
+                call EnableThunderInZone(RegionZoneIndex[i])
+            endif
+            set i = i + 1
+        endloop
         call Debug("FPS Optimization: Disabled")
     endif
+    call UpdateRainImpactTimer()
+endfunction
+
+public function IsFPSOptimizationEnabled takes nothing returns boolean
+    return FPS_OptimizationEnabled
 endfunction
 
 // Disable/enable clouds for FPS (individual control)
