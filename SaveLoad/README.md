@@ -1,4 +1,4 @@
-# PotS Maxou NSL SaveLoad 2.2.0
+# PotS Maxou NSL SaveLoad 2.2.1
 
 This directory contains the PotS-owned automatic character-state layer described by `PotS_MaxouNSL_AutoSaveLoad_Codex.json`. It uses the existing Maxou New Save Load (NSL) codec and FileIO stack as an immutable backend. The PotS SaveLoad implementation does not edit or copy files under `_CoreSystems/MaxouNSL/`.
 
@@ -57,6 +57,7 @@ The imported `NSLImpl` remains the single owner of `NSL_CodeVersion`, `NSL_Key`,
 - A party slot writes authenticated `pots_<slot>_n` and, when owned, `pots_<slot>_z` character files. A small `pots_meta_<slot>` manifest publishes the title, hero count, game mode, and difficulty only after every required character file succeeds.
 - The startup panel restores the saved mode/difficulty before `Start` creates Nazgrek, then loads Nazgrek followed by Zul'kis when the manifest contains both heroes.
 - The startup slot choice explicitly reopens and owns the safe-load window, so waiting on the title panel does not invalidate a selected save.
+- A successful startup load explicitly clears the preload frame and opening cinematic filter before restoring the camera and player control.
 - A decode, schema, or preflight failure returns to the startup `New Game` / `Load Saved` choice without advancing the deferred world start. The player may choose another save or continue through the normal new-game mode/difficulty flow. A failure after gameplay mutation began still requires restarting the map because no safe rollback exists.
 
 The unchanged FileIO backend accepts only a relative folder. With the current `NSLImpl` configuration, its generated paths are `Path of the Shaman\SaveChar_<characterId>.pld` inside Warcraft III's permitted custom-map/FileIO storage. JASS cannot force these files into the literal installation directory `C:\Program Files (x86)\Warcraft III\_retail_\Pots`.
