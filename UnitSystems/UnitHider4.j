@@ -2,7 +2,7 @@
     UnitHider
 
     Author: Valdemar
-    Version: 4.11.1
+    Version: 4.11.2
 
     Description:
     Hides the ordinary map population outside tracked-unit reveal ranges.
@@ -141,8 +141,8 @@ private function IsManagedHidden takes unit whichUnit returns boolean
 endfunction
 
 private function CopyGroupFast takes group sourceGroup, group destinationGroup returns nothing
-    // The native's destination/source order is the reverse of GroupAddGroup.
-    call BlzGroupAddGroupFast(destinationGroup, sourceGroup)
+    // Runtime semantics match GroupAddGroup: source first, destination second.
+    call BlzGroupAddGroupFast(sourceGroup, destinationGroup)
 endfunction
 
 private function PrepareWorldScan takes nothing returns nothing

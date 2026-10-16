@@ -27,13 +27,13 @@ native BlzGroupGetSize takes group whichGroup returns integer
 native BlzGroupUnitAt takes group whichGroup, integer index returns unit
 ```
 
-The native order is destination then source, the reverse of `GroupAddGroup(sourceGroup, destGroup)`. This candidate targets JASS callback/native-transition CPU cost, not rendering.
+The native copies the first group into the second group: source then destination, matching `GroupAddGroup(sourceGroup, destGroup)`. Active PotS callers and the UnitHider 4.11.1 regression test confirm this runtime behavior despite the ambiguous formal names `whichGroup` and `addGroup`. This candidate targets JASS callback/native-transition CPU cost, not rendering.
 
 ## Semantic micro-test
 
 Before changing UnitHider, verify on retail 24342 and PTR 24360:
 
-- destination/source argument order;
+- source/destination argument order;
 - returned size;
 - duplicate membership behavior;
 - empty groups;
@@ -46,7 +46,7 @@ Do not depend on aliasing if the test shows undefined or version-specific behavi
 ## Minimal design
 
 1. Add a private, clearly named helper before its callers, for example `CopyGroupFast(sourceGroup, destinationGroup)`.
-2. Inside it, call `BlzGroupAddGroupFast(destinationGroup, sourceGroup)`.
+2. Inside it, call `BlzGroupAddGroupFast(sourceGroup, destinationGroup)`.
 3. Use it only where the current UnitHider code owns persistent groups and does not intentionally request `bj_wantDestroyGroup` destruction.
 4. Preserve explicit `GroupClear` calls and whether each call is a copy or union.
 5. Do not replace individual `GroupAddUnit`/`GroupRemoveUnit` operations.
@@ -78,8 +78,9 @@ Suggested commit: `Use native fast group copies in UnitHider`.
 
 ## Implementation record
 
-- Added the private source-to-destination `CopyGroupFast` helper in `UnitSystems/UnitHider4.j`; it reverses arguments only at the native boundary for `BlzGroupAddGroupFast(destinationGroup, sourceGroup)`.
+- Added the private source-to-destination `CopyGroupFast` helper in `UnitSystems/UnitHider4.j`; it calls `BlzGroupAddGroupFast(sourceGroup, destinationGroup)` in the engine's runtime order.
 - Converted all eleven audited persistent-group copies. Every source and destination is distinct, owned by UnitHider, and not intentionally subject to `bj_wantDestroyGroup` destruction.
 - Preserved every `GroupClear`, individual group membership operation, public API, and GUI global contract.
+- UnitHider 4.11.1 incorrectly reversed the native arguments based on the original plan text. That emptied automatic and registered reference-copy destinations, preventing player and AI hero movement from revealing nearby units; party companions still worked because they are added individually. UnitHider 4.11.2 corrects the order, corroborated by established active PotS native callers and the reported runtime behavior.
 - Retail 24342/PTR 24360 semantic checks, World Editor/JassHelper compilation, functional and multiplayer regressions, the 30-minute soak, and external performance acceptance measurements remain pending.
 
