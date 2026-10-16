@@ -1,6 +1,6 @@
 # Save and Load Guide
 
-Path of the Shaman uses a custom character save system. It does not use Warcraft III's normal **Save Game** feature.
+Path of the Shaman provides custom character saves alongside Warcraft III's normal **Save Game** feature. Native saves can still be used, but Warcraft III engine limitations may make them incompatible after the map is updated to a newer version. The custom system is designed to restore supported progress across compatible map updates.
 
 ## Saving and loading
 
