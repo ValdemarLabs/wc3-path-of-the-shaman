@@ -4,12 +4,12 @@
 
 - **Candidate ID:** PERF-005
 - **Priority:** P2
-- **Status:** planned; expected impact small and `NOT_MEASURED`
+- **Status:** implemented; expected impact small and `NOT_MEASURED`
 - **Bundle ID:** STORM-01
 - **Prerequisite:** idle callback counter
 - **Hard dependencies:** `EnvironmentSystems/Stormv2.j`
 - **Behavioral dependencies:** WeatherSystem, FogSystem and ZoneEvent fog restoration
-- **Shared files:** weather diagnostics only if a command is added
+- **Shared files:** `Debug/Warcraft300TestHarness.j` for diagnostics
 - **Can ship independently:** yes while the Storm public API remains unchanged
 
 ## Evidence and mechanism
@@ -64,7 +64,14 @@ Benchmark a CPU-bound idle scene for at least five minutes and separately exerci
 
 ## Rollback
 
-Restore the unconditional `TimerStart` in `onInit`, remove running state/helpers and confirm fog restoration after overlapping storms.
+Restore the unconditional `TimerStart` in `onInit`, remove running state/helpers, counters, and matching harness commands, then confirm fog restoration after overlapping storms.
 
 Suggested commit: `Pause the Storm timer while idle`.
+
+## Implementation record
+
+- Added first-storm start and final-storm pause gating around the existing reusable timer in `EnvironmentSystems/Stormv2.j`.
+- Preserved final fog restoration and override cleanup before pausing the timer.
+- Added disabled-by-default total/idle callback counters and `/debug perf storm` status/reset/candidate controls through `Debug/Warcraft300TestHarness.j`.
+- World Editor/JassHelper compile, multiplayer weather regression, repeated idle/start/stop runtime tests, and external frame-time acceptance measurements remain pending.
 

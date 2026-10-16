@@ -29,6 +29,13 @@ library Storm initializer Init requires DNC, ZoneEvent, FogSystem
     call Storm_ImitateRandomLocal(variant, localplayer)
     call Storm_Imitate(variant, count, azimuth, zenith)
     call Storm_ImitateRandom(variant)
+    call Storm_SetDiagnosticsEnabled(enabled)
+    call Storm_IsDiagnosticsEnabled() returns boolean
+    call Storm_ResetDiagnostics()
+    call Storm_GetCallbackCount() returns integer
+    call Storm_GetIdleCallbackCount() returns integer
+    call Storm_IsTimerRunning() returns boolean
+    call Storm_GetActiveStormCount() returns integer
     
     ====================================================================================================================
                                                     C O N F I G
@@ -265,7 +272,13 @@ library Storm initializer Init requires DNC, ZoneEvent, FogSystem
         
         private static timer Timer = CreateTimer()
         private static integer ActiveStorms = 0          // Keep overlapping storms under one fog override
+        private static boolean TimerRunning = false
         private static boolean FogOverrideActive = false
+
+        // Disabled-by-default counters support isolated idle-timer benchmarks.
+        private static boolean DiagnosticsEnabled = false
+        private static integer CallbackCount = 0
+        private static integer IdleCallbackCount = 0
         
         private unit    Unit
         private effect  Effect
@@ -276,6 +289,13 @@ library Storm initializer Init requires DNC, ZoneEvent, FogSystem
         private method toCamera takes nothing returns nothing
             call SetUnitX(.Unit, GetCameraTargetPositionX())
             call SetUnitY(.Unit, GetCameraTargetPositionY())
+        endmethod
+
+        private static method stopTimer takes nothing returns nothing
+            if TimerRunning then
+                call PauseTimer(Timer)
+                set TimerRunning = false
+            endif
         endmethod
         
         method destroy takes nothing returns nothing
@@ -296,6 +316,7 @@ library Storm initializer Init requires DNC, ZoneEvent, FogSystem
                     call FogSystem_EndOverride()
                     set FogOverrideActive = false
                 endif
+                call thistype.stopTimer()
             endif
 
             call this.deallocate()
@@ -357,6 +378,13 @@ library Storm initializer Init requires DNC, ZoneEvent, FogSystem
             local real b  = FogSystem_GetCurrentBlue(localPlayer)
             local integer i = thistype.size
 
+            if DiagnosticsEnabled then
+                set CallbackCount = CallbackCount + 1
+                if ActiveStorms == 0 then
+                    set IdleCallbackCount = IdleCallbackCount + 1
+                endif
+            endif
+
             if TF and i > 0 and not FogOverrideActive then
                 call FogSystem_BeginOverride()
                 set FogOverrideActive = true
@@ -414,6 +442,13 @@ library Storm initializer Init requires DNC, ZoneEvent, FogSystem
             set TempTF = TF
             set localPlayer = null
         endmethod
+
+        private static method startTimer takes nothing returns nothing
+            if not TimerRunning then
+                set TimerRunning = true
+                call TimerStart(Timer, PERIOD, true, function thistype.Periodic)
+            endif
+        endmethod
         
         static method create takes integer variant, integer count, integer azimuth, integer zenith, boolean localplayer returns thistype
             local thistype this = thistype.allocate()
@@ -439,11 +474,37 @@ library Storm initializer Init requires DNC, ZoneEvent, FogSystem
             set ActiveStorms = ActiveStorms + 1
 
             call this.add()
+            call thistype.startTimer()
             return this
         endmethod
-        
-        private static method onInit takes nothing returns nothing
-            call TimerStart(Timer, PERIOD, true, function thistype.Periodic)
+
+        static method setDiagnosticsEnabled takes boolean enabled returns nothing
+            set DiagnosticsEnabled = enabled
+        endmethod
+
+        static method isDiagnosticsEnabled takes nothing returns boolean
+            return DiagnosticsEnabled
+        endmethod
+
+        static method resetDiagnostics takes nothing returns nothing
+            set CallbackCount = 0
+            set IdleCallbackCount = 0
+        endmethod
+
+        static method getCallbackCount takes nothing returns integer
+            return CallbackCount
+        endmethod
+
+        static method getIdleCallbackCount takes nothing returns integer
+            return IdleCallbackCount
+        endmethod
+
+        static method isTimerRunning takes nothing returns boolean
+            return TimerRunning
+        endmethod
+
+        static method getActiveStormCount takes nothing returns integer
+            return ActiveStorms
         endmethod
     endstruct
     
@@ -492,6 +553,34 @@ library Storm initializer Init requires DNC, ZoneEvent, FogSystem
     //
     public function ImitateRandom takes integer variant returns nothing
         call ImitateRandomLocal(variant, true)
+    endfunction
+
+    public function SetDiagnosticsEnabled takes boolean enabled returns nothing
+        call TStorm.setDiagnosticsEnabled(enabled)
+    endfunction
+
+    public function IsDiagnosticsEnabled takes nothing returns boolean
+        return TStorm.isDiagnosticsEnabled()
+    endfunction
+
+    public function ResetDiagnostics takes nothing returns nothing
+        call TStorm.resetDiagnostics()
+    endfunction
+
+    public function GetCallbackCount takes nothing returns integer
+        return TStorm.getCallbackCount()
+    endfunction
+
+    public function GetIdleCallbackCount takes nothing returns integer
+        return TStorm.getIdleCallbackCount()
+    endfunction
+
+    public function IsTimerRunning takes nothing returns boolean
+        return TStorm.isTimerRunning()
+    endfunction
+
+    public function GetActiveStormCount takes nothing returns integer
+        return TStorm.getActiveStormCount()
     endfunction
 
 endlibrary
