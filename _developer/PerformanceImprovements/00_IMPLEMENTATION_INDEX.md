@@ -25,10 +25,10 @@ No candidate is considered successful until its isolated benchmark passes. Algor
 | 2 | PERF-002 Dynamic Far Z ceilings | P1 | implemented; `NOT_MEASURED` | CAMERA-01 | Yes as a complete camera bundle | [11_DYNAMIC_FARZ_PROFILE_CEILINGS_PLAN.md](11_DYNAMIC_FARZ_PROFILE_CEILINGS_PLAN.md) |
 | 3 | PERF-004 Doodad backend evaluation | P1 experiment | planned | DOODAD-01 | Yes as a complete doodad bundle | [13_DOODAD_RENDER_BACKEND_EVALUATION_PLAN.md](13_DOODAD_RENDER_BACKEND_EVALUATION_PLAN.md) |
 | 4 | PERF-003 UnitHider fast group copying | P1 | implemented; `NOT_MEASURED` | UNIT-HIDER-01 | Yes | [12_UNIT_HIDER_FAST_GROUP_COPY_PLAN.md](12_UNIT_HIDER_FAST_GROUP_COPY_PLAN.md) |
-| 5 | PERF-005 Storm idle timer gating | P2 | planned | STORM-01 | Yes while public behavior is unchanged | [14_STORM_IDLE_TIMER_GATING_PLAN.md](14_STORM_IDLE_TIMER_GATING_PLAN.md) |
+| 5 | PERF-005 Storm idle timer gating | P2 | implemented; `NOT_MEASURED` | STORM-01 | Yes while public behavior is unchanged | [14_STORM_IDLE_TIMER_GATING_PLAN.md](14_STORM_IDLE_TIMER_GATING_PLAN.md) |
 | 6 | PERF-006 Weather rain-effect budget | P2 conditional | planned | WEATHER-01 | Yes as a complete weather bundle | [15_WEATHER_RAIN_EFFECT_BUDGET_PLAN.md](15_WEATHER_RAIN_EFFECT_BUDGET_PLAN.md) |
 | 7 | PERF-007 Rebirth asset complexity | P2 research | planned | ASSET-01 | Yes; World Editor work is manual | [16_REBIRTH_ASSET_COMPLEXITY_PLAN.md](16_REBIRTH_ASSET_COMPLEXITY_PLAN.md) |
-| 8 | PERF-008 hidden AIRoutines policy | P3 conditional | planned | AI-LOD-01 | Yes as a complete AI bundle | [17_AI_HIDDEN_ROUTINE_POLICY_PLAN.md](17_AI_HIDDEN_ROUTINE_POLICY_PLAN.md) |
+| 8 | PERF-008 hidden AIRoutines policy | P3 conditional | implemented; `NOT_MEASURED` | AI-LOD-01 | Yes as a complete AI bundle | [17_AI_HIDDEN_ROUTINE_POLICY_PLAN.md](17_AI_HIDDEN_ROUTINE_POLICY_PLAN.md) |
 | 9 | PERF-009 effect native/lifecycle follow-up | P3 conditional | planned | EFFECTS-01 | Yes only with unchanged public API | [18_EFFECT_NATIVE_LIFECYCLE_FOLLOWUP_PLAN.md](18_EFFECT_NATIVE_LIFECYCLE_FOLLOWUP_PLAN.md) |
 
 Shared references:

@@ -11,8 +11,8 @@
     Credits:
 
     How to install:
-    Import DynamicFarZ, CameraControl, FogSystem, DoodadRender,
-    DoodadManager, DestructableHider, and Ascii before this library, then
+    Import DynamicFarZ, CameraControl, FogSystem, Storm, DoodadRender,
+    DoodadManager, DestructableHider, AIRoutines, and Ascii before this library, then
     import this library before DebugCommands.
 
     API:
@@ -21,7 +21,7 @@
     - /debug perf help
 
 **/
-library Warcraft300TestHarness requires DynamicFarZ, CameraControl, FogSystem, DoodadRender, DoodadManager, DestructableHider, Ascii
+library Warcraft300TestHarness requires DynamicFarZ, CameraControl, FogSystem, Storm, DoodadRender, DoodadManager, DestructableHider, AIRoutines, Ascii
     globals
         private constant string W3T_PREFIX = "|cff80dfff[WC3 3.0]|r "
         private constant string W3T_GAME_BUILD = "3.0.0.24268"
@@ -119,6 +119,8 @@ library Warcraft300TestHarness requires DynamicFarZ, CameraControl, FogSystem, D
         call W3T_Message(whichPlayer, "Performance: perf status | perf reset")
         call W3T_Message(whichPlayer, "PERF-001: perf destructable status|candidate|control|counters on|off")
         call W3T_Message(whichPlayer, "PERF-002: perf farz status, candidate, control, counters on/off")
+        call W3T_Message(whichPlayer, "PERF-005: perf storm status, candidate, control, counters on/off")
+        call W3T_Message(whichPlayer, "PERF-008: perf airoutines status|candidate|control|counters on|off")
     endfunction
 
     private function W3T_ShowDestructablePerformance takes player whichPlayer returns nothing
@@ -139,6 +141,19 @@ library Warcraft300TestHarness requires DynamicFarZ, CameraControl, FogSystem, D
             call W3T_Message(whichPlayer, "Far Z values: calculated=" + R2S(calculatedFarZ) + ", recorded=" + R2S(DynamicFarZ_GetLastEffectiveFarZ(whichPlayer)) + ", applied=" + R2S(GetCameraField(CAMERA_FIELD_FARZ)) + ".")
             call W3T_Message(whichPlayer, "Far Z setters: applied=" + I2S(CameraControl_GetFarZSetAppliedCount(whichPlayer)) + ", avoided=" + I2S(CameraControl_GetFarZSetAvoidedCount(whichPlayer)) + ".")
         endif
+    endfunction
+
+    private function W3T_ShowStormPerformance takes player whichPlayer returns nothing
+        call W3T_Message(whichPlayer, "PERF-005: variant=candidate idle gating, counters=" + W3T_BooleanText(Storm_IsDiagnosticsEnabled()) + ".")
+        call W3T_Message(whichPlayer, "Storm timer: running=" + W3T_BooleanText(Storm_IsTimerRunning()) + ", activeStorms=" + I2S(Storm_GetActiveStormCount()) + ".")
+        call W3T_Message(whichPlayer, "Storm callbacks: total=" + I2S(Storm_GetCallbackCount()) + ", active=" + I2S(Storm_GetCallbackCount() - Storm_GetIdleCallbackCount()) + ", idle=" + I2S(Storm_GetIdleCallbackCount()) + ".")
+    endfunction
+
+    private function W3T_ShowAIRoutinesPerformance takes player whichPlayer returns nothing
+        call W3T_Message(whichPlayer, "PERF-008: variant=candidate opt-in hidden pause, counters=" + W3T_BooleanText(AIRoutines_IsDiagnosticsEnabled()) + ".")
+        call W3T_Message(whichPlayer, "AIRoutines work: processed=" + I2S(AIRoutines_GetUnitsProcessedCount()) + ", hidden=" + I2S(AIRoutines_GetHiddenUnitsProcessedCount()) + ", hiddenSkipped=" + I2S(AIRoutines_GetHiddenSkipCount()) + ".")
+        call W3T_Message(whichPlayer, "AIRoutines steps: transitions=" + I2S(AIRoutines_GetStepTransitionCount()) + ".")
+        call W3T_Message(whichPlayer, "AIRoutines output: orders=" + I2S(AIRoutines_GetOrderCount()) + ", callbacks=" + I2S(AIRoutines_GetCallbackCount()) + ".")
     endfunction
 
     private function W3T_ShowCamera takes player whichPlayer returns nothing
@@ -475,13 +490,21 @@ library Warcraft300TestHarness requires DynamicFarZ, CameraControl, FogSystem, D
         elseif lowerCommand == "perf status" then
             call W3T_ShowDestructablePerformance(whichPlayer)
             call W3T_ShowFarZPerformance(whichPlayer)
+            call W3T_ShowStormPerformance(whichPlayer)
+            call W3T_ShowAIRoutinesPerformance(whichPlayer)
         elseif lowerCommand == "perf destructable" or lowerCommand == "perf destructable status" or lowerCommand == "perf destructible" or lowerCommand == "perf destructible status" then
             call W3T_ShowDestructablePerformance(whichPlayer)
         elseif lowerCommand == "perf farz" or lowerCommand == "perf farz status" then
             call W3T_ShowFarZPerformance(whichPlayer)
+        elseif lowerCommand == "perf storm" or lowerCommand == "perf storm status" then
+            call W3T_ShowStormPerformance(whichPlayer)
+        elseif lowerCommand == "perf airoutines" or lowerCommand == "perf airoutines status" then
+            call W3T_ShowAIRoutinesPerformance(whichPlayer)
         elseif lowerCommand == "perf reset" then
             call DestructableHider_ResetDiagnostics()
             call CameraControl_ResetFarZDiagnostics(whichPlayer)
+            call Storm_ResetDiagnostics()
+            call AIRoutines_ResetDiagnostics()
             call W3T_Message(whichPlayer, "Performance counters reset.")
         elseif lowerCommand == "perf destructable candidate" or lowerCommand == "perf destructible candidate" then
             call DestructableHider_SetDiagnosticsEnabled(true)
@@ -509,6 +532,32 @@ library Warcraft300TestHarness requires DynamicFarZ, CameraControl, FogSystem, D
         elseif lowerCommand == "perf farz counters off" then
             call CameraControl_SetFarZDiagnosticsEnabled(whichPlayer, false)
             call W3T_Message(whichPlayer, "PERF-002 local counters disabled.")
+        elseif lowerCommand == "perf storm candidate" then
+            call Storm_SetDiagnosticsEnabled(true)
+            call Storm_ResetDiagnostics()
+            call W3T_Message(whichPlayer, "PERF-005 candidate is active; counters enabled and reset.")
+        elseif lowerCommand == "perf storm control" then
+            call W3T_Message(whichPlayer, "PERF-005 control requires a control map build and reload; runtime switching is unavailable.")
+        elseif lowerCommand == "perf storm counters on" then
+            call Storm_SetDiagnosticsEnabled(true)
+            call Storm_ResetDiagnostics()
+            call W3T_Message(whichPlayer, "PERF-005 counters enabled and reset.")
+        elseif lowerCommand == "perf storm counters off" then
+            call Storm_SetDiagnosticsEnabled(false)
+            call W3T_Message(whichPlayer, "PERF-005 counters disabled.")
+        elseif lowerCommand == "perf airoutines candidate" then
+            call AIRoutines_SetDiagnosticsEnabled(true)
+            call AIRoutines_ResetDiagnostics()
+            call W3T_Message(whichPlayer, "PERF-008 candidate is active; counters enabled and reset.")
+        elseif lowerCommand == "perf airoutines control" then
+            call W3T_Message(whichPlayer, "PERF-008 control requires a control map build and reload; runtime switching is unavailable.")
+        elseif lowerCommand == "perf airoutines counters on" then
+            call AIRoutines_SetDiagnosticsEnabled(true)
+            call AIRoutines_ResetDiagnostics()
+            call W3T_Message(whichPlayer, "PERF-008 counters enabled and reset.")
+        elseif lowerCommand == "perf airoutines counters off" then
+            call AIRoutines_SetDiagnosticsEnabled(false)
+            call W3T_Message(whichPlayer, "PERF-008 counters disabled.")
         elseif lowerCommand == "wc3" or lowerCommand == "wc3 help" then
             call W3T_ShowHelp(whichPlayer)
         elseif lowerCommand == "wc3 status" then
