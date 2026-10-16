@@ -21,7 +21,11 @@ globals
     unit udg_Zulkis = null
     unit udg_CompDummy = null
     unit udg_AbilityPreloader = null
+    integer udg_CompanionCount = 0
+    unit array udg_CompanionUnit
+    group udg_TamedUnits = null
     rect gg_rct_IntroV2Nazgrek01 = null
+    rect gg_rct_NazgrekIntroPoint = null
     trigger gg_trg_Intro_Cinematic_Orc_Q = null
 endglobals
 
@@ -106,6 +110,15 @@ endlibrary
 library BridgeSystem
     function BridgeSystem_AddIgnoredUnit takes unit whichUnit returns nothing
         set whichUnit = null
+    endfunction
+endlibrary
+
+library Companions
+    function Companions_GetControlledDisplayCount takes nothing returns integer
+        return 0
+    endfunction
+    function Companions_GetControlledDisplayUnit takes integer index returns unit
+        return null
     endfunction
 endlibrary
 
