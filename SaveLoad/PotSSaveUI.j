@@ -2,7 +2,7 @@
     PotSSaveUI
 
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.1.1
 
     Description:
     Provides the first-run New Game / Load Saved choice and the in-game
@@ -12,18 +12,23 @@
     - Tasyen for Warcraft III frame UI examples used throughout PotS
 
     How to install:
-    Import after PotSSaveLoad, GameMode, ImagesUI, Interface, and MasterUI.
+    Import after PotSSaveLoad, GameMode, ImagesUI, Interface, MasterUI, and
+    Companions.
     Preloader calls PotSSaveUI_ShowStartup() after preload.
 
     API:
     - PotSSaveUI_ShowStartup()
     - PotSSaveUI_Show()
     - PotSSaveUI_Hide()
+    - PotSSaveUI_RelocateLoadedPartyToHut()
 
 **/
-library PotSSaveUI initializer AutoInit requires PotSSaveLoad, GameMode, Start, ImagesUI, Interface, MasterUI
+library PotSSaveUI initializer AutoInit requires PotSSaveLoad, GameMode, Start, ImagesUI, Interface, MasterUI, Companions
     globals
         private constant integer PSU_SLOT_COUNT = 6
+        private constant integer PSU_LOAD_PARTY_UNITS_PER_RING = 8
+        private constant real PSU_LOAD_PARTY_FIRST_RING_RADIUS = 112.00
+        private constant real PSU_LOAD_PARTY_RING_SPACING = 96.00
         private boolean PSU_Initialized = false
         private boolean PSU_StartupMode = false
         private boolean PSU_ShowingSlots = false
@@ -47,6 +52,97 @@ library PotSSaveUI initializer AutoInit requires PotSSaveLoad, GameMode, Start, 
         private trigger PSU_ClearFocusTrigger = null
         private trigger PSU_InitTrigger = null
     endglobals
+
+    private function PSU_MoveLoadedPartyUnit takes unit whichUnit, group movedUnits, integer placementIndex, real centerX, real centerY returns boolean
+        local integer ringIndex
+        local integer ringSlot
+        local real angle
+        local real radius
+        local real x = centerX
+        local real y = centerY
+
+        if whichUnit == null or GetUnitTypeId(whichUnit) == 0 or GetWidgetLife(whichUnit) <= 0.405 or IsUnitHidden(whichUnit) or IsUnitInGroup(whichUnit, movedUnits) then
+            return false
+        endif
+
+        if placementIndex > 0 then
+            set ringIndex = (placementIndex - 1) / PSU_LOAD_PARTY_UNITS_PER_RING
+            set ringSlot = (placementIndex - 1) - ringIndex * PSU_LOAD_PARTY_UNITS_PER_RING
+            set angle = 2.00 * bj_PI * I2R(ringSlot) / I2R(PSU_LOAD_PARTY_UNITS_PER_RING)
+            set radius = PSU_LOAD_PARTY_FIRST_RING_RADIUS + I2R(ringIndex) * PSU_LOAD_PARTY_RING_SPACING
+            set x = centerX + radius * Cos(angle)
+            set y = centerY + radius * Sin(angle)
+        endif
+
+        call SetUnitPosition(whichUnit, x, y)
+        call IssueImmediateOrder(whichUnit, "stop")
+        call GroupAddUnit(movedUnits, whichUnit)
+        return true
+    endfunction
+
+    public function RelocateLoadedPartyToHut takes nothing returns nothing
+        local group movedUnits
+        local group pendingUnits
+        local unit partyUnit
+        local integer placementIndex = 0
+        local integer rosterIndex = 1
+        local integer displayIndex = 1
+        local real centerX
+        local real centerY
+
+        if gg_rct_NazgrekIntroPoint == null then
+            call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, "|cffff8080PotSSaveUI: gg_rct_NazgrekIntroPoint is missing; the loaded party could not be relocated.|r")
+            return
+        endif
+
+        set centerX = GetRectCenterX(gg_rct_NazgrekIntroPoint)
+        set centerY = GetRectCenterY(gg_rct_NazgrekIntroPoint)
+        set movedUnits = CreateGroup()
+
+        if PSU_MoveLoadedPartyUnit(udg_Nazgrek, movedUnits, placementIndex, centerX, centerY) then
+            set placementIndex = placementIndex + 1
+        endif
+        if PSU_MoveLoadedPartyUnit(udg_Zulkis, movedUnits, placementIndex, centerX, centerY) then
+            set placementIndex = placementIndex + 1
+        endif
+
+        loop
+            exitwhen rosterIndex > udg_CompanionCount
+            if PSU_MoveLoadedPartyUnit(udg_CompanionUnit[rosterIndex], movedUnits, placementIndex, centerX, centerY) then
+                set placementIndex = placementIndex + 1
+            endif
+            set rosterIndex = rosterIndex + 1
+        endloop
+
+        if udg_TamedUnits != null then
+            set pendingUnits = CreateGroup()
+            call GroupAddGroup(udg_TamedUnits, pendingUnits)
+            loop
+                set partyUnit = FirstOfGroup(pendingUnits)
+                exitwhen partyUnit == null
+                call GroupRemoveUnit(pendingUnits, partyUnit)
+                if PSU_MoveLoadedPartyUnit(partyUnit, movedUnits, placementIndex, centerX, centerY) then
+                    set placementIndex = placementIndex + 1
+                endif
+            endloop
+            call DestroyGroup(pendingUnits)
+            set pendingUnits = null
+        endif
+
+        loop
+            exitwhen displayIndex > Companions_GetControlledDisplayCount()
+            set partyUnit = Companions_GetControlledDisplayUnit(displayIndex)
+            if PSU_MoveLoadedPartyUnit(partyUnit, movedUnits, placementIndex, centerX, centerY) then
+                set placementIndex = placementIndex + 1
+            endif
+            set displayIndex = displayIndex + 1
+        endloop
+
+        call DestroyGroup(movedUnits)
+        set movedUnits = null
+        set pendingUnits = null
+        set partyUnit = null
+    endfunction
 
     private function PSU_GetSlotId takes integer index returns string
         return "slot" + I2S(index)

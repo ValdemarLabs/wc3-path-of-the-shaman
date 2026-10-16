@@ -2,7 +2,7 @@
     Start
 
     Author: Valdemar
-    Version: 1.3.3
+    Version: 1.3.4
 
     Description:
     Runs the player start flow after a new-game mode choice or a saved-game
@@ -27,16 +27,13 @@
     call Start_ContinueAfterLoad()
 
 **/
-library Start requires ZonesCore, DInventory, DEquipment, WeatherSystem, TerrainDamage, BridgeSystem, FullscreenUI, optional CameraControl, optional MasterUI, optional Companions
+library Start requires ZonesCore, DInventory, DEquipment, WeatherSystem, TerrainDamage, BridgeSystem, FullscreenUI, optional CameraControl
     globals
         // Configuration
         private constant integer ST_PLAYER_ID = 0
         private constant integer ST_START_GOLD = 150
         private constant real ST_HERO_SETUP_DELAY = 1.00
         private constant real ST_INTRO_DELAY = 1.00
-        private constant integer ST_LOAD_PARTY_UNITS_PER_RING = 8
-        private constant real ST_LOAD_PARTY_FIRST_RING_RADIUS = 112.00
-        private constant real ST_LOAD_PARTY_RING_SPACING = 96.00
 
 
         // ============================================================
@@ -97,6 +94,7 @@ library Start requires ZonesCore, DInventory, DEquipment, WeatherSystem, Terrain
         private integer ST_StartingGoldBonus = 0
         private string ST_PendingLoadSlot = ""
         private boolean ST_AwaitingLoad = false
+        private boolean ST_LoadedGamePresentationPending = false
     endglobals
 
     private function ST_StopTimer takes nothing returns nothing
@@ -241,105 +239,14 @@ library Start requires ZonesCore, DInventory, DEquipment, WeatherSystem, Terrain
         call SetPlayerState(Player(ST_PLAYER_ID), PLAYER_STATE_RESOURCE_GOLD, gold)
     endfunction
 
-    private function ST_MoveLoadedPartyUnit takes unit whichUnit, group movedUnits, integer placementIndex, real centerX, real centerY returns boolean
-        local integer ringIndex
-        local integer ringSlot
-        local real angle
-        local real radius
-        local real x = centerX
-        local real y = centerY
-
-        if whichUnit == null or GetUnitTypeId(whichUnit) == 0 or GetWidgetLife(whichUnit) <= 0.405 or IsUnitHidden(whichUnit) or IsUnitInGroup(whichUnit, movedUnits) then
-            return false
-        endif
-
-        if placementIndex > 0 then
-            set ringIndex = (placementIndex - 1) / ST_LOAD_PARTY_UNITS_PER_RING
-            set ringSlot = (placementIndex - 1) - ringIndex * ST_LOAD_PARTY_UNITS_PER_RING
-            set angle = 2.00 * bj_PI * I2R(ringSlot) / I2R(ST_LOAD_PARTY_UNITS_PER_RING)
-            set radius = ST_LOAD_PARTY_FIRST_RING_RADIUS + I2R(ringIndex) * ST_LOAD_PARTY_RING_SPACING
-            set x = centerX + radius * Cos(angle)
-            set y = centerY + radius * Sin(angle)
-        endif
-
-        call SetUnitPosition(whichUnit, x, y)
-        call IssueImmediateOrder(whichUnit, "stop")
-        call GroupAddUnit(movedUnits, whichUnit)
-        return true
-    endfunction
-
-    private function ST_MoveLoadedPartyToHut takes nothing returns nothing
-        local group movedUnits
-        local group pendingUnits
-        local unit partyUnit
-        local integer placementIndex = 0
-        local integer rosterIndex = 1
-        local integer displayIndex = 1
-        local real centerX
-        local real centerY
-
-        if gg_rct_NazgrekIntroPoint == null then
-            call DisplayTextToForce(bj_FORCE_ALL_PLAYERS, "|cffff8080Start: gg_rct_NazgrekIntroPoint is missing; the loaded party could not be relocated.|r")
-            return
-        endif
-
-        set centerX = GetRectCenterX(gg_rct_NazgrekIntroPoint)
-        set centerY = GetRectCenterY(gg_rct_NazgrekIntroPoint)
-        set movedUnits = CreateGroup()
-
-        if ST_MoveLoadedPartyUnit(udg_Nazgrek, movedUnits, placementIndex, centerX, centerY) then
-            set placementIndex = placementIndex + 1
-        endif
-        if ST_MoveLoadedPartyUnit(udg_Zulkis, movedUnits, placementIndex, centerX, centerY) then
-            set placementIndex = placementIndex + 1
-        endif
-
-        static if LIBRARY_Companions then
-            loop
-                exitwhen rosterIndex > udg_CompanionCount
-                if ST_MoveLoadedPartyUnit(udg_CompanionUnit[rosterIndex], movedUnits, placementIndex, centerX, centerY) then
-                    set placementIndex = placementIndex + 1
-                endif
-                set rosterIndex = rosterIndex + 1
-            endloop
-
-            if udg_TamedUnits != null then
-                set pendingUnits = CreateGroup()
-                call GroupAddGroup(udg_TamedUnits, pendingUnits)
-                loop
-                    set partyUnit = FirstOfGroup(pendingUnits)
-                    exitwhen partyUnit == null
-                    call GroupRemoveUnit(pendingUnits, partyUnit)
-                    if ST_MoveLoadedPartyUnit(partyUnit, movedUnits, placementIndex, centerX, centerY) then
-                        set placementIndex = placementIndex + 1
-                    endif
-                endloop
-                call DestroyGroup(pendingUnits)
-                set pendingUnits = null
-            endif
-
-            loop
-                exitwhen displayIndex > Companions_GetControlledDisplayCount()
-                set partyUnit = Companions_GetControlledDisplayUnit(displayIndex)
-                if ST_MoveLoadedPartyUnit(partyUnit, movedUnits, placementIndex, centerX, centerY) then
-                    set placementIndex = placementIndex + 1
-                endif
-                set displayIndex = displayIndex + 1
-            endloop
-        endif
-
-        call DestroyGroup(movedUnits)
-        set movedUnits = null
-        set pendingUnits = null
-        set partyUnit = null
-    endfunction
-
     private function ST_EnterPlayableState takes nothing returns nothing
         local player whichPlayer = Player(ST_PLAYER_ID)
 
         call FullscreenUI_SetEnabled(false)
-        static if LIBRARY_MasterUI then
-            call MasterUI_ShowGameButton()
+        call ExecuteFunc("MasterUI_ShowGameButton")
+        if ST_LoadedGamePresentationPending then
+            set ST_LoadedGamePresentationPending = false
+            call ExecuteFunc("PotSSaveUI_RelocateLoadedPartyToHut")
         endif
         if ST_HasNazgrek() then
             static if LIBRARY_CameraControl then
@@ -440,7 +347,7 @@ library Start requires ZonesCore, DInventory, DEquipment, WeatherSystem, Terrain
         endif
         set ST_AwaitingLoad = false
         set ST_PendingLoadSlot = ""
-        call ST_MoveLoadedPartyToHut()
+        set ST_LoadedGamePresentationPending = true
         if ST_Timer == null then
             set ST_Timer = CreateTimer()
         endif
