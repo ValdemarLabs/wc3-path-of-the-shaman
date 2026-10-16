@@ -2,9 +2,11 @@
     CameraUI
     
     Author: [Valdemar]
-    Version: 1.3.1
+    Version: 1.3.2
 
-    Description: Provides a panel for switching camera modes and adjusting camera, DynamicFarZ, and mouse-orbit settings.
+    Description: Provides a panel for switching camera modes and adjusting camera,
+    DynamicFarZ automatic behavior, and mouse-orbit settings. The performance
+    profile is configured in SettingsUI.
 
     Credits: Tasyen (TasQuestBox as inspiration)
 
@@ -37,7 +39,6 @@ globals
     private constant integer CUI_ACTION_MOUSE_VERTICAL = 6
     private constant integer CUI_ACTION_FREE_CAMERA = 7
     private constant integer CUI_ACTION_DYNAMIC_FARZ = 8
-    private constant integer CUI_ACTION_DYNAMIC_FARZ_PROFILE = 9
 
     private boolean CUI_Initialized = false
     private boolean CUI_Syncing = false
@@ -169,7 +170,6 @@ private function CUI_RefreshFields takes player whichPlayer returns nothing
         else
             call BlzFrameSetText(CUI_ActionButton[8], "Auto: Off")
         endif
-        call BlzFrameSetText(CUI_ActionButton[9], "Profile: " + DynamicFarZ_GetProfileName(whichPlayer))
         loop
             exitwhen i > 5
             call BlzFrameSetText(CUI_SliderLabel[i], CUI_GetSliderDisplay(i, whichPlayer))
@@ -269,9 +269,6 @@ private function CUI_ActionAction takes nothing returns nothing
             call FreeCamera_Toggle(whichPlayer)
         elseif CUI_ButtonAction.integer[handleId] == CUI_ACTION_DYNAMIC_FARZ then
             call DynamicFarZ_ToggleAuto(whichPlayer)
-            call CameraControl_RefreshFarZ(whichPlayer)
-        elseif CUI_ButtonAction.integer[handleId] == CUI_ACTION_DYNAMIC_FARZ_PROFILE then
-            call DynamicFarZ_CycleProfile(whichPlayer)
             call CameraControl_RefreshFarZ(whichPlayer)
         endif
         call CUI_RefreshFields(whichPlayer)
@@ -457,8 +454,7 @@ private function CUI_CreateFrames takes nothing returns nothing
     call BlzFrameSetEnable(CUI_DynamicFarZTitle, false)
     call BlzFrameSetText(CUI_DynamicFarZTitle, "|cffffcc00Dynamic Far Z|r")
 
-    call CUI_CreateDynamicFarZButton(8, "Auto: On", CUI_ACTION_DYNAMIC_FARZ, 0.010, 0.100)
-    call CUI_CreateDynamicFarZButton(9, "Profile: Medium", CUI_ACTION_DYNAMIC_FARZ_PROFILE, 0.116, 0.166)
+    call CUI_CreateDynamicFarZButton(8, "Auto: On", CUI_ACTION_DYNAMIC_FARZ, 0.010, 0.150)
 
     call BlzFrameSetVisible(CUI_Parent, false)
 endfunction

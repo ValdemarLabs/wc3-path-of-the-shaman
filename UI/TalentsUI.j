@@ -2,7 +2,7 @@
     TalentsUI
 
     Author: Valdemar
-    Version:
+    Version: 1.1.0
 
     Description:
     Custom frame talent tree UI for player shaman heroes. Displays Elemental,
@@ -15,7 +15,8 @@
 
     How to install:
     Import after Talents, AbilitiesPlayer, MasterUI, Table, Interface, and CameraControl.
-    AbilitiesLiteUI can open this UI through TalentsUI_ShowForUnit.
+    MasterUI opens the selected owned player hero; StatsUI opens an explicit hero
+    through TalentsUI_ShowForUnit.
 
     API:
     - call TalentsUI_ShowForUnit(hero)
@@ -48,6 +49,7 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
         private constant integer TUI_LINK_DOWN = 4
 
         private boolean TUI_Initialized = false
+        private boolean TUI_ReturnToStats = false
 
         private framehandle TUI_Parent = null
         private framehandle TUI_Title = null
@@ -135,7 +137,11 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
     endfunction
 
     private function TUI_GetDefaultHero takes nothing returns unit
-        if TUI_IsPlayerShamanHero(udg_Nazgrek) then
+        if TUI_IsPlayerShamanHero(udg_Zulkis) and IsUnitSelected(udg_Zulkis, Player(0)) then
+            return udg_Zulkis
+        elseif TUI_IsPlayerShamanHero(udg_Nazgrek) and IsUnitSelected(udg_Nazgrek, Player(0)) then
+            return udg_Nazgrek
+        elseif TUI_IsPlayerShamanHero(udg_Nazgrek) then
             return udg_Nazgrek
         elseif TUI_IsPlayerShamanHero(udg_Zulkis) then
             return udg_Zulkis
@@ -166,6 +172,7 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
         call ExecuteFunc("CommandsUI_Hide")
         call ExecuteFunc("PlayerHomeUI_Hide")
         call ExecuteFunc("SettingsUI_Hide")
+        call ExecuteFunc("MinimapSettingsUI_Hide")
     endfunction
 
     private function TUI_ClampSelection takes nothing returns nothing
@@ -646,12 +653,14 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
     endfunction
 
     public function ShowForUnit takes unit hero returns nothing
+        set TUI_ReturnToStats = true
         call TUI_OpenForHero(hero)
     endfunction
 
     public function Show takes nothing returns nothing
         local unit hero = TUI_GetDefaultHero()
 
+        set TUI_ReturnToStats = false
         call TUI_OpenForHero(hero)
 
         set hero = null
@@ -670,8 +679,15 @@ library TalentsUI initializer AutoInit requires Table, MasterUI, Talents, Abilit
     endfunction
 
     private function TUI_ReturnAction takes nothing returns nothing
+        local boolean returnToStats = TUI_ReturnToStats
+
         call Hide()
-        call ExecuteFunc("AbilitiesLiteUI_Show")
+        set TUI_ReturnToStats = false
+        if returnToStats then
+            call ExecuteFunc("StatsUI_Show")
+        else
+            call MasterUI_Show()
+        endif
     endfunction
 
     private function TUI_TreeAction takes nothing returns nothing

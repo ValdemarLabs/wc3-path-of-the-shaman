@@ -365,6 +365,7 @@ library AbilitiesUI initializer AutoInit requires Table, MasterUI, Abilities, Ab
         call ExecuteFunc("CommandsUI_Hide")
         call ExecuteFunc("PlayerHomeUI_Hide")
         call ExecuteFunc("SettingsUI_Hide")
+        call ExecuteFunc("MinimapSettingsUI_Hide")
     endfunction
 
     private function ABUI_OpenForPlayer takes player whichPlayer, unit trainer, unit hero returns nothing

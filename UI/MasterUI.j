@@ -2,7 +2,7 @@
     MasterUI
     
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.2.0
 
     Description: Serves as the main in-game menu for opening information,
     settings, and the PotS save/load panel.
@@ -64,6 +64,7 @@ globals
     private constant integer MUI_ACTION_PLAYER_HOME = 11
     private constant integer MUI_ACTION_SETTINGS = 12
     private constant integer MUI_ACTION_SAVE_LOAD = 13
+    private constant integer MUI_ACTION_TALENTS = 14
 
     private constant real MUI_PANEL_LEFT = 0.110
     private constant real MUI_PANEL_RIGHT = 0.560
@@ -90,6 +91,7 @@ globals
     private constant string MUI_ICON_ZONES = "ReplaceableTextures\\CommandButtons\\BTNMap03.blp"                     // OK
     private constant string MUI_ICON_PROFESSIONS = "ReplaceableTextures\\CommandButtons\\BTNTrade11.blp"             // OK
     private constant string MUI_ICON_ABILITIES = "ReplaceableTextures\\CommandButtons\\BTNBook_07.blp"              // OK
+    private constant string MUI_ICON_TALENTS = "ReplaceableTextures\\CommandButtons\\BTNSelectHeroOn.blp"
     private constant string MUI_ICON_CAMERA = "ReplaceableTextures\\WorldEditUI\\Doodad-Cinematic.blp"              // OK
     private constant string MUI_ICON_HINTS = "ReplaceableTextures\\CommandButtons\\BTNINV_Misc_Note_01.blp"         // OK
     private constant string MUI_ICON_ACHIEVEMENTS = "ReplaceableTextures\\CommandButtons\\BTNINV_Misc_Note_02.blp"  // OK
@@ -197,6 +199,7 @@ private function MUI_HideAllPanels takes nothing returns nothing
     call ExecuteFunc("CommandsUI_Hide")
     call ExecuteFunc("PlayerHomeUI_Hide")
     call ExecuteFunc("SettingsUI_Hide")
+    call ExecuteFunc("MinimapSettingsUI_Hide")
     call ExecuteFunc("PotSSaveUI_Hide")
     static if LIBRARY_QuestUI then
         call ExecuteFunc("QuestUI_Hide")
@@ -245,6 +248,11 @@ endfunction
 private function MUI_OpenAbilities takes nothing returns nothing
     call MUI_HideAllPanels()
     call ExecuteFunc("AbilitiesLiteUI_Show")
+endfunction
+
+private function MUI_OpenTalents takes nothing returns nothing
+    call MUI_HideAllPanels()
+    call ExecuteFunc("TalentsUI_Show")
 endfunction
 
 private function MUI_OpenCamera takes nothing returns nothing
@@ -298,6 +306,8 @@ private function MUI_RunAction takes integer actionId returns nothing
         call MUI_OpenStats()
     elseif actionId == MUI_ACTION_ABILITIES then
         call MUI_OpenAbilities()
+    elseif actionId == MUI_ACTION_TALENTS then
+        call MUI_OpenTalents()
     elseif actionId == MUI_ACTION_CAMERA then
         call MUI_OpenCamera()
     elseif actionId == MUI_ACTION_HINTS then
@@ -402,9 +412,9 @@ private function MUI_CreateMenuButton takes integer index, string label, string 
 endfunction
 
 private function MUI_CreateHintsButtonAlert takes nothing returns framehandle
-    local framehandle alertFrame = BlzCreateFrameByType("SPRITE", "MasterUIHintsButtonAlert", MUI_MenuButton[6], "", 0)
+    local framehandle alertFrame = BlzCreateFrameByType("SPRITE", "MasterUIHintsButtonAlert", MUI_MenuButton[7], "", 0)
 
-    call BlzFrameSetPoint(alertFrame, FRAMEPOINT_CENTER, MUI_MenuButtonIcon[6], FRAMEPOINT_CENTER, MUI_HINT_ICON_ALERT_OFFSET, MUI_HINT_ICON_ALERT_OFFSET)
+    call BlzFrameSetPoint(alertFrame, FRAMEPOINT_CENTER, MUI_MenuButtonIcon[7], FRAMEPOINT_CENTER, MUI_HINT_ICON_ALERT_OFFSET, MUI_HINT_ICON_ALERT_OFFSET)
     call BlzFrameSetSize(alertFrame, MUI_MENU_ICON_SIZE, MUI_MENU_ICON_SIZE)
     call BlzFrameSetModel(alertFrame, MUI_HINT_ICON_ALERT_MODEL, 0)
     call BlzFrameSetScale(alertFrame, MUI_HINT_ICON_ALERT_SCALE)
@@ -440,15 +450,16 @@ private function MUI_CreateFrames takes nothing returns nothing
     call MUI_CreateMenuButton(4, "Professions", MUI_ICON_PROFESSIONS, MUI_ACTION_PROFESSIONS, 0.020, -0.186)
 
     call MUI_CreateMenuButton(5, "Abilities", MUI_ICON_ABILITIES, MUI_ACTION_ABILITIES, 0.160, -0.060)
-    call MUI_CreateMenuButton(6, "Hints", MUI_ICON_HINTS, MUI_ACTION_HINTS, 0.160, -0.102)
-    call MUI_CreateMenuButton(7, "Achievements", MUI_ICON_ACHIEVEMENTS, MUI_ACTION_ACHIEVEMENTS, 0.160, -0.144)
-    call MUI_CreateMenuButton(8, "Secrets", MUI_ICON_SECRETS, MUI_ACTION_SECRETS, 0.160, -0.186)
+    call MUI_CreateMenuButton(6, "Talents", MUI_ICON_TALENTS, MUI_ACTION_TALENTS, 0.160, -0.102)
+    call MUI_CreateMenuButton(7, "Hints", MUI_ICON_HINTS, MUI_ACTION_HINTS, 0.160, -0.144)
+    call MUI_CreateMenuButton(8, "Achievements", MUI_ICON_ACHIEVEMENTS, MUI_ACTION_ACHIEVEMENTS, 0.160, -0.186)
+    call MUI_CreateMenuButton(9, "Secrets", MUI_ICON_SECRETS, MUI_ACTION_SECRETS, 0.160, -0.228)
 
-    call MUI_CreateMenuButton(9, "Camera", MUI_ICON_CAMERA, MUI_ACTION_CAMERA, 0.300, -0.060)
-    call MUI_CreateMenuButton(10, "Commands", MUI_ICON_COMMANDS, MUI_ACTION_COMMANDS, 0.300, -0.102)
-    call MUI_CreateMenuButton(11, "Traveler's Journal", MUI_ICON_PLAYER_HOME, MUI_ACTION_PLAYER_HOME, 0.300, -0.144)
-    call MUI_CreateMenuButton(12, "Settings", MUI_ICON_SETTINGS, MUI_ACTION_SETTINGS, 0.300, -0.186)
-    call MUI_CreateMenuButton(13, "Save / Load", MUI_ICON_SAVE_LOAD, MUI_ACTION_SAVE_LOAD, 0.300, -0.228)
+    call MUI_CreateMenuButton(10, "Camera", MUI_ICON_CAMERA, MUI_ACTION_CAMERA, 0.300, -0.060)
+    call MUI_CreateMenuButton(11, "Commands", MUI_ICON_COMMANDS, MUI_ACTION_COMMANDS, 0.300, -0.102)
+    call MUI_CreateMenuButton(12, "Traveler's Journal", MUI_ICON_PLAYER_HOME, MUI_ACTION_PLAYER_HOME, 0.300, -0.144)
+    call MUI_CreateMenuButton(13, "Settings", MUI_ICON_SETTINGS, MUI_ACTION_SETTINGS, 0.300, -0.186)
+    call MUI_CreateMenuButton(14, "Save / Load", MUI_ICON_SAVE_LOAD, MUI_ACTION_SAVE_LOAD, 0.300, -0.228)
 
     set MUI_HintsButtonAlert = MUI_CreateHintsButtonAlert()
 
