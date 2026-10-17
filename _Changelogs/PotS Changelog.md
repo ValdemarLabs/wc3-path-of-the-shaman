@@ -17,6 +17,13 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [17.10.2026]
+
+### Technical Updates
+
+- Updated `SaveLoad/PotSSaveConfig.j` and `SaveLoad/PotSSaveLoad.j` with reserved map/game version manifest fields and public metadata getters. New saves write `unused` to both fields rather than relying on error-prone manual version labels; legacy and earlier informational values remain readable and never affect load acceptance.
+- Updated the repository-root `SAVELOAD.md` to direct players through the Path of the Shaman Game menu instead of F10.
+
 
 ## [16.10.2026]
 
