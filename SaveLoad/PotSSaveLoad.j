@@ -2,7 +2,7 @@
     PotSSaveLoad
 
     Author: Valdemar
-    Version: 2.2.1
+    Version: 2.3.1
 
     Description:
     Public single-player party save/load facade, fixed-slot metadata, safe-load
@@ -24,6 +24,7 @@
     - PotSSaveLoad_IsRestoring()
     - PotSSaveLoad_CanRecoverFromLoadFailure(player)
     - PotSSaveLoad_SlotExists/GetSlotTitle/GetSlotMode/GetSlotDifficulty(...)
+    - PotSSaveLoad_GetSlotMapVersion/GetSlotGameVersion(slot)
     - PotSSaveLoad_StartPendingLoad()
     - PotSSaveLoad_AddSaveCompleteAction/SaveFailedAction(...)
     - PotSSaveLoad_AddLoadCompleteAction/LoadFailedAction/WarningAction(...)
@@ -71,6 +72,12 @@ library PotSSaveLoad initializer Init requires PotSSaveConfig, PotSStateData, Po
         private constant integer PSS_PREFLIGHT_STAGE_CUSTOM_STORAGE = 4
         private constant integer PSS_PREFLIGHT_STAGE_WORLD = 5
         private constant string PSS_META_PREFIX = "pots_meta_"
+        private constant integer PSS_META_HERO_COUNT = 0
+        private constant integer PSS_META_GAME_MODE = 1
+        private constant integer PSS_META_DIFFICULTY = 2
+        private constant integer PSS_META_MAP_VERSION = 3
+        private constant integer PSS_META_GAME_VERSION = 4
+        private constant string PSS_META_LEGACY_VERSION = "Unknown (legacy save)"
 
         public trigger OnSaveComplete = CreateTrigger()
         public trigger OnSaveFailed = CreateTrigger()
@@ -785,11 +792,11 @@ library PotSSaveLoad initializer Init requires PotSSaveConfig, PotSStateData, Po
             set mode = GameMode_GetMode()
             set difficulty = GameMode_GetDifficulty()
         endif
-        set data = I2S(heroCount) + "|" + I2S(mode) + "|" + I2S(difficulty)
+        set data = I2S(heroCount) + "|" + I2S(mode) + "|" + I2S(difficulty) + "|" + PotSSaveConfig_MAP_VERSION + "|" + PotSSaveConfig_GAME_VERSION
         call SaveFile.create(Player(playerId), title, PSS_GetMetaId(slot), data)
     endfunction
 
-    private function PSS_GetMetaValue takes string slot, integer wantedIndex, integer defaultValue returns integer
+    private function PSS_GetMetaToken takes string slot, integer wantedIndex, string defaultValue returns string
         local string data = SaveFile.getData(PSS_GetMetaId(slot))
         local string token = ""
         local string character
@@ -804,7 +811,10 @@ library PotSSaveLoad initializer Init requires PotSSaveConfig, PotSStateData, Po
             set character = SubString(data, i, i + 1)
             if character == "|" or i == StringLength(data) then
                 if index == wantedIndex then
-                    return S2I(token)
+                    if token == "" then
+                        return defaultValue
+                    endif
+                    return token
                 endif
                 set token = ""
                 set index = index + 1
@@ -814,6 +824,10 @@ library PotSSaveLoad initializer Init requires PotSSaveConfig, PotSStateData, Po
             set i = i + 1
         endloop
         return defaultValue
+    endfunction
+
+    private function PSS_GetMetaValue takes string slot, integer wantedIndex, integer defaultValue returns integer
+        return S2I(PSS_GetMetaToken(slot, wantedIndex, I2S(defaultValue)))
     endfunction
 
     private function PSS_CacheZulkisStream takes nothing returns boolean
@@ -1195,7 +1209,7 @@ library PotSSaveLoad initializer Init requires PotSSaveConfig, PotSStateData, Po
         set PSS_Busy[playerId] = true
         set PSS_ZulkisStreamCount = 0
         set PSS_LogicalSlot[playerId] = slot
-        set PSS_PartyHasZulkis[playerId] = SaveFile.exists(PSS_GetMetaId(slot)) and PSS_GetMetaValue(slot, 0, 1) >= 2
+        set PSS_PartyHasZulkis[playerId] = SaveFile.exists(PSS_GetMetaId(slot)) and PSS_GetMetaValue(slot, PSS_META_HERO_COUNT, 1) >= 2
         if PSS_PartyHasZulkis[playerId] then
             if udg_Zulkis == null or GetUnitTypeId(udg_Zulkis) == 0 or not IsUnitType(udg_Zulkis, UNIT_TYPE_HERO) then
                 set PSS_Busy[playerId] = false
@@ -1299,7 +1313,7 @@ library PotSSaveLoad initializer Init requires PotSSaveConfig, PotSStateData, Po
         if not SaveFile.exists(PSS_GetMetaId(slot)) or not SaveFile.exists("pots_" + slot + "_n") then
             return false
         endif
-        return PSS_GetMetaValue(slot, 0, 1) < 2 or SaveFile.exists("pots_" + slot + "_z")
+        return PSS_GetMetaValue(slot, PSS_META_HERO_COUNT, 1) < 2 or SaveFile.exists("pots_" + slot + "_z")
     endfunction
 
     public function GetSlotTitle takes string slot returns string
@@ -1310,11 +1324,25 @@ library PotSSaveLoad initializer Init requires PotSSaveConfig, PotSStateData, Po
     endfunction
 
     public function GetSlotMode takes string slot returns integer
-        return PSS_GetMetaValue(slot, 1, 1)
+        return PSS_GetMetaValue(slot, PSS_META_GAME_MODE, 1)
     endfunction
 
     public function GetSlotDifficulty takes string slot returns integer
-        return PSS_GetMetaValue(slot, 2, 2)
+        return PSS_GetMetaValue(slot, PSS_META_DIFFICULTY, 2)
+    endfunction
+
+    public function GetSlotMapVersion takes string slot returns string
+        if not SlotExists(slot) then
+            return ""
+        endif
+        return PSS_GetMetaToken(slot, PSS_META_MAP_VERSION, PSS_META_LEGACY_VERSION)
+    endfunction
+
+    public function GetSlotGameVersion takes string slot returns string
+        if not SlotExists(slot) then
+            return ""
+        endif
+        return PSS_GetMetaToken(slot, PSS_META_GAME_VERSION, PSS_META_LEGACY_VERSION)
     endfunction
 
     public function StartPendingLoad takes nothing returns nothing

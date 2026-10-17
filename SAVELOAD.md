@@ -38,8 +38,6 @@ A yellow warning about a skipped completed quest is non-fatal. It means that que
 
 Older saves should normally continue to work after terrain changes, new content, balance updates, and script changes. They are not tied to Warcraft III's native map checksum.
 
-New saves also record the map build and Warcraft III build label for troubleshooting. These labels are informational and do not decide whether a save is compatible.
-
 An older save may not work when:
 
 - The Warcraft III player/profile name is different.

@@ -1,4 +1,4 @@
-# PotS Maxou NSL SaveLoad 2.2.1
+# PotS Maxou NSL SaveLoad 2.3.1
 
 This directory contains the PotS-owned automatic character-state layer described by `PotS_MaxouNSL_AutoSaveLoad_Codex.json`. It uses the existing Maxou New Save Load (NSL) codec and FileIO stack as an immutable backend. The PotS SaveLoad implementation does not edit or copy files under `_CoreSystems/MaxouNSL/`.
 
@@ -54,7 +54,7 @@ The imported `NSLImpl` remains the single owner of `NSL_CodeVersion`, `NSL_Key`,
 - After preload, the first gameplay panel offers `New Game` and `Load Saved`. New Game opens the existing mode/difficulty flow; Load Saved lists six local slots.
 - `MasterUI` exposes the same six-slot Save / Load panel during play.
 - `-pots-save <slot>` and `-pots-load <slot>` remain available for 1-30-character ASCII slot names made of letters, digits, underscores, or hyphens.
-- A party slot writes authenticated `pots_<slot>_n` and, when owned, `pots_<slot>_z` character files. A small `pots_meta_<slot>` manifest publishes the title, hero count, game mode, and difficulty only after every required character file succeeds.
+- A party slot writes authenticated `pots_<slot>_n` and, when owned, `pots_<slot>_z` character files. A small `pots_meta_<slot>` manifest publishes the title, hero count, game mode, difficulty, and two reserved version fields only after every required character file succeeds.
 - The startup panel restores the saved mode/difficulty before `Start` creates Nazgrek, then loads Nazgrek followed by Zul'kis when the manifest contains both heroes.
 - The startup slot choice explicitly reopens and owns the safe-load window, so waiting on the title panel does not invalidate a selected save.
 - A successful startup load explicitly clears the preload frame and opening cinematic filter before restoring the camera and player control.
@@ -67,6 +67,8 @@ Party saves prefer `udg_Nazgrek` and include `udg_Zulkis` when Zul'kis is a vali
 Zul'kis is never accepted as the fallback for Nazgrek's primary party slot. Saving is rejected while Nazgrek is temporarily unavailable or not player-owned during a split story phase, preventing one Zul'kis snapshot from being labeled and written as both heroes.
 
 The manifest title takes each displayed hero level from that hero's serialized snapshot. It does not reuse a live unit level after the asynchronous Nazgrek/Zul'kis save sequence, and the same unit handle cannot be published as both heroes.
+
+The manifest's map and game version fields are reserved but currently unused. New saves write the literal value `unused` to both fields because runtime JASS cannot discover authoritative values and manually maintained labels are too error-prone. These fields do not participate in authentication, schema migration, preflight, or load acceptance. Saves created before the fields existed report `Unknown (legacy save)`; saves written during an earlier implementation may retain their old informational values. All variants remain loadable.
 
 Only one operation per player can run at once. A second load is rejected. An unexpected apply-stage failure locks further loading for that session and tells the player to reload the map, because Warcraft III does not provide a transactional rollback for arbitrary unit mutations.
 

@@ -2,7 +2,7 @@
     PotSSaveConfig
 
     Author: Valdemar
-    Version: 2.1.1
+    Version: 2.1.3
 
     Description:
     Owns PotS application-schema limits. The immutable original Maxou NSLImpl
@@ -21,6 +21,11 @@
 **/
 library PotSSaveConfig
     globals
+        // Reserved manifest fields. Automatic authoritative version discovery
+        // is not available to runtime JASS, so do not maintain manual labels.
+        public constant string MAP_VERSION = "unused"
+        public constant string GAME_VERSION = "unused"
+
         // PotS application schema. Schema 1 remains readable; schema 2.0 adds
         // ability provenance and schema 2.1 adds custom inventory/equipment.
         public constant integer SCHEMA_MAJOR = 2
