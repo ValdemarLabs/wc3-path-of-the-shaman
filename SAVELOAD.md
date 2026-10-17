@@ -4,7 +4,7 @@ Path of the Shaman provides custom character saves alongside Warcraft III's norm
 
 ## Saving and loading
 
-- Open **Menu (F10)** and choose the Save / Load option during play.
+- Open **Game** in the Path of the Shaman menu and choose **Save / Load**.
 - Choose one of the six local save slots and wait for the save-completed message.
 - To continue later, choose **Load Saved** on the first menu and select the slot.
 - Saves are stored locally on the computer that created them, in Warcraft III's permitted custom-map storage under the `Path of the Shaman` folder.
@@ -37,6 +37,8 @@ A yellow warning about a skipped completed quest is non-fatal. It means that que
 ## Loading saves after a map update
 
 Older saves should normally continue to work after terrain changes, new content, balance updates, and script changes. They are not tied to Warcraft III's native map checksum.
+
+New saves also record the map build and Warcraft III build label for troubleshooting. These labels are informational and do not decide whether a save is compatible.
 
 An older save may not work when:
 
