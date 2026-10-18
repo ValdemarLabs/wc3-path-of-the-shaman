@@ -63,6 +63,9 @@ namespace WC3ItemManager
         private string settingsFile = "MainFormSettings.ini";
         private static string cacheFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "cache");
         private static string backupFolder = "";
+        private static string modelExplorerExecutablePath = @"H:\Pelit\WC3\_Tools\WC3ModelExplorer-1.4.0\WC3ModelExplorer.exe";
+        private static string nativeModelSourcePath = "";
+        private static string mapModelSourcePath = "";
 
         public MainForm()
         {
@@ -111,7 +114,7 @@ namespace WC3ItemManager
                 {
                     foreach (var line in File.ReadAllLines(settingsFile))
                     {
-                        var parts = line.Split('=');
+                        var parts = line.Split(new[] { '=' }, 2);
                         if (parts.Length == 2)
                         {
                             if (parts[0] == "ZoomLevel" && float.TryParse(parts[1], out float zoom))
@@ -121,6 +124,18 @@ namespace WC3ItemManager
                             else if (parts[0] == "BackupFolder")
                             {
                                 backupFolder = parts[1];
+                            }
+                            else if (parts[0] == "ModelExplorerExecutable")
+                            {
+                                modelExplorerExecutablePath = parts[1];
+                            }
+                            else if (parts[0] == "NativeModelSource")
+                            {
+                                nativeModelSourcePath = parts[1];
+                            }
+                            else if (parts[0] == "MapModelSource")
+                            {
+                                mapModelSourcePath = parts[1];
                             }
                             else if (parts[0].StartsWith("Visible_"))
                             {
@@ -146,6 +161,11 @@ namespace WC3ItemManager
                         "database_item_backups"
                     );
                 }
+
+                ModelExplorerIntegration.Configure(
+                    modelExplorerExecutablePath,
+                    nativeModelSourcePath,
+                    mapModelSourcePath);
             }
             catch { /* Ignore settings load errors */ }
         }
@@ -157,6 +177,9 @@ namespace WC3ItemManager
                 var lines = new List<string>();
                 lines.Add($"ZoomLevel={currentZoomFactor}"); // Save zoom level
                 lines.Add($"BackupFolder={backupFolder}"); // Save backup folder path
+                lines.Add($"ModelExplorerExecutable={modelExplorerExecutablePath}");
+                lines.Add($"NativeModelSource={nativeModelSourcePath}");
+                lines.Add($"MapModelSource={mapModelSourcePath}");
                 
                 if (dgvItems != null && dgvItems.Columns != null)
                 {
@@ -1030,7 +1053,14 @@ namespace WC3ItemManager
                 string customPath = IconPathConfig.GetCustomIconPath();
                 
                 // Open configuration dialog
-                using (var configForm = new ConfigurationForm(columnVisibility, blizzardPath, customPath, backupFolder))
+                using (var configForm = new ConfigurationForm(
+                    columnVisibility,
+                    blizzardPath,
+                    customPath,
+                    backupFolder,
+                    modelExplorerExecutablePath,
+                    nativeModelSourcePath,
+                    mapModelSourcePath))
                 {
                     if (configForm.ShowDialog() == DialogResult.OK)
                     {
@@ -1044,8 +1074,15 @@ namespace WC3ItemManager
                             }
                         }
                         
-                        // Update backup folder from configuration
+                        // Update external tool and backup paths from configuration
                         backupFolder = configForm.BackupFolderPath;
+                        modelExplorerExecutablePath = configForm.ModelExplorerExecutablePath;
+                        nativeModelSourcePath = configForm.NativeModelSourcePath;
+                        mapModelSourcePath = configForm.MapModelSourcePath;
+                        ModelExplorerIntegration.Configure(
+                            modelExplorerExecutablePath,
+                            nativeModelSourcePath,
+                            mapModelSourcePath);
                         
                         // Save settings to file
                         SaveSettings();

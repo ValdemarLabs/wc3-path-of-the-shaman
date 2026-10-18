@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("CodexDbTool")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+551499d39b2f1fdfe1fae0a1579e4fa21ef30902")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c7ac5e2d121603a91ed20cbf991d5c5c41396902")]
 [assembly: System.Reflection.AssemblyProductAttribute("CodexDbTool")]
 [assembly: System.Reflection.AssemblyTitleAttribute("CodexDbTool")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

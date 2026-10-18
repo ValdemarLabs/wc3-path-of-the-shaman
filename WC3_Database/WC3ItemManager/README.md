@@ -142,6 +142,23 @@ For a command-line synchronization against the configured database:
 dotnet .\WC3_Database\WC3ItemManager\bin\Debug\net8.0-windows\WC3ItemManager.dll --sync-quest-sources .\QuestsAndDialogs
 ```
 
+### External Model Browser
+
+WC3 Manager can launch a separately installed [WC3 Model Explorer](https://github.com/Jaccouille/wc3-model-explorer) without bundling or embedding it.
+
+1. Open **Tools > Configuration > Model Explorer**.
+2. Select `WC3ModelExplorer.exe`.
+3. Configure a native model source folder (for example an extracted `war3.w3mod\units` tree) and the current map `.w3x`/`.w3m` or an extracted map-assets folder.
+4. In the item editor, use **Browse Models...** beside the standard Model Path, on the Stack Models tab, or beside Model Attachment Abilities.
+5. Choose the map or native profile. WC3 Manager copies that source path and starts the external explorer.
+6. Paste the source into WC3 Model Explorer's top source field and press Enter. After selecting a model, use the explorer's **Copy Path**, return to WC3 Manager, and choose **Paste Path**.
+
+WC3 Model Explorer 1.4.0 ignores command-line arguments and scans only one folder or map archive at a time, so WC3 Manager cannot switch its source automatically. The explorer's CASC/MPQ data-source settings resolve model textures; they do not make native models browseable. Point its browser at an extracted native model folder when browsing base-game models.
+
+**Paste Path** converts copied absolute paths to Warcraft-relative paths when they come from `war3.w3mod`, `war3mapImported`, the explorer's temporary `wc3map_*` extraction folder, or either configured source directory. Unrecognized absolute paths are rejected rather than saved as invalid Warcraft model paths.
+
+The attachment-ability control opens the same visual browser, but WC3 Manager does not currently map Object Editor ability codes to their attachment model fields. Select the attachment ability separately after reviewing the desired effect model.
+
 ### Edit/Add Item Dialog
 
 **Basic Info Tab**

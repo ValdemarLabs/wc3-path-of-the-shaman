@@ -21,6 +21,11 @@ namespace WC3ItemManager
         private TextBox txtCustomIconPath;
         private Button btnBrowseBlizzard;
         private Button btnBrowseCustom;
+
+        // Model Explorer Tab
+        private TextBox txtModelExplorerExecutable;
+        private TextBox txtNativeModelSource;
+        private TextBox txtMapModelSource;
         
         // Display Settings Tab
         private CheckBox chkShowTooltipPreview;
@@ -36,13 +41,26 @@ namespace WC3ItemManager
         public string BlizzardIconPath { get; private set; }
         public string CustomIconPath { get; private set; }
         public string BackupFolderPath { get; private set; }
+        public string ModelExplorerExecutablePath { get; private set; }
+        public string NativeModelSourcePath { get; private set; }
+        public string MapModelSourcePath { get; private set; }
         
-        public ConfigurationForm(Dictionary<string, bool> currentVisibility, string blizzardPath, string customPath, string backupPath = null)
+        public ConfigurationForm(
+            Dictionary<string, bool> currentVisibility,
+            string blizzardPath,
+            string customPath,
+            string backupPath = null,
+            string modelExplorerExecutablePath = null,
+            string nativeModelSourcePath = null,
+            string mapModelSourcePath = null)
         {
             columnVisibility = new Dictionary<string, bool>(currentVisibility);
             BlizzardIconPath = blizzardPath ?? "";
             CustomIconPath = customPath ?? "";
             BackupFolderPath = backupPath ?? GetDefaultBackupPath();
+            ModelExplorerExecutablePath = modelExplorerExecutablePath ?? "";
+            NativeModelSourcePath = nativeModelSourcePath ?? "";
+            MapModelSourcePath = mapModelSourcePath ?? "";
             
             InitializeUI();
             LoadSettings();
@@ -80,6 +98,11 @@ namespace WC3ItemManager
             TabPage tabIconPaths = new TabPage("Icon Paths");
             SetupIconPathsTab(tabIconPaths);
             tabControl.TabPages.Add(tabIconPaths);
+
+            // Model Explorer Tab
+            TabPage tabModelExplorer = new TabPage("Model Explorer");
+            SetupModelExplorerTab(tabModelExplorer);
+            tabControl.TabPages.Add(tabModelExplorer);
             
             // Display Settings Tab
             TabPage tabDisplay = new TabPage("Display Settings");
@@ -264,6 +287,108 @@ namespace WC3ItemManager
             });
         }
         
+        private void SetupModelExplorerTab(TabPage tab)
+        {
+            int y = 25;
+
+            tab.Controls.Add(new Label
+            {
+                Text = "WC3 Model Explorer executable:",
+                Location = new Point(20, y),
+                AutoSize = true,
+                Font = new Font("Segoe UI", 10, FontStyle.Bold)
+            });
+
+            txtModelExplorerExecutable = new TextBox
+            {
+                Location = new Point(20, y + 28),
+                Size = new Size(500, 25),
+                Text = ModelExplorerExecutablePath
+            };
+            tab.Controls.Add(txtModelExplorerExecutable);
+
+            var btnBrowseExecutable = new Button
+            {
+                Text = "Browse...",
+                Location = new Point(530, y + 26),
+                Size = new Size(100, 28)
+            };
+            btnBrowseExecutable.Click += (s, e) => BrowseModelExplorerExecutable();
+            tab.Controls.Add(btnBrowseExecutable);
+
+            y += 95;
+            tab.Controls.Add(new Label
+            {
+                Text = "Native WC3 model source folder:",
+                Location = new Point(20, y),
+                AutoSize = true,
+                Font = new Font("Segoe UI", 10, FontStyle.Bold)
+            });
+
+            txtNativeModelSource = new TextBox
+            {
+                Location = new Point(20, y + 28),
+                Size = new Size(500, 25),
+                Text = NativeModelSourcePath
+            };
+            tab.Controls.Add(txtNativeModelSource);
+
+            var btnBrowseNative = new Button
+            {
+                Text = "Browse...",
+                Location = new Point(530, y + 26),
+                Size = new Size(100, 28)
+            };
+            btnBrowseNative.Click += (s, e) =>
+                BrowseFolder(txtNativeModelSource, "Select the folder containing native WC3 models");
+            tab.Controls.Add(btnBrowseNative);
+
+            tab.Controls.Add(new Label
+            {
+                Text = "Example: ...\\_retail_\\war3.w3mod\\units. This folder is scanned for native models.",
+                Location = new Point(20, y + 58),
+                Size = new Size(620, 32),
+                ForeColor = Color.Gray
+            });
+
+            y += 115;
+            tab.Controls.Add(new Label
+            {
+                Text = "Map model source (.w3x/.w3m or extracted folder):",
+                Location = new Point(20, y),
+                AutoSize = true,
+                Font = new Font("Segoe UI", 10, FontStyle.Bold)
+            });
+
+            txtMapModelSource = new TextBox
+            {
+                Location = new Point(20, y + 28),
+                Size = new Size(500, 25),
+                Text = MapModelSourcePath
+            };
+            tab.Controls.Add(txtMapModelSource);
+
+            var btnBrowseMap = new Button
+            {
+                Text = "Browse...",
+                Location = new Point(530, y + 26),
+                Size = new Size(100, 28)
+            };
+            btnBrowseMap.Click += (s, e) => BrowseMapModelSource();
+            tab.Controls.Add(btnBrowseMap);
+
+            y += 90;
+            tab.Controls.Add(new Label
+            {
+                Text = "WC3 Model Explorer 1.4.0 ignores startup arguments. WC3 Manager therefore copies the selected " +
+                       "source to the clipboard and opens the external tool; paste it into the explorer's top source field. " +
+                       "The explorer remains separately installed and is not bundled or embedded.",
+                Location = new Point(20, y),
+                Size = new Size(610, 75),
+                ForeColor = Color.FromArgb(90, 90, 90)
+            });
+        }
+
         private void SetupDisplaySettingsTab(TabPage tab)
         {
             int y = 30;
@@ -393,6 +518,9 @@ namespace WC3ItemManager
             
             txtBlizzardIconPath.Text = BlizzardIconPath;
             txtCustomIconPath.Text = CustomIconPath;
+            txtModelExplorerExecutable.Text = ModelExplorerExecutablePath;
+            txtNativeModelSource.Text = NativeModelSourcePath;
+            txtMapModelSource.Text = MapModelSourcePath;
         }
         
         private string GetColumnDisplayName(string columnName)
@@ -453,11 +581,11 @@ namespace WC3ItemManager
             return mapping.ContainsKey(displayName) ? mapping[displayName] : displayName;
         }
         
-        private void BrowseFolder(TextBox textBox)
+        private void BrowseFolder(TextBox textBox, string description = "Select icon folder path")
         {
             using (var folderDialog = new FolderBrowserDialog())
             {
-                folderDialog.Description = "Select icon folder path";
+                folderDialog.Description = description;
                 folderDialog.ShowNewFolderButton = true;
                 
                 if (!string.IsNullOrWhiteSpace(textBox.Text) && System.IO.Directory.Exists(textBox.Text))
@@ -472,6 +600,36 @@ namespace WC3ItemManager
             }
         }
         
+        private void BrowseModelExplorerExecutable()
+        {
+            using (var dialog = new OpenFileDialog())
+            {
+                dialog.Title = "Select WC3 Model Explorer executable";
+                dialog.Filter = "WC3 Model Explorer (WC3ModelExplorer.exe)|WC3ModelExplorer.exe|Executable files (*.exe)|*.exe|All files (*.*)|*.*";
+                dialog.CheckFileExists = true;
+                if (System.IO.File.Exists(txtModelExplorerExecutable.Text))
+                    dialog.InitialDirectory = System.IO.Path.GetDirectoryName(txtModelExplorerExecutable.Text);
+
+                if (dialog.ShowDialog(this) == DialogResult.OK)
+                    txtModelExplorerExecutable.Text = dialog.FileName;
+            }
+        }
+
+        private void BrowseMapModelSource()
+        {
+            using (var dialog = new OpenFileDialog())
+            {
+                dialog.Title = "Select the Warcraft III map containing imported models";
+                dialog.Filter = "Warcraft III maps (*.w3x;*.w3m)|*.w3x;*.w3m|All files (*.*)|*.*";
+                dialog.CheckFileExists = true;
+                if (System.IO.File.Exists(txtMapModelSource.Text))
+                    dialog.InitialDirectory = System.IO.Path.GetDirectoryName(txtMapModelSource.Text);
+
+                if (dialog.ShowDialog(this) == DialogResult.OK)
+                    txtMapModelSource.Text = dialog.FileName;
+            }
+        }
+
         private void BtnResetColumns_Click(object sender, EventArgs e)
         {
             var result = MessageBox.Show(
@@ -511,6 +669,9 @@ namespace WC3ItemManager
             // Save icon paths
             BlizzardIconPath = txtBlizzardIconPath.Text;
             CustomIconPath = txtCustomIconPath.Text;
+            ModelExplorerExecutablePath = txtModelExplorerExecutable.Text.Trim();
+            NativeModelSourcePath = txtNativeModelSource.Text.Trim();
+            MapModelSourcePath = txtMapModelSource.Text.Trim();
             
             // Validate paths
             if (!string.IsNullOrWhiteSpace(BlizzardIconPath) && !System.IO.Directory.Exists(BlizzardIconPath))
@@ -542,6 +703,37 @@ namespace WC3ItemManager
                     return;
                 }
             }
+
+            if (!ConfirmPathExists(ModelExplorerExecutablePath, allowDirectory: true, "WC3 Model Explorer executable"))
+                return;
+
+            if (!ConfirmPathExists(NativeModelSourcePath, allowDirectory: true, "Native model source"))
+                return;
+
+            if (!ConfirmPathExists(MapModelSourcePath, allowDirectory: true, "Map model source"))
+                return;
+        }
+
+        private bool ConfirmPathExists(string path, bool allowDirectory, string label)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+                return true;
+
+            bool exists = System.IO.File.Exists(path) || (allowDirectory && System.IO.Directory.Exists(path));
+            if (exists)
+                return true;
+
+            var result = MessageBox.Show(
+                $"{label} does not exist:\n{path}\n\nSave anyway?",
+                "Path Warning",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning);
+
+            if (result == DialogResult.Yes)
+                return true;
+
+            this.DialogResult = DialogResult.None;
+            return false;
         }
         
         private string GetCacheSizeInfo()

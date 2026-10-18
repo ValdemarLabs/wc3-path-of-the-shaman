@@ -17,6 +17,20 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [18.10.2026]
+
+### Tool Updates
+
+- Added external WC3 Model Explorer support to `WC3_Database/WC3ItemManager`: configurable executable, native-model source, and map-model source profiles; launch controls for standard item models, stack models, and attachment effects; and guarded clipboard conversion from explorer filesystem paths to Warcraft-relative MDX/MDL paths.
+
+### Resolved Issues
+
+- Fixed the WC3 Manager `Browse Models...` popup disposing itself before WinForms finished processing a selected source, which caused an unhandled `ObjectDisposedException`.
+
+### Known Issues
+
+- WC3 Model Explorer 1.4.0 ignores startup arguments and browses one root at a time. WC3 Manager copies the chosen source path for manual paste into the separately installed explorer; attachment ability codes are not yet mapped to their Object Editor model fields.
+
 ## [17.10.2026]
 
 ### Technical Updates

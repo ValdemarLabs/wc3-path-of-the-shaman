@@ -545,6 +545,48 @@ namespace WC3ItemManager
             this.Controls.Add(tabControl);
         }
 
+        private Button CreateModelExplorerButton(Point location, int width = 145)
+        {
+            var button = new Button
+            {
+                Text = "Browse Models...",
+                Location = location,
+                Width = width,
+                Height = 27
+            };
+            button.Click += (s, e) => ModelExplorerIntegration.ShowBrowseMenu(button, this);
+            return button;
+        }
+
+        private Button CreatePasteModelPathButton(Point location, Action<string> applyPath, int width = 110)
+        {
+            var button = new Button
+            {
+                Text = "Paste Path",
+                Location = location,
+                Width = width,
+                Height = 27
+            };
+            button.Click += (s, e) => ModelExplorerIntegration.PasteCopiedModelPath(this, applyPath);
+            return button;
+        }
+
+        private void PasteStackModelPath()
+        {
+            DataGridViewRow row = dgvStackModelRanges.CurrentRow;
+            if (row == null)
+            {
+                int rowIndex = dgvStackModelRanges.Rows.Add();
+                row = dgvStackModelRanges.Rows[rowIndex];
+            }
+
+            ModelExplorerIntegration.PasteCopiedModelPath(this, path =>
+            {
+                row.Cells["StackModelPath"].Value = path;
+                dgvStackModelRanges.CurrentCell = row.Cells["StackModelPath"];
+            });
+        }
+
         private void SetupStackModelsTab(TabPage tab)
         {
             var description = new Label
@@ -620,6 +662,22 @@ namespace WC3ItemManager
                 }
             };
             tab.Controls.Add(removeButton);
+
+            var browseModelsButton = CreateModelExplorerButton(new Point(175, 650));
+            browseModelsButton.Height = 30;
+            browseModelsButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+            tab.Controls.Add(browseModelsButton);
+
+            var pasteStackPathButton = new Button
+            {
+                Text = "Paste Path",
+                Location = new Point(330, 650),
+                Width = 110,
+                Height = 30,
+                Anchor = AnchorStyles.Bottom | AnchorStyles.Left
+            };
+            pasteStackPathButton.Click += (s, e) => PasteStackModelPath();
+            tab.Controls.Add(pasteStackPathButton);
         }
 
         private void SetupBasicTab(TabPage tab)
@@ -1553,10 +1611,12 @@ namespace WC3ItemManager
             tab.Controls.Add(new Label { Text = "Model Path:", Location = new Point(20, y), AutoSize = true });
             txtModelPath = new TextBox { 
                 Location = new Point(180, y), 
-                Width = 500,
+                Width = 400,
                 Text = "Objects\\InventoryItems\\TreasureChest\\treasurechest.mdl" // Default model path
             };
             tab.Controls.Add(txtModelPath);
+            tab.Controls.Add(CreateModelExplorerButton(new Point(590, y - 2)));
+            tab.Controls.Add(CreatePasteModelPathButton(new Point(745, y - 2), path => txtModelPath.Text = path));
             y += 35;
 
             chkActivelyUsedWC3 = new CheckBox
@@ -1670,6 +1730,7 @@ namespace WC3ItemManager
                 AutoSize = true,
                 Font = new Font(FontFamily.GenericSansSerif, 9, FontStyle.Bold)
             });
+            tab.Controls.Add(CreateModelExplorerButton(new Point(650, y - 4), 190));
             y += 25;
             
             // Quick select dropdown for EQUIP_ abilities
