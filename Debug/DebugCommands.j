@@ -2,7 +2,7 @@
     DebugCommands
 
     Author: Valdemar
-    Version: 1.12.0
+    Version: 1.13.0
 
     Description:
     Chat-driven debug commands for Path of the Shaman testing. Commands are
@@ -37,6 +37,10 @@
     - /debug doodadrender distance <distance>
     - /debug performance disable
     - /debug wc3 help
+    - /debug ai, /debug aidebug, /debug aispawn, /debug aicamp
+    - /debug aicraft, /debug aibuy, /debug aisell, /debug aishop
+    - /debug ap add
+    - /debug VoidEntity
 
 **/
 library DebugCommands initializer Init requires DebugObjectRegistry, Ascii, GatherNodes, GatherNodeUnits, GatherNodeSkills, ZonesCore, Dungeon, Drunk, PlayerHome, UnitHider, DoodadRender, AI, AIRoutines, Companions, TerrainDamage, QuestMaster, WeatherSystem, VendorFloatingText, Warcraft300TestHarness, Warcraft300P2TestHarness
@@ -845,6 +849,10 @@ library DebugCommands initializer Init requires DebugObjectRegistry, Ascii, Gath
         call TimerStart(DBG_PerformanceTimer, DBG_PERFORMANCE_STEP_INTERVAL, true, function DBG_PerformanceTimerExpired)
     endfunction
 
+    private function DBG_IsExternallyHandledCommand takes string command, string lowerCommand returns boolean
+        return lowerCommand == "aispawn" or lowerCommand == "ai" or lowerCommand == "aidebug" or lowerCommand == "aicamp" or lowerCommand == "aicraft" or lowerCommand == "aibuy" or lowerCommand == "aisell" or lowerCommand == "aishop" or lowerCommand == "ap add" or command == "VoidEntity"
+    endfunction
+
     private function DBG_ShowHelp takes player whichPlayer returns nothing
         call DBG_Message(whichPlayer, "Commands:")
         call DBG_Message(whichPlayer, "/debug item create '<rawcode-or-name>'")
@@ -868,6 +876,10 @@ library DebugCommands initializer Init requires DebugObjectRegistry, Ascii, Gath
         call DBG_Message(whichPlayer, "/debug wc3 help (baseline, camera, fog, and doodad probes)")
         call DBG_Message(whichPlayer, "/debug wc3 effects help (P2 special-effect animation probes)")
         call DBG_Message(whichPlayer, "/debug wc3 minimap help (P2 native/imported minimap probes)")
+        call DBG_Message(whichPlayer, "/debug ai|aidebug | aispawn | aicamp | aicraft (handled by AI)")
+        call DBG_Message(whichPlayer, "/debug aibuy | aisell | aishop (handled by AI)")
+        call DBG_Message(whichPlayer, "/debug ap add (handled by AbilityPoints)")
+        call DBG_Message(whichPlayer, "/debug VoidEntity (handled by BossVoidEntity; exact capitalization required)")
     endfunction
 
     private function DBG_ExecuteCommand takes player whichPlayer, string command, real cameraX, real cameraY, boolean hasCamera returns nothing
@@ -947,6 +959,8 @@ library DebugCommands initializer Init requires DebugObjectRegistry, Ascii, Gath
             call DBG_SetDoodadRenderDistance(whichPlayer, "")
         elseif lowerCommand == "performance disable" or lowerCommand == "perf disable" then
             call DBG_StartPerformanceDisable(whichPlayer)
+        elseif whichPlayer == Player(0) and DBG_IsExternallyHandledCommand(trimmed, lowerCommand) then
+            return
         else
             call DBG_Message(whichPlayer, "Unknown command. Use /debug help.")
         endif
