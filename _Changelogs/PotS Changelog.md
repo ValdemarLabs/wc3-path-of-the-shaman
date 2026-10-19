@@ -17,6 +17,17 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [20.10.2026]
+
+### Player-Facing Updates
+
+- Moved the Dynamic Far Z Auto toggle from Camera to Settings beside the Far Z profile. The Abilities panel Return button now returns to the Game menu when opened there and returns to Stats when opened from a hero's Stats panel.
+
+### Technical Updates
+
+- Updated `UI/CameraUI.j`, `UI/SettingsUI.j`, and `UI/AbilitiesLiteUI.j` for consolidated Dynamic Far Z settings ownership and origin-aware abilities navigation.
+- Updated `UI/CommandsUI.j` with the complete active debug-command catalog and per-entry visibility configuration; updated `Debug/DebugCommands.j` to recognize and document externally handled AI, ability-point, and Void Entity debug commands without changing their owning libraries.
+
 ## [19.10.2026]
 
 ### Technical Updates
