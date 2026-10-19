@@ -2,11 +2,11 @@
     SettingsUI
 
     Author: Valdemar
-    Version: 1.0.0
+    Version: 1.0.1
 
     Description:
     In-game map and performance settings for difficulty, UI sounds, AI unit
-    cap, DynamicFarZ profile, DoodadRender, and WeatherSystem detail. Minimap
+    cap, DynamicFarZ Auto/Profile, DoodadRender, and WeatherSystem detail. Minimap
     and IconQuery controls are opened in MinimapSettingsUI.
 
     Credits:
@@ -40,6 +40,7 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, MinimapSetting
         private constant integer PSETUI_ACTION_FARZ_PROFILE = 4
         private constant integer PSETUI_ACTION_DOODAD_RENDER = 5
         private constant integer PSETUI_ACTION_WEATHER_DETAIL = 6
+        private constant integer PSETUI_ACTION_FARZ_AUTO = 7
 
         private boolean PSETUI_Initialized = false
         private boolean PSETUI_Syncing = false
@@ -125,6 +126,7 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, MinimapSetting
             call BlzFrameSetText(PSETUI_Button[2], "Difficulty: " + PSETUI_GetDifficultyName())
             call BlzFrameSetText(PSETUI_Button[3], "UI Sounds: " + PSETUI_OnOff(Interface_AreSoundsEnabled()))
             call BlzFrameSetText(PSETUI_Button[4], "Far Z Profile: " + DynamicFarZ_GetProfileName(whichPlayer))
+            call BlzFrameSetText(PSETUI_Button[7], "Far Z Auto: " + PSETUI_OnOff(DynamicFarZ_IsAuto(whichPlayer)))
             static if LIBRARY_DoodadRender then
                 call BlzFrameSetText(PSETUI_Button[5], "Doodad Culling: " + PSETUI_OnOff(DoodadRender_IsEnabled()))
             else
@@ -198,6 +200,9 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, MinimapSetting
                 call PSETUI_CycleDifficulty()
             elseif actionId == PSETUI_ACTION_UI_SOUNDS then
                 call Interface_SetSoundsEnabled(not Interface_AreSoundsEnabled())
+            elseif actionId == PSETUI_ACTION_FARZ_AUTO then
+                call DynamicFarZ_ToggleAuto(whichPlayer)
+                call CameraControl_RefreshFarZ(whichPlayer)
             elseif actionId == PSETUI_ACTION_FARZ_PROFILE then
                 call DynamicFarZ_CycleProfile(whichPlayer)
                 call CameraControl_RefreshFarZ(whichPlayer)
@@ -290,12 +295,13 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, MinimapSetting
         call PSETUI_CreateButton(1, "Minimap Settings", PSETUI_ACTION_MINIMAP, PSETUI_LeftPane, -0.024)
         call PSETUI_CreateButton(2, "Difficulty", PSETUI_ACTION_DIFFICULTY, PSETUI_LeftPane, -0.070)
         call PSETUI_CreateButton(3, "UI Sounds", PSETUI_ACTION_UI_SOUNDS, PSETUI_LeftPane, -0.116)
-        call PSETUI_CreateButton(4, "Far Z Profile", PSETUI_ACTION_FARZ_PROFILE, PSETUI_RightPane, -0.024)
-        call PSETUI_CreateButton(5, "Doodad Culling", PSETUI_ACTION_DOODAD_RENDER, PSETUI_RightPane, -0.070)
-        call PSETUI_CreateButton(6, "Weather Detail", PSETUI_ACTION_WEATHER_DETAIL, PSETUI_RightPane, -0.116)
+        call PSETUI_CreateButton(7, "Far Z Auto", PSETUI_ACTION_FARZ_AUTO, PSETUI_RightPane, -0.024)
+        call PSETUI_CreateButton(4, "Far Z Profile", PSETUI_ACTION_FARZ_PROFILE, PSETUI_RightPane, -0.064)
+        call PSETUI_CreateButton(5, "Doodad Culling", PSETUI_ACTION_DOODAD_RENDER, PSETUI_RightPane, -0.104)
+        call PSETUI_CreateButton(6, "Weather Detail", PSETUI_ACTION_WEATHER_DETAIL, PSETUI_RightPane, -0.144)
 
         set PSETUI_AISlider = BlzCreateFrame("EscMenuSliderTemplate", PSETUI_Parent, 0, 31)
-        call BlzFrameSetPoint(PSETUI_AISlider, FRAMEPOINT_TOPLEFT, PSETUI_RightPane, FRAMEPOINT_TOPLEFT, 0.112, -0.184)
+        call BlzFrameSetPoint(PSETUI_AISlider, FRAMEPOINT_TOPLEFT, PSETUI_RightPane, FRAMEPOINT_TOPLEFT, 0.112, -0.194)
         call BlzFrameSetSize(PSETUI_AISlider, 0.115, 0.018)
         call BlzFrameSetMinMaxValue(PSETUI_AISlider, PSETUI_AI_ACTIVE_CAP_MIN, PSETUI_AI_ACTIVE_CAP_MAX)
         call BlzFrameSetStepSize(PSETUI_AISlider, 1.0)
@@ -306,8 +312,8 @@ library SettingsUI initializer AutoInit requires Table, MasterUI, MinimapSetting
         call BlzFrameSetTextAlignment(PSETUI_AISliderLabel, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_RIGHT)
 
         set PSETUI_AIDisclaimer = BlzCreateFrameByType("TEXT", "SettingsUIAIDisclaimer", PSETUI_RightPane, "", 0)
-        call BlzFrameSetPoint(PSETUI_AIDisclaimer, FRAMEPOINT_TOPLEFT, PSETUI_RightPane, FRAMEPOINT_TOPLEFT, 0.018, -0.220)
-        call BlzFrameSetSize(PSETUI_AIDisclaimer, 0.210, 0.052)
+        call BlzFrameSetPoint(PSETUI_AIDisclaimer, FRAMEPOINT_TOPLEFT, PSETUI_RightPane, FRAMEPOINT_TOPLEFT, 0.018, -0.226)
+        call BlzFrameSetSize(PSETUI_AIDisclaimer, 0.210, 0.042)
         call BlzFrameSetTextAlignment(PSETUI_AIDisclaimer, TEXT_JUSTIFY_TOP, TEXT_JUSTIFY_LEFT)
         call BlzFrameSetScale(PSETUI_AIDisclaimer, 0.78)
         call BlzFrameSetEnable(PSETUI_AIDisclaimer, false)

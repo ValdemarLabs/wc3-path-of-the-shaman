@@ -2,11 +2,11 @@
     CameraUI
     
     Author: [Valdemar]
-    Version: 1.3.2
+    Version: 1.3.3
 
-    Description: Provides a panel for switching camera modes and adjusting camera,
-    DynamicFarZ automatic behavior, and mouse-orbit settings. The performance
-    profile is configured in SettingsUI.
+    Description: Provides a panel for switching camera modes and adjusting camera
+    and mouse-orbit settings. DynamicFarZ Auto and Profile are configured in
+    SettingsUI.
 
     Credits: Tasyen (TasQuestBox as inspiration)
 
@@ -38,7 +38,6 @@ globals
     private constant integer CUI_ACTION_MOUSE_HORIZONTAL = 5
     private constant integer CUI_ACTION_MOUSE_VERTICAL = 6
     private constant integer CUI_ACTION_FREE_CAMERA = 7
-    private constant integer CUI_ACTION_DYNAMIC_FARZ = 8
 
     private boolean CUI_Initialized = false
     private boolean CUI_Syncing = false
@@ -55,7 +54,6 @@ globals
     private framehandle CUI_ModeTitle = null
     private framehandle CUI_ModeValue = null
     private framehandle CUI_MouseTitle = null
-    private framehandle CUI_DynamicFarZTitle = null
     private framehandle array CUI_ActionButton
     private framehandle array CUI_Slider
     private framehandle array CUI_SliderLabel
@@ -165,11 +163,6 @@ private function CUI_RefreshFields takes player whichPlayer returns nothing
         else
             call BlzFrameSetText(CUI_ActionButton[6], "Vertical: Normal")
         endif
-        if DynamicFarZ_IsAuto(whichPlayer) then
-            call BlzFrameSetText(CUI_ActionButton[8], "Auto: On")
-        else
-            call BlzFrameSetText(CUI_ActionButton[8], "Auto: Off")
-        endif
         loop
             exitwhen i > 5
             call BlzFrameSetText(CUI_SliderLabel[i], CUI_GetSliderDisplay(i, whichPlayer))
@@ -267,9 +260,6 @@ private function CUI_ActionAction takes nothing returns nothing
             call CameraControl_SetMouseOrbitVerticalInverted(whichPlayer, not CameraControl_IsMouseOrbitVerticalInverted(whichPlayer))
         elseif CUI_ButtonAction.integer[handleId] == CUI_ACTION_FREE_CAMERA then
             call FreeCamera_Toggle(whichPlayer)
-        elseif CUI_ButtonAction.integer[handleId] == CUI_ACTION_DYNAMIC_FARZ then
-            call DynamicFarZ_ToggleAuto(whichPlayer)
-            call CameraControl_RefreshFarZ(whichPlayer)
         endif
         call CUI_RefreshFields(whichPlayer)
     endif
@@ -338,16 +328,6 @@ private function CUI_CreateMouseButton takes integer index, string label, intege
     set CUI_ActionButton[index] = BlzCreateFrameByType("GLUETEXTBUTTON", "CameraUIMouseButton" + I2S(index), CUI_RightPane, "ScriptDialogButton", 0)
     call BlzFrameSetSize(CUI_ActionButton[index], width, 0.026)
     call BlzFrameSetPoint(CUI_ActionButton[index], FRAMEPOINT_TOPLEFT, CUI_RightPane, FRAMEPOINT_TOPLEFT, x, -0.250)
-    call BlzFrameSetText(CUI_ActionButton[index], label)
-    call BlzTriggerRegisterFrameEvent(CUI_ActionTrigger, CUI_ActionButton[index], FRAMEEVENT_CONTROL_CLICK)
-    call BlzTriggerRegisterFrameEvent(CUI_ClearFocusTrigger, CUI_ActionButton[index], FRAMEEVENT_CONTROL_CLICK)
-    set CUI_ButtonAction.integer[GetHandleId(CUI_ActionButton[index])] = actionId
-endfunction
-
-private function CUI_CreateDynamicFarZButton takes integer index, string label, integer actionId, real x, real width returns nothing
-    set CUI_ActionButton[index] = BlzCreateFrameByType("GLUETEXTBUTTON", "CameraUIDynamicFarZButton" + I2S(index), CUI_RightPane, "ScriptDialogButton", 0)
-    call BlzFrameSetSize(CUI_ActionButton[index], width, 0.026)
-    call BlzFrameSetPoint(CUI_ActionButton[index], FRAMEPOINT_TOPLEFT, CUI_RightPane, FRAMEPOINT_TOPLEFT, x, -0.315)
     call BlzFrameSetText(CUI_ActionButton[index], label)
     call BlzTriggerRegisterFrameEvent(CUI_ActionTrigger, CUI_ActionButton[index], FRAMEEVENT_CONTROL_CLICK)
     call BlzTriggerRegisterFrameEvent(CUI_ClearFocusTrigger, CUI_ActionButton[index], FRAMEEVENT_CONTROL_CLICK)
@@ -446,15 +426,6 @@ private function CUI_CreateFrames takes nothing returns nothing
     call CUI_CreateMouseButton(4, "Orbit: On", CUI_ACTION_MOUSE_ORBIT, 0.010, 0.076)
     call CUI_CreateMouseButton(5, "Horizontal: Normal", CUI_ACTION_MOUSE_HORIZONTAL, 0.090, 0.098)
     call CUI_CreateMouseButton(6, "Vertical: Normal", CUI_ACTION_MOUSE_VERTICAL, 0.192, 0.090)
-
-    set CUI_DynamicFarZTitle = BlzCreateFrameByType("TEXT", "CameraUIDynamicFarZTitle", CUI_RightPane, "", 0)
-    call BlzFrameSetPoint(CUI_DynamicFarZTitle, FRAMEPOINT_TOPLEFT, CUI_RightPane, FRAMEPOINT_TOPLEFT, 0.010, -0.285)
-    call BlzFrameSetSize(CUI_DynamicFarZTitle, 0.20, 0.016)
-    call BlzFrameSetTextAlignment(CUI_DynamicFarZTitle, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
-    call BlzFrameSetEnable(CUI_DynamicFarZTitle, false)
-    call BlzFrameSetText(CUI_DynamicFarZTitle, "|cffffcc00Dynamic Far Z|r")
-
-    call CUI_CreateDynamicFarZButton(8, "Auto: On", CUI_ACTION_DYNAMIC_FARZ, 0.010, 0.150)
 
     call BlzFrameSetVisible(CUI_Parent, false)
 endfunction

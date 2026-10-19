@@ -145,6 +145,7 @@ globals
 
     private boolean AUI_Initialized = false
     private boolean AUI_SyncingListScroll = false
+    private boolean AUI_ReturnToStats = false
     private framehandle AUI_Parent = null
     private framehandle AUI_MainBackdrop = null
     private framehandle AUI_Title = null
@@ -1573,12 +1574,20 @@ private function AUI_ClearFocusAction takes nothing returns nothing
 endfunction
 
 private function AUI_CloseAction takes nothing returns nothing
+    set AUI_ReturnToStats = false
     call Hide()
 endfunction
 
 private function AUI_ReturnAction takes nothing returns nothing
+    local boolean returnToStats = AUI_ReturnToStats
+
+    set AUI_ReturnToStats = false
     call Hide()
-    call ExecuteFunc("StatsUI_Show")
+    if returnToStats then
+        call ExecuteFunc("StatsUI_Show")
+    else
+        call MasterUI_Show()
+    endif
 endfunction
 
 private function AUI_RowAction takes nothing returns nothing
@@ -1807,6 +1816,7 @@ private function AUI_CreateFrames takes nothing returns nothing
 endfunction
 
 public function ShowForUnit takes unit u returns nothing
+    set AUI_ReturnToStats = true
     set AUI_SelectedUnit = u
     call AUI_EnsureTemplatesForUnit(u)
     call AUI_ResetViewState()
@@ -1819,6 +1829,7 @@ public function ShowForUnit takes unit u returns nothing
 endfunction
 
 public function Show takes nothing returns nothing
+    set AUI_ReturnToStats = false
     set AUI_SelectedUnit = AUI_GetMenuSelectedHero()
     call AUI_EnsureTemplatesForUnit(AUI_SelectedUnit)
     call AUI_ResetViewState()
