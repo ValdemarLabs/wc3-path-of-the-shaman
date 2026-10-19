@@ -2,13 +2,12 @@
     ModernPlayerHUD
 
     Author: Valdemar
-    Version: 0.1.3
+    Version: 0.2.0
 
     Description:
     Creates the first modern PotS player HUD prototype. It adds a compact
-    bottom-center unit frame and rearranges Warcraft III's real command
-    buttons into a single action-bar row. Reusing the native buttons preserves
-    targeting, autocast, cooldown, mana, tooltip, and hotkey behavior.
+    bottom-center unit frame, twelve custom action-slot placeholders, and an
+    ability-book shortcut without moving or reparenting native HUD widgets.
 
     Credits:
     - Blizzard Entertainment, native frame API and frame templates
@@ -35,10 +34,7 @@ library ModernPlayerHUD initializer Init requires Events, MasterUI, AbilitiesLit
 globals
     // Configuration
     private constant boolean MHUD_AUTO_ENABLE = true
-    // Keep both false until the PTR native-frame crash is isolated.
-    private constant boolean MHUD_RELOCATE_COMMAND_BUTTONS = false
-    private constant boolean MHUD_RELOCATE_PORTRAIT = false
-    private constant integer MHUD_COMMAND_BUTTON_COUNT = 12
+    private constant integer MHUD_ACTION_SLOT_COUNT = 12
     private constant real MHUD_UPDATE_INTERVAL = 0.10
 
     private constant real MHUD_PANEL_LEFT = 0.115
@@ -69,7 +65,6 @@ globals
     private boolean MHUD_Initialized = false
     private boolean MHUD_FramesCreated = false
     private boolean MHUD_Enabled = false
-    private boolean MHUD_NativeLayoutPending = false
     private boolean MHUD_WasFullscreen = false
 
     private framehandle MHUD_ScreenParent = null
@@ -90,11 +85,7 @@ globals
     private framehandle MHUD_XPText = null
     private framehandle MHUD_BookButton = null
     private framehandle MHUD_BookIcon = null
-    private framehandle MHUD_Portrait = null
-    private framehandle MHUD_PortraitHPText = null
-    private framehandle MHUD_PortraitManaText = null
     private framehandle array MHUD_SlotBackdrop
-    private framehandle array MHUD_CommandButton
 
     private trigger MHUD_BookTrigger = null
     private trigger MHUD_ClearFocusTrigger = null
@@ -208,51 +199,6 @@ private function MHUD_UpdateXP takes unit whichUnit returns nothing
     endif
 endfunction
 
-private function MHUD_ApplyNativeLayout takes nothing returns nothing
-    local integer index = 0
-    local real x
-
-    if not MHUD_RELOCATE_COMMAND_BUTTONS and not MHUD_RELOCATE_PORTRAIT then
-        return
-    endif
-
-    call BlzEnableUIAutoPosition(false)
-
-    if MHUD_RELOCATE_COMMAND_BUTTONS then
-        loop
-            exitwhen index >= MHUD_COMMAND_BUTTON_COUNT
-            set x = MHUD_ACTION_START_X + I2R(index) * (MHUD_ACTION_SIZE + MHUD_ACTION_GAP)
-            set MHUD_CommandButton[index] = BlzGetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON, index)
-            if MHUD_CommandButton[index] != null then
-                call BlzFrameClearAllPoints(MHUD_CommandButton[index])
-                call BlzFrameSetAbsPoint(MHUD_CommandButton[index], FRAMEPOINT_BOTTOMLEFT, x, MHUD_ACTION_BOTTOM)
-                call BlzFrameSetSize(MHUD_CommandButton[index], MHUD_ACTION_SIZE, MHUD_ACTION_SIZE)
-                call BlzFrameSetLevel(MHUD_CommandButton[index], 10)
-            endif
-            set index = index + 1
-        endloop
-    endif
-
-    if MHUD_RELOCATE_PORTRAIT then
-        set MHUD_Portrait = BlzGetOriginFrame(ORIGIN_FRAME_PORTRAIT, 0)
-        if MHUD_Portrait != null then
-            call BlzFrameClearAllPoints(MHUD_Portrait)
-            call BlzFrameSetAbsPoint(MHUD_Portrait, FRAMEPOINT_BOTTOMLEFT, 0.126, 0.014)
-            call BlzFrameSetSize(MHUD_Portrait, 0.054, 0.054)
-            call BlzFrameSetLevel(MHUD_Portrait, 9)
-        endif
-
-        set MHUD_PortraitHPText = BlzGetOriginFrame(ORIGIN_FRAME_PORTRAIT_HP_TEXT, 0)
-        set MHUD_PortraitManaText = BlzGetOriginFrame(ORIGIN_FRAME_PORTRAIT_MANA_TEXT, 0)
-        if MHUD_PortraitHPText != null then
-            call BlzFrameSetVisible(MHUD_PortraitHPText, false)
-        endif
-        if MHUD_PortraitManaText != null then
-            call BlzFrameSetVisible(MHUD_PortraitManaText, false)
-        endif
-    endif
-endfunction
-
 private function MHUD_Update takes nothing returns nothing
     local unit whichUnit = MHUD_SelectedUnit
     local real life
@@ -267,7 +213,6 @@ private function MHUD_Update takes nothing returns nothing
 
     if FullscreenUI_IsEnabled() then
         set MHUD_WasFullscreen = true
-        set MHUD_NativeLayoutPending = true
         call BlzFrameSetVisible(MHUD_Parent, false)
         set whichUnit = null
         return
@@ -275,11 +220,6 @@ private function MHUD_Update takes nothing returns nothing
 
     if MHUD_WasFullscreen then
         set MHUD_WasFullscreen = false
-        set MHUD_NativeLayoutPending = true
-    endif
-    if MHUD_NativeLayoutPending then
-        set MHUD_NativeLayoutPending = false
-        call MHUD_ApplyNativeLayout()
     endif
 
     if not MHUD_IsValidUnit(whichUnit) and GetLocalPlayer() == Player(0) and MHUD_IsValidUnit(udg_Nazgrek) then
@@ -461,7 +401,7 @@ private function MHUD_CreateFrames takes nothing returns nothing
     call BlzFrameSetLevel(MHUD_XPText, 5)
 
     loop
-        exitwhen index >= MHUD_COMMAND_BUTTON_COUNT
+        exitwhen index >= MHUD_ACTION_SLOT_COUNT
         set x = MHUD_ACTION_START_X + I2R(index) * (MHUD_ACTION_SIZE + MHUD_ACTION_GAP)
         set MHUD_SlotBackdrop[index] = BlzCreateFrameByType("BACKDROP", "ModernPlayerHUDSlot" + I2S(index), MHUD_Parent, "", 0)
         call BlzFrameSetTexture(MHUD_SlotBackdrop[index], MHUD_SURFACE_TEXTURE, 0, false)
@@ -470,7 +410,7 @@ private function MHUD_CreateFrames takes nothing returns nothing
         call BlzFrameSetVertexColor(MHUD_SlotBackdrop[index], BlzConvertColor(255, 62, 54, 45))
         call BlzFrameSetEnable(MHUD_SlotBackdrop[index], false)
         call BlzFrameSetLevel(MHUD_SlotBackdrop[index], 3)
-        call BlzFrameSetVisible(MHUD_SlotBackdrop[index], MHUD_RELOCATE_COMMAND_BUTTONS)
+        call BlzFrameSetVisible(MHUD_SlotBackdrop[index], true)
         set index = index + 1
     endloop
 
@@ -501,9 +441,8 @@ endfunction
 public function Refresh takes nothing returns nothing
     if MHUD_Enabled then
         if FullscreenUI_IsEnabled() then
-            set MHUD_NativeLayoutPending = true
+            call BlzFrameSetVisible(MHUD_Parent, false)
         else
-            call MHUD_ApplyNativeLayout()
             call MHUD_Update()
         endif
     endif
@@ -518,30 +457,18 @@ public function Enable takes nothing returns nothing
     endif
 
     set MHUD_Enabled = true
-    set MHUD_NativeLayoutPending = false
     set MHUD_WasFullscreen = false
     call TimerStart(MHUD_UpdateTimer, MHUD_UPDATE_INTERVAL, true, function MHUD_Update)
-    call MHUD_ApplyNativeLayout()
     call MHUD_Update()
 endfunction
 
 public function Disable takes nothing returns nothing
     set MHUD_Enabled = false
-    set MHUD_NativeLayoutPending = false
     set MHUD_WasFullscreen = false
     call PauseTimer(MHUD_EnableTimer)
     call PauseTimer(MHUD_UpdateTimer)
     if MHUD_Parent != null then
         call BlzFrameSetVisible(MHUD_Parent, false)
-    endif
-    if MHUD_PortraitHPText != null then
-        call BlzFrameSetVisible(MHUD_PortraitHPText, true)
-    endif
-    if MHUD_PortraitManaText != null then
-        call BlzFrameSetVisible(MHUD_PortraitManaText, true)
-    endif
-    if MHUD_RELOCATE_COMMAND_BUTTONS or MHUD_RELOCATE_PORTRAIT then
-        call BlzEnableUIAutoPosition(true)
     endif
 endfunction
 
@@ -555,11 +482,6 @@ private function MHUD_OnUnitSelected takes nothing returns nothing
 
     if selectingPlayer == GetLocalPlayer() then
         set MHUD_SelectedUnit = selectedUnit
-        if MHUD_Enabled then
-            // Let Warcraft finish rebuilding its command card before moving
-            // origin frames on the next HUD update tick.
-            set MHUD_NativeLayoutPending = true
-        endif
     endif
 
     set selectedUnit = null
