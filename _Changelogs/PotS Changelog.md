@@ -17,6 +17,16 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [19.10.2026]
+
+### Technical Updates
+
+- Added `UI/_Modern/ModernPlayerHUD.j` and `UI/_Modern/README.md` as an isolated modern player-HUD prototype inspired by the Forgotten Hollow map. The bottom-center layout presents health, mana, level, experience, portrait, twelve action slots, and an Abilities book shortcut while reusing Warcraft III's native command buttons so targeting, autocast, cooldowns, tooltips, hotkeys, and order dispatch remain engine-owned. The first pass requires no custom UI package; the documentation records how compatible Forgotten Hollow TOC structure, FDF templates, and supporting art may be selectively reused after their dependencies, frame names, credits, and usage rights are verified.
+
+### Actions Remaining
+
+- Import `UI/_Modern/ModernPlayerHUD.j` after `Events`, `MasterUI`, and `AbilitiesLiteUI`; compile through World Editor/JassHelper and runtime-test the documented selection, command-button, cinematic, scaling, restoration, and two-client cases. Audit the complete Forgotten Hollow UI package for reusable TOC/FDF definitions, dependent assets, naming collisions, credits, and usage rights before introducing a minimal PotS-specific UI asset package. After the native command-card refresh behavior is proven on the current Warcraft III 3.0 client, implement synchronized per-hero quick-slot assignment and save/load support through the modern ability book.
+
 ## [18.10.2026]
 
 ### Tool Updates
