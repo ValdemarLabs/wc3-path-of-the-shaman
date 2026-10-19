@@ -15,7 +15,23 @@ The first prototype is `ModernPlayerHUD.j`:
 [portrait] [command buttons 1 through 12] [ability book]
 ```
 
-The twelve action slots reuse Warcraft III's native command-button frames.
+### PTR crash-isolation state
+
+Version 0.1.2 keeps native command-button relocation and native portrait
+relocation disabled by default. Two tests on Warcraft III 3.0.1 PTR build
+24368 produced the identical native null-pointer crash as soon as the first
+origin-frame layout was applied, including after intro/selection timing was
+deferred. The custom health, mana, level, XP, and ability-book frames remain
+enabled so they can establish a crash-free baseline without touching
+engine-owned origin frames.
+
+The source contains separate `MHUD_RELOCATE_COMMAND_BUTTONS` and
+`MHUD_RELOCATE_PORTRAIT` configuration flags. Keep both false for the next
+test. If that test is stable, enable command buttons only in a dedicated test
+build; test portrait relocation separately only after command-bar behavior is
+known.
+
+The intended twelve action slots reuse Warcraft III's native command-button frames.
 This is deliberate: native buttons already own the targeting cursor, autocast,
 cooldown shading, mana validation, tooltips, hotkeys, disabled state, and order
 dispatch. A row of imitation frames would need to reproduce all of that and
@@ -26,6 +42,15 @@ ability grid. This first pass does not hide the shared native console parent,
 because that would also hide the engine-owned buttons. Any remaining command
 card decoration should be suppressed only after its exact child frames have
 been verified in the current client.
+
+The HUD remains disabled until `FullscreenUI` no longer owns the intro
+presentation and the normal gameplay handoff has selected Nazgrek or Zul'kis.
+This second condition prevents premature activation while the preload-mode
+choice is still open, before `FullscreenUI` has been enabled. The HUD then
+enables on a later timer tick. Selection events likewise defer native
+command-button positioning until Warcraft has finished rebuilding the command
+card; origin frames must not be cleared and resized inside the selection event
+itself.
 
 The Abilities button opens the existing `AbilitiesLiteUI` for Nazgrek or
 Zul'kis. The prototype does not yet assign an ability-list entry to a specific
@@ -96,6 +121,7 @@ Import `ModernPlayerHUD.j` after:
 - `Events`
 - `MasterUI`
 - `AbilitiesLiteUI`
+- `FullscreenUI`
 
 Then compile through the current World Editor/JassHelper workflow. Test:
 
@@ -105,6 +131,9 @@ Then compile through the current World Editor/JassHelper workflow. Test:
 - cooldown, mana, disabled-state, tooltip, and hotkey presentation;
 - non-hero and enemy selection;
 - inventory, quest, MasterUI, cinematic, and fullscreen UI transitions;
+- the intro-to-gameplay transition without a native access violation;
+- version 0.1.2 with both native-relocation flags false before testing either
+  subsystem independently;
 - UI scaling at 1080p, 1440p, and 4K;
 - enable/disable restoration;
 - two-client frame and selection behavior.
@@ -118,3 +147,10 @@ FDF, and supporting assets before `ModernPlayerHUD.j`, then repeat the full UI
 scaling, Reforged/Classic presentation, cinematic, and multiplayer validation
 matrix. Do not import the entire Forgotten Hollow UI package without first
 removing unused definitions and resolving global frame-name collisions.
+
+The prototype intentionally leaves the shared native console parent visible.
+Consequently, the normal command card and native HUD artwork remain visible
+beside the crash-isolation HUD. A Warcraft III 2.0+ frame-hierarchy change
+places the command bar under `ConsoleBottomBar`; hiding that parent also hides
+its native command buttons. Reparenting and decorative-frame suppression must
+be tested separately after the crash source is isolated.

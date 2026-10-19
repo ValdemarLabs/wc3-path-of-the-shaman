@@ -2,7 +2,7 @@
     ModernPlayerHUD
 
     Author: Valdemar
-    Version: 0.1.0
+    Version: 0.1.2
 
     Description:
     Creates the first modern PotS player HUD prototype. It adds a compact
@@ -15,10 +15,12 @@
     - Forgotten Hollow, action-bar and lower-HUD presentation reference
 
     How to install:
-    Import after Events, MasterUI, and AbilitiesLiteUI. No TOC or FDF import is
-    required for this first prototype. The library enables itself after a
-    short frame-initialization delay. Set MHUD_AUTO_ENABLE to false when an
-    external startup flow should call ModernPlayerHUD_Enable instead.
+    Import after Events, MasterUI, AbilitiesLiteUI, and FullscreenUI. No TOC or
+    FDF import is required for this first prototype. The library creates its
+    frames after a short initialization delay and enables itself only after
+    FullscreenUI has finished the intro presentation. Set MHUD_AUTO_ENABLE to
+    false when an external startup flow should call ModernPlayerHUD_Enable
+    instead.
 
     API:
     - call ModernPlayerHUD_Enable()
@@ -28,11 +30,14 @@
     - set enabled = ModernPlayerHUD_IsEnabled()
 
 **/
-library ModernPlayerHUD initializer Init requires Events, MasterUI, AbilitiesLiteUI
+library ModernPlayerHUD initializer Init requires Events, MasterUI, AbilitiesLiteUI, FullscreenUI
 
 globals
     // Configuration
     private constant boolean MHUD_AUTO_ENABLE = true
+    // Keep both false until the PTR native-frame crash is isolated.
+    private constant boolean MHUD_RELOCATE_COMMAND_BUTTONS = false
+    private constant boolean MHUD_RELOCATE_PORTRAIT = false
     private constant integer MHUD_COMMAND_BUTTON_COUNT = 12
     private constant real MHUD_UPDATE_INTERVAL = 0.10
 
@@ -64,6 +69,8 @@ globals
     private boolean MHUD_Initialized = false
     private boolean MHUD_FramesCreated = false
     private boolean MHUD_Enabled = false
+    private boolean MHUD_NativeLayoutPending = false
+    private boolean MHUD_WasFullscreen = false
 
     private framehandle MHUD_ScreenParent = null
     private framehandle MHUD_Parent = null
@@ -92,6 +99,7 @@ globals
     private trigger MHUD_BookTrigger = null
     private trigger MHUD_ClearFocusTrigger = null
     private trigger MHUD_InitTrigger = null
+    private timer MHUD_EnableTimer = null
     private timer MHUD_UpdateTimer = null
 
     // This is local presentation state and must never drive synchronized gameplay.
@@ -204,36 +212,44 @@ private function MHUD_ApplyNativeLayout takes nothing returns nothing
     local integer index = 0
     local real x
 
+    if not MHUD_RELOCATE_COMMAND_BUTTONS and not MHUD_RELOCATE_PORTRAIT then
+        return
+    endif
+
     call BlzEnableUIAutoPosition(false)
 
-    loop
-        exitwhen index >= MHUD_COMMAND_BUTTON_COUNT
-        set x = MHUD_ACTION_START_X + I2R(index) * (MHUD_ACTION_SIZE + MHUD_ACTION_GAP)
-        set MHUD_CommandButton[index] = BlzGetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON, index)
-        if MHUD_CommandButton[index] != null then
-            call BlzFrameClearAllPoints(MHUD_CommandButton[index])
-            call BlzFrameSetAbsPoint(MHUD_CommandButton[index], FRAMEPOINT_BOTTOMLEFT, x, MHUD_ACTION_BOTTOM)
-            call BlzFrameSetSize(MHUD_CommandButton[index], MHUD_ACTION_SIZE, MHUD_ACTION_SIZE)
-            call BlzFrameSetLevel(MHUD_CommandButton[index], 10)
+    if MHUD_RELOCATE_COMMAND_BUTTONS then
+        loop
+            exitwhen index >= MHUD_COMMAND_BUTTON_COUNT
+            set x = MHUD_ACTION_START_X + I2R(index) * (MHUD_ACTION_SIZE + MHUD_ACTION_GAP)
+            set MHUD_CommandButton[index] = BlzGetOriginFrame(ORIGIN_FRAME_COMMAND_BUTTON, index)
+            if MHUD_CommandButton[index] != null then
+                call BlzFrameClearAllPoints(MHUD_CommandButton[index])
+                call BlzFrameSetAbsPoint(MHUD_CommandButton[index], FRAMEPOINT_BOTTOMLEFT, x, MHUD_ACTION_BOTTOM)
+                call BlzFrameSetSize(MHUD_CommandButton[index], MHUD_ACTION_SIZE, MHUD_ACTION_SIZE)
+                call BlzFrameSetLevel(MHUD_CommandButton[index], 10)
+            endif
+            set index = index + 1
+        endloop
+    endif
+
+    if MHUD_RELOCATE_PORTRAIT then
+        set MHUD_Portrait = BlzGetOriginFrame(ORIGIN_FRAME_PORTRAIT, 0)
+        if MHUD_Portrait != null then
+            call BlzFrameClearAllPoints(MHUD_Portrait)
+            call BlzFrameSetAbsPoint(MHUD_Portrait, FRAMEPOINT_BOTTOMLEFT, 0.126, 0.014)
+            call BlzFrameSetSize(MHUD_Portrait, 0.054, 0.054)
+            call BlzFrameSetLevel(MHUD_Portrait, 9)
         endif
-        set index = index + 1
-    endloop
 
-    set MHUD_Portrait = BlzGetOriginFrame(ORIGIN_FRAME_PORTRAIT, 0)
-    if MHUD_Portrait != null then
-        call BlzFrameClearAllPoints(MHUD_Portrait)
-        call BlzFrameSetAbsPoint(MHUD_Portrait, FRAMEPOINT_BOTTOMLEFT, 0.126, 0.014)
-        call BlzFrameSetSize(MHUD_Portrait, 0.054, 0.054)
-        call BlzFrameSetLevel(MHUD_Portrait, 9)
-    endif
-
-    set MHUD_PortraitHPText = BlzGetOriginFrame(ORIGIN_FRAME_PORTRAIT_HP_TEXT, 0)
-    set MHUD_PortraitManaText = BlzGetOriginFrame(ORIGIN_FRAME_PORTRAIT_MANA_TEXT, 0)
-    if MHUD_PortraitHPText != null then
-        call BlzFrameSetVisible(MHUD_PortraitHPText, false)
-    endif
-    if MHUD_PortraitManaText != null then
-        call BlzFrameSetVisible(MHUD_PortraitManaText, false)
+        set MHUD_PortraitHPText = BlzGetOriginFrame(ORIGIN_FRAME_PORTRAIT_HP_TEXT, 0)
+        set MHUD_PortraitManaText = BlzGetOriginFrame(ORIGIN_FRAME_PORTRAIT_MANA_TEXT, 0)
+        if MHUD_PortraitHPText != null then
+            call BlzFrameSetVisible(MHUD_PortraitHPText, false)
+        endif
+        if MHUD_PortraitManaText != null then
+            call BlzFrameSetVisible(MHUD_PortraitManaText, false)
+        endif
     endif
 endfunction
 
@@ -247,6 +263,23 @@ private function MHUD_Update takes nothing returns nothing
     if not MHUD_Enabled or MHUD_Parent == null then
         set whichUnit = null
         return
+    endif
+
+    if FullscreenUI_IsEnabled() then
+        set MHUD_WasFullscreen = true
+        set MHUD_NativeLayoutPending = true
+        call BlzFrameSetVisible(MHUD_Parent, false)
+        set whichUnit = null
+        return
+    endif
+
+    if MHUD_WasFullscreen then
+        set MHUD_WasFullscreen = false
+        set MHUD_NativeLayoutPending = true
+    endif
+    if MHUD_NativeLayoutPending then
+        set MHUD_NativeLayoutPending = false
+        call MHUD_ApplyNativeLayout()
     endif
 
     if not MHUD_IsValidUnit(whichUnit) and GetLocalPlayer() == Player(0) and MHUD_IsValidUnit(udg_Nazgrek) then
@@ -436,6 +469,7 @@ private function MHUD_CreateFrames takes nothing returns nothing
         call BlzFrameSetVertexColor(MHUD_SlotBackdrop[index], BlzConvertColor(255, 62, 54, 45))
         call BlzFrameSetEnable(MHUD_SlotBackdrop[index], false)
         call BlzFrameSetLevel(MHUD_SlotBackdrop[index], 3)
+        call BlzFrameSetVisible(MHUD_SlotBackdrop[index], MHUD_RELOCATE_COMMAND_BUTTONS)
         set index = index + 1
     endloop
 
@@ -465,13 +499,17 @@ endfunction
 
 public function Refresh takes nothing returns nothing
     if MHUD_Enabled then
-        call MHUD_ApplyNativeLayout()
-        call MHUD_Update()
+        if FullscreenUI_IsEnabled() then
+            set MHUD_NativeLayoutPending = true
+        else
+            call MHUD_ApplyNativeLayout()
+            call MHUD_Update()
+        endif
     endif
 endfunction
 
 public function Enable takes nothing returns nothing
-    if not MHUD_Initialized then
+    if not MHUD_Initialized or FullscreenUI_IsEnabled() then
         return
     endif
     if not MHUD_FramesCreated then
@@ -479,6 +517,8 @@ public function Enable takes nothing returns nothing
     endif
 
     set MHUD_Enabled = true
+    set MHUD_NativeLayoutPending = false
+    set MHUD_WasFullscreen = false
     call TimerStart(MHUD_UpdateTimer, MHUD_UPDATE_INTERVAL, true, function MHUD_Update)
     call MHUD_ApplyNativeLayout()
     call MHUD_Update()
@@ -486,6 +526,9 @@ endfunction
 
 public function Disable takes nothing returns nothing
     set MHUD_Enabled = false
+    set MHUD_NativeLayoutPending = false
+    set MHUD_WasFullscreen = false
+    call PauseTimer(MHUD_EnableTimer)
     call PauseTimer(MHUD_UpdateTimer)
     if MHUD_Parent != null then
         call BlzFrameSetVisible(MHUD_Parent, false)
@@ -496,7 +539,9 @@ public function Disable takes nothing returns nothing
     if MHUD_PortraitManaText != null then
         call BlzFrameSetVisible(MHUD_PortraitManaText, true)
     endif
-    call BlzEnableUIAutoPosition(true)
+    if MHUD_RELOCATE_COMMAND_BUTTONS or MHUD_RELOCATE_PORTRAIT then
+        call BlzEnableUIAutoPosition(true)
+    endif
 endfunction
 
 public function IsEnabled takes nothing returns boolean
@@ -510,8 +555,9 @@ private function MHUD_OnUnitSelected takes nothing returns nothing
     if selectingPlayer == GetLocalPlayer() then
         set MHUD_SelectedUnit = selectedUnit
         if MHUD_Enabled then
-            call MHUD_ApplyNativeLayout()
-            call MHUD_Update()
+            // Let Warcraft finish rebuilding its command card before moving
+            // origin frames on the next HUD update tick.
+            set MHUD_NativeLayoutPending = true
         endif
     endif
 
@@ -525,17 +571,23 @@ private function MHUD_OnUnitDeselected takes nothing returns nothing
 
     if deselectingPlayer == GetLocalPlayer() and MHUD_SelectedUnit == deselectedUnit then
         set MHUD_SelectedUnit = null
-        call MHUD_Update()
     endif
 
     set deselectedUnit = null
     set deselectingPlayer = null
 endfunction
 
+private function MHUD_WaitForGameplay takes nothing returns nothing
+    if not FullscreenUI_IsEnabled() and MHUD_IsPlayerHero(MHUD_SelectedUnit) then
+        call PauseTimer(MHUD_EnableTimer)
+        call Enable()
+    endif
+endfunction
+
 private function MHUD_DelayedInit takes nothing returns nothing
     call MHUD_CreateFrames()
     if MHUD_AUTO_ENABLE then
-        call Enable()
+        call TimerStart(MHUD_EnableTimer, MHUD_UPDATE_INTERVAL, true, function MHUD_WaitForGameplay)
     endif
     call DestroyTrigger(MHUD_InitTrigger)
     set MHUD_InitTrigger = null
@@ -557,6 +609,7 @@ private function Init takes nothing returns nothing
     call TriggerRegisterTimerEvent(MHUD_InitTrigger, 0.20, false)
     call TriggerAddAction(MHUD_InitTrigger, function MHUD_DelayedInit)
 
+    set MHUD_EnableTimer = CreateTimer()
     set MHUD_UpdateTimer = CreateTimer()
 
     call Events_RegisterPlayerUnitEvent(function MHUD_OnUnitSelected, EVENT_PLAYER_UNIT_SELECTED)
