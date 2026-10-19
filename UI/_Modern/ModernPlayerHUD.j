@@ -2,7 +2,7 @@
     ModernPlayerHUD
 
     Author: Valdemar
-    Version: 0.1.2
+    Version: 0.1.3
 
     Description:
     Creates the first modern PotS player HUD prototype. It adds a compact
@@ -345,14 +345,15 @@ private function MHUD_CreateFrames takes nothing returns nothing
     endif
     set MHUD_FramesCreated = true
 
-    set MHUD_ScreenParent = BlzGetFrameByName("ConsoleUIBackdrop", 0)
-    if MHUD_ScreenParent == null then
-        set MHUD_ScreenParent = BlzGetOriginFrame(ORIGIN_FRAME_GAME_UI, 0)
-    endif
+    // ConsoleUIBackdrop is below the Warcraft III 2.x bottom-console layers.
+    // Own custom frames directly under GameUI so the restored native HUD does
+    // not cover them after FullscreenUI ends.
+    set MHUD_ScreenParent = BlzGetOriginFrame(ORIGIN_FRAME_GAME_UI, 0)
 
     set MHUD_Parent = BlzCreateFrameByType("FRAME", "ModernPlayerHUDPanel", MHUD_ScreenParent, "", 0)
     call BlzFrameSetAbsPoint(MHUD_Parent, FRAMEPOINT_TOPLEFT, MHUD_PANEL_LEFT, MHUD_PANEL_TOP)
     call BlzFrameSetAbsPoint(MHUD_Parent, FRAMEPOINT_BOTTOMRIGHT, MHUD_PANEL_RIGHT, MHUD_PANEL_BOTTOM)
+    call BlzFrameSetLevel(MHUD_Parent, 20)
 
     set MHUD_Backdrop = BlzCreateFrameByType("BACKDROP", "ModernPlayerHUDBackdrop", MHUD_Parent, "", 0)
     call BlzFrameSetTexture(MHUD_Backdrop, MHUD_SURFACE_TEXTURE, 0, false)
@@ -578,6 +579,14 @@ private function MHUD_OnUnitDeselected takes nothing returns nothing
 endfunction
 
 private function MHUD_WaitForGameplay takes nothing returns nothing
+    if not FullscreenUI_IsEnabled() and not MHUD_IsPlayerHero(MHUD_SelectedUnit) and GetLocalPlayer() == Player(0) then
+        if MHUD_IsPlayerHero(udg_Nazgrek) then
+            set MHUD_SelectedUnit = udg_Nazgrek
+        elseif MHUD_IsPlayerHero(udg_Zulkis) then
+            set MHUD_SelectedUnit = udg_Zulkis
+        endif
+    endif
+
     if not FullscreenUI_IsEnabled() and MHUD_IsPlayerHero(MHUD_SelectedUnit) then
         call PauseTimer(MHUD_EnableTimer)
         call Enable()

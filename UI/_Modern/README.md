@@ -17,13 +17,21 @@ The first prototype is `ModernPlayerHUD.j`:
 
 ### PTR crash-isolation state
 
-Version 0.1.2 keeps native command-button relocation and native portrait
+Version 0.1.3 keeps native command-button relocation and native portrait
 relocation disabled by default. Two tests on Warcraft III 3.0.1 PTR build
 24368 produced the identical native null-pointer crash as soon as the first
 origin-frame layout was applied, including after intro/selection timing was
 deferred. The custom health, mana, level, XP, and ability-book frames remain
 enabled so they can establish a crash-free baseline without touching
 engine-owned origin frames.
+
+The first custom-only test no longer crashed, confirming that one of the
+native-origin mutation paths is responsible. That test rendered the custom HUD
+behind the restored native bottom console because its parent was
+`ConsoleUIBackdrop`. Version 0.1.3 parents only the custom HUD to
+`ORIGIN_FRAME_GAME_UI` and gives its root an explicit level. It also falls
+back to Nazgrek or Zul'kis after the intro if no new selection event is raised.
+These changes do not move, resize, hide, or reparent native frames.
 
 The source contains separate `MHUD_RELOCATE_COMMAND_BUTTONS` and
 `MHUD_RELOCATE_PORTRAIT` configuration flags. Keep both false for the next
@@ -44,10 +52,11 @@ card decoration should be suppressed only after its exact child frames have
 been verified in the current client.
 
 The HUD remains disabled until `FullscreenUI` no longer owns the intro
-presentation and the normal gameplay handoff has selected Nazgrek or Zul'kis.
-This second condition prevents premature activation while the preload-mode
-choice is still open, before `FullscreenUI` has been enabled. The HUD then
-enables on a later timer tick. Selection events likewise defer native
+presentation and Nazgrek or Zul'kis is available. A normal selection event is
+used when present; otherwise the enable timer falls back to the first valid
+player hero after the intro. This prevents premature activation while the
+preload-mode choice is still open. The HUD then enables on a later timer tick.
+Selection events likewise defer native
 command-button positioning until Warcraft has finished rebuilding the command
 card; origin frames must not be cleared and resized inside the selection event
 itself.
@@ -132,8 +141,8 @@ Then compile through the current World Editor/JassHelper workflow. Test:
 - non-hero and enemy selection;
 - inventory, quest, MasterUI, cinematic, and fullscreen UI transitions;
 - the intro-to-gameplay transition without a native access violation;
-- version 0.1.2 with both native-relocation flags false before testing either
-  subsystem independently;
+- version 0.1.3 with both native-relocation flags false, confirming that the
+  custom resource HUD is visible above the native bottom console;
 - UI scaling at 1080p, 1440p, and 4K;
 - enable/disable restoration;
 - two-client frame and selection behavior.
