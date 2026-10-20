@@ -2,13 +2,13 @@
     ModernPlayerHUD
 
     Author: Valdemar
-    Version: 0.3.0
+    Version: 0.4.0
 
     Description:
-    Creates the modern PotS bottom-center resource shell, twelve custom action
-    slot mounting points, and an ability-book shortcut without moving or
-    reparenting native HUD widgets. ModernAbilityActionBar renders the learned
-    abilities and owns activation above this shell.
+    Creates the cached modern PotS bottom-center resource shell, twelve custom
+    action-slot mounting points, and an ability-book shortcut without moving
+    or reparenting native HUD widgets. Its compact art/layout combines the
+    reference VideoRPG HUD with Forgotten Hollow's broad centered bars.
 
     Credits:
     - Blizzard Entertainment, native frame API and frame templates
@@ -28,6 +28,7 @@
     - call ModernPlayerHUD_Disable()
     - call ModernPlayerHUD_SetUnit(whichUnit)
     - call ModernPlayerHUD_Refresh()
+    - call ModernPlayerHUD_RegisterUpdate(callback)
     - set enabled = ModernPlayerHUD_IsEnabled()
 
 **/
@@ -39,9 +40,9 @@ globals
     private constant integer MHUD_ACTION_SLOT_COUNT = 12
     private constant real MHUD_UPDATE_INTERVAL = 0.10
 
-    private constant real MHUD_PANEL_LEFT = 0.115
-    private constant real MHUD_PANEL_RIGHT = 0.685
-    private constant real MHUD_PANEL_TOP = 0.112
+    private constant real MHUD_PANEL_LEFT = 0.100
+    private constant real MHUD_PANEL_RIGHT = 0.700
+    private constant real MHUD_PANEL_TOP = 0.100
     private constant real MHUD_PANEL_BOTTOM = 0.004
 
     private constant real MHUD_ACTION_START_X = 0.190
@@ -53,6 +54,9 @@ globals
     private constant real MHUD_RESOURCE_BAR_HEIGHT = 0.014
     private constant real MHUD_XP_BAR_WIDTH = 0.420
     private constant real MHUD_XP_BAR_HEIGHT = 0.006
+    private constant integer MHUD_BAR_HEALTH = 0
+    private constant integer MHUD_BAR_MANA = 1
+    private constant integer MHUD_BAR_XP = 2
 
     // Must match Gameplay Constants and the values mirrored by StatsUI.
     private constant integer MHUD_HERO_XP_FORMULA_A = 1
@@ -60,8 +64,14 @@ globals
     private constant integer MHUD_HERO_XP_FORMULA_C = 0
 
     private constant string MHUD_SURFACE_TEXTURE = "UI\\Widgets\\EscMenu\\Human\\blank-background.blp"
-    private constant string MHUD_HEALTH_TEXTURE = "ReplaceableTextures\\TeamColor\\TeamColor06.blp"
-    private constant string MHUD_MANA_TEXTURE = "ReplaceableTextures\\TeamColor\\TeamColor09.blp"
+    private constant string MHUD_PANEL_TEXTURE = "UI\\_Modern\\Assets\\PotSHUD.tga"
+    private constant string MHUD_ACTION_SLOT_TEXTURE = "UI\\_Modern\\Assets\\PotSActionSlot.tga"
+    private constant string MHUD_BAR_BACK_TEXTURE = "UI\\_Modern\\Assets\\PotSBarBack.tga"
+    private constant string MHUD_BAR_FRAME_TEXTURE = "UI\\_Modern\\Assets\\PotSBarFrame.tga"
+    private constant string MHUD_MEDALLION_TEXTURE = "UI\\_Modern\\Assets\\PotSMedallion.tga"
+    private constant string MHUD_HEALTH_TEXTURE = "UI\\_Modern\\Assets\\PotSHealth.tga"
+    private constant string MHUD_MANA_TEXTURE = "UI\\_Modern\\Assets\\PotSMana.tga"
+    private constant string MHUD_XP_TEXTURE = "UI\\_Modern\\Assets\\PotSXP.tga"
     private constant string MHUD_BOOK_ICON = "ReplaceableTextures\\CommandButtons\\BTNBook_07.blp"
 
     private boolean MHUD_Initialized = false
@@ -73,6 +83,8 @@ globals
     private framehandle MHUD_Parent = null
     private framehandle MHUD_Backdrop = null
     private framehandle MHUD_TopTrim = null
+    private framehandle MHUD_ResourceBarBack = null
+    private framehandle MHUD_ResourceBarFrame = null
     private framehandle MHUD_NameText = null
     private framehandle MHUD_LevelBackdrop = null
     private framehandle MHUD_LevelText = null
@@ -92,11 +104,24 @@ globals
     private trigger MHUD_BookTrigger = null
     private trigger MHUD_ClearFocusTrigger = null
     private trigger MHUD_InitTrigger = null
+    private trigger MHUD_UpdateTrigger = null
     private timer MHUD_EnableTimer = null
     private timer MHUD_UpdateTimer = null
 
     // This is local presentation state and must never drive synchronized gameplay.
     private unit MHUD_SelectedUnit = null
+    private unit MHUD_CachedUnit = null
+    private boolean MHUD_ParentVisible = false
+    private boolean MHUD_ManaVisible = false
+    private boolean MHUD_XPVisible = false
+    private boolean MHUD_BookVisible = false
+    private integer MHUD_CachedLife = -1
+    private integer MHUD_CachedMaxLife = -1
+    private integer MHUD_CachedMana = -1
+    private integer MHUD_CachedMaxMana = -1
+    private integer MHUD_CachedLevel = -1
+    private integer MHUD_CachedXP = -1
+    private integer array MHUD_BarStep
 endglobals
 
 private function MHUD_IsValidUnit takes unit whichUnit returns boolean
@@ -153,16 +178,62 @@ private function MHUD_ClampRatio takes real value returns real
     return value
 endfunction
 
-private function MHUD_SetBarFill takes framehandle fillFrame, real width, real height, real current, real maximum returns nothing
+private function MHUD_ResetCache takes nothing returns nothing
+    set MHUD_CachedUnit = null
+    set MHUD_CachedLife = -1
+    set MHUD_CachedMaxLife = -1
+    set MHUD_CachedMana = -1
+    set MHUD_CachedMaxMana = -1
+    set MHUD_CachedLevel = -1
+    set MHUD_CachedXP = -1
+    set MHUD_BarStep[MHUD_BAR_HEALTH] = -1
+    set MHUD_BarStep[MHUD_BAR_MANA] = -1
+    set MHUD_BarStep[MHUD_BAR_XP] = -1
+endfunction
+
+private function MHUD_SetParentVisible takes boolean visible returns nothing
+    if MHUD_ParentVisible != visible then
+        set MHUD_ParentVisible = visible
+        call BlzFrameSetVisible(MHUD_Parent, visible)
+    endif
+endfunction
+
+private function MHUD_SetManaVisible takes boolean visible returns nothing
+    if MHUD_ManaVisible != visible then
+        set MHUD_ManaVisible = visible
+        call BlzFrameSetVisible(MHUD_ManaBack, visible)
+    endif
+endfunction
+
+private function MHUD_SetXPVisible takes boolean visible returns nothing
+    if MHUD_XPVisible != visible then
+        set MHUD_XPVisible = visible
+        call BlzFrameSetVisible(MHUD_XPBack, visible)
+    endif
+endfunction
+
+private function MHUD_SetBookVisible takes boolean visible returns nothing
+    if MHUD_BookVisible != visible then
+        set MHUD_BookVisible = visible
+        call BlzFrameSetVisible(MHUD_BookButton, visible)
+    endif
+endfunction
+
+private function MHUD_SetBarFill takes framehandle fillFrame, real width, real height, real current, real maximum, integer barIndex returns nothing
     local real ratio = 0.00
+    local integer step
 
     if maximum > 0.00 then
         set ratio = MHUD_ClampRatio(current / maximum)
     endif
-    if ratio <= 0.00 then
-        call BlzFrameSetSize(fillFrame, 0.0001, height)
-    else
-        call BlzFrameSetSize(fillFrame, width * ratio, height)
+    set step = R2I(ratio * 1000.00)
+    if MHUD_BarStep[barIndex] != step then
+        set MHUD_BarStep[barIndex] = step
+        if step <= 0 then
+            call BlzFrameSetSize(fillFrame, 0.0001, height)
+        else
+            call BlzFrameSetSize(fillFrame, width * I2R(step) / 1000.00, height)
+        endif
     endif
 
     set fillFrame = null
@@ -177,12 +248,17 @@ private function MHUD_UpdateXP takes unit whichUnit returns nothing
     local integer required
 
     if not IsUnitType(whichUnit, UNIT_TYPE_HERO) then
-        call BlzFrameSetVisible(MHUD_XPBack, false)
+        call MHUD_SetXPVisible(false)
         return
     endif
 
     set level = GetHeroLevel(whichUnit)
     set currentXP = GetHeroXP(whichUnit)
+    call MHUD_SetXPVisible(true)
+    if level == MHUD_CachedLevel and currentXP == MHUD_CachedXP then
+        return
+    endif
+    set MHUD_CachedXP = currentXP
     set previousXP = MHUD_GetHeroXPRequiredForLevel(level)
     set nextXP = MHUD_GetHeroXPRequiredForLevel(level + 1)
     set progress = currentXP - previousXP
@@ -191,22 +267,23 @@ private function MHUD_UpdateXP takes unit whichUnit returns nothing
     if progress < 0 then
         set progress = 0
     endif
-    call BlzFrameSetVisible(MHUD_XPBack, true)
     if required <= 0 then
-        call MHUD_SetBarFill(MHUD_XPFill, MHUD_XP_BAR_WIDTH, MHUD_XP_BAR_HEIGHT, 1.00, 1.00)
+        call MHUD_SetBarFill(MHUD_XPFill, MHUD_XP_BAR_WIDTH, MHUD_XP_BAR_HEIGHT, 1.00, 1.00, MHUD_BAR_XP)
         call BlzFrameSetText(MHUD_XPText, "MAX")
     else
-        call MHUD_SetBarFill(MHUD_XPFill, MHUD_XP_BAR_WIDTH, MHUD_XP_BAR_HEIGHT, I2R(progress), I2R(required))
+        call MHUD_SetBarFill(MHUD_XPFill, MHUD_XP_BAR_WIDTH, MHUD_XP_BAR_HEIGHT, I2R(progress), I2R(required), MHUD_BAR_XP)
         call BlzFrameSetText(MHUD_XPText, I2S(progress) + " / " + I2S(required) + " XP")
     endif
 endfunction
 
 private function MHUD_Update takes nothing returns nothing
     local unit whichUnit = MHUD_SelectedUnit
-    local real life
-    local real maxLife
-    local real mana
-    local real maxMana
+    local integer life
+    local integer maxLife
+    local integer mana
+    local integer maxMana
+    local integer level
+    local boolean playerHero
 
     if not MHUD_Enabled or MHUD_Parent == null then
         set whichUnit = null
@@ -215,7 +292,7 @@ private function MHUD_Update takes nothing returns nothing
 
     if FullscreenUI_IsEnabled() then
         set MHUD_WasFullscreen = true
-        call BlzFrameSetVisible(MHUD_Parent, false)
+        call MHUD_SetParentVisible(false)
         set whichUnit = null
         return
     endif
@@ -230,34 +307,58 @@ private function MHUD_Update takes nothing returns nothing
     endif
 
     if not MHUD_IsValidUnit(whichUnit) then
-        call BlzFrameSetVisible(MHUD_Parent, false)
+        call MHUD_SetParentVisible(false)
         set whichUnit = null
         return
     endif
 
-    set life = GetWidgetLife(whichUnit)
-    set maxLife = I2R(BlzGetUnitMaxHP(whichUnit))
-    set mana = GetUnitState(whichUnit, UNIT_STATE_MANA)
-    set maxMana = I2R(BlzGetUnitMaxMana(whichUnit))
+    if MHUD_CachedUnit != whichUnit then
+        call MHUD_ResetCache()
+        set MHUD_CachedUnit = whichUnit
+        call BlzFrameSetText(MHUD_NameText, "|cffffe4a3" + MHUD_GetDisplayName(whichUnit) + "|r")
+    endif
 
-    call BlzFrameSetVisible(MHUD_Parent, true)
-    call BlzFrameSetText(MHUD_NameText, "|cffffe4a3" + MHUD_GetDisplayName(whichUnit) + "|r")
-    call BlzFrameSetText(MHUD_LevelText, I2S(MHUD_GetDisplayLevel(whichUnit)))
-    call BlzFrameSetText(MHUD_HealthText, I2S(R2I(life)) + " / " + I2S(R2I(maxLife)))
-    call MHUD_SetBarFill(MHUD_HealthFill, MHUD_RESOURCE_BAR_WIDTH, MHUD_RESOURCE_BAR_HEIGHT, life, maxLife)
+    set life = R2I(GetWidgetLife(whichUnit))
+    set maxLife = BlzGetUnitMaxHP(whichUnit)
+    set mana = R2I(GetUnitState(whichUnit, UNIT_STATE_MANA))
+    set maxMana = BlzGetUnitMaxMana(whichUnit)
+    set level = MHUD_GetDisplayLevel(whichUnit)
+    set playerHero = MHUD_IsPlayerHero(whichUnit)
 
-    if maxMana > 0.00 then
-        call BlzFrameSetVisible(MHUD_ManaBack, true)
-        call BlzFrameSetText(MHUD_ManaText, I2S(R2I(mana)) + " / " + I2S(R2I(maxMana)))
-        call MHUD_SetBarFill(MHUD_ManaFill, MHUD_RESOURCE_BAR_WIDTH, MHUD_RESOURCE_BAR_HEIGHT, mana, maxMana)
+    call MHUD_SetParentVisible(true)
+    if level != MHUD_CachedLevel then
+        set MHUD_CachedLevel = level
+        set MHUD_CachedXP = -1
+        call BlzFrameSetText(MHUD_LevelText, I2S(level))
+    endif
+    if life != MHUD_CachedLife or maxLife != MHUD_CachedMaxLife then
+        set MHUD_CachedLife = life
+        set MHUD_CachedMaxLife = maxLife
+        call BlzFrameSetText(MHUD_HealthText, I2S(life) + " / " + I2S(maxLife))
+        call MHUD_SetBarFill(MHUD_HealthFill, MHUD_RESOURCE_BAR_WIDTH, MHUD_RESOURCE_BAR_HEIGHT, I2R(life), I2R(maxLife), MHUD_BAR_HEALTH)
+    endif
+
+    if maxMana > 0 then
+        call MHUD_SetManaVisible(true)
+        if mana != MHUD_CachedMana or maxMana != MHUD_CachedMaxMana then
+            set MHUD_CachedMana = mana
+            set MHUD_CachedMaxMana = maxMana
+            call BlzFrameSetText(MHUD_ManaText, I2S(mana) + " / " + I2S(maxMana))
+            call MHUD_SetBarFill(MHUD_ManaFill, MHUD_RESOURCE_BAR_WIDTH, MHUD_RESOURCE_BAR_HEIGHT, I2R(mana), I2R(maxMana), MHUD_BAR_MANA)
+        endif
     else
-        call BlzFrameSetVisible(MHUD_ManaBack, false)
+        call MHUD_SetManaVisible(false)
     endif
 
     call MHUD_UpdateXP(whichUnit)
-    call BlzFrameSetVisible(MHUD_BookButton, MHUD_IsPlayerHero(whichUnit))
+    call MHUD_SetBookVisible(playerHero)
 
     set whichUnit = null
+endfunction
+
+private function MHUD_Tick takes nothing returns nothing
+    call MHUD_Update()
+    call TriggerExecute(MHUD_UpdateTrigger)
 endfunction
 
 private function MHUD_ClearFocusAction takes nothing returns nothing
@@ -297,47 +398,61 @@ private function MHUD_CreateFrames takes nothing returns nothing
     call BlzFrameSetAbsPoint(MHUD_Parent, FRAMEPOINT_BOTTOMRIGHT, MHUD_PANEL_RIGHT, MHUD_PANEL_BOTTOM)
     call BlzFrameSetLevel(MHUD_Parent, 20)
 
-    set MHUD_Backdrop = BlzCreateFrameByType("BACKDROP", "ModernPlayerHUDBackdrop", MHUD_Parent, "EscMenuBackdrop", 0)
-    call BlzFrameSetAllPoints(MHUD_Backdrop, MHUD_Parent)
+    set MHUD_Backdrop = BlzCreateFrameByType("BACKDROP", "ModernPlayerHUDBackdrop", MHUD_Parent, "", 0)
+    call BlzFrameSetPoint(MHUD_Backdrop, FRAMEPOINT_BOTTOM, MHUD_Parent, FRAMEPOINT_BOTTOM, 0.000, 0.000)
+    call BlzFrameSetSize(MHUD_Backdrop, 0.540, 0.061)
+    call BlzFrameSetTexture(MHUD_Backdrop, MHUD_PANEL_TEXTURE, 0, true)
     call BlzFrameSetEnable(MHUD_Backdrop, false)
     call BlzFrameSetLevel(MHUD_Backdrop, 1)
 
     set MHUD_TopTrim = BlzCreateFrameByType("BACKDROP", "ModernPlayerHUDTopTrim", MHUD_Parent, "", 0)
     call BlzFrameSetTexture(MHUD_TopTrim, MHUD_SURFACE_TEXTURE, 0, false)
-    call BlzFrameSetPoint(MHUD_TopTrim, FRAMEPOINT_TOP, MHUD_Parent, FRAMEPOINT_TOP, 0.000, -0.003)
-    call BlzFrameSetSize(MHUD_TopTrim, MHUD_PANEL_RIGHT - MHUD_PANEL_LEFT - 0.016, 0.002)
-    call BlzFrameSetVertexColor(MHUD_TopTrim, BlzConvertColor(255, 214, 180, 92))
+    call BlzFrameSetPoint(MHUD_TopTrim, FRAMEPOINT_TOP, MHUD_Parent, FRAMEPOINT_TOP, 0.000, -0.002)
+    call BlzFrameSetSize(MHUD_TopTrim, MHUD_PANEL_RIGHT - MHUD_PANEL_LEFT - 0.050, 0.0015)
+    call BlzFrameSetVertexColor(MHUD_TopTrim, BlzConvertColor(220, 188, 145, 74))
     call BlzFrameSetEnable(MHUD_TopTrim, false)
     call BlzFrameSetLevel(MHUD_TopTrim, 2)
 
     set MHUD_NameText = BlzCreateFrameByType("TEXT", "ModernPlayerHUDName", MHUD_Parent, "", 0)
-    call BlzFrameSetPoint(MHUD_NameText, FRAMEPOINT_TOP, MHUD_Parent, FRAMEPOINT_TOP, 0.000, -0.004)
+    call BlzFrameSetPoint(MHUD_NameText, FRAMEPOINT_TOP, MHUD_Parent, FRAMEPOINT_TOP, 0.000, -0.001)
     call BlzFrameSetSize(MHUD_NameText, 0.180, 0.014)
     call BlzFrameSetTextAlignment(MHUD_NameText, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_CENTER)
     call BlzFrameSetScale(MHUD_NameText, 0.72)
     call BlzFrameSetEnable(MHUD_NameText, false)
     call BlzFrameSetLevel(MHUD_NameText, 6)
 
+    set MHUD_ResourceBarBack = BlzCreateFrameByType("BACKDROP", "ModernPlayerHUDResourceBarBack", MHUD_Parent, "", 0)
+    call BlzFrameSetTexture(MHUD_ResourceBarBack, MHUD_BAR_BACK_TEXTURE, 0, true)
+    call BlzFrameSetPoint(MHUD_ResourceBarBack, FRAMEPOINT_TOP, MHUD_Parent, FRAMEPOINT_TOP, 0.000, -0.016)
+    call BlzFrameSetSize(MHUD_ResourceBarBack, 0.408, 0.024)
+    call BlzFrameSetEnable(MHUD_ResourceBarBack, false)
+    call BlzFrameSetLevel(MHUD_ResourceBarBack, 2)
+
+    set MHUD_ResourceBarFrame = BlzCreateFrameByType("BACKDROP", "ModernPlayerHUDResourceBarFrame", MHUD_Parent, "", 0)
+    call BlzFrameSetTexture(MHUD_ResourceBarFrame, MHUD_BAR_FRAME_TEXTURE, 0, true)
+    call BlzFrameSetAllPoints(MHUD_ResourceBarFrame, MHUD_ResourceBarBack)
+    call BlzFrameSetEnable(MHUD_ResourceBarFrame, false)
+    call BlzFrameSetLevel(MHUD_ResourceBarFrame, 5)
+
     set MHUD_LevelBackdrop = BlzCreateFrameByType("BACKDROP", "ModernPlayerHUDLevelBackdrop", MHUD_Parent, "", 0)
-    call BlzFrameSetTexture(MHUD_LevelBackdrop, MHUD_SURFACE_TEXTURE, 0, false)
-    call BlzFrameSetPoint(MHUD_LevelBackdrop, FRAMEPOINT_TOP, MHUD_Parent, FRAMEPOINT_TOP, 0.000, -0.018)
-    call BlzFrameSetSize(MHUD_LevelBackdrop, 0.034, 0.026)
-    call BlzFrameSetVertexColor(MHUD_LevelBackdrop, BlzConvertColor(255, 92, 69, 32))
+    call BlzFrameSetTexture(MHUD_LevelBackdrop, MHUD_MEDALLION_TEXTURE, 0, true)
+    call BlzFrameSetPoint(MHUD_LevelBackdrop, FRAMEPOINT_TOP, MHUD_Parent, FRAMEPOINT_TOP, 0.000, -0.007)
+    call BlzFrameSetSize(MHUD_LevelBackdrop, 0.044, 0.044)
     call BlzFrameSetEnable(MHUD_LevelBackdrop, false)
-    call BlzFrameSetLevel(MHUD_LevelBackdrop, 4)
+    call BlzFrameSetLevel(MHUD_LevelBackdrop, 7)
 
     set MHUD_LevelText = BlzCreateFrameByType("TEXT", "ModernPlayerHUDLevel", MHUD_LevelBackdrop, "", 0)
     call BlzFrameSetAllPoints(MHUD_LevelText, MHUD_LevelBackdrop)
     call BlzFrameSetTextAlignment(MHUD_LevelText, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_CENTER)
     call BlzFrameSetScale(MHUD_LevelText, 0.82)
     call BlzFrameSetEnable(MHUD_LevelText, false)
-    call BlzFrameSetLevel(MHUD_LevelText, 5)
+    call BlzFrameSetLevel(MHUD_LevelText, 8)
 
     set MHUD_HealthBack = BlzCreateFrameByType("BACKDROP", "ModernPlayerHUDHealthBack", MHUD_Parent, "", 0)
     call BlzFrameSetTexture(MHUD_HealthBack, MHUD_SURFACE_TEXTURE, 0, false)
-    call BlzFrameSetPoint(MHUD_HealthBack, FRAMEPOINT_TOPRIGHT, MHUD_LevelBackdrop, FRAMEPOINT_TOPLEFT, -0.006, 0.000)
+    call BlzFrameSetPoint(MHUD_HealthBack, FRAMEPOINT_TOPRIGHT, MHUD_LevelBackdrop, FRAMEPOINT_TOPLEFT, -0.004, -0.011)
     call BlzFrameSetSize(MHUD_HealthBack, MHUD_RESOURCE_BAR_WIDTH, MHUD_RESOURCE_BAR_HEIGHT)
-    call BlzFrameSetVertexColor(MHUD_HealthBack, BlzConvertColor(235, 38, 38, 38))
+    call BlzFrameSetVertexColor(MHUD_HealthBack, BlzConvertColor(210, 18, 14, 12))
     call BlzFrameSetEnable(MHUD_HealthBack, false)
     call BlzFrameSetLevel(MHUD_HealthBack, 3)
 
@@ -353,13 +468,13 @@ private function MHUD_CreateFrames takes nothing returns nothing
     call BlzFrameSetTextAlignment(MHUD_HealthText, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_CENTER)
     call BlzFrameSetScale(MHUD_HealthText, 0.58)
     call BlzFrameSetEnable(MHUD_HealthText, false)
-    call BlzFrameSetLevel(MHUD_HealthText, 5)
+    call BlzFrameSetLevel(MHUD_HealthText, 6)
 
     set MHUD_ManaBack = BlzCreateFrameByType("BACKDROP", "ModernPlayerHUDManaBack", MHUD_Parent, "", 0)
     call BlzFrameSetTexture(MHUD_ManaBack, MHUD_SURFACE_TEXTURE, 0, false)
-    call BlzFrameSetPoint(MHUD_ManaBack, FRAMEPOINT_TOPLEFT, MHUD_LevelBackdrop, FRAMEPOINT_TOPRIGHT, 0.006, 0.000)
+    call BlzFrameSetPoint(MHUD_ManaBack, FRAMEPOINT_TOPLEFT, MHUD_LevelBackdrop, FRAMEPOINT_TOPRIGHT, 0.004, -0.011)
     call BlzFrameSetSize(MHUD_ManaBack, MHUD_RESOURCE_BAR_WIDTH, MHUD_RESOURCE_BAR_HEIGHT)
-    call BlzFrameSetVertexColor(MHUD_ManaBack, BlzConvertColor(235, 38, 38, 38))
+    call BlzFrameSetVertexColor(MHUD_ManaBack, BlzConvertColor(210, 18, 14, 12))
     call BlzFrameSetEnable(MHUD_ManaBack, false)
     call BlzFrameSetLevel(MHUD_ManaBack, 3)
 
@@ -375,21 +490,20 @@ private function MHUD_CreateFrames takes nothing returns nothing
     call BlzFrameSetTextAlignment(MHUD_ManaText, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_CENTER)
     call BlzFrameSetScale(MHUD_ManaText, 0.58)
     call BlzFrameSetEnable(MHUD_ManaText, false)
-    call BlzFrameSetLevel(MHUD_ManaText, 5)
+    call BlzFrameSetLevel(MHUD_ManaText, 6)
 
     set MHUD_XPBack = BlzCreateFrameByType("BACKDROP", "ModernPlayerHUDXPBack", MHUD_Parent, "", 0)
     call BlzFrameSetTexture(MHUD_XPBack, MHUD_SURFACE_TEXTURE, 0, false)
-    call BlzFrameSetPoint(MHUD_XPBack, FRAMEPOINT_TOP, MHUD_Parent, FRAMEPOINT_TOP, 0.000, -0.048)
+    call BlzFrameSetPoint(MHUD_XPBack, FRAMEPOINT_TOP, MHUD_Parent, FRAMEPOINT_TOP, 0.000, -0.049)
     call BlzFrameSetSize(MHUD_XPBack, MHUD_XP_BAR_WIDTH, MHUD_XP_BAR_HEIGHT)
     call BlzFrameSetVertexColor(MHUD_XPBack, BlzConvertColor(235, 38, 38, 38))
     call BlzFrameSetEnable(MHUD_XPBack, false)
     call BlzFrameSetLevel(MHUD_XPBack, 3)
 
     set MHUD_XPFill = BlzCreateFrameByType("BACKDROP", "ModernPlayerHUDXPFill", MHUD_XPBack, "", 0)
-    call BlzFrameSetTexture(MHUD_XPFill, MHUD_SURFACE_TEXTURE, 0, false)
+    call BlzFrameSetTexture(MHUD_XPFill, MHUD_XP_TEXTURE, 0, true)
     call BlzFrameSetPoint(MHUD_XPFill, FRAMEPOINT_LEFT, MHUD_XPBack, FRAMEPOINT_LEFT, 0.000, 0.000)
     call BlzFrameSetSize(MHUD_XPFill, MHUD_XP_BAR_WIDTH, MHUD_XP_BAR_HEIGHT)
-    call BlzFrameSetVertexColor(MHUD_XPFill, BlzConvertColor(255, 150, 88, 196))
     call BlzFrameSetEnable(MHUD_XPFill, false)
     call BlzFrameSetLevel(MHUD_XPFill, 4)
 
@@ -404,10 +518,9 @@ private function MHUD_CreateFrames takes nothing returns nothing
         exitwhen index >= MHUD_ACTION_SLOT_COUNT
         set x = MHUD_ACTION_START_X + I2R(index) * (MHUD_ACTION_SIZE + MHUD_ACTION_GAP)
         set MHUD_SlotBackdrop[index] = BlzCreateFrameByType("BACKDROP", "ModernPlayerHUDSlot" + I2S(index), MHUD_Parent, "", 0)
-        call BlzFrameSetTexture(MHUD_SlotBackdrop[index], MHUD_SURFACE_TEXTURE, 0, false)
+        call BlzFrameSetTexture(MHUD_SlotBackdrop[index], MHUD_ACTION_SLOT_TEXTURE, 0, true)
         call BlzFrameSetAbsPoint(MHUD_SlotBackdrop[index], FRAMEPOINT_BOTTOMLEFT, x - 0.001, MHUD_ACTION_BOTTOM - 0.001)
         call BlzFrameSetSize(MHUD_SlotBackdrop[index], MHUD_ACTION_SIZE + 0.002, MHUD_ACTION_SIZE + 0.002)
-        call BlzFrameSetVertexColor(MHUD_SlotBackdrop[index], BlzConvertColor(255, 62, 54, 45))
         call BlzFrameSetEnable(MHUD_SlotBackdrop[index], false)
         call BlzFrameSetLevel(MHUD_SlotBackdrop[index], 3)
         call BlzFrameSetVisible(MHUD_SlotBackdrop[index], true)
@@ -434,18 +547,22 @@ private function MHUD_CreateFrames takes nothing returns nothing
 endfunction
 
 public function SetUnit takes unit whichUnit returns nothing
-    set MHUD_SelectedUnit = whichUnit
-    call MHUD_Update()
+    if MHUD_SelectedUnit != whichUnit then
+        set MHUD_SelectedUnit = whichUnit
+        call MHUD_ResetCache()
+    endif
+    call MHUD_Tick()
+    set whichUnit = null
 endfunction
 
 public function Refresh takes nothing returns nothing
     if MHUD_Enabled then
-        if FullscreenUI_IsEnabled() then
-            call BlzFrameSetVisible(MHUD_Parent, false)
-        else
-            call MHUD_Update()
-        endif
+        call MHUD_Tick()
     endif
+endfunction
+
+public function RegisterUpdate takes code callback returns nothing
+    call TriggerAddAction(MHUD_UpdateTrigger, callback)
 endfunction
 
 public function Enable takes nothing returns nothing
@@ -458,8 +575,9 @@ public function Enable takes nothing returns nothing
 
     set MHUD_Enabled = true
     set MHUD_WasFullscreen = false
-    call TimerStart(MHUD_UpdateTimer, MHUD_UPDATE_INTERVAL, true, function MHUD_Update)
-    call MHUD_Update()
+    call MHUD_ResetCache()
+    call TimerStart(MHUD_UpdateTimer, MHUD_UPDATE_INTERVAL, true, function MHUD_Tick)
+    call MHUD_Tick()
 endfunction
 
 public function Disable takes nothing returns nothing
@@ -468,8 +586,9 @@ public function Disable takes nothing returns nothing
     call PauseTimer(MHUD_EnableTimer)
     call PauseTimer(MHUD_UpdateTimer)
     if MHUD_Parent != null then
-        call BlzFrameSetVisible(MHUD_Parent, false)
+        call MHUD_SetParentVisible(false)
     endif
+    call MHUD_ResetCache()
 endfunction
 
 public function IsEnabled takes nothing returns boolean
@@ -481,7 +600,10 @@ private function MHUD_OnUnitSelected takes nothing returns nothing
     local player selectingPlayer = GetTriggerPlayer()
 
     if selectingPlayer == GetLocalPlayer() then
-        set MHUD_SelectedUnit = selectedUnit
+        if MHUD_SelectedUnit != selectedUnit then
+            set MHUD_SelectedUnit = selectedUnit
+            call MHUD_ResetCache()
+        endif
     endif
 
     set selectedUnit = null
@@ -494,6 +616,7 @@ private function MHUD_OnUnitDeselected takes nothing returns nothing
 
     if deselectingPlayer == GetLocalPlayer() and MHUD_SelectedUnit == deselectedUnit then
         set MHUD_SelectedUnit = null
+        call MHUD_ResetCache()
     endif
 
     set deselectedUnit = null
@@ -504,8 +627,10 @@ private function MHUD_WaitForGameplay takes nothing returns nothing
     if not FullscreenUI_IsEnabled() and not MHUD_IsPlayerHero(MHUD_SelectedUnit) and GetLocalPlayer() == Player(0) then
         if MHUD_IsPlayerHero(udg_Nazgrek) then
             set MHUD_SelectedUnit = udg_Nazgrek
+            call MHUD_ResetCache()
         elseif MHUD_IsPlayerHero(udg_Zulkis) then
             set MHUD_SelectedUnit = udg_Zulkis
+            call MHUD_ResetCache()
         endif
     endif
 
@@ -535,6 +660,8 @@ private function Init takes nothing returns nothing
 
     set MHUD_ClearFocusTrigger = CreateTrigger()
     call TriggerAddAction(MHUD_ClearFocusTrigger, function MHUD_ClearFocusAction)
+
+    set MHUD_UpdateTrigger = CreateTrigger()
 
     set MHUD_InitTrigger = CreateTrigger()
     call TriggerRegisterTimerEvent(MHUD_InitTrigger, 0.20, false)

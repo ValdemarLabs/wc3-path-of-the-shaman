@@ -2,14 +2,13 @@
     ModernAbilityActionBar
 
     Author: Valdemar
-    Version: 0.2.0
+    Version: 0.4.0
 
     Description:
-    Renders the PotS-owned twelve-slot action bar with learned ability icons,
-    cooldown shading, mana/readiness state, tooltips, synchronized click
-    activation, and the four-choice Summon Elemental flyout. It hides the
-    native bottom gameplay HUD without moving or reparenting engine-owned
-    command buttons.
+    Renders the cached PotS-owned twelve-slot action bar with learned ability
+    icons, active-cooldown updates, one shared tooltip, synchronized click
+    activation, and the four-choice Summon Elemental flyout. Static frame data
+    is rewritten only after a hero, loadout, or ability-level change.
 
     Credits:
     - Blizzard Entertainment, Warcraft III frame API
@@ -32,7 +31,6 @@ library ModernAbilityActionBar initializer Init requires Events, FullscreenUI, M
 globals
     private constant boolean MAB_AUTO_ENABLE = true
     private constant boolean MAB_HIDE_NATIVE_BOTTOM_HUD = true
-    private constant real MAB_UPDATE_INTERVAL = 0.10
 
     private constant real MAB_ACTION_START_X = 0.190
     private constant real MAB_ACTION_BOTTOM = 0.012
@@ -54,17 +52,25 @@ globals
 
     private constant string MAB_SURFACE_TEXTURE = "UI\\Widgets\\EscMenu\\Human\\blank-background.blp"
     private constant string MAB_EMPTY_ICON = "ReplaceableTextures\\CommandButtons\\BTNCancel.blp"
+    private constant string MAB_MEDALLION_TEXTURE = "UI\\_Modern\\Assets\\PotSMedallion.tga"
 
     private boolean MAB_Initialized = false
     private boolean MAB_FramesCreated = false
     private boolean MAB_Enabled = false
     private boolean MAB_NativeCaptured = false
+    private boolean MAB_ParentVisible = false
+    private boolean MAB_TargetingVisible = false
+    private boolean MAB_StaticDirty = true
+    private boolean MAB_WasFullscreen = false
 
     private framehandle MAB_ScreenParent = null
     private framehandle MAB_Parent = null
     private framehandle MAB_HeroBorder = null
     private framehandle MAB_HeroIcon = null
     private framehandle MAB_TargetingText = null
+    private framehandle MAB_Tooltip = null
+    private framehandle MAB_TooltipTitle = null
+    private framehandle MAB_TooltipBody = null
     private framehandle MAB_ElementalBackdrop = null
     private framehandle MAB_ElementalTitle = null
 
@@ -74,9 +80,6 @@ globals
     private framehandle array MAB_SlotCooldownText
     private framehandle array MAB_SlotKeyText
     private framehandle array MAB_SlotDisabled
-    private framehandle array MAB_SlotTooltip
-    private framehandle array MAB_SlotTooltipTitle
-    private framehandle array MAB_SlotTooltipBody
     private framehandle array MAB_ElementalButton
     private framehandle array MAB_ElementalIcon
     private framehandle array MAB_ElementalLabel
@@ -89,12 +92,26 @@ globals
     private trigger MAB_SlotTrigger = null
     private trigger MAB_ElementalTrigger = null
     private trigger MAB_ClearFocusTrigger = null
+    private trigger MAB_HoverTrigger = null
     private trigger MAB_InitTrigger = null
-    private timer MAB_UpdateTimer = null
 
     private unit MAB_SelectedUnit = null
+    private unit MAB_CachedHero = null
     private unit MAB_ElementalHero = null
     private boolean MAB_ElementalOpen = false
+    private integer MAB_CachedTargetingAbility = -1
+    private integer array MAB_CachedAbilityId
+    private integer array MAB_CachedAbilityLevel
+    private integer array MAB_CachedManaCost
+    private integer array MAB_CachedCooldownSecond
+    private integer array MAB_CachedCooldownStep
+    private boolean array MAB_CachedReady
+    private boolean array MAB_CachedDisabled
+    private boolean array MAB_CachedCooldownVisible
+    private string array MAB_CachedTitle
+    private string array MAB_CachedBody
+    private string array MAB_CachedIcon
+    private boolean array MAB_ElementalReady
 endglobals
 
 private function MAB_IsValidUnit takes unit whichUnit returns boolean
@@ -217,7 +234,40 @@ private function MAB_RestoreNativeFrames takes nothing returns nothing
     set MAB_NativeCaptured = false
 endfunction
 
+private function MAB_SetParentVisible takes boolean visible returns nothing
+    if MAB_ParentVisible != visible then
+        set MAB_ParentVisible = visible
+        call BlzFrameSetVisible(MAB_Parent, visible)
+    endif
+endfunction
+
+private function MAB_ResetSlotCache takes nothing returns nothing
+    local integer index = 0
+
+    set MAB_CachedHero = null
+    set MAB_StaticDirty = true
+    set MAB_CachedTargetingAbility = -1
+    loop
+        exitwhen index >= ModernAbilityLoadout_SLOT_COUNT
+        set MAB_CachedAbilityId[index] = -1
+        set MAB_CachedAbilityLevel[index] = -1
+        set MAB_CachedManaCost[index] = -1
+        set MAB_CachedCooldownSecond[index] = -1
+        set MAB_CachedCooldownStep[index] = -1
+        set MAB_CachedReady[index] = false
+        set MAB_CachedDisabled[index] = false
+        set MAB_CachedCooldownVisible[index] = false
+        set MAB_CachedTitle[index] = ""
+        set MAB_CachedBody[index] = ""
+        set MAB_CachedIcon[index] = ""
+        set index = index + 1
+    endloop
+endfunction
+
 private function MAB_CloseElementalFlyout takes nothing returns nothing
+    if not MAB_ElementalOpen then
+        return
+    endif
     set MAB_ElementalOpen = false
     set MAB_ElementalHero = null
     if MAB_ElementalBackdrop != null then
@@ -263,28 +313,46 @@ private function MAB_UpdateElementalFlyout takes nothing returns nothing
             set manaCost = BlzGetUnitAbilityManaCost(MAB_ElementalHero, abilityId, abilityLevel - 1)
         endif
         set ready = abilityLevel > 0 and BlzGetUnitAbilityCooldownRemaining(MAB_ElementalHero, abilityId) <= 0.00 and mana + 0.01 >= I2R(manaCost)
-        call BlzFrameSetEnable(MAB_ElementalButton[index], ready)
-        call BlzFrameSetVisible(MAB_ElementalDisabled[index], not ready)
+        if MAB_ElementalReady[index] != ready then
+            set MAB_ElementalReady[index] = ready
+            call BlzFrameSetEnable(MAB_ElementalButton[index], ready)
+            call BlzFrameSetVisible(MAB_ElementalDisabled[index], not ready)
+        endif
         set index = index + 1
     endloop
 endfunction
 
 private function MAB_SetCooldownVisual takes integer index, unit whichHero, integer abilityId, integer abilityLevel returns nothing
     local real remaining = BlzGetUnitAbilityCooldownRemaining(whichHero, abilityId)
-    local real total = BlzGetUnitAbilityCooldown(whichHero, abilityId, abilityLevel - 1)
-    local real ratio = 0.00
+    local real total
+    local integer second
+    local integer step
 
     if remaining > 0.00 then
+        set total = BlzGetUnitAbilityCooldown(whichHero, abilityId, abilityLevel - 1)
         if total > 0.00 then
-            set ratio = MAB_Clamp(remaining / total)
+            set step = R2I(MAB_Clamp(remaining / total) * 100.00)
         else
-            set ratio = 1.00
+            set step = 100
         endif
-        call BlzFrameSetSize(MAB_SlotCooldown[index], MAB_ACTION_SIZE - 0.004, (MAB_ACTION_SIZE - 0.004) * ratio)
-        call BlzFrameSetText(MAB_SlotCooldownText[index], I2S(R2I(remaining + 0.99)))
-        call BlzFrameSetVisible(MAB_SlotCooldown[index], true)
-        call BlzFrameSetVisible(MAB_SlotCooldownText[index], true)
-    else
+        if step != MAB_CachedCooldownStep[index] then
+            set MAB_CachedCooldownStep[index] = step
+            call BlzFrameSetSize(MAB_SlotCooldown[index], MAB_ACTION_SIZE - 0.004, (MAB_ACTION_SIZE - 0.004) * I2R(step) / 100.00)
+        endif
+        set second = R2I(remaining + 0.99)
+        if second != MAB_CachedCooldownSecond[index] then
+            set MAB_CachedCooldownSecond[index] = second
+            call BlzFrameSetText(MAB_SlotCooldownText[index], I2S(second))
+        endif
+        if not MAB_CachedCooldownVisible[index] then
+            set MAB_CachedCooldownVisible[index] = true
+            call BlzFrameSetVisible(MAB_SlotCooldown[index], true)
+            call BlzFrameSetVisible(MAB_SlotCooldownText[index], true)
+        endif
+    elseif MAB_CachedCooldownVisible[index] then
+        set MAB_CachedCooldownVisible[index] = false
+        set MAB_CachedCooldownSecond[index] = -1
+        set MAB_CachedCooldownStep[index] = -1
         call BlzFrameSetVisible(MAB_SlotCooldown[index], false)
         call BlzFrameSetVisible(MAB_SlotCooldownText[index], false)
     endif
@@ -292,64 +360,88 @@ private function MAB_SetCooldownVisual takes integer index, unit whichHero, inte
     set whichHero = null
 endfunction
 
-private function MAB_UpdateSlot takes integer index, unit whichHero returns nothing
+private function MAB_UpdateSlotStatic takes integer index, unit whichHero returns nothing
     local integer slot = index + 1
     local integer abilityId = ModernAbilityLoadout_GetEffectiveAbilityId(whichHero, slot)
     local integer entryIndex
-    local integer abilityLevel
-    local integer manaCost
-    local real mana
+    local integer abilityLevel = 0
     local string iconPath
-    local string titleText
-    local string bodyText
     local boolean ready
 
-    if abilityId == 0 then
-        call BlzFrameSetTexture(MAB_SlotIcon[index], MAB_EMPTY_ICON, 0, true)
-        call BlzFrameSetVisible(MAB_SlotIcon[index], false)
+    if abilityId != 0 then
+        set abilityLevel = GetUnitAbilityLevel(whichHero, abilityId)
+    endif
+    if not MAB_StaticDirty and abilityId == MAB_CachedAbilityId[index] and abilityLevel == MAB_CachedAbilityLevel[index] then
+        set whichHero = null
+        return
+    endif
+
+    set MAB_CachedAbilityId[index] = abilityId
+    set MAB_CachedAbilityLevel[index] = abilityLevel
+    set MAB_CachedCooldownSecond[index] = -1
+    set MAB_CachedCooldownStep[index] = -1
+    if MAB_CachedCooldownVisible[index] then
+        set MAB_CachedCooldownVisible[index] = false
         call BlzFrameSetVisible(MAB_SlotCooldown[index], false)
         call BlzFrameSetVisible(MAB_SlotCooldownText[index], false)
+    endif
+
+    if abilityId == 0 then
+        set MAB_CachedManaCost[index] = 0
+        set MAB_CachedReady[index] = false
+        set MAB_CachedDisabled[index] = false
+        set MAB_CachedTitle[index] = "Empty slot"
+        set MAB_CachedBody[index] = "Choose a learned ability from the Abilities book."
+        set MAB_CachedIcon[index] = MAB_EMPTY_ICON
+        call BlzFrameSetTexture(MAB_SlotIcon[index], MAB_EMPTY_ICON, 0, true)
+        call BlzFrameSetVisible(MAB_SlotIcon[index], false)
         call BlzFrameSetVisible(MAB_SlotDisabled[index], false)
         call BlzFrameSetEnable(MAB_SlotButton[index], false)
-        call BlzFrameSetText(MAB_SlotTooltipTitle[index], "Empty slot")
-        call BlzFrameSetText(MAB_SlotTooltipBody[index], "Choose a learned ability from the Abilities book.")
         set whichHero = null
         return
     endif
 
     set entryIndex = AbilitiesPlayer_GetEntryByAbilityId(abilityId)
-    set abilityLevel = GetUnitAbilityLevel(whichHero, abilityId)
     set ready = abilityLevel > 0 and ModernAbilityCatalog_IsRuntimeReady(abilityId)
     set iconPath = BlzGetAbilityIcon(abilityId)
     if iconPath == null or iconPath == "" then
         set iconPath = MAB_EMPTY_ICON
     endif
 
-    call BlzFrameSetTexture(MAB_SlotIcon[index], iconPath, 0, true)
-    call BlzFrameSetVisible(MAB_SlotIcon[index], true)
-    call BlzFrameSetEnable(MAB_SlotButton[index], true)
-
+    set MAB_CachedIcon[index] = iconPath
+    set MAB_CachedReady[index] = ready
+    set MAB_CachedDisabled[index] = false
+    set MAB_CachedTitle[index] = AbilitiesPlayer_GetEntryTitle(entryIndex)
+    set MAB_CachedBody[index] = AbilitiesPlayer_GetEntryBodyForLevel(entryIndex, abilityLevel)
     if abilityLevel > 0 then
-        set manaCost = BlzGetUnitAbilityManaCost(whichHero, abilityId, abilityLevel - 1)
-        set mana = GetUnitState(whichHero, UNIT_STATE_MANA)
-        call MAB_SetCooldownVisual(index, whichHero, abilityId, abilityLevel)
+        set MAB_CachedManaCost[index] = BlzGetUnitAbilityManaCost(whichHero, abilityId, abilityLevel - 1)
     else
-        set manaCost = 0
-        set mana = 0.00
-        call BlzFrameSetVisible(MAB_SlotCooldown[index], false)
-        call BlzFrameSetVisible(MAB_SlotCooldownText[index], false)
+        set MAB_CachedManaCost[index] = 0
     endif
-    call BlzFrameSetVisible(MAB_SlotDisabled[index], not ready or mana + 0.01 < I2R(manaCost))
 
-    set titleText = AbilitiesPlayer_GetEntryTitle(entryIndex)
-    if ready then
-        call BlzFrameSetText(MAB_SlotTooltipTitle[index], "|cffffe4a3" + titleText + "|r")
-    else
-        call BlzFrameSetText(MAB_SlotTooltipTitle[index], "|cff808080" + titleText + " - unavailable|r")
+    call BlzFrameSetTexture(MAB_SlotIcon[index], MAB_CachedIcon[index], 0, true)
+    call BlzFrameSetVisible(MAB_SlotIcon[index], true)
+    call BlzFrameSetVisible(MAB_SlotDisabled[index], false)
+    call BlzFrameSetEnable(MAB_SlotButton[index], true)
+    set whichHero = null
+endfunction
+
+private function MAB_UpdateSlotDynamic takes integer index, unit whichHero, real mana returns nothing
+    local integer abilityId = MAB_CachedAbilityId[index]
+    local integer abilityLevel = MAB_CachedAbilityLevel[index]
+    local boolean disabled
+
+    if abilityId <= 0 or abilityLevel <= 0 then
+        set whichHero = null
+        return
     endif
-    set bodyText = AbilitiesPlayer_GetEntryBodyForLevel(entryIndex, abilityLevel)
-    call BlzFrameSetText(MAB_SlotTooltipBody[index], bodyText)
 
+    set disabled = not MAB_CachedReady[index] or mana + 0.01 < I2R(MAB_CachedManaCost[index])
+    if disabled != MAB_CachedDisabled[index] then
+        set MAB_CachedDisabled[index] = disabled
+        call BlzFrameSetVisible(MAB_SlotDisabled[index], disabled)
+    endif
+    call MAB_SetCooldownVisual(index, whichHero, abilityId, abilityLevel)
     set whichHero = null
 endfunction
 
@@ -360,10 +452,18 @@ private function MAB_UpdateTargetingText takes nothing returns nothing
 
     if ModernAbilityController_IsTargetingLocal(localPlayer) then
         set abilityId = ModernAbilityController_GetPendingAbilityId(localPlayer)
-        set entryIndex = AbilitiesPlayer_GetEntryByAbilityId(abilityId)
-        call BlzFrameSetText(MAB_TargetingText, "|cffffcc00Choose target:|r " + AbilitiesPlayer_GetEntryTitle(entryIndex) + "  |cffaaaaaa(Right-click cancels)|r")
-        call BlzFrameSetVisible(MAB_TargetingText, true)
-    else
+        if abilityId != MAB_CachedTargetingAbility then
+            set MAB_CachedTargetingAbility = abilityId
+            set entryIndex = AbilitiesPlayer_GetEntryByAbilityId(abilityId)
+            call BlzFrameSetText(MAB_TargetingText, "|cffffcc00Choose target:|r " + AbilitiesPlayer_GetEntryTitle(entryIndex) + "  |cffaaaaaa(Right-click cancels)|r")
+        endif
+        if not MAB_TargetingVisible then
+            set MAB_TargetingVisible = true
+            call BlzFrameSetVisible(MAB_TargetingText, true)
+        endif
+    elseif MAB_TargetingVisible then
+        set MAB_TargetingVisible = false
+        set MAB_CachedTargetingAbility = -1
         call BlzFrameSetVisible(MAB_TargetingText, false)
     endif
 
@@ -374,41 +474,55 @@ private function MAB_Update takes nothing returns nothing
     local unit whichHero = MAB_SelectedUnit
     local integer index = 0
     local string heroIcon
+    local real mana
 
     if not MAB_Enabled or not ModernPlayerHUD_IsEnabled() or FullscreenUI_IsEnabled() then
-        if MAB_Parent != null then
-            call BlzFrameSetVisible(MAB_Parent, false)
+        if FullscreenUI_IsEnabled() then
+            set MAB_WasFullscreen = true
         endif
+        call MAB_SetParentVisible(false)
         call MAB_CloseElementalFlyout()
         set whichHero = null
         return
     endif
 
-    call MAB_HideNativeFrames()
+    if MAB_WasFullscreen or not MAB_NativeCaptured then
+        set MAB_WasFullscreen = false
+        call MAB_HideNativeFrames()
+    endif
     if not MAB_IsValidUnit(whichHero) and GetLocalPlayer() == Player(0) and MAB_IsValidUnit(udg_Nazgrek) then
         set whichHero = udg_Nazgrek
         set MAB_SelectedUnit = whichHero
     endif
     if not MAB_IsPlayerHero(whichHero) then
-        call BlzFrameSetVisible(MAB_Parent, false)
+        call MAB_SetParentVisible(false)
         call MAB_CloseElementalFlyout()
         set whichHero = null
         return
     endif
 
-    call BlzFrameSetVisible(MAB_Parent, true)
-    set heroIcon = BlzGetAbilityIcon(GetUnitTypeId(whichHero))
-    if heroIcon == null or heroIcon == "" then
-        set heroIcon = MAB_EMPTY_ICON
+    if MAB_CachedHero != whichHero then
+        call MAB_ResetSlotCache()
+        set MAB_CachedHero = whichHero
+        set heroIcon = BlzGetAbilityIcon(GetUnitTypeId(whichHero))
+        if heroIcon == null or heroIcon == "" then
+            set heroIcon = MAB_EMPTY_ICON
+        endif
+        call BlzFrameSetTexture(MAB_HeroIcon, heroIcon, 0, true)
     endif
-    call BlzFrameSetTexture(MAB_HeroIcon, heroIcon, 0, true)
 
+    call MAB_SetParentVisible(true)
+    set mana = GetUnitState(whichHero, UNIT_STATE_MANA)
     loop
         exitwhen index >= ModernAbilityLoadout_SLOT_COUNT
-        call MAB_UpdateSlot(index, whichHero)
+        call MAB_UpdateSlotStatic(index, whichHero)
+        call MAB_UpdateSlotDynamic(index, whichHero, mana)
         set index = index + 1
     endloop
-    call MAB_UpdateElementalFlyout()
+    set MAB_StaticDirty = false
+    if MAB_ElementalOpen then
+        call MAB_UpdateElementalFlyout()
+    endif
     call MAB_UpdateTargetingText()
 
     set whichHero = null
@@ -479,15 +593,66 @@ private function MAB_ElementalAction takes nothing returns nothing
     set triggerPlayer = null
 endfunction
 
+private function MAB_HoverAction takes nothing returns nothing
+    local framehandle triggerFrame = BlzGetTriggerFrame()
+    local integer index = 0
+
+    if GetTriggerPlayer() == GetLocalPlayer() then
+        loop
+            exitwhen index >= ModernAbilityLoadout_SLOT_COUNT
+            if triggerFrame == MAB_SlotButton[index] then
+                if MAB_CachedAbilityId[index] > 0 then
+                    if MAB_CachedReady[index] then
+                        call BlzFrameSetText(MAB_TooltipTitle, "|cffffcc00" + MAB_CachedTitle[index] + "|r")
+                    else
+                        call BlzFrameSetText(MAB_TooltipTitle, "|cffff5555" + MAB_CachedTitle[index] + "|r")
+                    endif
+                    call BlzFrameSetText(MAB_TooltipBody, MAB_CachedBody[index])
+                else
+                    call BlzFrameSetText(MAB_TooltipTitle, "|cffaaaaaaEmpty slot|r")
+                    call BlzFrameSetText(MAB_TooltipBody, "Choose a learned ability from the Abilities book.")
+                endif
+                set index = ModernAbilityLoadout_SLOT_COUNT
+            else
+                set index = index + 1
+            endif
+        endloop
+    endif
+
+    set triggerFrame = null
+endfunction
+
+private function MAB_CreateTooltip takes nothing returns nothing
+    set MAB_Tooltip = BlzCreateFrameByType("BACKDROP", "ModernAbilityTooltip", MAB_ScreenParent, "EscMenuBackdrop", 0)
+    call BlzFrameSetAbsPoint(MAB_Tooltip, FRAMEPOINT_BOTTOM, 0.400, 0.130)
+    call BlzFrameSetSize(MAB_Tooltip, MAB_TOOLTIP_WIDTH, MAB_TOOLTIP_HEIGHT)
+    call BlzFrameSetLevel(MAB_Tooltip, 40)
+
+    set MAB_TooltipTitle = BlzCreateFrameByType("TEXT", "ModernAbilityTooltipTitle", MAB_Tooltip, "", 0)
+    call BlzFrameSetPoint(MAB_TooltipTitle, FRAMEPOINT_TOPLEFT, MAB_Tooltip, FRAMEPOINT_TOPLEFT, 0.010, -0.010)
+    call BlzFrameSetSize(MAB_TooltipTitle, MAB_TOOLTIP_WIDTH - 0.020, 0.016)
+    call BlzFrameSetTextAlignment(MAB_TooltipTitle, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
+    call BlzFrameSetScale(MAB_TooltipTitle, 0.86)
+    call BlzFrameSetEnable(MAB_TooltipTitle, false)
+
+    set MAB_TooltipBody = BlzCreateFrameByType("TEXT", "ModernAbilityTooltipBody", MAB_Tooltip, "", 0)
+    call BlzFrameSetPoint(MAB_TooltipBody, FRAMEPOINT_TOPLEFT, MAB_TooltipTitle, FRAMEPOINT_BOTTOMLEFT, 0.000, -0.006)
+    call BlzFrameSetSize(MAB_TooltipBody, MAB_TOOLTIP_WIDTH - 0.020, MAB_TOOLTIP_HEIGHT - 0.036)
+    call BlzFrameSetTextAlignment(MAB_TooltipBody, TEXT_JUSTIFY_TOP, TEXT_JUSTIFY_LEFT)
+    call BlzFrameSetScale(MAB_TooltipBody, 0.72)
+    call BlzFrameSetEnable(MAB_TooltipBody, false)
+    call BlzFrameSetVisible(MAB_Tooltip, false)
+endfunction
+
 private function MAB_CreateSlot takes integer index returns nothing
     local real x = MAB_ACTION_START_X + I2R(index) * (MAB_ACTION_SIZE + MAB_ACTION_GAP)
 
-    set MAB_SlotButton[index] = BlzCreateFrameByType("GLUEBUTTON", "ModernAbilityActionButton" + I2S(index), MAB_Parent, "ScoreScreenTabButtonTemplate", 0)
+    set MAB_SlotButton[index] = BlzCreateFrameByType("BUTTON", "ModernAbilityActionButton" + I2S(index), MAB_Parent, "", 0)
     call BlzFrameSetAbsPoint(MAB_SlotButton[index], FRAMEPOINT_BOTTOMLEFT, x, MAB_ACTION_BOTTOM)
     call BlzFrameSetSize(MAB_SlotButton[index], MAB_ACTION_SIZE, MAB_ACTION_SIZE)
     call BlzFrameSetLevel(MAB_SlotButton[index], 4)
 
-    set MAB_SlotIcon[index] = BlzCreateFrameByType("BACKDROP", "ModernAbilityActionIcon" + I2S(index), MAB_SlotButton[index], "IconButtonTemplate", 0)
+    set MAB_SlotIcon[index] = BlzCreateFrameByType("BACKDROP", "ModernAbilityActionIcon" + I2S(index), MAB_SlotButton[index], "", 0)
     call BlzFrameSetPoint(MAB_SlotIcon[index], FRAMEPOINT_BOTTOMLEFT, MAB_SlotButton[index], FRAMEPOINT_BOTTOMLEFT, 0.002, 0.002)
     call BlzFrameSetPoint(MAB_SlotIcon[index], FRAMEPOINT_TOPRIGHT, MAB_SlotButton[index], FRAMEPOINT_TOPRIGHT, -0.002, -0.002)
     call BlzFrameSetEnable(MAB_SlotIcon[index], false)
@@ -523,29 +688,11 @@ private function MAB_CreateSlot takes integer index returns nothing
     call BlzFrameSetEnable(MAB_SlotKeyText[index], false)
     call BlzFrameSetLevel(MAB_SlotKeyText[index], 9)
 
-    set MAB_SlotTooltip[index] = BlzCreateFrameByType("BACKDROP", "ModernAbilityTooltip" + I2S(index), MAB_ScreenParent, "EscMenuBackdrop", 0)
-    call BlzFrameSetAbsPoint(MAB_SlotTooltip[index], FRAMEPOINT_BOTTOM, 0.400, 0.130)
-    call BlzFrameSetSize(MAB_SlotTooltip[index], MAB_TOOLTIP_WIDTH, MAB_TOOLTIP_HEIGHT)
-    call BlzFrameSetLevel(MAB_SlotTooltip[index], 40)
-
-    set MAB_SlotTooltipTitle[index] = BlzCreateFrameByType("TEXT", "ModernAbilityTooltipTitle" + I2S(index), MAB_SlotTooltip[index], "", 0)
-    call BlzFrameSetPoint(MAB_SlotTooltipTitle[index], FRAMEPOINT_TOPLEFT, MAB_SlotTooltip[index], FRAMEPOINT_TOPLEFT, 0.010, -0.010)
-    call BlzFrameSetSize(MAB_SlotTooltipTitle[index], MAB_TOOLTIP_WIDTH - 0.020, 0.016)
-    call BlzFrameSetTextAlignment(MAB_SlotTooltipTitle[index], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
-    call BlzFrameSetScale(MAB_SlotTooltipTitle[index], 0.86)
-    call BlzFrameSetEnable(MAB_SlotTooltipTitle[index], false)
-
-    set MAB_SlotTooltipBody[index] = BlzCreateFrameByType("TEXT", "ModernAbilityTooltipBody" + I2S(index), MAB_SlotTooltip[index], "", 0)
-    call BlzFrameSetPoint(MAB_SlotTooltipBody[index], FRAMEPOINT_TOPLEFT, MAB_SlotTooltipTitle[index], FRAMEPOINT_BOTTOMLEFT, 0.000, -0.006)
-    call BlzFrameSetSize(MAB_SlotTooltipBody[index], MAB_TOOLTIP_WIDTH - 0.020, MAB_TOOLTIP_HEIGHT - 0.036)
-    call BlzFrameSetTextAlignment(MAB_SlotTooltipBody[index], TEXT_JUSTIFY_TOP, TEXT_JUSTIFY_LEFT)
-    call BlzFrameSetScale(MAB_SlotTooltipBody[index], 0.72)
-    call BlzFrameSetEnable(MAB_SlotTooltipBody[index], false)
-    call BlzFrameSetTooltip(MAB_SlotButton[index], MAB_SlotTooltip[index])
-    call BlzFrameSetVisible(MAB_SlotTooltip[index], false)
+    call BlzFrameSetTooltip(MAB_SlotButton[index], MAB_Tooltip)
 
     call BlzTriggerRegisterFrameEvent(MAB_SlotTrigger, MAB_SlotButton[index], FRAMEEVENT_CONTROL_CLICK)
     call BlzTriggerRegisterFrameEvent(MAB_ClearFocusTrigger, MAB_SlotButton[index], FRAMEEVENT_CONTROL_CLICK)
+    call BlzTriggerRegisterFrameEvent(MAB_HoverTrigger, MAB_SlotButton[index], FRAMEEVENT_MOUSE_ENTER)
 endfunction
 
 private function MAB_CreateElementalFlyout takes nothing returns nothing
@@ -595,6 +742,9 @@ private function MAB_CreateElementalFlyout takes nothing returns nothing
         call BlzFrameSetVertexColor(MAB_ElementalDisabled[index], BlzConvertColor(160, 25, 25, 25))
         call BlzFrameSetEnable(MAB_ElementalDisabled[index], false)
         call BlzFrameSetLevel(MAB_ElementalDisabled[index], 38)
+        call BlzFrameSetEnable(MAB_ElementalButton[index], false)
+        call BlzFrameSetVisible(MAB_ElementalDisabled[index], true)
+        set MAB_ElementalReady[index] = false
 
         set MAB_ElementalLabel[index] = BlzCreateFrameByType("TEXT", "ModernElementalFlyoutLabel" + I2S(index), MAB_ElementalButton[index], "", 0)
         call BlzFrameSetPoint(MAB_ElementalLabel[index], FRAMEPOINT_BOTTOM, MAB_ElementalButton[index], FRAMEPOINT_BOTTOM, 0.000, 0.002)
@@ -626,19 +776,19 @@ private function MAB_CreateFrames takes nothing returns nothing
     call BlzFrameSetLevel(MAB_Parent, 30)
 
     set MAB_HeroBorder = BlzCreateFrameByType("BACKDROP", "ModernAbilityHeroBorder", MAB_Parent, "", 0)
-    call BlzFrameSetTexture(MAB_HeroBorder, MAB_SURFACE_TEXTURE, 0, false)
-    call BlzFrameSetAbsPoint(MAB_HeroBorder, FRAMEPOINT_BOTTOMLEFT, 0.126, 0.012)
-    call BlzFrameSetSize(MAB_HeroBorder, 0.052, 0.052)
-    call BlzFrameSetVertexColor(MAB_HeroBorder, BlzConvertColor(255, 110, 82, 40))
+    call BlzFrameSetTexture(MAB_HeroBorder, MAB_MEDALLION_TEXTURE, 0, true)
+    call BlzFrameSetAbsPoint(MAB_HeroBorder, FRAMEPOINT_BOTTOMLEFT, 0.124, 0.010)
+    call BlzFrameSetSize(MAB_HeroBorder, 0.056, 0.056)
     call BlzFrameSetEnable(MAB_HeroBorder, false)
     call BlzFrameSetLevel(MAB_HeroBorder, 4)
 
-    set MAB_HeroIcon = BlzCreateFrameByType("BACKDROP", "ModernAbilityHeroIcon", MAB_HeroBorder, "IconButtonTemplate", 0)
-    call BlzFrameSetPoint(MAB_HeroIcon, FRAMEPOINT_BOTTOMLEFT, MAB_HeroBorder, FRAMEPOINT_BOTTOMLEFT, 0.003, 0.003)
-    call BlzFrameSetPoint(MAB_HeroIcon, FRAMEPOINT_TOPRIGHT, MAB_HeroBorder, FRAMEPOINT_TOPRIGHT, -0.003, -0.003)
+    set MAB_HeroIcon = BlzCreateFrameByType("BACKDROP", "ModernAbilityHeroIcon", MAB_HeroBorder, "", 0)
+    call BlzFrameSetPoint(MAB_HeroIcon, FRAMEPOINT_BOTTOMLEFT, MAB_HeroBorder, FRAMEPOINT_BOTTOMLEFT, 0.006, 0.006)
+    call BlzFrameSetPoint(MAB_HeroIcon, FRAMEPOINT_TOPRIGHT, MAB_HeroBorder, FRAMEPOINT_TOPRIGHT, -0.006, -0.006)
     call BlzFrameSetEnable(MAB_HeroIcon, false)
     call BlzFrameSetLevel(MAB_HeroIcon, 5)
 
+    call MAB_CreateTooltip()
     loop
         exitwhen index >= ModernAbilityLoadout_SLOT_COUNT
         call MAB_CreateSlot(index)
@@ -658,6 +808,7 @@ private function MAB_CreateFrames takes nothing returns nothing
 endfunction
 
 public function Refresh takes nothing returns nothing
+    set MAB_StaticDirty = true
     call MAB_Update()
 endfunction
 
@@ -669,18 +820,17 @@ public function Enable takes nothing returns nothing
         call MAB_CreateFrames()
     endif
     set MAB_Enabled = true
-    call TimerStart(MAB_UpdateTimer, MAB_UPDATE_INTERVAL, true, function MAB_Update)
+    set MAB_WasFullscreen = false
+    call MAB_ResetSlotCache()
     call MAB_Update()
 endfunction
 
 public function Disable takes nothing returns nothing
     set MAB_Enabled = false
-    call PauseTimer(MAB_UpdateTimer)
     call ModernAbilityController_CancelLocal(GetLocalPlayer())
     call MAB_CloseElementalFlyout()
-    if MAB_Parent != null then
-        call BlzFrameSetVisible(MAB_Parent, false)
-    endif
+    call MAB_SetParentVisible(false)
+    call MAB_ResetSlotCache()
     call MAB_RestoreNativeFrames()
 endfunction
 
@@ -697,6 +847,7 @@ private function MAB_OnUnitSelected takes nothing returns nothing
             call MAB_CloseElementalFlyout()
         endif
         set MAB_SelectedUnit = selectedUnit
+        call MAB_ResetSlotCache()
     endif
     set selectedUnit = null
     set selectingPlayer = null
@@ -708,6 +859,7 @@ private function MAB_OnUnitDeselected takes nothing returns nothing
 
     if deselectingPlayer == GetLocalPlayer() and MAB_SelectedUnit == deselectedUnit then
         set MAB_SelectedUnit = null
+        call MAB_ResetSlotCache()
     endif
     set deselectedUnit = null
     set deselectingPlayer = null
@@ -734,13 +886,14 @@ private function Init takes nothing returns nothing
     call TriggerAddAction(MAB_ElementalTrigger, function MAB_ElementalAction)
     set MAB_ClearFocusTrigger = CreateTrigger()
     call TriggerAddAction(MAB_ClearFocusTrigger, function MAB_ClearFocusAction)
+    set MAB_HoverTrigger = CreateTrigger()
+    call TriggerAddAction(MAB_HoverTrigger, function MAB_HoverAction)
     set MAB_InitTrigger = CreateTrigger()
     call TriggerRegisterTimerEvent(MAB_InitTrigger, 0.25, false)
     call TriggerAddAction(MAB_InitTrigger, function MAB_DelayedInit)
-    set MAB_UpdateTimer = CreateTimer()
-
     call Events_RegisterPlayerUnitEvent(function MAB_OnUnitSelected, EVENT_PLAYER_UNIT_SELECTED)
     call Events_RegisterPlayerUnitEvent(function MAB_OnUnitDeselected, EVENT_PLAYER_UNIT_DESELECTED)
+    call ModernPlayerHUD_RegisterUpdate(function MAB_Update)
 endfunction
 
 endlibrary
