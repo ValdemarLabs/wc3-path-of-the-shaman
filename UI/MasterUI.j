@@ -2,10 +2,10 @@
     MasterUI
     
     Author: Valdemar
-    Version: 1.2.0
+    Version: 1.3.0
 
     Description: Serves as the main in-game menu for opening information,
-    settings, and the PotS save/load panel.
+    settings, world status, and the PotS save/load panel.
 
     Credits: Tasyen (TasQuestBox as inspiration)
 
@@ -65,6 +65,7 @@ globals
     private constant integer MUI_ACTION_SETTINGS = 12
     private constant integer MUI_ACTION_SAVE_LOAD = 13
     private constant integer MUI_ACTION_TALENTS = 14
+    private constant integer MUI_ACTION_INFO = 15
 
     private constant real MUI_PANEL_LEFT = 0.110
     private constant real MUI_PANEL_RIGHT = 0.560
@@ -100,6 +101,7 @@ globals
     private constant string MUI_ICON_PLAYER_HOME = "ReplaceableTextures\\CommandButtons\\BTNBook_07.blp"
     private constant string MUI_ICON_SETTINGS = "ReplaceableTextures\\CommandButtons\\BTNEngineeringUpgrade.blp"     // OK
     private constant string MUI_ICON_SAVE_LOAD = "ReplaceableTextures\\CommandButtons\\BTNReplay-Loop.blp"
+    private constant string MUI_ICON_INFO = "ReplaceableTextures\\CommandButtons\\BTNScroll.blp"
 endglobals
 
 private function MUI_FormatButtonLabel takes string label returns string
@@ -201,6 +203,7 @@ private function MUI_HideAllPanels takes nothing returns nothing
     call ExecuteFunc("SettingsUI_Hide")
     call ExecuteFunc("MinimapSettingsUI_Hide")
     call ExecuteFunc("PotSSaveUI_Hide")
+    call ExecuteFunc("InfoUI_Hide")
     static if LIBRARY_QuestUI then
         call ExecuteFunc("QuestUI_Hide")
     endif
@@ -295,6 +298,11 @@ private function MUI_OpenSaveLoad takes nothing returns nothing
     call ExecuteFunc("PotSSaveUI_Show")
 endfunction
 
+private function MUI_OpenInfo takes nothing returns nothing
+    call MUI_HideAllPanels()
+    call ExecuteFunc("InfoUI_Show")
+endfunction
+
 private function MUI_RunAction takes integer actionId returns nothing
     if actionId == MUI_ACTION_ZONES then
         call MUI_OpenZones()
@@ -324,6 +332,8 @@ private function MUI_RunAction takes integer actionId returns nothing
         call MUI_OpenSettings()
     elseif actionId == MUI_ACTION_SAVE_LOAD then
         call MUI_OpenSaveLoad()
+    elseif actionId == MUI_ACTION_INFO then
+        call MUI_OpenInfo()
     endif
 endfunction
 
@@ -448,6 +458,7 @@ private function MUI_CreateFrames takes nothing returns nothing
     call MUI_CreateMenuButton(2, "Reputations", MUI_ICON_REPUTATIONS, MUI_ACTION_REPUTATIONS, 0.020, -0.102)
     call MUI_CreateMenuButton(3, "Zones", MUI_ICON_ZONES, MUI_ACTION_ZONES, 0.020, -0.144)
     call MUI_CreateMenuButton(4, "Professions", MUI_ICON_PROFESSIONS, MUI_ACTION_PROFESSIONS, 0.020, -0.186)
+    call MUI_CreateMenuButton(15, "Information", MUI_ICON_INFO, MUI_ACTION_INFO, 0.020, -0.228)
 
     call MUI_CreateMenuButton(5, "Abilities", MUI_ICON_ABILITIES, MUI_ACTION_ABILITIES, 0.160, -0.060)
     call MUI_CreateMenuButton(6, "Talents", MUI_ICON_TALENTS, MUI_ACTION_TALENTS, 0.160, -0.102)
