@@ -2,7 +2,7 @@
     TargetUnitUI
 
     Author: Valdemar
-    Version: 1.3.0
+    Version: 1.3.1
 
     Description:
     Compact upper-left target and threat frame for active boss encounters,
@@ -15,9 +15,10 @@
     - StatsLiteUI, header controls and configuration-pane pattern
 
     How to install:
-    Import after Table, ThreatSystem, Boss, Events, and Companions. No FDF or
-    TOC import is required. Active bosses registered through Boss are found
-    automatically. Selection and deselection use the shared Events dispatcher.
+    Import after Table, ThreatSystem, Boss, Events, Companions, and
+    FullscreenUI. No FDF or TOC import is required. Active bosses registered
+    through Boss are found automatically. Selection and deselection use the
+    shared Events dispatcher.
 
     API:
     - call TargetUnitUI_ShowForUnit(whichUnit) // Shows only active threat
@@ -30,7 +31,7 @@
     - set whichUnit = TargetUnitUI_GetDisplayedUnit()
 
 **/
-library TargetUnitUI initializer Init requires Table, ThreatSystem, Boss, Events, Companions
+library TargetUnitUI initializer Init requires Table, ThreatSystem, Boss, Events, Companions, FullscreenUI
 
 globals
     // Fullscreen-relative upper-left layout. The left offset clears hero icons.
@@ -378,6 +379,11 @@ private function TUI_Update takes nothing returns nothing
     local real topThreat
     local integer row = 1
 
+    if FullscreenUI_IsEnabled() then
+        call TUI_SetVisible(false)
+        return
+    endif
+
     call TUI_ApplyLayout()
     if TUI_ConfigVisible then
         call BlzFrameSetText(TUI_Title, "|cffffcc00Threat Settings|r")
@@ -654,10 +660,9 @@ private function TUI_CreateFrames takes nothing returns nothing
     local integer row = 1
     local real y
 
-    set TUI_ScreenParent = BlzGetFrameByName("ConsoleUIBackdrop", 0)
-    if TUI_ScreenParent == null then
-        set TUI_ScreenParent = BlzGetOriginFrame(ORIGIN_FRAME_GAME_UI, 0)
-    endif
+    // Keep this PotS overlay independent from the native console backdrop.
+    // The modern HUD hides that native parent while gameplay is active.
+    set TUI_ScreenParent = BlzGetOriginFrame(ORIGIN_FRAME_GAME_UI, 0)
     set TUI_ScreenAnchor = BlzCreateFrameByType("FRAME", "TargetUnitUIScreenAnchor", TUI_ScreenParent, "", 0)
     call TUI_UpdateScreenAnchor()
     call BlzFrameSetEnable(TUI_ScreenAnchor, false)

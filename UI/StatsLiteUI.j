@@ -1489,12 +1489,9 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, I
         local integer rowIndex = 1
         local real rowY = -0.001 // CHANGE: move first monitored unit upward to fit full party better
 
-        // CHANGE: Parent under ConsoleUIBackdrop so the fullscreen anchor can leave
-        // the 4:3 UI space. Fall back to GAME_UI if the native frame is unavailable.
-        set SLUI_ScreenParent = BlzGetFrameByName("ConsoleUIBackdrop", 0)
-        if SLUI_ScreenParent == null then
-            set SLUI_ScreenParent = BlzGetOriginFrame(ORIGIN_FRAME_GAME_UI, 0)
-        endif
+        // Keep this PotS overlay independent from the native console backdrop.
+        // The modern HUD hides that native parent while gameplay is active.
+        set SLUI_ScreenParent = BlzGetOriginFrame(ORIGIN_FRAME_GAME_UI, 0)
 
         set SLUI_ScreenAnchor = BlzCreateFrameByType("FRAME", "StatsLiteUIScreenAnchor", SLUI_ScreenParent, "", 0)
         call SLUI_UpdateScreenAnchor()
