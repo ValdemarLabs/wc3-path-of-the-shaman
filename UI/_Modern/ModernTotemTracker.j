@@ -2,7 +2,7 @@
     ModernTotemTracker
 
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.2.0
 
     Description:
     Displays Earth, Fire, Water, and Air badges above the modern player HUD.
@@ -53,6 +53,7 @@ globals
     private framehandle array MTT_ProgressBack
     private framehandle array MTT_ProgressFill
     private framehandle array MTT_TimerText
+    private framehandle array MTT_ElementLabel
     private trigger MTT_InitTrigger = null
     private unit MTT_CachedUnit = null
     private integer array MTT_CachedActive
@@ -80,6 +81,17 @@ private function MTT_GetTexture takes integer index returns string
         return MTT_WATER_TEXTURE
     endif
     return MTT_AIR_TEXTURE
+endfunction
+
+private function MTT_GetLabel takes integer index returns string
+    if index == 0 then
+        return "E"
+    elseif index == 1 then
+        return "F"
+    elseif index == 2 then
+        return "W"
+    endif
+    return "A"
 endfunction
 
 private function MTT_GetColor takes integer index returns integer
@@ -133,11 +145,13 @@ private function MTT_UpdateElement takes integer index, unit whichHero returns n
         if active == 1 then
             call BlzFrameSetSize(MTT_Icon[index], MTT_ACTIVE_SIZE, MTT_ACTIVE_SIZE)
             call BlzFrameSetVisible(MTT_InactiveShade[index], false)
+            call BlzFrameSetVisible(MTT_ElementLabel[index], false)
             call BlzFrameSetVisible(MTT_ProgressBack[index], true)
             call BlzFrameSetVisible(MTT_TimerText[index], true)
         else
             call BlzFrameSetSize(MTT_Icon[index], MTT_INACTIVE_SIZE, MTT_INACTIVE_SIZE)
             call BlzFrameSetVisible(MTT_InactiveShade[index], true)
+            call BlzFrameSetVisible(MTT_ElementLabel[index], true)
             call BlzFrameSetVisible(MTT_ProgressBack[index], false)
             call BlzFrameSetVisible(MTT_TimerText[index], false)
             set MTT_CachedSecond[index] = -1
@@ -213,6 +227,7 @@ private function MTT_CreateElement takes integer index returns nothing
     set MTT_Slot[index] = BlzCreateFrameByType("FRAME", "ModernTotemTrackerSlot" + I2S(index), MTT_Parent, "", 0)
     call BlzFrameSetAbsPoint(MTT_Slot[index], FRAMEPOINT_BOTTOMLEFT, x, MTT_BOTTOM)
     call BlzFrameSetSize(MTT_Slot[index], MTT_SLOT_SIZE, MTT_SLOT_SIZE)
+    call BlzFrameSetEnable(MTT_Slot[index], false)
     call BlzFrameSetLevel(MTT_Slot[index], 32)
 
     set MTT_Icon[index] = BlzCreateFrameByType("BACKDROP", "ModernTotemTrackerIcon" + I2S(index), MTT_Slot[index], "", 0)
@@ -225,9 +240,17 @@ private function MTT_CreateElement takes integer index returns nothing
     set MTT_InactiveShade[index] = BlzCreateFrameByType("BACKDROP", "ModernTotemTrackerShade" + I2S(index), MTT_Icon[index], "", 0)
     call BlzFrameSetAllPoints(MTT_InactiveShade[index], MTT_Icon[index])
     call BlzFrameSetTexture(MTT_InactiveShade[index], MTT_SURFACE_TEXTURE, 0, false)
-    call BlzFrameSetVertexColor(MTT_InactiveShade[index], BlzConvertColor(155, 0, 0, 0))
+    call BlzFrameSetVertexColor(MTT_InactiveShade[index], BlzConvertColor(72, 0, 0, 0))
     call BlzFrameSetEnable(MTT_InactiveShade[index], false)
     call BlzFrameSetLevel(MTT_InactiveShade[index], 34)
+
+    set MTT_ElementLabel[index] = BlzCreateFrameByType("TEXT", "ModernTotemTrackerLabel" + I2S(index), MTT_Slot[index], "", 0)
+    call BlzFrameSetAllPoints(MTT_ElementLabel[index], MTT_Slot[index])
+    call BlzFrameSetTextAlignment(MTT_ElementLabel[index], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_CENTER)
+    call BlzFrameSetScale(MTT_ElementLabel[index], 0.58)
+    call BlzFrameSetText(MTT_ElementLabel[index], "|cffffe4a3" + MTT_GetLabel(index) + "|r")
+    call BlzFrameSetEnable(MTT_ElementLabel[index], false)
+    call BlzFrameSetLevel(MTT_ElementLabel[index], 35)
 
     set MTT_ProgressBack[index] = BlzCreateFrameByType("BACKDROP", "ModernTotemTrackerProgressBack" + I2S(index), MTT_Slot[index], "", 0)
     call BlzFrameSetPoint(MTT_ProgressBack[index], FRAMEPOINT_BOTTOM, MTT_Slot[index], FRAMEPOINT_BOTTOM, 0.000, 0.001)
@@ -266,7 +289,9 @@ private function MTT_CreateFrames takes nothing returns nothing
     set MTT_FramesCreated = true
     set gameUI = BlzGetOriginFrame(ORIGIN_FRAME_GAME_UI, 0)
     set MTT_Parent = BlzCreateFrameByType("FRAME", "ModernTotemTracker", gameUI, "", 0)
-    call BlzFrameSetAllPoints(MTT_Parent, gameUI)
+    // A full-screen logical FRAME blocks unrelated UI and world clicks.
+    call BlzFrameSetSize(MTT_Parent, 0.0001, 0.0001)
+    call BlzFrameSetAbsPoint(MTT_Parent, FRAMEPOINT_BOTTOMLEFT, 0.000, 0.000)
     call BlzFrameSetLevel(MTT_Parent, 31)
 
     loop

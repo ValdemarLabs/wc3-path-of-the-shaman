@@ -28,10 +28,16 @@ command card or portrait.
 `ModernAbilityActionBar.j` fills the twelve custom slots with learned
 ability icons, cooldown shading, mana/readiness state, and custom tooltips. It
 hides `ConsoleBottomBar`, `ConsoleBottomBarOverlay`, the native hero bar,
-minimap, portrait, and `ConsoleUIBackdrop` with visibility calls only.
+portrait, and `ConsoleUIBackdrop` with visibility calls only.
 `StatsLiteUI.j` and `TargetUnitUI.j` now use `ORIGIN_FRAME_GAME_UI`
 directly, so hiding the native console canvas no longer hides those PotS
 overlays. The Game UI root remains only an invisible frame parent.
+
+`ModernMinimapHUD.j` reparents only the native minimap into a compact
+upper-left PotS shell and adds separate Nazgrek and Zul'kis selection buttons.
+It does not move the native command card, portrait, or hero-bar controls that
+caused the earlier unsafe-layout crash. The native hero buttons are hidden
+individually so their status icons cannot remain over the modern bottom HUD.
 
 The large black rectangle seen behind version 0.4.0 was the visible native
 `ConsoleUIBackdrop`, not `PotSHUD.tga`. Its bounds are the same 0.10-to-0.70
@@ -131,12 +137,18 @@ the modern HUD now bounds each of those operations. Runtime soak testing is
 still required because Warcraft III frame performance cannot be established
 by JassHelper compilation alone.
 
+The action-bar and totem systems use tiny textureless logical parents. A
+full-screen `FRAME` consumes mouse input even when it has no visible texture;
+the earlier full-screen roots therefore blocked the action bar, StatsLiteUI,
+Quest UI, MasterUI, and world clicks. Their children retain absolute screen
+positions while the parent hit-test area is now effectively empty.
+
 ## Ability action architecture
 
 The migration does not require rewriting the existing 38 player ability
 implementations. Spellbooks can continue to expose learned abilities to the
 old system while the modern HUD stores and invokes the real ability rawcodes.
-Five focused libraries establish that boundary:
+Six focused libraries establish that boundary:
 
 - `ModernAbilityCatalog.j` classifies every Elemental, Enhancement,
   Restoration, and Totemic ability as passive, immediate, unit, point, or
@@ -151,6 +163,8 @@ Five focused libraries establish that boundary:
   cast without a second click; unit and ground abilities enter targeting mode.
 - `ModernAbilityActionBar.j` renders the PotS-owned slots and hides the native
   bottom HUD after `FullscreenUI` releases the intro presentation.
+- `ModernMinimapHUD.j` preserves the engine minimap's interaction while
+  presenting it independently of the hidden console and native hero bar.
 
 The targeting policies are:
 
@@ -214,6 +228,8 @@ Finally import `UI/_Modern/ModernAbilityActionBar.j` after
 `ModernPlayerHUD`, `ModernAbilityController`, and the dependencies above.
 Then import `UI/_Modern/ModernTotemTracker.j` after `Totems`,
 `ShamanCommon`, `FullscreenUI`, and `ModernPlayerHUD`.
+Import `UI/_Modern/ModernMinimapHUD.j` after `FullscreenUI` and
+`ModernPlayerHUD`; it can otherwise sit beside the other Modern HUD modules.
 
 Import these files with the exact custom paths shown:
 
@@ -232,6 +248,13 @@ Import these files with the exact custom paths shown:
 
 No TOC or FDF import is required for this stage.
 
+The four black squares reported in the first tracker test were the inactive
+Earth, Fire, Water, and Air badge frames. Ensure all four `PotSTotem*.tga`
+files use the exact custom paths above. Version 1.2.0 also reduces the inactive
+shade and displays E/F/W/A fallback labels, so a missing or incorrect texture
+path is immediately identifiable instead of appearing as an unexplained row
+of black rectangles.
+
 Then compile through the current World Editor/JassHelper workflow. Test:
 
 - Nazgrek and Zul'kis selection and switching;
@@ -241,10 +264,16 @@ Then compile through the current World Editor/JassHelper workflow. Test:
 - non-hero and enemy selection;
 - inventory, quest, MasterUI, cinematic, and fullscreen UI transitions;
 - the intro-to-gameplay transition without a native access violation;
-- version 0.6.0, confirming that the custom resource HUD, learned ability
-  icons, cooldowns, tooltips, and Abilities control render after the intro;
-- native bottom bar, command card, hero bar, minimap, and portrait visibility
-  while the modern action bar is active, plus restoration after disabling it;
+- version 0.6.0 of the resource shell and version 0.7.0 of the action bar,
+  confirming that learned icons, cooldowns, tooltips, and Abilities render;
+- mouse clicks on action slots, Abilities, StatsLiteUI, Quest UI, MasterUI,
+  world terrain, and units after the full-screen logical parents were removed;
+- `1` through `0`, minus, and equals activation for slots 1 through 12,
+  including targeted abilities and the Summon Elemental flyout;
+- the upper-left native minimap inside its custom shell, minimap interaction,
+  Nazgrek/Zul'kis selector buttons, and intro/fullscreen transitions;
+- native bottom bar, command card, hero bar, and portrait hiding while the
+  custom minimap remains visible, plus restoration after disabling the bar;
 - direct self and melee-auto casting; soft friendly/hostile targeting; exact
   totem placement; and approximate area-spell placement;
 - all four Summon Elemental flyout choices, including mana, cooldown, channel,
@@ -273,12 +302,10 @@ scaling, Reforged/Classic presentation, cinematic, and multiplayer validation
 matrix. Do not import the entire Forgotten Hollow UI package without first
 removing unused definitions and resolving global frame-name collisions.
 
-The current stage hides the shared native bottom HUD without moving or
-reparenting its children. Because this also removes native minimap and inventory
-access, those functions are temporarily unavailable from the gameplay HUD and
-must receive PotS-owned replacements. The fixed `1` through `=` labels are
-presentation-only in this stage; clicking works, but keyboard activation waits
-until it can be added without double-firing native hotkeys.
+The current stage hides the shared native bottom HUD without moving its command
+card or portrait. The minimap and hero selectors now have PotS-owned shells,
+and the fixed `1` through `=` labels have matching keyboard input. Native
+inventory access remains unavailable and still needs a PotS-owned replacement.
 
 `ModernAbilityCompileTest.j` is a compile-only harness for the complete modern
 HUD stack. Never import it into the production map.

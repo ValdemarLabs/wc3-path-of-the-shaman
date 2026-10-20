@@ -118,6 +118,7 @@ endlibrary
 //! import "ModernAbilityTargeting.j"
 //! import "ModernAbilityController.j"
 //! import "ModernPlayerHUD.j"
+//! import "ModernMinimapHUD.j"
 //! import "ModernAbilityActionBar.j"
 //! import "ModernTotemTracker.j"
 

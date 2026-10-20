@@ -21,6 +21,6 @@ leather bindings, and restrained elemental turquoise:
 - `PotSXP.tga`: thin amber/turquoise spirit-energy fill, 2048x32.
 
 They are loaded directly by `ModernPlayerHUD.j`,
-`ModernAbilityActionBar.j`, and `ModernTotemTracker.j`; no TOC or FDF is
-required.
+`ModernAbilityActionBar.j`, `ModernTotemTracker.j`, and
+`ModernMinimapHUD.j`; no TOC or FDF is required.
 

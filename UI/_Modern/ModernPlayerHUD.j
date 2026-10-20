@@ -2,7 +2,7 @@
     ModernPlayerHUD
 
     Author: Valdemar
-    Version: 0.5.0
+    Version: 0.6.0
 
     Description:
     Creates the cached modern PotS bottom-center resource shell, twelve custom
@@ -51,9 +51,9 @@ globals
     private constant real MHUD_ACTION_SIZE = 0.032
     private constant real MHUD_ACTION_GAP = 0.003
 
-    private constant real MHUD_RESOURCE_BAR_WIDTH = 0.180
-    private constant real MHUD_RESOURCE_BAR_HEIGHT = 0.014
-    private constant real MHUD_XP_BAR_WIDTH = 0.420
+    private constant real MHUD_RESOURCE_BAR_WIDTH = 0.174
+    private constant real MHUD_RESOURCE_BAR_HEIGHT = 0.010
+    private constant real MHUD_XP_BAR_WIDTH = 0.404
     private constant real MHUD_XP_BAR_HEIGHT = 0.006
     private constant integer MHUD_BAR_HEALTH = 0
     private constant integer MHUD_BAR_MANA = 1
@@ -451,7 +451,7 @@ private function MHUD_CreateFrames takes nothing returns nothing
 
     set MHUD_HealthBack = BlzCreateFrameByType("BACKDROP", "ModernPlayerHUDHealthBack", MHUD_Parent, "", 0)
     call BlzFrameSetTexture(MHUD_HealthBack, MHUD_SURFACE_TEXTURE, 0, false)
-    call BlzFrameSetPoint(MHUD_HealthBack, FRAMEPOINT_TOPRIGHT, MHUD_LevelBackdrop, FRAMEPOINT_TOPLEFT, -0.004, -0.011)
+    call BlzFrameSetPoint(MHUD_HealthBack, FRAMEPOINT_TOPRIGHT, MHUD_LevelBackdrop, FRAMEPOINT_TOPLEFT, -0.006, -0.016)
     call BlzFrameSetSize(MHUD_HealthBack, MHUD_RESOURCE_BAR_WIDTH, MHUD_RESOURCE_BAR_HEIGHT)
     call BlzFrameSetVertexColor(MHUD_HealthBack, BlzConvertColor(210, 18, 14, 12))
     call BlzFrameSetEnable(MHUD_HealthBack, false)
@@ -467,13 +467,13 @@ private function MHUD_CreateFrames takes nothing returns nothing
     set MHUD_HealthText = BlzCreateFrameByType("TEXT", "ModernPlayerHUDHealthText", MHUD_HealthBack, "", 0)
     call BlzFrameSetAllPoints(MHUD_HealthText, MHUD_HealthBack)
     call BlzFrameSetTextAlignment(MHUD_HealthText, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_CENTER)
-    call BlzFrameSetScale(MHUD_HealthText, 0.58)
+    call BlzFrameSetScale(MHUD_HealthText, 0.55)
     call BlzFrameSetEnable(MHUD_HealthText, false)
     call BlzFrameSetLevel(MHUD_HealthText, 6)
 
     set MHUD_ManaBack = BlzCreateFrameByType("BACKDROP", "ModernPlayerHUDManaBack", MHUD_Parent, "", 0)
     call BlzFrameSetTexture(MHUD_ManaBack, MHUD_SURFACE_TEXTURE, 0, false)
-    call BlzFrameSetPoint(MHUD_ManaBack, FRAMEPOINT_TOPLEFT, MHUD_LevelBackdrop, FRAMEPOINT_TOPRIGHT, 0.004, -0.011)
+    call BlzFrameSetPoint(MHUD_ManaBack, FRAMEPOINT_TOPLEFT, MHUD_LevelBackdrop, FRAMEPOINT_TOPRIGHT, 0.006, -0.016)
     call BlzFrameSetSize(MHUD_ManaBack, MHUD_RESOURCE_BAR_WIDTH, MHUD_RESOURCE_BAR_HEIGHT)
     call BlzFrameSetVertexColor(MHUD_ManaBack, BlzConvertColor(210, 18, 14, 12))
     call BlzFrameSetEnable(MHUD_ManaBack, false)
@@ -489,7 +489,7 @@ private function MHUD_CreateFrames takes nothing returns nothing
     set MHUD_ManaText = BlzCreateFrameByType("TEXT", "ModernPlayerHUDManaText", MHUD_ManaBack, "", 0)
     call BlzFrameSetAllPoints(MHUD_ManaText, MHUD_ManaBack)
     call BlzFrameSetTextAlignment(MHUD_ManaText, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_CENTER)
-    call BlzFrameSetScale(MHUD_ManaText, 0.58)
+    call BlzFrameSetScale(MHUD_ManaText, 0.55)
     call BlzFrameSetEnable(MHUD_ManaText, false)
     call BlzFrameSetLevel(MHUD_ManaText, 6)
 
@@ -529,14 +529,14 @@ private function MHUD_CreateFrames takes nothing returns nothing
     endloop
 
     set MHUD_BookButton = BlzCreateFrameByType("GLUETEXTBUTTON", "ModernPlayerHUDBookButton", MHUD_Parent, "ScriptDialogButton", 0)
-    call BlzFrameSetAbsPoint(MHUD_BookButton, FRAMEPOINT_BOTTOMLEFT, 0.611, MHUD_ACTION_BOTTOM)
-    call BlzFrameSetSize(MHUD_BookButton, 0.064, MHUD_ACTION_SIZE)
-    call BlzFrameSetText(MHUD_BookButton, "ABILITIES")
+    call BlzFrameSetAbsPoint(MHUD_BookButton, FRAMEPOINT_BOTTOMLEFT, 0.610, MHUD_ACTION_BOTTOM)
+    call BlzFrameSetSize(MHUD_BookButton, 0.076, MHUD_ACTION_SIZE)
+    call BlzFrameSetText(MHUD_BookButton, "    Abilities")
     call BlzFrameSetLevel(MHUD_BookButton, 7)
 
     set MHUD_BookIcon = BlzCreateFrameByType("BACKDROP", "ModernPlayerHUDBookIcon", MHUD_BookButton, "IconButtonTemplate", 0)
-    call BlzFrameSetPoint(MHUD_BookIcon, FRAMEPOINT_LEFT, MHUD_BookButton, FRAMEPOINT_LEFT, 0.003, 0.000)
-    call BlzFrameSetSize(MHUD_BookIcon, 0.016, 0.016)
+    call BlzFrameSetPoint(MHUD_BookIcon, FRAMEPOINT_LEFT, MHUD_BookButton, FRAMEPOINT_LEFT, 0.006, 0.000)
+    call BlzFrameSetSize(MHUD_BookIcon, 0.014, 0.014)
     call BlzFrameSetTexture(MHUD_BookIcon, MHUD_BOOK_ICON, 0, true)
     call BlzFrameSetEnable(MHUD_BookIcon, false)
     call BlzFrameSetLevel(MHUD_BookIcon, 8)

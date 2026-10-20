@@ -2,14 +2,15 @@
     ModernAbilityActionBar
 
     Author: Valdemar
-    Version: 0.6.0
+    Version: 0.7.0
 
     Description:
     Renders the cached PotS-owned twelve-slot action bar with learned ability
     icons, active-cooldown updates, one shared tooltip, synchronized click
     activation, and the four-choice Summon Elemental flyout. Static frame data
     is rebuilt only after an invalidation, while cooldown polling is restricted
-    to slots that are actually cooling down.
+    to slots that are actually cooling down. Number-row keys 1 through 0,
+    minus, and equals activate the corresponding visible slot.
 
     Credits:
     - Blizzard Entertainment, Warcraft III frame API
@@ -45,6 +46,7 @@ globals
     private constant real MAB_ELEMENTAL_SIZE = 0.038
     private constant real MAB_ELEMENTAL_GAP = 0.004
     private constant integer MAB_COOLDOWN_STEPS = 20
+    private constant integer MAB_NATIVE_HERO_BUTTON_COUNT = 7
 
     private constant integer MAB_SUMMON_ELEMENTAL = 'A67Q'
     private constant integer MAB_ELEMENTAL_AIR = 'A61K'
@@ -95,6 +97,7 @@ globals
     private trigger MAB_ElementalTrigger = null
     private trigger MAB_ClearFocusTrigger = null
     private trigger MAB_HoverTrigger = null
+    private trigger MAB_KeyTrigger = null
     private trigger MAB_InitTrigger = null
 
     private unit MAB_SelectedUnit = null
@@ -181,6 +184,8 @@ private function MAB_RegisterNativeFrame takes framehandle whichFrame returns no
 endfunction
 
 private function MAB_FindNativeFrames takes nothing returns nothing
+    local integer index = 0
+
     if MAB_NativeFrameCount > 0 then
         return
     endif
@@ -188,8 +193,15 @@ private function MAB_FindNativeFrames takes nothing returns nothing
     call MAB_RegisterNativeFrame(BlzGetFrameByName("ConsoleBottomBar", 0))
     call MAB_RegisterNativeFrame(BlzGetFrameByName("ConsoleBottomBarOverlay", 0))
     call MAB_RegisterNativeFrame(BlzGetOriginFrame(ORIGIN_FRAME_HERO_BAR, 0))
-    call MAB_RegisterNativeFrame(BlzGetOriginFrame(ORIGIN_FRAME_MINIMAP, 0))
     call MAB_RegisterNativeFrame(BlzGetOriginFrame(ORIGIN_FRAME_PORTRAIT, 0))
+    loop
+        exitwhen index >= MAB_NATIVE_HERO_BUTTON_COUNT
+        call MAB_RegisterNativeFrame(BlzGetOriginFrame(ORIGIN_FRAME_HERO_BUTTON, index))
+        call MAB_RegisterNativeFrame(BlzGetOriginFrame(ORIGIN_FRAME_HERO_HP_BAR, index))
+        call MAB_RegisterNativeFrame(BlzGetOriginFrame(ORIGIN_FRAME_HERO_MANA_BAR, index))
+        call MAB_RegisterNativeFrame(BlzGetOriginFrame(ORIGIN_FRAME_HERO_BUTTON_INDICATOR, index))
+        set index = index + 1
+    endloop
     // Keep this last so child visibility is captured before the parent hides.
     call MAB_RegisterNativeFrame(BlzGetFrameByName("ConsoleUIBackdrop", 0))
 endfunction
@@ -585,28 +597,40 @@ private function MAB_ClearFocusAction takes nothing returns nothing
     set triggerFrame = null
 endfunction
 
+private function MAB_ActivateSlotLocal takes player whichPlayer, integer index returns nothing
+    local integer abilityId
+
+    if whichPlayer != GetLocalPlayer() or index < 0 or index >= ModernAbilityLoadout_SLOT_COUNT or not MAB_IsPlayerHero(MAB_SelectedUnit) then
+        set whichPlayer = null
+        return
+    endif
+
+    set abilityId = ModernAbilityLoadout_GetEffectiveAbilityId(MAB_SelectedUnit, index + 1)
+    if abilityId == MAB_SUMMON_ELEMENTAL then
+        if MAB_ElementalOpen and MAB_ElementalHero == MAB_SelectedUnit then
+            call MAB_CloseElementalFlyout()
+        else
+            call MAB_OpenElementalFlyout(MAB_SelectedUnit)
+            call MAB_UpdateElementalFlyout()
+        endif
+    else
+        call MAB_CloseElementalFlyout()
+        call ModernAbilityController_BeginLocal(whichPlayer, MAB_SelectedUnit, index + 1)
+    endif
+
+    set whichPlayer = null
+endfunction
+
 private function MAB_SlotAction takes nothing returns nothing
     local framehandle triggerFrame = BlzGetTriggerFrame()
     local player triggerPlayer = GetTriggerPlayer()
     local integer index = 0
-    local integer abilityId
 
     if triggerPlayer == GetLocalPlayer() and MAB_IsPlayerHero(MAB_SelectedUnit) then
         loop
             exitwhen index >= ModernAbilityLoadout_SLOT_COUNT
             if triggerFrame == MAB_SlotButton[index] then
-                set abilityId = ModernAbilityLoadout_GetEffectiveAbilityId(MAB_SelectedUnit, index + 1)
-                if abilityId == MAB_SUMMON_ELEMENTAL then
-                    if MAB_ElementalOpen and MAB_ElementalHero == MAB_SelectedUnit then
-                        call MAB_CloseElementalFlyout()
-                    else
-                        call MAB_OpenElementalFlyout(MAB_SelectedUnit)
-                        call MAB_UpdateElementalFlyout()
-                    endif
-                else
-                    call MAB_CloseElementalFlyout()
-                    call ModernAbilityController_BeginLocal(triggerPlayer, MAB_SelectedUnit, index + 1)
-                endif
+                call MAB_ActivateSlotLocal(triggerPlayer, index)
                 set index = ModernAbilityLoadout_SLOT_COUNT
             else
                 set index = index + 1
@@ -615,6 +639,48 @@ private function MAB_SlotAction takes nothing returns nothing
     endif
 
     set triggerFrame = null
+    set triggerPlayer = null
+endfunction
+
+private function MAB_GetKeySlot takes oskeytype whichKey returns integer
+    if whichKey == OSKEY_1 then
+        return 0
+    elseif whichKey == OSKEY_2 then
+        return 1
+    elseif whichKey == OSKEY_3 then
+        return 2
+    elseif whichKey == OSKEY_4 then
+        return 3
+    elseif whichKey == OSKEY_5 then
+        return 4
+    elseif whichKey == OSKEY_6 then
+        return 5
+    elseif whichKey == OSKEY_7 then
+        return 6
+    elseif whichKey == OSKEY_8 then
+        return 7
+    elseif whichKey == OSKEY_9 then
+        return 8
+    elseif whichKey == OSKEY_0 then
+        return 9
+    elseif whichKey == OSKEY_OEM_MINUS then
+        return 10
+    elseif whichKey == OSKEY_OEM_PLUS then
+        return 11
+    endif
+    return -1
+endfunction
+
+private function MAB_KeyAction takes nothing returns nothing
+    local player triggerPlayer = GetTriggerPlayer()
+    local oskeytype triggerKey = BlzGetTriggerPlayerKey()
+    local integer slot = MAB_GetKeySlot(triggerKey)
+
+    if triggerPlayer == GetLocalPlayer() and MAB_Enabled and MAB_ParentVisible and not FullscreenUI_IsEnabled() and slot >= 0 then
+        call MAB_ActivateSlotLocal(triggerPlayer, slot)
+    endif
+
+    set triggerKey = null
     set triggerPlayer = null
 endfunction
 
@@ -819,7 +885,10 @@ private function MAB_CreateFrames takes nothing returns nothing
     set MAB_FramesCreated = true
     set MAB_ScreenParent = BlzGetOriginFrame(ORIGIN_FRAME_GAME_UI, 0)
     set MAB_Parent = BlzCreateFrameByType("FRAME", "ModernAbilityActionBar", MAB_ScreenParent, "", 0)
-    call BlzFrameSetAllPoints(MAB_Parent, MAB_ScreenParent)
+    // Full-screen FRAME parents consume mouse input even without a texture.
+    // Children use absolute points, so keep this logical parent effectively empty.
+    call BlzFrameSetSize(MAB_Parent, 0.0001, 0.0001)
+    call BlzFrameSetAbsPoint(MAB_Parent, FRAMEPOINT_BOTTOMLEFT, 0.000, 0.000)
     call BlzFrameSetLevel(MAB_Parent, 30)
 
     set MAB_HeroBorder = BlzCreateFrameByType("BACKDROP", "ModernAbilityHeroBorder", MAB_Parent, "", 0)
@@ -952,6 +1021,9 @@ private function MAB_DelayedInit takes nothing returns nothing
 endfunction
 
 private function Init takes nothing returns nothing
+    local integer keyIndex = 0
+    local oskeytype array actionKey
+
     if MAB_Initialized then
         return
     endif
@@ -965,6 +1037,26 @@ private function Init takes nothing returns nothing
     call TriggerAddAction(MAB_ClearFocusTrigger, function MAB_ClearFocusAction)
     set MAB_HoverTrigger = CreateTrigger()
     call TriggerAddAction(MAB_HoverTrigger, function MAB_HoverAction)
+    set actionKey[0] = OSKEY_1
+    set actionKey[1] = OSKEY_2
+    set actionKey[2] = OSKEY_3
+    set actionKey[3] = OSKEY_4
+    set actionKey[4] = OSKEY_5
+    set actionKey[5] = OSKEY_6
+    set actionKey[6] = OSKEY_7
+    set actionKey[7] = OSKEY_8
+    set actionKey[8] = OSKEY_9
+    set actionKey[9] = OSKEY_0
+    set actionKey[10] = OSKEY_OEM_MINUS
+    set actionKey[11] = OSKEY_OEM_PLUS
+    set MAB_KeyTrigger = CreateTrigger()
+    loop
+        exitwhen keyIndex >= ModernAbilityLoadout_SLOT_COUNT
+        call BlzTriggerRegisterPlayerKeyEvent(MAB_KeyTrigger, Player(0), actionKey[keyIndex], 0, true)
+        set actionKey[keyIndex] = null
+        set keyIndex = keyIndex + 1
+    endloop
+    call TriggerAddAction(MAB_KeyTrigger, function MAB_KeyAction)
     set MAB_InitTrigger = CreateTrigger()
     call TriggerRegisterTimerEvent(MAB_InitTrigger, 0.25, false)
     call TriggerAddAction(MAB_InitTrigger, function MAB_DelayedInit)
