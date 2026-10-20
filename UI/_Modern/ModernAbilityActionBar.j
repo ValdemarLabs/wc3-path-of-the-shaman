@@ -2,13 +2,14 @@
     ModernAbilityActionBar
 
     Author: Valdemar
-    Version: 0.1.0
+    Version: 0.2.0
 
     Description:
     Renders the PotS-owned twelve-slot action bar with learned ability icons,
-    cooldown shading, mana/readiness state, tooltips, and synchronized click
-    activation. It hides the native bottom gameplay HUD without moving or
-    reparenting engine-owned command buttons.
+    cooldown shading, mana/readiness state, tooltips, synchronized click
+    activation, and the four-choice Summon Elemental flyout. It hides the
+    native bottom gameplay HUD without moving or reparenting engine-owned
+    command buttons.
 
     Credits:
     - Blizzard Entertainment, Warcraft III frame API
@@ -39,6 +40,17 @@ globals
     private constant real MAB_ACTION_GAP = 0.003
     private constant real MAB_TOOLTIP_WIDTH = 0.240
     private constant real MAB_TOOLTIP_HEIGHT = 0.092
+    private constant integer MAB_ELEMENTAL_COUNT = 4
+    private constant real MAB_ELEMENTAL_START_X = 0.318
+    private constant real MAB_ELEMENTAL_BOTTOM = 0.124
+    private constant real MAB_ELEMENTAL_SIZE = 0.038
+    private constant real MAB_ELEMENTAL_GAP = 0.004
+
+    private constant integer MAB_SUMMON_ELEMENTAL = 'A67Q'
+    private constant integer MAB_ELEMENTAL_AIR = 'A61K'
+    private constant integer MAB_ELEMENTAL_WATER = 'A61L'
+    private constant integer MAB_ELEMENTAL_FIRE = 'A61M'
+    private constant integer MAB_ELEMENTAL_EARTH = 'A61N'
 
     private constant string MAB_SURFACE_TEXTURE = "UI\\Widgets\\EscMenu\\Human\\blank-background.blp"
     private constant string MAB_EMPTY_ICON = "ReplaceableTextures\\CommandButtons\\BTNCancel.blp"
@@ -53,6 +65,8 @@ globals
     private framehandle MAB_HeroBorder = null
     private framehandle MAB_HeroIcon = null
     private framehandle MAB_TargetingText = null
+    private framehandle MAB_ElementalBackdrop = null
+    private framehandle MAB_ElementalTitle = null
 
     private framehandle array MAB_SlotButton
     private framehandle array MAB_SlotIcon
@@ -63,17 +77,24 @@ globals
     private framehandle array MAB_SlotTooltip
     private framehandle array MAB_SlotTooltipTitle
     private framehandle array MAB_SlotTooltipBody
+    private framehandle array MAB_ElementalButton
+    private framehandle array MAB_ElementalIcon
+    private framehandle array MAB_ElementalLabel
+    private framehandle array MAB_ElementalDisabled
 
     private framehandle array MAB_NativeFrame
     private boolean array MAB_NativeWasVisible
     private integer MAB_NativeFrameCount = 0
 
     private trigger MAB_SlotTrigger = null
+    private trigger MAB_ElementalTrigger = null
     private trigger MAB_ClearFocusTrigger = null
     private trigger MAB_InitTrigger = null
     private timer MAB_UpdateTimer = null
 
     private unit MAB_SelectedUnit = null
+    private unit MAB_ElementalHero = null
+    private boolean MAB_ElementalOpen = false
 endglobals
 
 private function MAB_IsValidUnit takes unit whichUnit returns boolean
@@ -93,6 +114,28 @@ private function MAB_GetSlotLabel takes integer slot returns string
         return "-"
     endif
     return "="
+endfunction
+
+private function MAB_GetElementalAbilityId takes integer index returns integer
+    if index == 0 then
+        return MAB_ELEMENTAL_AIR
+    elseif index == 1 then
+        return MAB_ELEMENTAL_WATER
+    elseif index == 2 then
+        return MAB_ELEMENTAL_FIRE
+    endif
+    return MAB_ELEMENTAL_EARTH
+endfunction
+
+private function MAB_GetElementalLabel takes integer index returns string
+    if index == 0 then
+        return "Air"
+    elseif index == 1 then
+        return "Water"
+    elseif index == 2 then
+        return "Fire"
+    endif
+    return "Earth"
 endfunction
 
 private function MAB_Clamp takes real value returns real
@@ -172,6 +215,58 @@ private function MAB_RestoreNativeFrames takes nothing returns nothing
         set index = index + 1
     endloop
     set MAB_NativeCaptured = false
+endfunction
+
+private function MAB_CloseElementalFlyout takes nothing returns nothing
+    set MAB_ElementalOpen = false
+    set MAB_ElementalHero = null
+    if MAB_ElementalBackdrop != null then
+        call BlzFrameSetVisible(MAB_ElementalBackdrop, false)
+    endif
+endfunction
+
+private function MAB_OpenElementalFlyout takes unit whichHero returns nothing
+    if not MAB_IsPlayerHero(whichHero) or GetUnitAbilityLevel(whichHero, MAB_SUMMON_ELEMENTAL) <= 0 then
+        set whichHero = null
+        return
+    endif
+
+    set MAB_ElementalHero = whichHero
+    set MAB_ElementalOpen = true
+    call BlzFrameSetVisible(MAB_ElementalBackdrop, true)
+    set whichHero = null
+endfunction
+
+private function MAB_UpdateElementalFlyout takes nothing returns nothing
+    local integer index = 0
+    local integer abilityId
+    local integer abilityLevel
+    local integer manaCost
+    local real mana
+    local boolean ready
+
+    if not MAB_ElementalOpen then
+        return
+    endif
+    if not MAB_IsPlayerHero(MAB_ElementalHero) or GetUnitAbilityLevel(MAB_ElementalHero, MAB_SUMMON_ELEMENTAL) <= 0 then
+        call MAB_CloseElementalFlyout()
+        return
+    endif
+
+    set mana = GetUnitState(MAB_ElementalHero, UNIT_STATE_MANA)
+    loop
+        exitwhen index >= MAB_ELEMENTAL_COUNT
+        set abilityId = MAB_GetElementalAbilityId(index)
+        set abilityLevel = GetUnitAbilityLevel(MAB_ElementalHero, abilityId)
+        set manaCost = 0
+        if abilityLevel > 0 then
+            set manaCost = BlzGetUnitAbilityManaCost(MAB_ElementalHero, abilityId, abilityLevel - 1)
+        endif
+        set ready = abilityLevel > 0 and BlzGetUnitAbilityCooldownRemaining(MAB_ElementalHero, abilityId) <= 0.00 and mana + 0.01 >= I2R(manaCost)
+        call BlzFrameSetEnable(MAB_ElementalButton[index], ready)
+        call BlzFrameSetVisible(MAB_ElementalDisabled[index], not ready)
+        set index = index + 1
+    endloop
 endfunction
 
 private function MAB_SetCooldownVisual takes integer index, unit whichHero, integer abilityId, integer abilityLevel returns nothing
@@ -284,6 +379,7 @@ private function MAB_Update takes nothing returns nothing
         if MAB_Parent != null then
             call BlzFrameSetVisible(MAB_Parent, false)
         endif
+        call MAB_CloseElementalFlyout()
         set whichHero = null
         return
     endif
@@ -295,6 +391,7 @@ private function MAB_Update takes nothing returns nothing
     endif
     if not MAB_IsPlayerHero(whichHero) then
         call BlzFrameSetVisible(MAB_Parent, false)
+        call MAB_CloseElementalFlyout()
         set whichHero = null
         return
     endif
@@ -311,6 +408,7 @@ private function MAB_Update takes nothing returns nothing
         call MAB_UpdateSlot(index, whichHero)
         set index = index + 1
     endloop
+    call MAB_UpdateElementalFlyout()
     call MAB_UpdateTargetingText()
 
     set whichHero = null
@@ -330,13 +428,47 @@ private function MAB_SlotAction takes nothing returns nothing
     local framehandle triggerFrame = BlzGetTriggerFrame()
     local player triggerPlayer = GetTriggerPlayer()
     local integer index = 0
+    local integer abilityId
 
     if triggerPlayer == GetLocalPlayer() and MAB_IsPlayerHero(MAB_SelectedUnit) then
         loop
             exitwhen index >= ModernAbilityLoadout_SLOT_COUNT
             if triggerFrame == MAB_SlotButton[index] then
-                call ModernAbilityController_BeginLocal(triggerPlayer, MAB_SelectedUnit, index + 1)
+                set abilityId = ModernAbilityLoadout_GetEffectiveAbilityId(MAB_SelectedUnit, index + 1)
+                if abilityId == MAB_SUMMON_ELEMENTAL then
+                    if MAB_ElementalOpen and MAB_ElementalHero == MAB_SelectedUnit then
+                        call MAB_CloseElementalFlyout()
+                    else
+                        call MAB_OpenElementalFlyout(MAB_SelectedUnit)
+                        call MAB_UpdateElementalFlyout()
+                    endif
+                else
+                    call MAB_CloseElementalFlyout()
+                    call ModernAbilityController_BeginLocal(triggerPlayer, MAB_SelectedUnit, index + 1)
+                endif
                 set index = ModernAbilityLoadout_SLOT_COUNT
+            else
+                set index = index + 1
+            endif
+        endloop
+    endif
+
+    set triggerFrame = null
+    set triggerPlayer = null
+endfunction
+
+private function MAB_ElementalAction takes nothing returns nothing
+    local framehandle triggerFrame = BlzGetTriggerFrame()
+    local player triggerPlayer = GetTriggerPlayer()
+    local integer index = 0
+
+    if triggerPlayer == GetLocalPlayer() and MAB_ElementalOpen and MAB_IsPlayerHero(MAB_ElementalHero) then
+        loop
+            exitwhen index >= MAB_ELEMENTAL_COUNT
+            if triggerFrame == MAB_ElementalButton[index] then
+                call ModernAbilityController_BeginElementalLocal(triggerPlayer, MAB_ElementalHero, MAB_GetElementalAbilityId(index))
+                call MAB_CloseElementalFlyout()
+                set index = MAB_ELEMENTAL_COUNT
             else
                 set index = index + 1
             endif
@@ -416,6 +548,71 @@ private function MAB_CreateSlot takes integer index returns nothing
     call BlzTriggerRegisterFrameEvent(MAB_ClearFocusTrigger, MAB_SlotButton[index], FRAMEEVENT_CONTROL_CLICK)
 endfunction
 
+private function MAB_CreateElementalFlyout takes nothing returns nothing
+    local integer index = 0
+    local integer abilityId
+    local real x
+    local string iconPath
+
+    set MAB_ElementalBackdrop = BlzCreateFrameByType("BACKDROP", "ModernElementalFlyoutBackdrop", MAB_Parent, "EscMenuBackdrop", 0)
+    call BlzFrameSetAbsPoint(MAB_ElementalBackdrop, FRAMEPOINT_BOTTOMLEFT, 0.304, 0.115)
+    call BlzFrameSetSize(MAB_ElementalBackdrop, 0.192, 0.064)
+    call BlzFrameSetLevel(MAB_ElementalBackdrop, 34)
+
+    set MAB_ElementalTitle = BlzCreateFrameByType("TEXT", "ModernElementalFlyoutTitle", MAB_ElementalBackdrop, "", 0)
+    call BlzFrameSetPoint(MAB_ElementalTitle, FRAMEPOINT_TOP, MAB_ElementalBackdrop, FRAMEPOINT_TOP, 0.000, -0.005)
+    call BlzFrameSetSize(MAB_ElementalTitle, 0.160, 0.012)
+    call BlzFrameSetTextAlignment(MAB_ElementalTitle, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_CENTER)
+    call BlzFrameSetScale(MAB_ElementalTitle, 0.72)
+    call BlzFrameSetText(MAB_ElementalTitle, "Choose Elemental")
+    call BlzFrameSetEnable(MAB_ElementalTitle, false)
+    call BlzFrameSetLevel(MAB_ElementalTitle, 35)
+
+    loop
+        exitwhen index >= MAB_ELEMENTAL_COUNT
+        set abilityId = MAB_GetElementalAbilityId(index)
+        set x = MAB_ELEMENTAL_START_X + I2R(index) * (MAB_ELEMENTAL_SIZE + MAB_ELEMENTAL_GAP)
+        set iconPath = BlzGetAbilityIcon(abilityId)
+        if iconPath == null or iconPath == "" then
+            set iconPath = MAB_EMPTY_ICON
+        endif
+
+        set MAB_ElementalButton[index] = BlzCreateFrameByType("GLUEBUTTON", "ModernElementalFlyoutButton" + I2S(index), MAB_ElementalBackdrop, "ScoreScreenTabButtonTemplate", 0)
+        call BlzFrameSetAbsPoint(MAB_ElementalButton[index], FRAMEPOINT_BOTTOMLEFT, x, MAB_ELEMENTAL_BOTTOM)
+        call BlzFrameSetSize(MAB_ElementalButton[index], MAB_ELEMENTAL_SIZE, MAB_ELEMENTAL_SIZE)
+        call BlzFrameSetLevel(MAB_ElementalButton[index], 36)
+
+        set MAB_ElementalIcon[index] = BlzCreateFrameByType("BACKDROP", "ModernElementalFlyoutIcon" + I2S(index), MAB_ElementalButton[index], "IconButtonTemplate", 0)
+        call BlzFrameSetPoint(MAB_ElementalIcon[index], FRAMEPOINT_BOTTOMLEFT, MAB_ElementalButton[index], FRAMEPOINT_BOTTOMLEFT, 0.002, 0.002)
+        call BlzFrameSetPoint(MAB_ElementalIcon[index], FRAMEPOINT_TOPRIGHT, MAB_ElementalButton[index], FRAMEPOINT_TOPRIGHT, -0.002, -0.002)
+        call BlzFrameSetTexture(MAB_ElementalIcon[index], iconPath, 0, true)
+        call BlzFrameSetEnable(MAB_ElementalIcon[index], false)
+        call BlzFrameSetLevel(MAB_ElementalIcon[index], 37)
+
+        set MAB_ElementalDisabled[index] = BlzCreateFrameByType("BACKDROP", "ModernElementalFlyoutDisabled" + I2S(index), MAB_ElementalButton[index], "", 0)
+        call BlzFrameSetTexture(MAB_ElementalDisabled[index], MAB_SURFACE_TEXTURE, 0, false)
+        call BlzFrameSetAllPoints(MAB_ElementalDisabled[index], MAB_ElementalIcon[index])
+        call BlzFrameSetVertexColor(MAB_ElementalDisabled[index], BlzConvertColor(160, 25, 25, 25))
+        call BlzFrameSetEnable(MAB_ElementalDisabled[index], false)
+        call BlzFrameSetLevel(MAB_ElementalDisabled[index], 38)
+
+        set MAB_ElementalLabel[index] = BlzCreateFrameByType("TEXT", "ModernElementalFlyoutLabel" + I2S(index), MAB_ElementalButton[index], "", 0)
+        call BlzFrameSetPoint(MAB_ElementalLabel[index], FRAMEPOINT_BOTTOM, MAB_ElementalButton[index], FRAMEPOINT_BOTTOM, 0.000, 0.002)
+        call BlzFrameSetSize(MAB_ElementalLabel[index], MAB_ELEMENTAL_SIZE - 0.004, 0.010)
+        call BlzFrameSetTextAlignment(MAB_ElementalLabel[index], TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_CENTER)
+        call BlzFrameSetScale(MAB_ElementalLabel[index], 0.58)
+        call BlzFrameSetText(MAB_ElementalLabel[index], MAB_GetElementalLabel(index))
+        call BlzFrameSetEnable(MAB_ElementalLabel[index], false)
+        call BlzFrameSetLevel(MAB_ElementalLabel[index], 39)
+
+        call BlzTriggerRegisterFrameEvent(MAB_ElementalTrigger, MAB_ElementalButton[index], FRAMEEVENT_CONTROL_CLICK)
+        call BlzTriggerRegisterFrameEvent(MAB_ClearFocusTrigger, MAB_ElementalButton[index], FRAMEEVENT_CONTROL_CLICK)
+        set index = index + 1
+    endloop
+
+    call BlzFrameSetVisible(MAB_ElementalBackdrop, false)
+endfunction
+
 private function MAB_CreateFrames takes nothing returns nothing
     local integer index = 0
 
@@ -447,6 +644,7 @@ private function MAB_CreateFrames takes nothing returns nothing
         call MAB_CreateSlot(index)
         set index = index + 1
     endloop
+    call MAB_CreateElementalFlyout()
 
     set MAB_TargetingText = BlzCreateFrameByType("TEXT", "ModernAbilityTargetingText", MAB_Parent, "", 0)
     call BlzFrameSetAbsPoint(MAB_TargetingText, FRAMEPOINT_BOTTOM, 0.400, 0.118)
@@ -479,6 +677,7 @@ public function Disable takes nothing returns nothing
     set MAB_Enabled = false
     call PauseTimer(MAB_UpdateTimer)
     call ModernAbilityController_CancelLocal(GetLocalPlayer())
+    call MAB_CloseElementalFlyout()
     if MAB_Parent != null then
         call BlzFrameSetVisible(MAB_Parent, false)
     endif
@@ -494,6 +693,9 @@ private function MAB_OnUnitSelected takes nothing returns nothing
     local player selectingPlayer = GetTriggerPlayer()
 
     if selectingPlayer == GetLocalPlayer() then
+        if MAB_ElementalHero != null and MAB_ElementalHero != selectedUnit then
+            call MAB_CloseElementalFlyout()
+        endif
         set MAB_SelectedUnit = selectedUnit
     endif
     set selectedUnit = null
@@ -528,6 +730,8 @@ private function Init takes nothing returns nothing
 
     set MAB_SlotTrigger = CreateTrigger()
     call TriggerAddAction(MAB_SlotTrigger, function MAB_SlotAction)
+    set MAB_ElementalTrigger = CreateTrigger()
+    call TriggerAddAction(MAB_ElementalTrigger, function MAB_ElementalAction)
     set MAB_ClearFocusTrigger = CreateTrigger()
     call TriggerAddAction(MAB_ClearFocusTrigger, function MAB_ClearFocusAction)
     set MAB_InitTrigger = CreateTrigger()

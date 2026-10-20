@@ -2,13 +2,14 @@
     ModernAbilityController
 
     Author: Valdemar
-    Version: 0.1.0
+    Version: 0.2.0
 
     Description:
     Converts local custom action-slot input into validated synchronized ability
     orders. Unit-target abilities resolve from a clicked world point, immediate
-    and self abilities cast directly, and precise point abilities retain the
-    exact synchronized coordinates.
+    and self abilities cast directly, precise point abilities retain the exact
+    synchronized coordinates, and Summon Elemental choices dispatch their
+    validated child Channel rawcodes.
 
     Credits:
     - Blizzard Entertainment, Warcraft III frame, input, sync, and order APIs
@@ -20,6 +21,7 @@
 
     API:
     - call ModernAbilityController_BeginLocal(whichPlayer, whichHero, slot)
+    - call ModernAbilityController_BeginElementalLocal(whichPlayer, whichHero, abilityId)
     - call ModernAbilityController_CancelLocal(whichPlayer)
     - set active = ModernAbilityController_IsTargetingLocal(whichPlayer)
     - set abilityId = ModernAbilityController_GetPendingAbilityId(whichPlayer)
@@ -29,6 +31,13 @@ library ModernAbilityController initializer Init requires AbilitiesPlayer, Shama
 
 globals
     private constant string MAC_SYNC_PREFIX = "POTS_MAB_CAST"
+    private constant string MAC_ELEMENTAL_SYNC_PREFIX = "POTS_MAB_ELEMENTAL"
+
+    private constant integer MAC_SUMMON_ELEMENTAL = 'A67Q'
+    private constant integer MAC_ELEMENTAL_AIR = 'A61K'
+    private constant integer MAC_ELEMENTAL_WATER = 'A61L'
+    private constant integer MAC_ELEMENTAL_FIRE = 'A61M'
+    private constant integer MAC_ELEMENTAL_EARTH = 'A61N'
 
     private boolean array MAC_Targeting
     private integer array MAC_PendingHeroSlot
@@ -37,6 +46,10 @@ globals
     private trigger MAC_MouseTrigger = CreateTrigger()
     private trigger MAC_SyncTrigger = CreateTrigger()
 endglobals
+
+private function MAC_IsElementalChoice takes integer abilityId returns boolean
+    return abilityId == MAC_ELEMENTAL_AIR or abilityId == MAC_ELEMENTAL_WATER or abilityId == MAC_ELEMENTAL_FIRE or abilityId == MAC_ELEMENTAL_EARTH
+endfunction
 
 private function MAC_FindSeparator takes string source, integer startIndex returns integer
     local integer sourceLength = StringLength(source)
@@ -126,8 +139,49 @@ private function MAC_Execute takes player sourcePlayer, integer heroSlot, intege
     set target = null
 endfunction
 
+private function MAC_ExecuteElemental takes player sourcePlayer, integer heroSlot, integer abilityId returns nothing
+    local unit caster = ShamanCommon_GetHeroBySlot(heroSlot)
+    local ability whichAbility = null
+    local integer abilityLevel
+    local string orderString
+    local boolean issued = false
+
+    if caster == null or GetOwningPlayer(caster) != sourcePlayer or not MAC_IsElementalChoice(abilityId) then
+        set sourcePlayer = null
+        set caster = null
+        return
+    endif
+
+    set abilityLevel = GetUnitAbilityLevel(caster, abilityId)
+    if GetUnitAbilityLevel(caster, MAC_SUMMON_ELEMENTAL) <= 0 or abilityLevel <= 0 then
+        call DisplayTimedTextToPlayer(sourcePlayer, 0.00, 0.00, 2.00, "|cffff8080That elemental is not available.|r")
+        set sourcePlayer = null
+        set caster = null
+        return
+    endif
+
+    set whichAbility = BlzGetUnitAbility(caster, abilityId)
+    if whichAbility != null then
+        set orderString = BlzGetAbilityStringLevelField(whichAbility, ABILITY_SLF_BASE_ORDER_ID_NCL6, abilityLevel - 1)
+    endif
+    if orderString != null and orderString != "" then
+        set issued = IssueImmediateOrder(caster, orderString)
+    endif
+    if not issued then
+        call DisplayTimedTextToPlayer(sourcePlayer, 0.00, 0.00, 2.00, "|cffff8080The elemental summon could not be started.|r")
+    endif
+
+    set whichAbility = null
+    set sourcePlayer = null
+    set caster = null
+endfunction
+
 private function MAC_SendCast takes integer heroSlot, integer slot, real pointX, real pointY returns nothing
     call BlzSendSyncData(MAC_SYNC_PREFIX, I2S(heroSlot) + "," + I2S(slot) + "," + R2S(pointX) + "," + R2S(pointY))
+endfunction
+
+private function MAC_SendElemental takes integer heroSlot, integer abilityId returns nothing
+    call BlzSendSyncData(MAC_ELEMENTAL_SYNC_PREFIX, I2S(heroSlot) + "," + I2S(abilityId))
 endfunction
 
 public function CancelLocal takes player whichPlayer returns nothing
@@ -214,6 +268,26 @@ public function BeginLocal takes player whichPlayer, unit whichHero, integer slo
     set whichHero = null
 endfunction
 
+public function BeginElementalLocal takes player whichPlayer, unit whichHero, integer abilityId returns nothing
+    local integer heroSlot
+
+    if whichPlayer == null or whichHero == null or whichPlayer != GetLocalPlayer() or GetOwningPlayer(whichHero) != whichPlayer or not MAC_IsElementalChoice(abilityId) then
+        set whichPlayer = null
+        set whichHero = null
+        return
+    endif
+
+    set heroSlot = ShamanCommon_GetHeroSlot(whichHero)
+    if heroSlot == ShamanCommon_HERO_SLOT_NONE or GetUnitAbilityLevel(whichHero, MAC_SUMMON_ELEMENTAL) <= 0 or GetUnitAbilityLevel(whichHero, abilityId) <= 0 then
+        call DisplayTimedTextToPlayer(whichPlayer, 0.00, 0.00, 2.00, "|cffff8080That elemental is not available.|r")
+    else
+        call MAC_SendElemental(heroSlot, abilityId)
+    endif
+
+    set whichPlayer = null
+    set whichHero = null
+endfunction
+
 private function MAC_OnMouseDown takes nothing returns nothing
     local player whichPlayer = GetTriggerPlayer()
     local integer playerIndex = GetPlayerId(whichPlayer)
@@ -235,6 +309,21 @@ private function MAC_OnMouseDown takes nothing returns nothing
     set whichPlayer = null
 endfunction
 
+private function MAC_HandleElementalSync takes player sourcePlayer, string data returns nothing
+    local integer separator = MAC_FindSeparator(data, 0)
+    local integer heroSlot
+    local integer abilityId
+
+    if separator <= 0 then
+        set sourcePlayer = null
+        return
+    endif
+    set heroSlot = S2I(SubString(data, 0, separator))
+    set abilityId = S2I(SubString(data, separator + 1, StringLength(data)))
+    call MAC_ExecuteElemental(sourcePlayer, heroSlot, abilityId)
+    set sourcePlayer = null
+endfunction
+
 private function MAC_OnSync takes nothing returns nothing
     local string data = BlzGetTriggerSyncData()
     local integer separator1 = MAC_FindSeparator(data, 0)
@@ -245,6 +334,12 @@ private function MAC_OnSync takes nothing returns nothing
     local real pointX
     local real pointY
     local player sourcePlayer = GetTriggerPlayer()
+
+    if BlzGetTriggerSyncPrefix() == MAC_ELEMENTAL_SYNC_PREFIX then
+        call MAC_HandleElementalSync(sourcePlayer, data)
+        set sourcePlayer = null
+        return
+    endif
 
     if separator1 <= 0 then
         set sourcePlayer = null
@@ -279,6 +374,7 @@ private function Init takes nothing returns nothing
         exitwhen playerIndex >= bj_MAX_PLAYERS
         call TriggerRegisterPlayerEvent(MAC_MouseTrigger, Player(playerIndex), EVENT_PLAYER_MOUSE_DOWN)
         call BlzTriggerRegisterPlayerSyncEvent(MAC_SyncTrigger, Player(playerIndex), MAC_SYNC_PREFIX, false)
+        call BlzTriggerRegisterPlayerSyncEvent(MAC_SyncTrigger, Player(playerIndex), MAC_ELEMENTAL_SYNC_PREFIX, false)
         set playerIndex = playerIndex + 1
     endloop
     call TriggerAddAction(MAC_MouseTrigger, function MAC_OnMouseDown)

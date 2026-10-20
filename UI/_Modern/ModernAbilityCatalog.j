@@ -2,7 +2,7 @@
     ModernAbilityCatalog
 
     Author: Valdemar
-    Version: 0.2.0
+    Version: 0.3.0
 
     Description:
     Classifies player shaman abilities for the modern action bar. The catalog
@@ -79,7 +79,7 @@ private function MAC_RegisterOrder takes integer abilityId, string orderString, 
     if orderString != null and orderString != "" then
         set MAC_OrderId[entryIndex] = OrderId(orderString)
     endif
-    set MAC_RuntimeReady[entryIndex] = runtimeReady and MAC_OrderId[entryIndex] != 0
+    set MAC_RuntimeReady[entryIndex] = runtimeReady and (MAC_OrderId[entryIndex] != 0 or MAC_ActionKind[entryIndex] == ACTION_SUBMENU)
 endfunction
 
 private function MAC_RegisterElemental takes nothing returns nothing
@@ -140,7 +140,7 @@ private function MAC_RegisterOrders takes nothing returns nothing
     call MAC_RegisterOrder('A69L', "frostnova", true)
     call MAC_RegisterOrder('A69N', "thunderbolt", true)
     call MAC_RegisterOrder('A68H', "lightningshield", true)
-    call MAC_RegisterOrder('A67Q', "", false)
+    call MAC_RegisterOrder('A67Q', "", true)
 
     call MAC_RegisterOrder('A685', "summonbear", true)
     call MAC_RegisterOrder('A6DP', "whirlwind", true)
@@ -168,8 +168,7 @@ private function MAC_RegisterOrders takes nothing returns nothing
     call MAC_RegisterOrder('A68J', "uncoldarrows", true)
     call MAC_RegisterOrder('A68L', "uncorporealform", true)
     call MAC_RegisterOrder('A68F', "unholyfrenzy", true)
-    // The export disagrees between aord=undeadbuild and Ncl6=uncoldarrows.
-    call MAC_RegisterOrder('A68T', "uncoldarrows", false)
+    call MAC_RegisterOrder('A68T', "undeadbuild", true)
     call MAC_RegisterOrder('A01U', "unburrow", true)
 endfunction
 
