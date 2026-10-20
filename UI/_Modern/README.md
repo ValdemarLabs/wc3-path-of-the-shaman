@@ -17,14 +17,14 @@ The first prototype is `ModernPlayerHUD.j`:
 
 ### Custom-only direction
 
-Version 0.3.0 keeps the crash-free custom-only boundary established in version
+Version 0.4.0 keeps the crash-free custom-only boundary established in version
 0.2.0. Two tests on Warcraft III 3.0.1 PTR build 24368 produced the same native
 null-pointer crash when the first origin-frame layout moved engine-owned
 widgets. The current path creates PotS-owned frames under
 `ORIGIN_FRAME_GAME_UI`; it never moves, resizes, reparents, or clicks the native
 command card or portrait.
 
-`ModernAbilityActionBar.j` now fills the twelve custom slots with learned
+`ModernAbilityActionBar.j` fills the twelve custom slots with learned
 ability icons, cooldown shading, mana/readiness state, and custom tooltips. It
 hides `ConsoleBottomBar`, `ConsoleBottomBarOverlay`, the native hero bar,
 minimap, and portrait with visibility calls only. It deliberately leaves
@@ -71,12 +71,41 @@ PotS uses vJASS, so behavioral Lua code must be rewritten or replaced by
 existing PotS systems. Reused frame names should be namespaced for PotS to
 avoid collisions with other imported UI packages.
 
-`ModernPlayerHUD.j` therefore begins with built-in Warcraft frame templates
-and textures already proven by `TargetUnitUI`. No FDF, TOC, or new imported
-art is required for the first prototype. A later visual pass may introduce a
-small PotS-specific TOC/FDF package derived from compatible Forgotten Hollow
-components. The finished action bar remains PotS-owned rather than embedding
-native command-card buttons.
+The current visual pass deliberately combines both references. Its narrow
+centered action bar, portrait medallion, split health/mana treatment, and slot
+rhythm follow the unpacked VideoRPG reference map in
+`_developer/InventorySystemIdeas`. Its dark fantasy framing, restrained
+gold accents, compact vertical footprint, and reduced native-console presence
+follow the Forgotten Hollow direction. PotS keeps its own ability systems and
+does not import either reference map's gameplay scripts.
+
+Eight original PotS texture files are staged in `UI/_Modern/Assets`. They were
+created specifically for this HUD using a shared shamanic material language:
+blackened iron, aged bronze, charcoal stone, leather bindings, and restrained
+elemental turquoise. The medallion is an empty four-element ring so the
+same asset can frame either a real hero portrait or the level text.
+
+The current HUD creates its frames from vJASS, so these textures require no TOC
+or FDF. Forgotten Hollow remains a mood/compactness reference. Forgotten Hollow TOC/FDF
+components remain optional future sources only if their complete dependencies
+and reuse rights are available. The action bar remains PotS-owned rather than
+embedding native command-card buttons.
+
+### Performance architecture
+
+The HUD uses one 0.10-second presentation tick owned by
+`ModernPlayerHUD.j`. `ModernAbilityActionBar.j` registers with that tick
+instead of creating a second timer. Static slot data (ability rawcode, level,
+icon, tooltip, mana cost, and readiness classification) is rebuilt only after
+selection/loadout changes. The dynamic pass reads mana and cooldown state,
+quantizes cooldown height, and writes frame state only when a cached value
+changes. All twelve slots share one tooltip frame whose content is filled on
+hover.
+
+This keeps custom action bars inexpensive; their existence is not inherently
+the source of the earlier 1-2 FPS behavior. The damaging pattern was repeated
+texture, tooltip, text, size, enable, and visibility writes across every slot
+on every timer tick.
 
 ## Ability action architecture
 
@@ -157,8 +186,20 @@ Import the modern ability foundation in this order:
 - `FullscreenUI`
 
 Finally import `UI/_Modern/ModernAbilityActionBar.j` after
-`ModernPlayerHUD`, `ModernAbilityController`, and the dependencies above. No
-new TOC, FDF, or texture import is required for this functional stage.
+`ModernPlayerHUD`, `ModernAbilityController`, and the dependencies above.
+
+Import these files with the exact custom paths shown:
+
+- `UI\_Modern\Assets\PotSHUD.tga`
+- `UI\_Modern\Assets\PotSActionSlot.tga`
+- `UI\_Modern\Assets\PotSBarBack.tga`
+- `UI\_Modern\Assets\PotSBarFrame.tga`
+- `UI\_Modern\Assets\PotSMedallion.tga`
+- `UI\_Modern\Assets\PotSHealth.tga`
+- `UI\_Modern\Assets\PotSMana.tga`
+- `UI\_Modern\Assets\PotSXP.tga`
+
+No TOC or FDF import is required for this stage.
 
 Then compile through the current World Editor/JassHelper workflow. Test:
 
@@ -169,7 +210,7 @@ Then compile through the current World Editor/JassHelper workflow. Test:
 - non-hero and enemy selection;
 - inventory, quest, MasterUI, cinematic, and fullscreen UI transitions;
 - the intro-to-gameplay transition without a native access violation;
-- version 0.3.0, confirming that the custom resource HUD, learned ability
+- version 0.4.0, confirming that the custom resource HUD, learned ability
   icons, cooldowns, tooltips, and Abilities control render after the intro;
 - native bottom bar, command card, hero bar, minimap, and portrait visibility
   while the modern action bar is active, plus restoration after disabling it;
@@ -182,6 +223,8 @@ Then compile through the current World Editor/JassHelper workflow. Test:
 - every shared-order collision pair, verifying that the selected ability casts
   and that its siblings remain usable afterward;
 - UI scaling at 1080p, 1440p, and 4K;
+- a ten-minute idle/combat soak while recording average FPS and checking that
+  performance no longer worsens over time;
 - enable/disable restoration;
 - two-client frame and selection behavior.
 
