@@ -2,7 +2,7 @@
     Totems
 
     Author: Valdemar
-    Version:
+    Version: 1.1.0
 
     Description:
     MUI shaman totem system converted from the old GUI Totemic Abilities
@@ -16,8 +16,13 @@
     Requires `Table`, `DamageEngine`, `Events`, and `UnitDeathEvent`.
 
     API:
-    call Totems_CanCast(unit caster, integer abilityId)
-    call Totems_GetLiveTotem(unit caster, integer abilityId)
+    - set allowed = Totems_CanCast(unit caster, integer abilityId)
+    - set totem = Totems_GetLiveTotem(unit caster, integer abilityId)
+    - set totem = Totems_GetLiveTotemForSlot(unit caster, integer slot)
+    - set remaining = Totems_GetRemainingDuration(unit totem)
+    - set total = Totems_GetTotalDuration(unit totem)
+    - Totems_SLOT_EARTH, Totems_SLOT_FIRE, Totems_SLOT_WATER,
+      Totems_SLOT_WIND
 
 **/
 library Totems initializer Init requires Table, DamageEngine, Events, UnitDeathEvent, FallenHeroState
@@ -26,10 +31,10 @@ globals
     private constant integer MAX_ACTIVE_TOTEMS = 512
     private constant integer MAX_SKYFURY_TARGETS = 512
 
-    private constant integer TOTEM_SLOT_EARTH = 1
-    private constant integer TOTEM_SLOT_FIRE = 2
-    private constant integer TOTEM_SLOT_WATER = 3
-    private constant integer TOTEM_SLOT_WIND = 4
+    public constant integer SLOT_EARTH = 1
+    public constant integer SLOT_FIRE = 2
+    public constant integer SLOT_WATER = 3
+    public constant integer SLOT_WIND = 4
 
     private constant real TOTEM_DURATION_DEFAULT = 45.00
     private constant real TOTEM_DURATION_EARTHBIND = 10.00
@@ -95,6 +100,8 @@ globals
     private Table TotemByCasterSlot = 0
     private Table TotemCasterByHandle = 0
     private Table TotemSlotByHandle = 0
+    private Table TotemDurationByHandle = 0
+    private Table TotemRemainingByHandle = 0
     private Table TotemTextByHandle = 0
     private Table ActiveTotemTracked = 0
     private Table TimedEffectByTimer = 0
@@ -121,6 +128,8 @@ private function EnsureState takes nothing returns nothing
         set TotemByCasterSlot = Table.create()
         set TotemCasterByHandle = Table.create()
         set TotemSlotByHandle = Table.create()
+        set TotemDurationByHandle = Table.create()
+        set TotemRemainingByHandle = Table.create()
         set TotemTextByHandle = Table.create()
         set ActiveTotemTracked = Table.create()
         set TimedEffectByTimer = Table.create()
@@ -167,14 +176,14 @@ private function GetTotemSlotForAbility takes integer abilityId returns integer
     if abilityId == ABILITY_TOTEM_EARTH or abilityId == ABILITY_AI_TOTEM_EARTH /*
         */ or abilityId == ABILITY_TOTEM_STONESKIN or abilityId == ABILITY_AI_TOTEM_STONESKIN /*
         */ or abilityId == ABILITY_TOTEM_EARTHBIND or abilityId == ABILITY_AI_TOTEM_EARTHBIND then
-        return TOTEM_SLOT_EARTH
+        return SLOT_EARTH
     elseif abilityId == ABILITY_TOTEM_FIRE or abilityId == ABILITY_AI_TOTEM_FIRE or abilityId == ABILITY_TOTEM_SKYFURY then
-        return TOTEM_SLOT_FIRE
+        return SLOT_FIRE
     elseif abilityId == ABILITY_TOTEM_WATER or abilityId == ABILITY_AI_TOTEM_WATER or abilityId == ABILITY_TOTEM_CLEANSING then
-        return TOTEM_SLOT_WATER
+        return SLOT_WATER
     elseif abilityId == ABILITY_TOTEM_WIND or abilityId == ABILITY_AI_TOTEM_WIND /*
         */ or abilityId == ABILITY_TOTEM_WINDFURY or abilityId == ABILITY_AI_TOTEM_WINDFURY then
-        return TOTEM_SLOT_WIND
+        return SLOT_WIND
     endif
     return 0
 endfunction
@@ -426,10 +435,12 @@ private function CleanupTotem takes unit totem returns nothing
     call RemoveActiveTotem(totem)
     call TotemCasterByHandle.unit.remove(handleId)
     call TotemSlotByHandle.integer.remove(handleId)
+    call TotemDurationByHandle.real.remove(handleId)
+    call TotemRemainingByHandle.real.remove(handleId)
     set caster = null
 endfunction
 
-private function GetLiveTotemForSlot takes unit caster, integer slot returns unit
+public function GetLiveTotemForSlot takes unit caster, integer slot returns unit
     local unit totem
     if caster == null or slot <= 0 then
         return null
@@ -447,6 +458,20 @@ public function GetLiveTotem takes unit caster, integer abilityId returns unit
     return GetLiveTotemForSlot(caster, GetTotemSlotForAbility(abilityId))
 endfunction
 
+public function GetRemainingDuration takes unit totem returns real
+    if totem == null then
+        return 0.00
+    endif
+    return TotemRemainingByHandle.real[GetHandleId(totem)]
+endfunction
+
+public function GetTotalDuration takes unit totem returns real
+    if totem == null then
+        return 0.00
+    endif
+    return TotemDurationByHandle.real[GetHandleId(totem)]
+endfunction
+
 public function CanCast takes unit caster, integer abilityId returns boolean
     local integer slot = GetTotemSlotForAbility(abilityId)
     if caster == null or slot <= 0 then
@@ -455,12 +480,14 @@ public function CanCast takes unit caster, integer abilityId returns boolean
     return GetLiveTotemForSlot(caster, slot) == null
 endfunction
 
-private function TrackTotem takes unit caster, unit totem, integer slot returns nothing
+private function TrackTotem takes unit caster, unit totem, integer slot, real duration returns nothing
     local integer handleId = GetHandleId(totem)
     call EnsureState()
     set TotemByCasterSlot.unit[GetTotemSlotKey(caster, slot)] = totem
     set TotemCasterByHandle.unit[handleId] = caster
     set TotemSlotByHandle.integer[handleId] = slot
+    set TotemDurationByHandle.real[handleId] = duration
+    set TotemRemainingByHandle.real[handleId] = duration
     call AddActiveTotem(totem)
 endfunction
 
@@ -489,7 +516,7 @@ private function SpawnTotem takes unit caster, integer abilityId, real x, real y
     set totem = CreateUnit(GetOwningPlayer(caster), unitTypeId, x, y, bj_UNIT_FACING)
     call UnitApplyTimedLife(totem, BUFF_TIMED_LIFE, duration)
     call SetUnitPathing(totem, false)
-    call TrackTotem(caster, totem, slot)
+    call TrackTotem(caster, totem, slot, duration)
     call CreateTotemText(totem, abilityId, duration)
     if abilityId == ABILITY_TOTEM_EARTHBIND or abilityId == ABILITY_AI_TOTEM_EARTHBIND then
         call IssueImmediateOrder(totem, "slowon")
@@ -658,12 +685,20 @@ endfunction
 
 private function TickTotems takes nothing returns nothing
     local integer index = 1
+    local integer handleId
+    local real remaining
     local unit totem
     call EnsureState()
     loop
         exitwhen index > ActiveTotemCount
         set totem = ActiveTotems[index]
         if IsAliveUnit(totem) then
+            set handleId = GetHandleId(totem)
+            set remaining = TotemRemainingByHandle.real[handleId] - TOTEM_PERIOD
+            if remaining < 0.00 then
+                set remaining = 0.00
+            endif
+            set TotemRemainingByHandle.real[handleId] = remaining
             call UpdateTotemTextVisibility(totem)
             set index = index + 1
         else
