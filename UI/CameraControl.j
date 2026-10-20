@@ -2,9 +2,9 @@
     CameraControl
     
     Author: [Valdemar]
-    Version: 1.9.0
+    Version: 1.10.0
 
-    Description: Keeps each player's camera behavior consistent, including modes, target tracking, local middle-drag mouse-look, DynamicFarZ, basic movement controls, and optional DynamicMinimap safety turns. Experimental camera-type and input-ownership APIs remain disabled by default.
+    Description: Keeps each player's camera behavior consistent, including modes, target tracking, selectable local mouse-orbit input, DynamicFarZ, basic movement controls, and optional DynamicMinimap safety turns. Experimental camera-type and input-ownership APIs remain disabled by default.
 
     Credits: Tasyen (TasQuestBox as inspiration), Rahko, Sabe
 
@@ -25,6 +25,8 @@
     call CameraControl_RefreshFarZ(whichPlayer)
     call CameraControl_SetMouseOrbitEnabled(whichPlayer, enabled)
     call CameraControl_IsMouseOrbitEnabled(whichPlayer) returns boolean
+    call CameraControl_SetMouseOrbitInputMode(whichPlayer, inputMode)
+    call CameraControl_GetMouseOrbitInputMode(whichPlayer) returns integer
     call CameraControl_SetMouseOrbitHorizontalInverted(whichPlayer, inverted)
     call CameraControl_SetMouseOrbitVerticalInverted(whichPlayer, inverted)
     call CameraControl_IsMouseOrbitHorizontalInverted(whichPlayer) returns boolean
@@ -57,6 +59,8 @@ globals
     public constant integer CAMERA_MODE_NORMAL = 1
     public constant integer CAMERA_MODE_ADVANCED = 2
     public constant integer CAMERA_MODE_DEVELOPER = 3
+    public constant integer MOUSE_ORBIT_INPUT_MIDDLE = 1
+    public constant integer MOUSE_ORBIT_INPUT_FREE_CAMERA = 2
     public constant integer CAMERA_SPECIAL_MODE_NONE = 0
     public constant integer CAMERA_SPECIAL_MODE_BOOMMINE = 1
     public constant integer CAMERA_SPECIAL_MODE_GNOLLHIDEOUT = 2
@@ -101,7 +105,10 @@ globals
     private constant real CAMERA_MOUSE_ORBIT_VERTICAL_SENSITIVITY = 180.00
     private constant real CAMERA_MOUSE_ORBIT_DEAD_ZONE = 0.004
     private constant real CAMERA_MOUSE_ORBIT_MAX_FRAME_DELTA = 0.050
+    private constant real CAMERA_MOUSE_ORBIT_FREE_CAMERA_SENSITIVITY = 0.15
+    private constant real CAMERA_MOUSE_ORBIT_FREE_CAMERA_MAX_PIXEL_DELTA = 200.00
     private constant boolean CAMERA_MOUSE_ORBIT_ENABLED_BY_DEFAULT = true
+    private constant integer CAMERA_MOUSE_ORBIT_INPUT_MODE_BY_DEFAULT = MOUSE_ORBIT_INPUT_FREE_CAMERA
     private constant boolean CAMERA_MOUSE_ORBIT_HORIZONTAL_INVERTED_BY_DEFAULT = false
     private constant boolean CAMERA_MOUSE_ORBIT_VERTICAL_INVERTED_BY_DEFAULT = false
     private constant real CAMERA_DRIFT_CHECK_INTERVAL = 0.03
@@ -186,6 +193,7 @@ globals
     private boolean array CC_ScriptedCameraPrepared
     private boolean array CC_WoundedActive
     private boolean array CC_MouseOrbitEnabled
+    private integer array CC_MouseOrbitInputMode
     private boolean array CC_MouseOrbitHorizontalInverted
     private boolean array CC_MouseOrbitVerticalInverted
     private boolean array CC_MouseOrbitBlocked
@@ -197,6 +205,8 @@ globals
     private boolean array CC_MouseOrbitReleaseWasDrag
     private real array CC_MouseOrbitLastFrameX
     private real array CC_MouseOrbitLastFrameY
+    private integer array CC_MouseOrbitAnchorX
+    private integer array CC_MouseOrbitAnchorY
     private real array CC_MouseOrbitTravel
     private integer array CC_MouseOrbitEventCount
     private integer array CC_MouseOrbitAcceptedCount
@@ -1000,6 +1010,9 @@ private function CC_ApplyKeyboardFields takes player whichPlayer returns nothing
 endfunction
 
 private function CC_CancelMouseOrbit takes integer pid returns nothing
+    if pid == GetPlayerId(GetLocalPlayer()) and CC_MouseOrbitInputMode[pid] == MOUSE_ORBIT_INPUT_FREE_CAMERA and CC_MouseOrbitPressed[pid] then
+        call BlzEnableCursor(true)
+    endif
     if CC_MouseOrbitDragging[pid] then
         set CC_MouseOrbitReleaseWasDrag[pid] = true
     endif
@@ -1017,7 +1030,8 @@ endfunction
 private function CC_UpdateMouseOrbit takes nothing returns nothing
     local player whichPlayer = GetLocalPlayer()
     local integer pid = CC_GetPlayerIndex(whichPlayer)
-    local boolean buttonDown = BlzIsMouseButtonPressed(MOUSE_BUTTON_TYPE_MIDDLE)
+    local boolean freeCameraStyle = CC_MouseOrbitInputMode[pid] == MOUSE_ORBIT_INPUT_FREE_CAMERA
+    local boolean buttonDown
     local integer mouseX
     local integer mouseY
     local real frameX
@@ -1025,9 +1039,15 @@ private function CC_UpdateMouseOrbit takes nothing returns nothing
     local real deltaX
     local real deltaY
 
+    if freeCameraStyle then
+        set buttonDown = BlzIsMouseButtonPressed(MOUSE_BUTTON_TYPE_RIGHT)
+    else
+        set buttonDown = BlzIsMouseButtonPressed(MOUSE_BUTTON_TYPE_MIDDLE)
+    endif
+
     if not buttonDown then
         if CC_MouseOrbitButtonWasDown[pid] then
-            if CC_MouseOrbitPressed[pid] and not CC_MouseOrbitDragging[pid] and BlzIsLocalClientActive() then
+            if not freeCameraStyle and CC_MouseOrbitPressed[pid] and not CC_MouseOrbitDragging[pid] and BlzIsLocalClientActive() then
                 // A click without a drag restores the stored Normal-mode fields.
                 call CC_UpdateAndApplyNormalFields(whichPlayer, 0.00)
             endif
@@ -1046,8 +1066,13 @@ private function CC_UpdateMouseOrbit takes nothing returns nothing
             set CC_MouseOrbitAcceptedCount[pid] = CC_MouseOrbitAcceptedCount[pid] + 1
             set mouseX = BlzGetMouseScreenPosX()
             set mouseY = BlzGetMouseScreenPosY()
-            set CC_MouseOrbitLastFrameX[pid] = BlzPixelToFrameX(mouseX)
-            set CC_MouseOrbitLastFrameY[pid] = BlzPixelToFrameY(mouseY)
+            if freeCameraStyle then
+                set CC_MouseOrbitAnchorX[pid] = mouseX
+                set CC_MouseOrbitAnchorY[pid] = mouseY
+            else
+                set CC_MouseOrbitLastFrameX[pid] = BlzPixelToFrameX(mouseX)
+                set CC_MouseOrbitLastFrameY[pid] = BlzPixelToFrameY(mouseY)
+            endif
             set CC_MouseOrbitTravel[pid] = 0.00
             set CC_MouseOrbitDragging[pid] = false
             set CC_MouseOrbitPressed[pid] = true
@@ -1075,6 +1100,31 @@ private function CC_UpdateMouseOrbit takes nothing returns nothing
     if mouseX < 0 or mouseY < 0 or mouseX > BlzGetLocalClientWidth() or mouseY > BlzGetLocalClientHeight() then
         set CC_MouseOrbitHeldCancelCount[pid] = CC_MouseOrbitHeldCancelCount[pid] + 1
         call CC_CancelMouseOrbit(pid)
+        set whichPlayer = null
+        return
+    endif
+
+    if freeCameraStyle then
+        // Match FreeCamera mouse-look: measure pixels from a fixed anchor,
+        // recenter after movement, and hide the cursor until release.
+        set deltaX = CC_Clamp(I2R(mouseX - CC_MouseOrbitAnchorX[pid]), -CAMERA_MOUSE_ORBIT_FREE_CAMERA_MAX_PIXEL_DELTA, CAMERA_MOUSE_ORBIT_FREE_CAMERA_MAX_PIXEL_DELTA)
+        set deltaY = CC_Clamp(I2R(mouseY - CC_MouseOrbitAnchorY[pid]), -CAMERA_MOUSE_ORBIT_FREE_CAMERA_MAX_PIXEL_DELTA, CAMERA_MOUSE_ORBIT_FREE_CAMERA_MAX_PIXEL_DELTA)
+        if deltaX != 0.00 or deltaY != 0.00 then
+            set CC_MouseOrbitDragging[pid] = true
+            if CC_MouseOrbitHorizontalInverted[pid] then
+                set deltaX = -deltaX
+            endif
+            if CC_MouseOrbitVerticalInverted[pid] then
+                set deltaY = -deltaY
+            endif
+            set CC_Rotation[pid] = CC_NormalizeAngle(CC_Rotation[pid] - deltaX*CAMERA_MOUSE_ORBIT_FREE_CAMERA_SENSITIVITY)
+            set CC_Angle[pid] = CC_Clamp(CC_Angle[pid] - deltaY*CAMERA_MOUSE_ORBIT_FREE_CAMERA_SENSITIVITY, CAMERA_ANGLE_MIN, CAMERA_ANGLE_MAX)
+            set CC_MinimapRotationInputGraceTicks = CAMERA_MINIMAP_INPUT_GRACE_TICKS
+            call CC_InvalidateNormalTraceCache(pid)
+            call CC_UpdateAndApplyNormalFields(whichPlayer, 0.00)
+            call BlzSetMousePos(CC_MouseOrbitAnchorX[pid], CC_MouseOrbitAnchorY[pid])
+        endif
+        call BlzEnableCursor(false)
         set whichPlayer = null
         return
     endif
@@ -1809,6 +1859,7 @@ public function ResetDefaults takes player whichPlayer returns nothing
     call DynamicFarZ_ResetDefaults(whichPlayer)
     if GetLocalPlayer() == whichPlayer then
         set CC_MouseOrbitEnabled[pid] = CAMERA_MOUSE_ORBIT_ENABLED_BY_DEFAULT
+        set CC_MouseOrbitInputMode[pid] = CAMERA_MOUSE_ORBIT_INPUT_MODE_BY_DEFAULT
         set CC_MouseOrbitHorizontalInverted[pid] = CAMERA_MOUSE_ORBIT_HORIZONTAL_INVERTED_BY_DEFAULT
         set CC_MouseOrbitVerticalInverted[pid] = CAMERA_MOUSE_ORBIT_VERTICAL_INVERTED_BY_DEFAULT
         call CC_CancelMouseOrbit(pid)
@@ -2050,6 +2101,21 @@ endfunction
 
 public function IsMouseOrbitEnabled takes player whichPlayer returns boolean
     return CC_MouseOrbitEnabled[CC_GetPlayerIndex(whichPlayer)]
+endfunction
+
+public function SetMouseOrbitInputMode takes player whichPlayer, integer inputMode returns nothing
+    local integer pid = CC_GetPlayerIndex(whichPlayer)
+
+    if GetLocalPlayer() == whichPlayer and (inputMode == MOUSE_ORBIT_INPUT_MIDDLE or inputMode == MOUSE_ORBIT_INPUT_FREE_CAMERA) and CC_MouseOrbitInputMode[pid] != inputMode then
+        call CC_CancelMouseOrbit(pid)
+        set CC_MouseOrbitButtonWasDown[pid] = false
+        set CC_MouseOrbitReleaseWasDrag[pid] = false
+        set CC_MouseOrbitInputMode[pid] = inputMode
+    endif
+endfunction
+
+public function GetMouseOrbitInputMode takes player whichPlayer returns integer
+    return CC_MouseOrbitInputMode[CC_GetPlayerIndex(whichPlayer)]
 endfunction
 
 public function SetMouseOrbitHorizontalInverted takes player whichPlayer, boolean inverted returns nothing
@@ -2372,15 +2438,23 @@ private function CC_MouseButtonAction takes nothing returns nothing
     local integer pid = CC_GetPlayerIndex(whichPlayer)
     local boolean wasDrag = CC_MouseOrbitReleaseWasDrag[pid] or CC_MouseOrbitDragging[pid]
 
-    if BlzGetTriggerPlayerMouseButton() != MOUSE_BUTTON_TYPE_MIDDLE or GetLocalPlayer() != whichPlayer then
+    if GetLocalPlayer() != whichPlayer then
+        set whichPlayer = null
+        return
+    endif
+    if CC_MouseOrbitInputMode[pid] == MOUSE_ORBIT_INPUT_MIDDLE and BlzGetTriggerPlayerMouseButton() != MOUSE_BUTTON_TYPE_MIDDLE then
+        set whichPlayer = null
+        return
+    endif
+    if CC_MouseOrbitInputMode[pid] == MOUSE_ORBIT_INPUT_FREE_CAMERA and BlzGetTriggerPlayerMouseButton() != MOUSE_BUTTON_TYPE_RIGHT then
         set whichPlayer = null
         return
     endif
     if GetTriggerEventId() == EVENT_PLAYER_MOUSE_UP then
         // Mouse-look starts and updates through direct polling. The mouse-up
-        // event only preserves the legacy click reset and provides an immediate
-        // release path; polling remains the fallback if this event is missed.
-        if not CC_MouseOrbitBlocked[pid] and not wasDrag and (not CC_MouseOrbitEnabled[pid] or not CC_MouseOrbitPressed[pid] or not CC_MouseOrbitDragging[pid]) then
+        // event preserves the legacy middle-click reset and provides an
+        // immediate release path; polling remains the fallback if it is missed.
+        if CC_MouseOrbitInputMode[pid] == MOUSE_ORBIT_INPUT_MIDDLE and not CC_MouseOrbitBlocked[pid] and not wasDrag and (not CC_MouseOrbitEnabled[pid] or not CC_MouseOrbitPressed[pid] or not CC_MouseOrbitDragging[pid]) then
             call CC_ResetStoredCameraState(whichPlayer)
         endif
         set CC_MouseOrbitButtonWasDown[pid] = false
@@ -2427,6 +2501,7 @@ public function Init takes nothing returns nothing
         set CC_WoundedSecondBeatTicks[i] = 0
         set CC_WoundedPulse[i] = 0.00
         set CC_MouseOrbitEnabled[i] = CAMERA_MOUSE_ORBIT_ENABLED_BY_DEFAULT
+        set CC_MouseOrbitInputMode[i] = CAMERA_MOUSE_ORBIT_INPUT_MODE_BY_DEFAULT
         set CC_MouseOrbitHorizontalInverted[i] = CAMERA_MOUSE_ORBIT_HORIZONTAL_INVERTED_BY_DEFAULT
         set CC_MouseOrbitVerticalInverted[i] = CAMERA_MOUSE_ORBIT_VERTICAL_INVERTED_BY_DEFAULT
         set CC_MouseOrbitBlocked[i] = false

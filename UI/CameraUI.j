@@ -2,7 +2,7 @@
     CameraUI
     
     Author: [Valdemar]
-    Version: 1.3.3
+    Version: 1.4.0
 
     Description: Provides a panel for switching camera modes and adjusting camera
     and mouse-orbit settings. DynamicFarZ Auto and Profile are configured in
@@ -38,6 +38,7 @@ globals
     private constant integer CUI_ACTION_MOUSE_HORIZONTAL = 5
     private constant integer CUI_ACTION_MOUSE_VERTICAL = 6
     private constant integer CUI_ACTION_FREE_CAMERA = 7
+    private constant integer CUI_ACTION_MOUSE_INPUT = 8
 
     private boolean CUI_Initialized = false
     private boolean CUI_Syncing = false
@@ -153,6 +154,11 @@ private function CUI_RefreshFields takes player whichPlayer returns nothing
         else
             call BlzFrameSetText(CUI_ActionButton[4], "Orbit: Off")
         endif
+        if CameraControl_GetMouseOrbitInputMode(whichPlayer) == CameraControl_MOUSE_ORBIT_INPUT_MIDDLE then
+            call BlzFrameSetText(CUI_ActionButton[8], "Input: Middle mouse")
+        else
+            call BlzFrameSetText(CUI_ActionButton[8], "Input: Free-camera style")
+        endif
         if CameraControl_IsMouseOrbitHorizontalInverted(whichPlayer) then
             call BlzFrameSetText(CUI_ActionButton[5], "Horizontal: Inverted")
         else
@@ -258,6 +264,12 @@ private function CUI_ActionAction takes nothing returns nothing
             call CameraControl_SetMouseOrbitHorizontalInverted(whichPlayer, not CameraControl_IsMouseOrbitHorizontalInverted(whichPlayer))
         elseif CUI_ButtonAction.integer[handleId] == CUI_ACTION_MOUSE_VERTICAL then
             call CameraControl_SetMouseOrbitVerticalInverted(whichPlayer, not CameraControl_IsMouseOrbitVerticalInverted(whichPlayer))
+        elseif CUI_ButtonAction.integer[handleId] == CUI_ACTION_MOUSE_INPUT then
+            if CameraControl_GetMouseOrbitInputMode(whichPlayer) == CameraControl_MOUSE_ORBIT_INPUT_MIDDLE then
+                call CameraControl_SetMouseOrbitInputMode(whichPlayer, CameraControl_MOUSE_ORBIT_INPUT_FREE_CAMERA)
+            else
+                call CameraControl_SetMouseOrbitInputMode(whichPlayer, CameraControl_MOUSE_ORBIT_INPUT_MIDDLE)
+            endif
         elseif CUI_ButtonAction.integer[handleId] == CUI_ACTION_FREE_CAMERA then
             call FreeCamera_Toggle(whichPlayer)
         endif
@@ -324,10 +336,10 @@ private function CUI_CreateSliderRow takes integer index, string label, integer 
     call BlzFrameSetVisible(CUI_Slider[index], false)
 endfunction
 
-private function CUI_CreateMouseButton takes integer index, string label, integer actionId, real x, real width returns nothing
+private function CUI_CreateMouseButton takes integer index, string label, integer actionId, real x, real y, real width returns nothing
     set CUI_ActionButton[index] = BlzCreateFrameByType("GLUETEXTBUTTON", "CameraUIMouseButton" + I2S(index), CUI_RightPane, "ScriptDialogButton", 0)
     call BlzFrameSetSize(CUI_ActionButton[index], width, 0.026)
-    call BlzFrameSetPoint(CUI_ActionButton[index], FRAMEPOINT_TOPLEFT, CUI_RightPane, FRAMEPOINT_TOPLEFT, x, -0.250)
+    call BlzFrameSetPoint(CUI_ActionButton[index], FRAMEPOINT_TOPLEFT, CUI_RightPane, FRAMEPOINT_TOPLEFT, x, y)
     call BlzFrameSetText(CUI_ActionButton[index], label)
     call BlzTriggerRegisterFrameEvent(CUI_ActionTrigger, CUI_ActionButton[index], FRAMEEVENT_CONTROL_CLICK)
     call BlzTriggerRegisterFrameEvent(CUI_ClearFocusTrigger, CUI_ActionButton[index], FRAMEEVENT_CONTROL_CLICK)
@@ -421,11 +433,12 @@ private function CUI_CreateFrames takes nothing returns nothing
     call BlzFrameSetSize(CUI_MouseTitle, 0.20, 0.016)
     call BlzFrameSetTextAlignment(CUI_MouseTitle, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_LEFT)
     call BlzFrameSetEnable(CUI_MouseTitle, false)
-    call BlzFrameSetText(CUI_MouseTitle, "|cffffcc00Middle-mouse orbit|r")
+    call BlzFrameSetText(CUI_MouseTitle, "|cffffcc00Mouse orbit|r")
 
-    call CUI_CreateMouseButton(4, "Orbit: On", CUI_ACTION_MOUSE_ORBIT, 0.010, 0.076)
-    call CUI_CreateMouseButton(5, "Horizontal: Normal", CUI_ACTION_MOUSE_HORIZONTAL, 0.090, 0.098)
-    call CUI_CreateMouseButton(6, "Vertical: Normal", CUI_ACTION_MOUSE_VERTICAL, 0.192, 0.090)
+    call CUI_CreateMouseButton(8, "Input: Free-camera style", CUI_ACTION_MOUSE_INPUT, 0.010, -0.246, 0.272)
+    call CUI_CreateMouseButton(4, "Orbit: On", CUI_ACTION_MOUSE_ORBIT, 0.010, -0.280, 0.076)
+    call CUI_CreateMouseButton(5, "Horizontal: Normal", CUI_ACTION_MOUSE_HORIZONTAL, 0.090, -0.280, 0.098)
+    call CUI_CreateMouseButton(6, "Vertical: Normal", CUI_ACTION_MOUSE_VERTICAL, 0.192, -0.280, 0.090)
 
     call BlzFrameSetVisible(CUI_Parent, false)
 endfunction
