@@ -21,10 +21,21 @@
 
 ### Player-Facing Updates
 
+- Restored Modern HUD mouse input and added working `1` through `=` action-slot hotkeys. Added a compact upper-left minimap shell with Nazgrek/Zul'kis selectors, improved inactive element-badge readability, aligned the health/mana fills inside their frame, and refined the Abilities button.
+- Added a Camera setting for choosing Free-camera-style right-mouse orbit or middle-mouse drag. Free-camera style is now the default orbit input.
 - Moved the Dynamic Far Z Auto toggle from Camera to Settings beside the Far Z profile. The Abilities panel Return button now returns to the Game menu when opened there and returns to Stats when opened from a hero's Stats panel.
+- Updated the modern player HUD to remove the leftover native black console backdrop and added four clear Earth, Fire, Water, and Air status badges. A placed totem now enlarges its element badge and shows its remaining lifetime as both seconds and a short progress bar.
+- Added an Information panel to the Game menu. It shows the current 360-day seasonal calendar day, total days passed, season, selected player hero's current zone and weather, and a scrollable list of completed daily quests that unlock again the next day.
 
 ### Technical Updates
 
+- Added `UI/_Modern/ModernMinimapHUD.j`; updated `ModernAbilityActionBar.j`, `ModernPlayerHUD.j`, `ModernTotemTracker.j`, the compile harness, and documentation. Full-screen textureless HUD parents were replaced with tiny logical parents because they intercepted all frame and world mouse input. The native minimap is now isolated from the hidden console, native hero subframes are hidden individually, and keyboard input uses the existing synchronized ability controller.
+- Updated `UI/CameraControl.j` and `UI/CameraUI.j` with per-player orbit input modes, FreeCamera-matched cursor hiding and recentering, and a live Camera panel selector.
+
+- Added `UI/InfoUI.j` and updated `UI/MasterUI.j` with live day, season, point-resolved hero-zone weather, and completed-daily enumeration through the existing WeatherSystem, ZonesCore, and QuestMaster APIs.
+- Updated `UI/_Modern/ModernAbilityLoadout.j`, `ModernAbilityActionBar.j`, `ModernTotemTracker.j`, the compile harness, and documentation to remove the modern HUD's remaining heavy idle path. Default layouts are now materialized once per hero instead of rescanning up to 42 definitions for each of twelve slots every 0.25 seconds; static slot data is event-invalidated, mana traversal runs only after integer mana changes, cooldown polling is restricted to active slots, and cooldown/totem geometry is limited to 20 visual steps.
+- Added `UI/_Modern/ModernTotemTracker.j`; updated `Abilities/Shaman/Totems.j`, `ModernPlayerHUD.j`, `ModernAbilityActionBar.j`, `StatsLiteUI.j`, `TargetUnitUI.j`, the Modern HUD compile harness, and documentation. The tracker reads the existing caster/element totem registry and stored timed-life values through the shared 0.25-second HUD tick, adding no unit scans or timer. The native `ConsoleUIBackdrop` is now hidden with the rest of the bottom HUD while the two PotS overlays that formerly depended on it use `ORIGIN_FRAME_GAME_UI`.
+- Replaced `UI/_Modern/Assets/PotSHUD.tga`, `PotSActionSlot.tga`, and `PotSBarFrame.tga` with cleaner, less ornate structural art; replaced `PotSMedallion.tga` with a clearer four-element compass; and added original `PotSTotemEarth.tga`, `PotSTotemFire.tga`, `PotSTotemWater.tga`, and `PotSTotemAir.tga` status badges.
 - Updated `UI/_Modern/ModernPlayerHUD.j` and `ModernAbilityActionBar.j` to version 0.4.0 with a cached shared presentation tick, transition-only frame writes, quantized cooldown rendering, and one hover-populated tooltip shared by all twelve slots. Added eight original PotS textures under `UI/_Modern/Assets` and updated `UI/_Modern/README.md`; the art direction combines the VideoRPG reference map's centered resource/action-bar proportions with Forgotten Hollow's compact dark-fantasy mood without copying their art, importing their gameplay scripts, or requiring a TOC/FDF.
 - Updated `UI/CameraUI.j`, `UI/SettingsUI.j`, and `UI/AbilitiesLiteUI.j` for consolidated Dynamic Far Z settings ownership and origin-aware abilities navigation.
 - Updated `UI/CommandsUI.j` with the complete active debug-command catalog and per-entry visibility configuration; updated `Debug/DebugCommands.j` to recognize and document externally handled AI, ability-point, and Void Entity debug commands without changing their owning libraries.
@@ -33,14 +44,14 @@
 
 ### Known Issues
 
-- The new original HUD textures and cached presentation path still need a ten-minute in-map FPS soak and 1080p/1440p/4K layout validation.
-- The functional modern action bar temporarily removes native minimap and inventory access with the rest of the bottom HUD; PotS-owned replacements are still required. The displayed `1` through `=` slot labels are not keyboard bindings yet.
+- The version 0.6.0 HUD performance refactor passes the compile harness but still needs a ten-minute enabled/disabled in-map FPS and frame-time comparison plus 1080p/1440p/4K layout validation.
+- The functional modern action bar still removes native inventory access with the rest of the bottom HUD; a PotS-owned inventory replacement is required. The newly isolated native minimap placement and hero selectors require current-client crash, scaling, and multiplayer validation.
 - Lightning Bolt/Fire Shock, Nature Shock/Wind Shear/Primal Force, and Water Shield/Ancestral Ward share engine order IDs. The dispatcher isolates those learned siblings only while issuing the selected synchronized order, but every collision group still requires current-client and two-client runtime validation.
 
 ### Actions Remaining
 
 - Import the modern ability foundation in the documented order, then import `ModernPlayerHUD.j` and `ModernAbilityActionBar.j` after their UI dependencies. Compile the full map and retest the intro handoff, native-HUD hiding/restoration, all target policies, collision groups, all four elemental choices, Windfury Totem placement, cinematics, fullscreen panels, both player heroes, and two-client synchronization on the current client.
-- Add Abilities-book row-to-slot assignment, save/load persistence, safe keyboard activation, and PotS-owned minimap and inventory access before treating the native HUD migration as complete.
+- Add Abilities-book row-to-slot assignment, save/load persistence, and PotS-owned inventory access before treating the native HUD migration as complete.
 
 ## [19.10.2026]
 
