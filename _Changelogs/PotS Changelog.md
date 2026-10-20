@@ -27,6 +27,18 @@
 
 - Updated `UI/CameraUI.j`, `UI/SettingsUI.j`, and `UI/AbilitiesLiteUI.j` for consolidated Dynamic Far Z settings ownership and origin-aware abilities navigation.
 - Updated `UI/CommandsUI.j` with the complete active debug-command catalog and per-entry visibility configuration; updated `Debug/DebugCommands.j` to recognize and document externally handled AI, ability-point, and Void Entity debug commands without changing their owning libraries.
+- Added `UI/_Modern/ModernAbilityController.j`, `UI/_Modern/ModernAbilityActionBar.j`, and `UI/_Modern/ModernAbilityCompileTest.j`; updated `ModernAbilityCatalog.j`, `ModernAbilityLoadout.j`, `ModernPlayerHUD.j`, and `UI/_Modern/README.md`. Learned active abilities now populate the twelve custom slots with icons, cooldowns, readiness shading, and tooltips. Slot clicks use synchronized immediate, self, automatic melee, approximate unit, approximate point, or exact point orders, while the modern HUD hides the native bottom console through visibility-only frame operations.
+- Updated `UI/_Modern/ModernAbilityController.j`, `ModernAbilityActionBar.j`, and `ModernAbilityCatalog.j` with a PotS-owned four-button Summon Elemental flyout. Air, Water, Fire, and Earth choices dispatch their validated child Channel rawcodes through synchronized input and read the current `Ncl6` order from Object Editor data at runtime. Windfury Totem is enabled with its corrected `undeadbuild` Channel base order.
+
+### Known Issues
+
+- The functional modern action bar temporarily removes native minimap and inventory access with the rest of the bottom HUD; PotS-owned replacements are still required. The displayed `1` through `=` slot labels are not keyboard bindings yet.
+- Lightning Bolt/Fire Shock, Nature Shock/Wind Shear/Primal Force, and Water Shield/Ancestral Ward share engine order IDs. The dispatcher isolates those learned siblings only while issuing the selected synchronized order, but every collision group still requires current-client and two-client runtime validation.
+
+### Actions Remaining
+
+- Import the modern ability foundation in the documented order, then import `ModernPlayerHUD.j` and `ModernAbilityActionBar.j` after their UI dependencies. Compile the full map and retest the intro handoff, native-HUD hiding/restoration, all target policies, collision groups, all four elemental choices, Windfury Totem placement, cinematics, fullscreen panels, both player heroes, and two-client synchronization on the current client.
+- Add Abilities-book row-to-slot assignment, save/load persistence, safe keyboard activation, and PotS-owned minimap and inventory access before treating the native HUD migration as complete.
 
 ## [19.10.2026]
 
