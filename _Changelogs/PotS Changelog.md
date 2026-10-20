@@ -25,6 +25,7 @@
 
 ### Technical Updates
 
+- Updated `UI/_Modern/ModernPlayerHUD.j` and `ModernAbilityActionBar.j` to version 0.4.0 with a cached shared presentation tick, transition-only frame writes, quantized cooldown rendering, and one hover-populated tooltip shared by all twelve slots. Added eight original PotS textures under `UI/_Modern/Assets` and updated `UI/_Modern/README.md`; the art direction combines the VideoRPG reference map's centered resource/action-bar proportions with Forgotten Hollow's compact dark-fantasy mood without copying their art, importing their gameplay scripts, or requiring a TOC/FDF.
 - Updated `UI/CameraUI.j`, `UI/SettingsUI.j`, and `UI/AbilitiesLiteUI.j` for consolidated Dynamic Far Z settings ownership and origin-aware abilities navigation.
 - Updated `UI/CommandsUI.j` with the complete active debug-command catalog and per-entry visibility configuration; updated `Debug/DebugCommands.j` to recognize and document externally handled AI, ability-point, and Void Entity debug commands without changing their owning libraries.
 - Added `UI/_Modern/ModernAbilityController.j`, `UI/_Modern/ModernAbilityActionBar.j`, and `UI/_Modern/ModernAbilityCompileTest.j`; updated `ModernAbilityCatalog.j`, `ModernAbilityLoadout.j`, `ModernPlayerHUD.j`, and `UI/_Modern/README.md`. Learned active abilities now populate the twelve custom slots with icons, cooldowns, readiness shading, and tooltips. Slot clicks use synchronized immediate, self, automatic melee, approximate unit, approximate point, or exact point orders, while the modern HUD hides the native bottom console through visibility-only frame operations.
@@ -32,6 +33,7 @@
 
 ### Known Issues
 
+- The new original HUD textures and cached presentation path still need a ten-minute in-map FPS soak and 1080p/1440p/4K layout validation.
 - The functional modern action bar temporarily removes native minimap and inventory access with the rest of the bottom HUD; PotS-owned replacements are still required. The displayed `1` through `=` slot labels are not keyboard bindings yet.
 - Lightning Bolt/Fire Shock, Nature Shock/Wind Shear/Primal Force, and Water Shield/Ancestral Ward share engine order IDs. The dispatcher isolates those learned siblings only while issuing the selected synchronized order, but every collision group still requires current-client and two-client runtime validation.
 
