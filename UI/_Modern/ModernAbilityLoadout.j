@@ -2,7 +2,7 @@
     ModernAbilityLoadout
 
     Author: Valdemar
-    Version: 0.1.0
+    Version: 0.3.0
 
     Description:
     Stores twelve synchronized modern action-bar assignments independently for
@@ -22,6 +22,7 @@
     - set changed = ModernAbilityLoadout_Assign(whichHero, slot, abilityId)
     - set changed = ModernAbilityLoadout_Clear(whichHero, slot)
     - set abilityId = ModernAbilityLoadout_GetAbilityId(whichHero, slot)
+    - set abilityId = ModernAbilityLoadout_GetEffectiveAbilityId(whichHero, slot)
     - set slot = ModernAbilityLoadout_FindSlot(whichHero, abilityId)
     - call ModernAbilityLoadout_FillFirstLearned(whichHero)
     - call ModernAbilityLoadout_Reset(whichHero)
@@ -34,6 +35,7 @@ globals
     public constant integer SLOT_COUNT = 12
 
     private integer array MAL_AbilityId
+    private boolean array MAL_Explicit
 endglobals
 
 private function MAL_GetStorageIndex takes integer heroSlot, integer slot returns integer
@@ -73,6 +75,59 @@ public function GetAbilityId takes unit whichHero, integer slot returns integer
     return MAL_AbilityId[storageIndex]
 endfunction
 
+private function MAL_MaterializeDefaults takes unit whichHero, integer heroSlot returns nothing
+    local integer entryIndex = 1
+    local integer entryCount = AbilitiesPlayer_GetEntryCount()
+    local integer abilityId
+    local integer slot = 1
+
+    if heroSlot == ShamanCommon_HERO_SLOT_NONE or MAL_Explicit[heroSlot] then
+        return
+    endif
+
+    loop
+        exitwhen entryIndex > entryCount or slot > SLOT_COUNT
+        set abilityId = AbilitiesPlayer_GetEntryAbilityId(entryIndex)
+        if MAL_IsLearnedActiveAbility(whichHero, abilityId) then
+            set MAL_AbilityId[MAL_GetStorageIndex(heroSlot, slot)] = abilityId
+            set slot = slot + 1
+        endif
+        set entryIndex = entryIndex + 1
+    endloop
+    set MAL_Explicit[heroSlot] = true
+endfunction
+
+public function GetEffectiveAbilityId takes unit whichHero, integer slot returns integer
+    local integer heroSlot = ShamanCommon_GetHeroSlot(whichHero)
+    local integer entryIndex = 1
+    local integer entryCount
+    local integer abilityId
+    local integer learnedIndex = 0
+    local integer storageIndex = MAL_GetStorageIndex(heroSlot, slot)
+
+    if storageIndex == 0 then
+        return 0
+    endif
+    if MAL_Explicit[heroSlot] then
+        return MAL_AbilityId[storageIndex]
+    endif
+
+    set entryCount = AbilitiesPlayer_GetEntryCount()
+    loop
+        exitwhen entryIndex > entryCount
+        set abilityId = AbilitiesPlayer_GetEntryAbilityId(entryIndex)
+        if MAL_IsLearnedActiveAbility(whichHero, abilityId) then
+            set learnedIndex = learnedIndex + 1
+            if learnedIndex == slot then
+                return abilityId
+            endif
+        endif
+        set entryIndex = entryIndex + 1
+    endloop
+
+    return 0
+endfunction
+
 public function FindSlot takes unit whichHero, integer abilityId returns integer
     local integer heroSlot = ShamanCommon_GetHeroSlot(whichHero)
     local integer canonicalAbilityId = MAL_GetCanonicalAbilityId(abilityId)
@@ -86,7 +141,7 @@ public function FindSlot takes unit whichHero, integer abilityId returns integer
     loop
         exitwhen slot > SLOT_COUNT
         set storageIndex = MAL_GetStorageIndex(heroSlot, slot)
-        if storageIndex != 0 and MAL_AbilityId[storageIndex] == canonicalAbilityId then
+        if storageIndex != 0 and GetEffectiveAbilityId(whichHero, slot) == canonicalAbilityId then
             return slot
         endif
         set slot = slot + 1
@@ -105,6 +160,7 @@ public function Assign takes unit whichHero, integer slot, integer abilityId ret
         return false
     endif
 
+    call MAL_MaterializeDefaults(whichHero, heroSlot)
     set previousSlot = FindSlot(whichHero, canonicalAbilityId)
     if previousSlot != 0 and previousSlot != slot then
         set MAL_AbilityId[MAL_GetStorageIndex(heroSlot, previousSlot)] = 0
@@ -115,12 +171,14 @@ public function Assign takes unit whichHero, integer slot, integer abilityId ret
 endfunction
 
 public function Clear takes unit whichHero, integer slot returns boolean
-    local integer storageIndex = MAL_GetStorageIndex(ShamanCommon_GetHeroSlot(whichHero), slot)
+    local integer heroSlot = ShamanCommon_GetHeroSlot(whichHero)
+    local integer storageIndex = MAL_GetStorageIndex(heroSlot, slot)
 
     if storageIndex == 0 then
         return false
     endif
 
+    call MAL_MaterializeDefaults(whichHero, heroSlot)
     set MAL_AbilityId[storageIndex] = 0
     return true
 endfunction
@@ -138,29 +196,20 @@ public function Reset takes unit whichHero returns nothing
         endif
         set slot = slot + 1
     endloop
+    if heroSlot != ShamanCommon_HERO_SLOT_NONE then
+        set MAL_Explicit[heroSlot] = false
+    endif
 endfunction
 
 public function FillFirstLearned takes unit whichHero returns nothing
-    local integer entryIndex = 1
-    local integer entryCount = AbilitiesPlayer_GetEntryCount()
     local integer heroSlot = ShamanCommon_GetHeroSlot(whichHero)
-    local integer abilityId
-    local integer slot = 1
 
     if heroSlot == ShamanCommon_HERO_SLOT_NONE then
         return
     endif
 
     call Reset(whichHero)
-    loop
-        exitwhen entryIndex > entryCount or slot > SLOT_COUNT
-        set abilityId = AbilitiesPlayer_GetEntryAbilityId(entryIndex)
-        if MAL_IsLearnedActiveAbility(whichHero, abilityId) then
-            set MAL_AbilityId[MAL_GetStorageIndex(heroSlot, slot)] = abilityId
-            set slot = slot + 1
-        endif
-        set entryIndex = entryIndex + 1
-    endloop
+    call MAL_MaterializeDefaults(whichHero, heroSlot)
 endfunction
 
 endlibrary

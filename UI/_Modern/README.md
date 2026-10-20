@@ -17,20 +17,19 @@ The first prototype is `ModernPlayerHUD.j`:
 
 ### Custom-only direction
 
-Version 0.2.0 permanently removes the prototype paths that moved Warcraft III
-command buttons or the native portrait. Two tests on Warcraft III 3.0.1 PTR
-build 24368 produced the same native null-pointer crash when the first
-origin-frame layout was applied. The crash-free path creates only PotS-owned
-frames under `ORIGIN_FRAME_GAME_UI`; it does not move, resize, reparent, or
-use native command buttons or portrait widgets.
+Version 0.3.0 keeps the crash-free custom-only boundary established in version
+0.2.0. Two tests on Warcraft III 3.0.1 PTR build 24368 produced the same native
+null-pointer crash when the first origin-frame layout moved engine-owned
+widgets. The current path creates PotS-owned frames under
+`ORIGIN_FRAME_GAME_UI`; it never moves, resizes, reparents, or clicks the native
+command card or portrait.
 
-The twelve visible boxes are custom action-slot placeholders. They are not
-copies of the command card and do not issue orders yet. The final modern HUD
-will render its own icons, cooldowns, costs, hotkeys, disabled states, and
-tooltips from the synchronized loadout. The native console can be hidden only
-after those controls and all required inventory/menu replacements are usable.
-The Game UI root may remain as an invisible frame parent; that does not make a
-native HUD widget part of the modern interface.
+`ModernAbilityActionBar.j` now fills the twelve custom slots with learned
+ability icons, cooldown shading, mana/readiness state, and custom tooltips. It
+hides `ConsoleBottomBar`, `ConsoleBottomBarOverlay`, the native hero bar,
+minimap, and portrait with visibility calls only. It deliberately leaves
+`ConsoleUIBackdrop` alive because existing PotS interfaces use it as a parent.
+The Game UI root remains only an invisible frame parent.
 
 The HUD remains disabled until `FullscreenUI` no longer owns the intro
 presentation and Nazgrek or Zul'kis is available. A normal selection event is
@@ -39,9 +38,10 @@ player hero after the intro. This prevents premature activation while the
 preload-mode choice is still open. The HUD then enables on a later timer tick.
 
 The Abilities button opens the existing `AbilitiesLiteUI` for Nazgrek or
-Zul'kis. The prototype does not yet connect an ability-list row to a slot; the
-loadout and targeting foundation below owns that state independently of the old
-spellbook presentation.
+Zul'kis. Until row-to-slot assignment is added, the action bar derives a stable
+default layout from the hero's learned active abilities. Once the player makes
+an explicit assignment, that synchronized loadout becomes authoritative. The
+old spellbooks remain compatible but are no longer the modern HUD presentation.
 
 ## Forgotten Hollow inspiration and reuse
 
@@ -83,7 +83,7 @@ native command-card buttons.
 The migration does not require rewriting the existing 38 player ability
 implementations. Spellbooks can continue to expose learned abilities to the
 old system while the modern HUD stores and invokes the real ability rawcodes.
-Three new libraries establish that boundary:
+Five focused libraries establish that boundary:
 
 - `ModernAbilityCatalog.j` classifies every Elemental, Enhancement,
   Restoration, and Totemic ability as passive, immediate, unit, point, or
@@ -93,6 +93,11 @@ Three new libraries establish that boundary:
   add, remove, hide, or change the level of an ability.
 - `ModernAbilityTargeting.j` provides deterministic unit acquisition. It
   contains no local mouse handling and issues no orders.
+- `ModernAbilityController.j` turns local slot clicks and world coordinates
+  into validated synchronized orders. Immediate/self and melee-auto abilities
+  cast without a second click; unit and ground abilities enter targeting mode.
+- `ModernAbilityActionBar.j` renders the PotS-owned slots and hides the native
+  bottom HUD after `FullscreenUI` releases the intro presentation.
 
 The targeting policies are:
 
@@ -102,8 +107,9 @@ The targeting policies are:
   equal-distance candidates prefer the more wounded unit. Clicking within 96
   range of the caster selects self. Clicking empty ground does not silently
   self-cast.
-- Melee auto: Stormstrike and Whirlwind acquire around the caster within 250
-  range and require no second target click.
+- Melee auto: Stormstrike and Whirlwind cast immediately around the caster and
+  require no second target click. The resolver also supports nearest-hostile
+  acquisition for future melee abilities that use a unit-target base.
 - Approximate point: area spells such as Lightning Strike retain the clicked
   point and can present their natural area indicator.
 - Precise point: all totem placement retains the exact clicked coordinates and
@@ -115,11 +121,20 @@ sent through a validated `BlzSendSyncData` flow before resolving a target or
 changing a loadout. No synchronized game state may be changed directly inside
 a local frame event.
 
-The next implementation stage is the custom order dispatcher and action-slot
-renderer, followed by ability-book slot assignment and save/load persistence.
-Summon Elemental needs a custom flyout, and the Windfury Totem base-order
-configuration must be verified in the current Object Editor export before
-either special case is enabled.
+Several existing abilities share the same engine order string. The dispatcher
+isolates a selected learned ability by synchronously disabling other learned
+abilities with that order only while the order is issued, then restoring them.
+This requires current-client and two-client tests for the `firebolt`,
+`thunderbolt`, and `innerfire` collision groups. The Ability Insight reference
+also confirms that Channel-based abilities need unique base orders when they
+must coexist; future Object Editor cleanup should prefer unique orders over the
+temporary isolation path.
+
+The next implementation stage is ability-book row-to-slot assignment, then
+save/load persistence and custom inventory/minimap replacements. Summon
+Elemental still needs a custom flyout. Windfury Totem remains unavailable on
+the modern bar because its exported Channel order fields disagree and must be
+corrected and retested before activation.
 
 ## Import and validation
 
@@ -130,6 +145,7 @@ Import the modern ability foundation in this order:
 3. `UI/_Modern/ModernAbilityCatalog.j`
 4. `UI/_Modern/ModernAbilityLoadout.j`
 5. `UI/_Modern/ModernAbilityTargeting.j`
+6. `UI/_Modern/ModernAbilityController.j`
 
 `ModernPlayerHUD.j` remains after:
 
@@ -137,6 +153,10 @@ Import the modern ability foundation in this order:
 - `MasterUI`
 - `AbilitiesLiteUI`
 - `FullscreenUI`
+
+Finally import `UI/_Modern/ModernAbilityActionBar.j` after
+`ModernPlayerHUD`, `ModernAbilityController`, and the dependencies above. No
+new TOC, FDF, or texture import is required for this functional stage.
 
 Then compile through the current World Editor/JassHelper workflow. Test:
 
@@ -147,8 +167,14 @@ Then compile through the current World Editor/JassHelper workflow. Test:
 - non-hero and enemy selection;
 - inventory, quest, MasterUI, cinematic, and fullscreen UI transitions;
 - the intro-to-gameplay transition without a native access violation;
-- version 0.2.0, confirming that the custom resource HUD and twelve custom
-  empty slots are visible above the unchanged native bottom console;
+- version 0.3.0, confirming that the custom resource HUD, learned ability
+  icons, cooldowns, tooltips, and Abilities control render after the intro;
+- native bottom bar, command card, hero bar, minimap, and portrait visibility
+  while the modern action bar is active, plus restoration after disabling it;
+- direct self and melee-auto casting; soft friendly/hostile targeting; exact
+  totem placement; and approximate area-spell placement;
+- every shared-order collision pair, verifying that the selected ability casts
+  and that its siblings remain usable afterward;
 - UI scaling at 1080p, 1440p, and 4K;
 - enable/disable restoration;
 - two-client frame and selection behavior.
@@ -163,10 +189,12 @@ scaling, Reforged/Classic presentation, cinematic, and multiplayer validation
 matrix. Do not import the entire Forgotten Hollow UI package without first
 removing unused definitions and resolving global frame-name collisions.
 
-The prototype intentionally leaves the shared native console visible until the
-custom action bar, inventory access, and required menu controls are functional.
-This is transitional only: the final interface must hide the native console
-without moving or reparenting its children. A Warcraft III 2.0+ hierarchy
-change places the command bar under `ConsoleBottomBar`; hiding that parent
-also hides its native buttons, which is acceptable only after the PotS-owned
-dispatcher is complete.
+The current stage hides the shared native bottom HUD without moving or
+reparenting its children. Because this also removes native minimap and inventory
+access, those functions are temporarily unavailable from the gameplay HUD and
+must receive PotS-owned replacements. The fixed `1` through `=` labels are
+presentation-only in this stage; clicking works, but keyboard activation waits
+until it can be added without double-firing native hotkeys.
+
+`ModernAbilityCompileTest.j` is a compile-only harness for the complete modern
+HUD stack. Never import it into the production map.

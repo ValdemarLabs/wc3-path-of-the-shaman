@@ -2,7 +2,7 @@
     ModernAbilityCatalog
 
     Author: Valdemar
-    Version: 0.1.0
+    Version: 0.2.0
 
     Description:
     Classifies player shaman abilities for the modern action bar. The catalog
@@ -21,6 +21,8 @@
     - set kind = ModernAbilityCatalog_GetActionKind(abilityId)
     - set policy = ModernAbilityCatalog_GetTargetPolicy(abilityId)
     - set radius = ModernAbilityCatalog_GetAcquireRadius(abilityId)
+    - set orderId = ModernAbilityCatalog_GetOrderId(abilityId)
+    - set ready = ModernAbilityCatalog_IsRuntimeReady(abilityId)
     - set allowed = ModernAbilityCatalog_IsAssignable(abilityId)
     - set allowed = ModernAbilityCatalog_AllowsSelfFallback(abilityId)
 
@@ -50,6 +52,8 @@ globals
     private integer array MAC_TargetPolicy
     private real array MAC_AcquireRadius
     private boolean array MAC_SelfFallback
+    private integer array MAC_OrderId
+    private boolean array MAC_RuntimeReady
 endglobals
 
 private function MAC_Register takes integer abilityId, integer actionKind, integer targetPolicy, real acquireRadius, boolean selfFallback returns nothing
@@ -65,6 +69,19 @@ private function MAC_Register takes integer abilityId, integer actionKind, integ
     set MAC_SelfFallback[entryIndex] = selfFallback
 endfunction
 
+private function MAC_RegisterOrder takes integer abilityId, string orderString, boolean runtimeReady returns nothing
+    local integer entryIndex = AbilitiesPlayer_GetEntryByAbilityId(abilityId)
+
+    if entryIndex == 0 then
+        return
+    endif
+
+    if orderString != null and orderString != "" then
+        set MAC_OrderId[entryIndex] = OrderId(orderString)
+    endif
+    set MAC_RuntimeReady[entryIndex] = runtimeReady and MAC_OrderId[entryIndex] != 0
+endfunction
+
 private function MAC_RegisterElemental takes nothing returns nothing
     call MAC_Register('A6A0', ACTION_UNIT, TARGET_SOFT_HOSTILE, MAC_DEFAULT_SOFT_RADIUS, false) // Lightning Bolt
     call MAC_Register('A67H', ACTION_POINT, TARGET_APPROXIMATE_POINT, 0.00, false)              // Lightning Strike
@@ -72,7 +89,7 @@ private function MAC_RegisterElemental takes nothing returns nothing
     call MAC_Register('A67J', ACTION_UNIT, TARGET_SOFT_HOSTILE, MAC_DEFAULT_SOFT_RADIUS, false) // Fire Shock
     call MAC_Register('A69L', ACTION_UNIT, TARGET_SOFT_HOSTILE, MAC_DEFAULT_SOFT_RADIUS, false) // Frost Shock
     call MAC_Register('A69N', ACTION_UNIT, TARGET_SOFT_HOSTILE, MAC_DEFAULT_SOFT_RADIUS, false) // Nature Shock
-    call MAC_Register('A68H', ACTION_IMMEDIATE, TARGET_SELF, 0.00, true)                        // Lightning Shield
+    call MAC_Register('A68H', ACTION_UNIT, TARGET_SELF, 0.00, true)                             // Lightning Shield
     call MAC_Register('A67Q', ACTION_SUBMENU, TARGET_NONE, 0.00, false)                         // Summon Elemental
 endfunction
 
@@ -94,7 +111,7 @@ private function MAC_RegisterRestoration takes nothing returns nothing
     call MAC_Register('A672', ACTION_UNIT, TARGET_SOFT_FRIENDLY, MAC_DEFAULT_SOFT_RADIUS, true) // Chain Heal
     call MAC_Register('A66W', ACTION_IMMEDIATE, TARGET_NONE, 0.00, false)                       // Healing Rain
     call MAC_Register('A69W', ACTION_UNIT, TARGET_SOFT_FRIENDLY, MAC_DEFAULT_SOFT_RADIUS, true) // Rejuvenation
-    call MAC_Register('A62Z', ACTION_IMMEDIATE, TARGET_SELF, 0.00, true)                        // Water Shield
+    call MAC_Register('A62Z', ACTION_UNIT, TARGET_SELF, 0.00, true)                             // Water Shield
     call MAC_Register('A01Z', ACTION_UNIT, TARGET_SOFT_FRIENDLY, MAC_DEFAULT_SOFT_RADIUS, true) // Spirit Link
     call MAC_Register('A6AL', ACTION_UNIT, TARGET_SOFT_FRIENDLY, MAC_DEFAULT_SOFT_RADIUS, true) // Ancestral Ward
     call MAC_Register('A638', ACTION_PASSIVE, TARGET_NONE, 0.00, false)                         // Spiritual Healing
@@ -113,6 +130,47 @@ private function MAC_RegisterTotemic takes nothing returns nothing
     call MAC_Register('A68T', ACTION_POINT, TARGET_PRECISE_POINT, 0.00, false) // Windfury Totem
     call MAC_Register('A01U', ACTION_POINT, TARGET_PRECISE_POINT, 0.00, false) // Skyfury Totem
     call MAC_Register('A636', ACTION_PASSIVE, TARGET_NONE, 0.00, false)        // Totem Master
+endfunction
+
+private function MAC_RegisterOrders takes nothing returns nothing
+    call MAC_RegisterOrder('A6A0', "firebolt", true)
+    call MAC_RegisterOrder('A67H', "blizzard", true)
+    call MAC_RegisterOrder('A67L', "chainlightning", true)
+    call MAC_RegisterOrder('A67J', "firebolt", true)
+    call MAC_RegisterOrder('A69L', "frostnova", true)
+    call MAC_RegisterOrder('A69N', "thunderbolt", true)
+    call MAC_RegisterOrder('A68H', "lightningshield", true)
+    call MAC_RegisterOrder('A67Q', "", false)
+
+    call MAC_RegisterOrder('A685', "summonbear", true)
+    call MAC_RegisterOrder('A6DP', "whirlwind", true)
+    call MAC_RegisterOrder('A026', "thunderbolt", true)
+    call MAC_RegisterOrder('A022', "thunderbolt", true)
+    call MAC_RegisterOrder('A67N', "berserk", true)
+    call MAC_RegisterOrder('A68Y', "fanofknives", true)
+    call MAC_RegisterOrder('A679', "spiritwolf", true)
+    call MAC_RegisterOrder('A673', "hex", true)
+    call MAC_RegisterOrder('A675', "acidbomb", true)
+    call MAC_RegisterOrder('A677', "locustswarm", true)
+
+    call MAC_RegisterOrder('A66Y', "holybolt", true)
+    call MAC_RegisterOrder('A672', "healingwave", true)
+    call MAC_RegisterOrder('A66W', "tranquility", true)
+    call MAC_RegisterOrder('A69W', "rejuvination", true)
+    call MAC_RegisterOrder('A62Z', "innerfire", true)
+    call MAC_RegisterOrder('A01Z', "spiritlink", true)
+    call MAC_RegisterOrder('A6AL', "innerfire", true)
+
+    call MAC_RegisterOrder('A63F', "transmute", true)
+    call MAC_RegisterOrder('A63G', "unavatar", true)
+    call MAC_RegisterOrder('A63H', "unavengerform", true)
+    call MAC_RegisterOrder('A63I', "unbearform", true)
+    call MAC_RegisterOrder('A68J', "uncoldarrows", true)
+    call MAC_RegisterOrder('A68L', "uncorporealform", true)
+    call MAC_RegisterOrder('A68F', "unholyfrenzy", true)
+    // The export disagrees between aord=undeadbuild and Ncl6=uncoldarrows.
+    call MAC_RegisterOrder('A68T', "uncoldarrows", false)
+    call MAC_RegisterOrder('A01U', "unburrow", true)
 endfunction
 
 public function GetActionKind takes integer abilityId returns integer
@@ -142,6 +200,21 @@ public function GetAcquireRadius takes integer abilityId returns real
     return MAC_AcquireRadius[entryIndex]
 endfunction
 
+public function GetOrderId takes integer abilityId returns integer
+    local integer entryIndex = AbilitiesPlayer_GetEntryByAbilityId(abilityId)
+
+    if entryIndex == 0 then
+        return 0
+    endif
+    return MAC_OrderId[entryIndex]
+endfunction
+
+public function IsRuntimeReady takes integer abilityId returns boolean
+    local integer entryIndex = AbilitiesPlayer_GetEntryByAbilityId(abilityId)
+
+    return entryIndex != 0 and MAC_RuntimeReady[entryIndex]
+endfunction
+
 public function AllowsSelfFallback takes integer abilityId returns boolean
     local integer entryIndex = AbilitiesPlayer_GetEntryByAbilityId(abilityId)
 
@@ -160,6 +233,7 @@ private function Init takes nothing returns nothing
     call MAC_RegisterEnhancement()
     call MAC_RegisterRestoration()
     call MAC_RegisterTotemic()
+    call MAC_RegisterOrders()
 endfunction
 
 endlibrary

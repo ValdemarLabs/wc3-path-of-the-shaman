@@ -2,20 +2,22 @@
     ModernPlayerHUD
 
     Author: Valdemar
-    Version: 0.2.0
+    Version: 0.3.0
 
     Description:
-    Creates the first modern PotS player HUD prototype. It adds a compact
-    bottom-center unit frame, twelve custom action-slot placeholders, and an
-    ability-book shortcut without moving or reparenting native HUD widgets.
+    Creates the modern PotS bottom-center resource shell, twelve custom action
+    slot mounting points, and an ability-book shortcut without moving or
+    reparenting native HUD widgets. ModernAbilityActionBar renders the learned
+    abilities and owns activation above this shell.
 
     Credits:
     - Blizzard Entertainment, native frame API and frame templates
     - Forgotten Hollow, action-bar and lower-HUD presentation reference
 
     How to install:
-    Import after Events, MasterUI, AbilitiesLiteUI, and FullscreenUI. No TOC or
-    FDF import is required for this first prototype. The library creates its
+    Import after Events, MasterUI, AbilitiesLiteUI, and FullscreenUI, then
+    import ModernAbilityActionBar after this library. No TOC or FDF import is
+    required for this implementation. The library creates its
     frames after a short initialization delay and enables itself only after
     FullscreenUI has finished the intro presentation. Set MHUD_AUTO_ENABLE to
     false when an external startup flow should call ModernPlayerHUD_Enable
@@ -295,10 +297,8 @@ private function MHUD_CreateFrames takes nothing returns nothing
     call BlzFrameSetAbsPoint(MHUD_Parent, FRAMEPOINT_BOTTOMRIGHT, MHUD_PANEL_RIGHT, MHUD_PANEL_BOTTOM)
     call BlzFrameSetLevel(MHUD_Parent, 20)
 
-    set MHUD_Backdrop = BlzCreateFrameByType("BACKDROP", "ModernPlayerHUDBackdrop", MHUD_Parent, "", 0)
-    call BlzFrameSetTexture(MHUD_Backdrop, MHUD_SURFACE_TEXTURE, 0, false)
+    set MHUD_Backdrop = BlzCreateFrameByType("BACKDROP", "ModernPlayerHUDBackdrop", MHUD_Parent, "EscMenuBackdrop", 0)
     call BlzFrameSetAllPoints(MHUD_Backdrop, MHUD_Parent)
-    call BlzFrameSetVertexColor(MHUD_Backdrop, BlzConvertColor(218, 12, 12, 16))
     call BlzFrameSetEnable(MHUD_Backdrop, false)
     call BlzFrameSetLevel(MHUD_Backdrop, 1)
 
@@ -415,9 +415,9 @@ private function MHUD_CreateFrames takes nothing returns nothing
     endloop
 
     set MHUD_BookButton = BlzCreateFrameByType("GLUETEXTBUTTON", "ModernPlayerHUDBookButton", MHUD_Parent, "ScriptDialogButton", 0)
-    call BlzFrameSetAbsPoint(MHUD_BookButton, FRAMEPOINT_BOTTOMLEFT, 0.617, MHUD_ACTION_BOTTOM)
-    call BlzFrameSetSize(MHUD_BookButton, 0.058, MHUD_ACTION_SIZE)
-    call BlzFrameSetText(MHUD_BookButton, "BOOK")
+    call BlzFrameSetAbsPoint(MHUD_BookButton, FRAMEPOINT_BOTTOMLEFT, 0.611, MHUD_ACTION_BOTTOM)
+    call BlzFrameSetSize(MHUD_BookButton, 0.064, MHUD_ACTION_SIZE)
+    call BlzFrameSetText(MHUD_BookButton, "ABILITIES")
     call BlzFrameSetLevel(MHUD_BookButton, 7)
 
     set MHUD_BookIcon = BlzCreateFrameByType("BACKDROP", "ModernPlayerHUDBookIcon", MHUD_BookButton, "IconButtonTemplate", 0)
