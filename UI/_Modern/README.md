@@ -130,11 +130,13 @@ also confirms that Channel-based abilities need unique base orders when they
 must coexist; future Object Editor cleanup should prefer unique orders over the
 temporary isolation path.
 
-The next implementation stage is ability-book row-to-slot assignment, then
-save/load persistence and custom inventory/minimap replacements. Summon
-Elemental still needs a custom flyout. Windfury Totem remains unavailable on
-the modern bar because its exported Channel order fields disagree and must be
-corrected and retested before activation.
+Summon Elemental now opens a four-button Air, Water, Fire, and Earth flyout.
+The selected child rawcode is synchronized and validated, while its current
+Channel `Ncl6` order is read from the hero's ability at runtime. Windfury Totem
+uses the corrected `undeadbuild` Channel base order and is enabled on the
+modern bar. The next implementation stage is ability-book row-to-slot
+assignment, followed by save/load persistence and custom inventory/minimap
+replacements.
 
 ## Import and validation
 
@@ -173,6 +175,10 @@ Then compile through the current World Editor/JassHelper workflow. Test:
   while the modern action bar is active, plus restoration after disabling it;
 - direct self and melee-auto casting; soft friendly/hostile targeting; exact
   totem placement; and approximate area-spell placement;
+- all four Summon Elemental flyout choices, including mana, cooldown, channel,
+  replacement of the active elemental, and two-client synchronization;
+- Windfury Totem point placement through its corrected `undeadbuild` Channel
+  order;
 - every shared-order collision pair, verifying that the selected ability casts
   and that its siblings remain usable afterward;
 - UI scaling at 1080p, 1440p, and 4K;
