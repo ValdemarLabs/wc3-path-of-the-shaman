@@ -11,13 +11,14 @@ The first prototype is `ModernPlayerHUD.j`:
 
 ```text
              [ Health ] [Level] [ Mana ]
+               [Earth Fire Water Air]
                      [ XP ]
        [custom action slots 1 through 12] [ability book]
 ```
 
 ### Custom-only direction
 
-Version 0.4.0 keeps the crash-free custom-only boundary established in version
+Version 0.6.0 keeps the crash-free custom-only boundary established in version
 0.2.0. Two tests on Warcraft III 3.0.1 PTR build 24368 produced the same native
 null-pointer crash when the first origin-frame layout moved engine-owned
 widgets. The current path creates PotS-owned frames under
@@ -27,9 +28,15 @@ command card or portrait.
 `ModernAbilityActionBar.j` fills the twelve custom slots with learned
 ability icons, cooldown shading, mana/readiness state, and custom tooltips. It
 hides `ConsoleBottomBar`, `ConsoleBottomBarOverlay`, the native hero bar,
-minimap, and portrait with visibility calls only. It deliberately leaves
-`ConsoleUIBackdrop` alive because existing PotS interfaces use it as a parent.
-The Game UI root remains only an invisible frame parent.
+minimap, portrait, and `ConsoleUIBackdrop` with visibility calls only.
+`StatsLiteUI.j` and `TargetUnitUI.j` now use `ORIGIN_FRAME_GAME_UI`
+directly, so hiding the native console canvas no longer hides those PotS
+overlays. The Game UI root remains only an invisible frame parent.
+
+The large black rectangle seen behind version 0.4.0 was the visible native
+`ConsoleUIBackdrop`, not `PotSHUD.tga`. Its bounds are the same 0.10-to-0.70
+screen span used by Warcraft's bottom console, which is why the rectangle was
+much taller and wider than the custom art.
 
 The HUD remains disabled until `FullscreenUI` no longer owns the intro
 presentation and Nazgrek or Zul'kis is available. A normal selection event is
@@ -79,11 +86,14 @@ gold accents, compact vertical footprint, and reduced native-console presence
 follow the Forgotten Hollow direction. PotS keeps its own ability systems and
 does not import either reference map's gameplay scripts.
 
-Eight original PotS texture files are staged in `UI/_Modern/Assets`. They were
+Twelve original PotS texture files are staged in `UI/_Modern/Assets`. They were
 created specifically for this HUD using a shared shamanic material language:
 blackened iron, aged bronze, charcoal stone, leather bindings, and restrained
 elemental turquoise. The medallion is an empty four-element ring so the
 same asset can frame either a real hero portrait or the level text.
+The revised medallion uses four large, distinct Earth, Fire, Water, and Air
+glyphs around a clean center. Matching individual element badges support the
+active-totem tracker without borrowing art from either reference map.
 
 The current HUD creates its frames from vJASS, so these textures require no TOC
 or FDF. Forgotten Hollow remains a mood/compactness reference. Forgotten Hollow TOC/FDF
@@ -93,19 +103,33 @@ embedding native command-card buttons.
 
 ### Performance architecture
 
-The HUD uses one 0.10-second presentation tick owned by
-`ModernPlayerHUD.j`. `ModernAbilityActionBar.j` registers with that tick
-instead of creating a second timer. Static slot data (ability rawcode, level,
-icon, tooltip, mana cost, and readiness classification) is rebuilt only after
-selection/loadout changes. The dynamic pass reads mana and cooldown state,
-quantizes cooldown height, and writes frame state only when a cached value
-changes. All twelve slots share one tooltip frame whose content is filled on
-hover.
+The HUD uses one 0.25-second presentation tick owned by
+`ModernPlayerHUD.j`. `ModernAbilityActionBar.j` and
+`ModernTotemTracker.j` register with that tick instead of creating additional
+permanent timers. The tracker reads the existing `Totems` caster/element
+registry, performs no unit enumeration, and reduces each lifetime bar to 20
+geometry steps.
 
-This keeps custom action bars inexpensive; their existence is not inherently
-the source of the earlier 1-2 FPS behavior. The damaging pattern was repeated
-texture, tooltip, text, size, enable, and visibility writes across every slot
-on every timer tick.
+Version 0.6.0 removes the action bar's remaining expensive idle path. The old
+fallback resolved each of twelve slots by rescanning as many as 42 ability
+definitions every tick: up to 504 catalog/ability tests per tick, or 2,016 per
+second before cooldown work. `ModernAbilityLoadout.j` now materializes that
+derived default layout once per hero. Static slot data (rawcode, level, icon,
+tooltip, mana cost, and readiness classification) is rebuilt only after hero
+selection, an explicit refresh/loadout change, or a hero-skill event.
+
+The shared tick now performs only cached visibility checks while idle. Mana
+shading traverses the slots only when the hero's integer mana changes.
+Cooldown natives are queried for every slot once during a static rebuild, then
+only for slots marked active by a spell-effect event until their cooldown ends.
+Cooldown height is limited to 20 geometry steps. All twelve slots share one
+tooltip frame whose content is filled on hover.
+
+Custom action bars are not inherently expensive. Repeated catalog scans,
+cooldown-native polling, and frame geometry changes were the harmful work;
+the modern HUD now bounds each of those operations. Runtime soak testing is
+still required because Warcraft III frame performance cannot be established
+by JassHelper compilation alone.
 
 ## Ability action architecture
 
@@ -177,6 +201,7 @@ Import the modern ability foundation in this order:
 4. `UI/_Modern/ModernAbilityLoadout.j`
 5. `UI/_Modern/ModernAbilityTargeting.j`
 6. `UI/_Modern/ModernAbilityController.j`
+7. `Abilities/Shaman/Totems.j`
 
 `ModernPlayerHUD.j` remains after:
 
@@ -187,6 +212,8 @@ Import the modern ability foundation in this order:
 
 Finally import `UI/_Modern/ModernAbilityActionBar.j` after
 `ModernPlayerHUD`, `ModernAbilityController`, and the dependencies above.
+Then import `UI/_Modern/ModernTotemTracker.j` after `Totems`,
+`ShamanCommon`, `FullscreenUI`, and `ModernPlayerHUD`.
 
 Import these files with the exact custom paths shown:
 
@@ -198,6 +225,10 @@ Import these files with the exact custom paths shown:
 - `UI\_Modern\Assets\PotSHealth.tga`
 - `UI\_Modern\Assets\PotSMana.tga`
 - `UI\_Modern\Assets\PotSXP.tga`
+- `UI\_Modern\Assets\PotSTotemEarth.tga`
+- `UI\_Modern\Assets\PotSTotemFire.tga`
+- `UI\_Modern\Assets\PotSTotemWater.tga`
+- `UI\_Modern\Assets\PotSTotemAir.tga`
 
 No TOC or FDF import is required for this stage.
 
@@ -210,7 +241,7 @@ Then compile through the current World Editor/JassHelper workflow. Test:
 - non-hero and enemy selection;
 - inventory, quest, MasterUI, cinematic, and fullscreen UI transitions;
 - the intro-to-gameplay transition without a native access violation;
-- version 0.4.0, confirming that the custom resource HUD, learned ability
+- version 0.6.0, confirming that the custom resource HUD, learned ability
   icons, cooldowns, tooltips, and Abilities control render after the intro;
 - native bottom bar, command card, hero bar, minimap, and portrait visibility
   while the modern action bar is active, plus restoration after disabling it;
@@ -220,11 +251,15 @@ Then compile through the current World Editor/JassHelper workflow. Test:
   replacement of the active elemental, and two-client synchronization;
 - Windfury Totem point placement through its corrected `undeadbuild` Channel
   order;
+- Earth, Fire, Water, and Air tracker badges in their inactive state, then
+  enlarged active state with a decreasing whole-second label and lifetime bar
+  for base and specialized totems in each element slot;
 - every shared-order collision pair, verifying that the selected ability casts
   and that its siblings remain usable afterward;
 - UI scaling at 1080p, 1440p, and 4K;
-- a ten-minute idle/combat soak while recording average FPS and checking that
-  performance no longer worsens over time;
+- a ten-minute idle/combat soak while recording average FPS, minimum FPS, and
+  frame-time behavior; compare the modern HUD enabled and disabled, and verify
+  that idle time does not accumulate additional cost;
 - enable/disable restoration;
 - two-client frame and selection behavior.
 

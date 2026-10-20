@@ -16,75 +16,99 @@
 **/
 globals
     unit udg_Nazgrek = null
+    unit udg_Zulkis = null
 endglobals
 
 library AbilitiesPlayer
     globals
-        constant integer ENTRY_ABILITY = 1
+        public constant integer ENTRY_ABILITY = 1
     endglobals
-    function EnsureInitialized takes nothing returns nothing
+    public function EnsureInitialized takes nothing returns nothing
     endfunction
-    function GetEntryCount takes nothing returns integer
+    public function GetEntryCount takes nothing returns integer
         return 0
     endfunction
-    function GetEntryKind takes integer entryIndex returns integer
+    public function GetEntryKind takes integer entryIndex returns integer
         return ENTRY_ABILITY
     endfunction
-    function GetEntryAbilityId takes integer entryIndex returns integer
+    public function GetEntryAbilityId takes integer entryIndex returns integer
         return 0
     endfunction
-    function GetEntryByAbilityId takes integer abilityId returns integer
+    public function GetEntryByAbilityId takes integer abilityId returns integer
         return 0
     endfunction
-    function GetEntryTitle takes integer entryIndex returns string
+    public function GetEntryTitle takes integer entryIndex returns string
         return ""
     endfunction
-    function GetEntryBodyForLevel takes integer entryIndex, integer abilityLevel returns string
+    public function GetEntryBodyForLevel takes integer entryIndex, integer abilityLevel returns string
         return ""
     endfunction
 endlibrary
 
 library ShamanCommon
     globals
-        constant integer HERO_SLOT_NONE = 0
-        constant integer HERO_SLOT_NAZGREK = 1
-        constant integer HERO_SLOT_ZULKIS = 2
+        public constant integer HERO_SLOT_NONE = 0
+        public constant integer HERO_SLOT_NAZGREK = 1
+        public constant integer HERO_SLOT_ZULKIS = 2
     endglobals
-    function IsAlive takes unit whichUnit returns boolean
+    public function IsAlive takes unit whichUnit returns boolean
         set whichUnit = null
         return true
     endfunction
-    function IsPlayerHero takes unit whichUnit returns boolean
+    public function IsPlayerHero takes unit whichUnit returns boolean
         set whichUnit = null
         return true
     endfunction
-    function GetHeroSlot takes unit whichUnit returns integer
+    public function GetHeroSlot takes unit whichUnit returns integer
         set whichUnit = null
         return HERO_SLOT_NAZGREK
     endfunction
-    function GetHeroBySlot takes integer heroSlot returns unit
+    public function GetHeroBySlot takes integer heroSlot returns unit
         return udg_Nazgrek
+    endfunction
+endlibrary
+
+library Totems
+    globals
+        public constant integer SLOT_EARTH = 1
+        public constant integer SLOT_FIRE = 2
+        public constant integer SLOT_WATER = 3
+        public constant integer SLOT_WIND = 4
+    endglobals
+    public function GetLiveTotemForSlot takes unit caster, integer slot returns unit
+        set caster = null
+        return null
+    endfunction
+    public function GetRemainingDuration takes unit totem returns real
+        set totem = null
+        return 0.00
+    endfunction
+    public function GetTotalDuration takes unit totem returns real
+        set totem = null
+        return 0.00
     endfunction
 endlibrary
 
 library Events
     function Events_RegisterPlayerUnitEvent takes code callback, playerunitevent whichEvent returns nothing
     endfunction
+    function Events_RegisterSpellEffect takes code callback returns nothing
+    endfunction
 endlibrary
 
 library FullscreenUI
-    function IsEnabled takes nothing returns boolean
+    public function IsEnabled takes nothing returns boolean
         return false
     endfunction
 endlibrary
 
 library MasterUI
-    function ClosePanels takes nothing returns nothing
+    public function ClosePanels takes nothing returns nothing
     endfunction
 endlibrary
 
 library AbilitiesLiteUI
-    function ShowForUnit takes unit whichUnit returns nothing
+    public function ShowForUnit takes unit whichUnit returns nothing
         set whichUnit = null
     endfunction
 endlibrary
@@ -95,6 +119,7 @@ endlibrary
 //! import "ModernAbilityController.j"
 //! import "ModernPlayerHUD.j"
 //! import "ModernAbilityActionBar.j"
+//! import "ModernTotemTracker.j"
 
 function config takes nothing returns nothing
 endfunction

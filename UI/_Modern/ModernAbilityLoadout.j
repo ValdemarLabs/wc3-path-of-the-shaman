@@ -2,13 +2,14 @@
     ModernAbilityLoadout
 
     Author: Valdemar
-    Version: 0.3.0
+    Version: 0.4.0
 
     Description:
     Stores twelve synchronized modern action-bar assignments independently for
     Nazgrek and Zul'kis. Assignments reference real learned ability rawcodes;
     spellbook wrapper abilities remain untouched for compatibility during the
-    staged migration.
+    staged migration. The derived default layout is materialized once per hero
+    instead of rescanning the complete ability catalog for every slot lookup.
 
     Credits:
     - Blizzard Entertainment, Warcraft III ability API
@@ -25,6 +26,7 @@
     - set abilityId = ModernAbilityLoadout_GetEffectiveAbilityId(whichHero, slot)
     - set slot = ModernAbilityLoadout_FindSlot(whichHero, abilityId)
     - call ModernAbilityLoadout_FillFirstLearned(whichHero)
+    - call ModernAbilityLoadout_RefreshDefaults(whichHero)
     - call ModernAbilityLoadout_Reset(whichHero)
     - set count = ModernAbilityLoadout_SLOT_COUNT
 
@@ -36,6 +38,7 @@ globals
 
     private integer array MAL_AbilityId
     private boolean array MAL_Explicit
+    private boolean array MAL_DefaultsMaterialized
 endglobals
 
 private function MAL_GetStorageIndex takes integer heroSlot, integer slot returns integer
@@ -81,7 +84,7 @@ private function MAL_MaterializeDefaults takes unit whichHero, integer heroSlot 
     local integer abilityId
     local integer slot = 1
 
-    if heroSlot == ShamanCommon_HERO_SLOT_NONE or MAL_Explicit[heroSlot] then
+    if heroSlot == ShamanCommon_HERO_SLOT_NONE or MAL_Explicit[heroSlot] or MAL_DefaultsMaterialized[heroSlot] then
         return
     endif
 
@@ -94,38 +97,18 @@ private function MAL_MaterializeDefaults takes unit whichHero, integer heroSlot 
         endif
         set entryIndex = entryIndex + 1
     endloop
-    set MAL_Explicit[heroSlot] = true
+    set MAL_DefaultsMaterialized[heroSlot] = true
 endfunction
 
 public function GetEffectiveAbilityId takes unit whichHero, integer slot returns integer
     local integer heroSlot = ShamanCommon_GetHeroSlot(whichHero)
-    local integer entryIndex = 1
-    local integer entryCount
-    local integer abilityId
-    local integer learnedIndex = 0
     local integer storageIndex = MAL_GetStorageIndex(heroSlot, slot)
 
     if storageIndex == 0 then
         return 0
     endif
-    if MAL_Explicit[heroSlot] then
-        return MAL_AbilityId[storageIndex]
-    endif
-
-    set entryCount = AbilitiesPlayer_GetEntryCount()
-    loop
-        exitwhen entryIndex > entryCount
-        set abilityId = AbilitiesPlayer_GetEntryAbilityId(entryIndex)
-        if MAL_IsLearnedActiveAbility(whichHero, abilityId) then
-            set learnedIndex = learnedIndex + 1
-            if learnedIndex == slot then
-                return abilityId
-            endif
-        endif
-        set entryIndex = entryIndex + 1
-    endloop
-
-    return 0
+    call MAL_MaterializeDefaults(whichHero, heroSlot)
+    return MAL_AbilityId[storageIndex]
 endfunction
 
 public function FindSlot takes unit whichHero, integer abilityId returns integer
@@ -167,6 +150,7 @@ public function Assign takes unit whichHero, integer slot, integer abilityId ret
     endif
 
     set MAL_AbilityId[storageIndex] = canonicalAbilityId
+    set MAL_Explicit[heroSlot] = true
     return true
 endfunction
 
@@ -180,6 +164,7 @@ public function Clear takes unit whichHero, integer slot returns boolean
 
     call MAL_MaterializeDefaults(whichHero, heroSlot)
     set MAL_AbilityId[storageIndex] = 0
+    set MAL_Explicit[heroSlot] = true
     return true
 endfunction
 
@@ -198,7 +183,25 @@ public function Reset takes unit whichHero returns nothing
     endloop
     if heroSlot != ShamanCommon_HERO_SLOT_NONE then
         set MAL_Explicit[heroSlot] = false
+        set MAL_DefaultsMaterialized[heroSlot] = false
     endif
+endfunction
+
+public function RefreshDefaults takes unit whichHero returns nothing
+    local integer heroSlot = ShamanCommon_GetHeroSlot(whichHero)
+    local integer slot = 1
+
+    if heroSlot == ShamanCommon_HERO_SLOT_NONE or MAL_Explicit[heroSlot] then
+        return
+    endif
+
+    loop
+        exitwhen slot > SLOT_COUNT
+        set MAL_AbilityId[MAL_GetStorageIndex(heroSlot, slot)] = 0
+        set slot = slot + 1
+    endloop
+    set MAL_DefaultsMaterialized[heroSlot] = false
+    call MAL_MaterializeDefaults(whichHero, heroSlot)
 endfunction
 
 public function FillFirstLearned takes unit whichHero returns nothing

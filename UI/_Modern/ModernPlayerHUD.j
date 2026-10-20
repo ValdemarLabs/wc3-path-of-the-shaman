@@ -2,7 +2,7 @@
     ModernPlayerHUD
 
     Author: Valdemar
-    Version: 0.4.0
+    Version: 0.5.0
 
     Description:
     Creates the cached modern PotS bottom-center resource shell, twelve custom
@@ -27,6 +27,7 @@
     - call ModernPlayerHUD_Enable()
     - call ModernPlayerHUD_Disable()
     - call ModernPlayerHUD_SetUnit(whichUnit)
+    - set whichUnit = ModernPlayerHUD_GetUnit()
     - call ModernPlayerHUD_Refresh()
     - call ModernPlayerHUD_RegisterUpdate(callback)
     - set enabled = ModernPlayerHUD_IsEnabled()
@@ -38,7 +39,7 @@ globals
     // Configuration
     private constant boolean MHUD_AUTO_ENABLE = true
     private constant integer MHUD_ACTION_SLOT_COUNT = 12
-    private constant real MHUD_UPDATE_INTERVAL = 0.10
+    private constant real MHUD_UPDATE_INTERVAL = 0.25
 
     private constant real MHUD_PANEL_LEFT = 0.100
     private constant real MHUD_PANEL_RIGHT = 0.700
@@ -424,7 +425,7 @@ private function MHUD_CreateFrames takes nothing returns nothing
     set MHUD_ResourceBarBack = BlzCreateFrameByType("BACKDROP", "ModernPlayerHUDResourceBarBack", MHUD_Parent, "", 0)
     call BlzFrameSetTexture(MHUD_ResourceBarBack, MHUD_BAR_BACK_TEXTURE, 0, true)
     call BlzFrameSetPoint(MHUD_ResourceBarBack, FRAMEPOINT_TOP, MHUD_Parent, FRAMEPOINT_TOP, 0.000, -0.016)
-    call BlzFrameSetSize(MHUD_ResourceBarBack, 0.408, 0.024)
+    call BlzFrameSetSize(MHUD_ResourceBarBack, 0.420, 0.024)
     call BlzFrameSetEnable(MHUD_ResourceBarBack, false)
     call BlzFrameSetLevel(MHUD_ResourceBarBack, 2)
 
@@ -553,6 +554,10 @@ public function SetUnit takes unit whichUnit returns nothing
     endif
     call MHUD_Tick()
     set whichUnit = null
+endfunction
+
+public function GetUnit takes nothing returns unit
+    return MHUD_SelectedUnit
 endfunction
 
 public function Refresh takes nothing returns nothing

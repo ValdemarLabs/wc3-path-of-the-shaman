@@ -2,13 +2,14 @@
     ModernAbilityActionBar
 
     Author: Valdemar
-    Version: 0.4.0
+    Version: 0.6.0
 
     Description:
     Renders the cached PotS-owned twelve-slot action bar with learned ability
     icons, active-cooldown updates, one shared tooltip, synchronized click
     activation, and the four-choice Summon Elemental flyout. Static frame data
-    is rewritten only after a hero, loadout, or ability-level change.
+    is rebuilt only after an invalidation, while cooldown polling is restricted
+    to slots that are actually cooling down.
 
     Credits:
     - Blizzard Entertainment, Warcraft III frame API
@@ -43,6 +44,7 @@ globals
     private constant real MAB_ELEMENTAL_BOTTOM = 0.124
     private constant real MAB_ELEMENTAL_SIZE = 0.038
     private constant real MAB_ELEMENTAL_GAP = 0.004
+    private constant integer MAB_COOLDOWN_STEPS = 20
 
     private constant integer MAB_SUMMON_ELEMENTAL = 'A67Q'
     private constant integer MAB_ELEMENTAL_AIR = 'A61K'
@@ -100,6 +102,7 @@ globals
     private unit MAB_ElementalHero = null
     private boolean MAB_ElementalOpen = false
     private integer MAB_CachedTargetingAbility = -1
+    private integer MAB_CachedMana = -1
     private integer array MAB_CachedAbilityId
     private integer array MAB_CachedAbilityLevel
     private integer array MAB_CachedManaCost
@@ -108,6 +111,7 @@ globals
     private boolean array MAB_CachedReady
     private boolean array MAB_CachedDisabled
     private boolean array MAB_CachedCooldownVisible
+    private boolean array MAB_CooldownActive
     private string array MAB_CachedTitle
     private string array MAB_CachedBody
     private string array MAB_CachedIcon
@@ -142,6 +146,10 @@ private function MAB_GetElementalAbilityId takes integer index returns integer
         return MAB_ELEMENTAL_FIRE
     endif
     return MAB_ELEMENTAL_EARTH
+endfunction
+
+private function MAB_IsElementalChoice takes integer abilityId returns boolean
+    return abilityId == MAB_ELEMENTAL_AIR or abilityId == MAB_ELEMENTAL_WATER or abilityId == MAB_ELEMENTAL_FIRE or abilityId == MAB_ELEMENTAL_EARTH
 endfunction
 
 private function MAB_GetElementalLabel takes integer index returns string
@@ -182,6 +190,8 @@ private function MAB_FindNativeFrames takes nothing returns nothing
     call MAB_RegisterNativeFrame(BlzGetOriginFrame(ORIGIN_FRAME_HERO_BAR, 0))
     call MAB_RegisterNativeFrame(BlzGetOriginFrame(ORIGIN_FRAME_MINIMAP, 0))
     call MAB_RegisterNativeFrame(BlzGetOriginFrame(ORIGIN_FRAME_PORTRAIT, 0))
+    // Keep this last so child visibility is captured before the parent hides.
+    call MAB_RegisterNativeFrame(BlzGetFrameByName("ConsoleUIBackdrop", 0))
 endfunction
 
 private function MAB_CaptureNativeVisibility takes nothing returns nothing
@@ -247,6 +257,7 @@ private function MAB_ResetSlotCache takes nothing returns nothing
     set MAB_CachedHero = null
     set MAB_StaticDirty = true
     set MAB_CachedTargetingAbility = -1
+    set MAB_CachedMana = -1
     loop
         exitwhen index >= ModernAbilityLoadout_SLOT_COUNT
         set MAB_CachedAbilityId[index] = -1
@@ -257,6 +268,7 @@ private function MAB_ResetSlotCache takes nothing returns nothing
         set MAB_CachedReady[index] = false
         set MAB_CachedDisabled[index] = false
         set MAB_CachedCooldownVisible[index] = false
+        set MAB_CooldownActive[index] = false
         set MAB_CachedTitle[index] = ""
         set MAB_CachedBody[index] = ""
         set MAB_CachedIcon[index] = ""
@@ -329,15 +341,19 @@ private function MAB_SetCooldownVisual takes integer index, unit whichHero, inte
     local integer step
 
     if remaining > 0.00 then
+        set MAB_CooldownActive[index] = true
         set total = BlzGetUnitAbilityCooldown(whichHero, abilityId, abilityLevel - 1)
         if total > 0.00 then
-            set step = R2I(MAB_Clamp(remaining / total) * 100.00)
+            set step = R2I(MAB_Clamp(remaining / total) * I2R(MAB_COOLDOWN_STEPS))
         else
-            set step = 100
+            set step = MAB_COOLDOWN_STEPS
+        endif
+        if step < 1 then
+            set step = 1
         endif
         if step != MAB_CachedCooldownStep[index] then
             set MAB_CachedCooldownStep[index] = step
-            call BlzFrameSetSize(MAB_SlotCooldown[index], MAB_ACTION_SIZE - 0.004, (MAB_ACTION_SIZE - 0.004) * I2R(step) / 100.00)
+            call BlzFrameSetSize(MAB_SlotCooldown[index], MAB_ACTION_SIZE - 0.004, (MAB_ACTION_SIZE - 0.004) * I2R(step) / I2R(MAB_COOLDOWN_STEPS))
         endif
         set second = R2I(remaining + 0.99)
         if second != MAB_CachedCooldownSecond[index] then
@@ -349,12 +365,15 @@ private function MAB_SetCooldownVisual takes integer index, unit whichHero, inte
             call BlzFrameSetVisible(MAB_SlotCooldown[index], true)
             call BlzFrameSetVisible(MAB_SlotCooldownText[index], true)
         endif
-    elseif MAB_CachedCooldownVisible[index] then
-        set MAB_CachedCooldownVisible[index] = false
-        set MAB_CachedCooldownSecond[index] = -1
-        set MAB_CachedCooldownStep[index] = -1
-        call BlzFrameSetVisible(MAB_SlotCooldown[index], false)
-        call BlzFrameSetVisible(MAB_SlotCooldownText[index], false)
+    else
+        set MAB_CooldownActive[index] = false
+        if MAB_CachedCooldownVisible[index] then
+            set MAB_CachedCooldownVisible[index] = false
+            set MAB_CachedCooldownSecond[index] = -1
+            set MAB_CachedCooldownStep[index] = -1
+            call BlzFrameSetVisible(MAB_SlotCooldown[index], false)
+            call BlzFrameSetVisible(MAB_SlotCooldownText[index], false)
+        endif
     endif
 
     set whichHero = null
@@ -380,6 +399,7 @@ private function MAB_UpdateSlotStatic takes integer index, unit whichHero return
     set MAB_CachedAbilityLevel[index] = abilityLevel
     set MAB_CachedCooldownSecond[index] = -1
     set MAB_CachedCooldownStep[index] = -1
+    set MAB_CooldownActive[index] = false
     if MAB_CachedCooldownVisible[index] then
         set MAB_CachedCooldownVisible[index] = false
         call BlzFrameSetVisible(MAB_SlotCooldown[index], false)
@@ -426,7 +446,7 @@ private function MAB_UpdateSlotStatic takes integer index, unit whichHero return
     set whichHero = null
 endfunction
 
-private function MAB_UpdateSlotDynamic takes integer index, unit whichHero, real mana returns nothing
+private function MAB_UpdateSlotReadiness takes integer index, unit whichHero, real mana returns nothing
     local integer abilityId = MAB_CachedAbilityId[index]
     local integer abilityLevel = MAB_CachedAbilityLevel[index]
     local boolean disabled
@@ -441,7 +461,20 @@ private function MAB_UpdateSlotDynamic takes integer index, unit whichHero, real
         set MAB_CachedDisabled[index] = disabled
         call BlzFrameSetVisible(MAB_SlotDisabled[index], disabled)
     endif
-    call MAB_SetCooldownVisual(index, whichHero, abilityId, abilityLevel)
+    set whichHero = null
+endfunction
+
+private function MAB_UpdateCooldowns takes unit whichHero, boolean discover returns nothing
+    local integer index = 0
+
+    loop
+        exitwhen index >= ModernAbilityLoadout_SLOT_COUNT
+        if (discover or MAB_CooldownActive[index]) and MAB_CachedAbilityId[index] > 0 and MAB_CachedAbilityLevel[index] > 0 then
+            call MAB_SetCooldownVisual(index, whichHero, MAB_CachedAbilityId[index], MAB_CachedAbilityLevel[index])
+        endif
+        set index = index + 1
+    endloop
+
     set whichHero = null
 endfunction
 
@@ -474,7 +507,8 @@ private function MAB_Update takes nothing returns nothing
     local unit whichHero = MAB_SelectedUnit
     local integer index = 0
     local string heroIcon
-    local real mana
+    local integer mana
+    local boolean rebuild
 
     if not MAB_Enabled or not ModernPlayerHUD_IsEnabled() or FullscreenUI_IsEnabled() then
         if FullscreenUI_IsEnabled() then
@@ -512,14 +546,27 @@ private function MAB_Update takes nothing returns nothing
     endif
 
     call MAB_SetParentVisible(true)
-    set mana = GetUnitState(whichHero, UNIT_STATE_MANA)
-    loop
-        exitwhen index >= ModernAbilityLoadout_SLOT_COUNT
-        call MAB_UpdateSlotStatic(index, whichHero)
-        call MAB_UpdateSlotDynamic(index, whichHero, mana)
-        set index = index + 1
-    endloop
-    set MAB_StaticDirty = false
+    set rebuild = MAB_StaticDirty
+    if rebuild then
+        loop
+            exitwhen index >= ModernAbilityLoadout_SLOT_COUNT
+            call MAB_UpdateSlotStatic(index, whichHero)
+            set index = index + 1
+        endloop
+        set MAB_StaticDirty = false
+    endif
+
+    set mana = R2I(GetUnitState(whichHero, UNIT_STATE_MANA))
+    if rebuild or mana != MAB_CachedMana then
+        set MAB_CachedMana = mana
+        set index = 0
+        loop
+            exitwhen index >= ModernAbilityLoadout_SLOT_COUNT
+            call MAB_UpdateSlotReadiness(index, whichHero, I2R(mana))
+            set index = index + 1
+        endloop
+    endif
+    call MAB_UpdateCooldowns(whichHero, rebuild)
     if MAB_ElementalOpen then
         call MAB_UpdateElementalFlyout()
     endif
@@ -777,7 +824,7 @@ private function MAB_CreateFrames takes nothing returns nothing
 
     set MAB_HeroBorder = BlzCreateFrameByType("BACKDROP", "ModernAbilityHeroBorder", MAB_Parent, "", 0)
     call BlzFrameSetTexture(MAB_HeroBorder, MAB_MEDALLION_TEXTURE, 0, true)
-    call BlzFrameSetAbsPoint(MAB_HeroBorder, FRAMEPOINT_BOTTOMLEFT, 0.124, 0.010)
+    call BlzFrameSetAbsPoint(MAB_HeroBorder, FRAMEPOINT_BOTTOMLEFT, 0.132, 0.010)
     call BlzFrameSetSize(MAB_HeroBorder, 0.056, 0.056)
     call BlzFrameSetEnable(MAB_HeroBorder, false)
     call BlzFrameSetLevel(MAB_HeroBorder, 4)
@@ -808,6 +855,7 @@ private function MAB_CreateFrames takes nothing returns nothing
 endfunction
 
 public function Refresh takes nothing returns nothing
+    call ModernAbilityLoadout_RefreshDefaults(MAB_SelectedUnit)
     set MAB_StaticDirty = true
     call MAB_Update()
 endfunction
@@ -865,6 +913,35 @@ private function MAB_OnUnitDeselected takes nothing returns nothing
     set deselectingPlayer = null
 endfunction
 
+private function MAB_OnHeroSkill takes nothing returns nothing
+    local unit whichHero = GetTriggerUnit()
+
+    if whichHero == MAB_SelectedUnit then
+        call Refresh()
+    endif
+    set whichHero = null
+endfunction
+
+private function MAB_OnSpellEffect takes nothing returns nothing
+    local unit caster = GetTriggerUnit()
+    local integer abilityId = GetSpellAbilityId()
+    local integer slot
+    local integer index
+
+    if caster == MAB_CachedHero and MAB_Enabled then
+        if MAB_IsElementalChoice(abilityId) then
+            set abilityId = MAB_SUMMON_ELEMENTAL
+        endif
+        set slot = ModernAbilityLoadout_FindSlot(caster, abilityId)
+        if slot > 0 then
+            set index = slot - 1
+            set MAB_CooldownActive[index] = true
+        endif
+    endif
+
+    set caster = null
+endfunction
+
 private function MAB_DelayedInit takes nothing returns nothing
     call MAB_CreateFrames()
     if MAB_AUTO_ENABLE then
@@ -893,6 +970,8 @@ private function Init takes nothing returns nothing
     call TriggerAddAction(MAB_InitTrigger, function MAB_DelayedInit)
     call Events_RegisterPlayerUnitEvent(function MAB_OnUnitSelected, EVENT_PLAYER_UNIT_SELECTED)
     call Events_RegisterPlayerUnitEvent(function MAB_OnUnitDeselected, EVENT_PLAYER_UNIT_DESELECTED)
+    call Events_RegisterPlayerUnitEvent(function MAB_OnHeroSkill, EVENT_PLAYER_HERO_SKILL)
+    call Events_RegisterSpellEffect(function MAB_OnSpellEffect)
     call ModernPlayerHUD_RegisterUpdate(function MAB_Update)
 endfunction
 
