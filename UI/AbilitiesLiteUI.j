@@ -1,4 +1,4 @@
-library AbilitiesLiteUI initializer AutoInit requires Table, MasterUI, PetDefinitions, Interface
+library AbilitiesLiteUI initializer AutoInit requires Table, MasterUI, PetDefinitions, Interface, optional ModernAbilityCatalog
 /**
     AbilitiesLiteUI
 
@@ -8,6 +8,16 @@ library AbilitiesLiteUI initializer AutoInit requires Table, MasterUI, PetDefini
     Description: Shows a selected unit's hardcoded ability list with a simple detail panel and tooltip text.
 
     Credits: Tasyen (TasQuestBox as inspiration)
+
+    How to install:
+    - Import this library after Table, MasterUI, PetDefinitions, and Interface.
+    - ModernAbilityCatalog is optional; when present, learned abilities can be
+      armed for assignment to the Modern HUD action bar with right-click.
+
+    API:
+    - AbilitiesLiteUI_Show / AbilitiesLiteUI_ShowForUnit
+    - AbilitiesLiteUI_GetModernPendingAbilityId
+    - AbilitiesLiteUI_ClearModernPendingAbility
 
 **/
 
@@ -204,6 +214,7 @@ globals
     private trigger AUI_CloseTrigger = null
     private trigger AUI_ReturnTrigger = null
     private trigger AUI_RowTrigger = null
+    private trigger AUI_ModernAssignTrigger = null
     private trigger AUI_ClearFocusTrigger = null
     private trigger AUI_ListScrollTrigger = null
     private trigger AUI_WheelTrigger = null
@@ -215,7 +226,16 @@ globals
     private string AUI_NoUnitText = "No unit selected."
     private string AUI_NoAbilitiesText = "No abilities are configured for this unit type yet."
     private string AUI_NotLearnedText = "|cff808080Not learned|r"
+    private integer AUI_ModernPendingAbilityId = 0
 endglobals
+
+public function GetModernPendingAbilityId takes nothing returns integer
+    return AUI_ModernPendingAbilityId
+endfunction
+
+public function ClearModernPendingAbility takes nothing returns nothing
+    set AUI_ModernPendingAbilityId = 0
+endfunction
 
 private function AUI_GetViewerName takes unit u returns string
     if u == null or GetHandleId(u) == 0 then
@@ -1611,6 +1631,41 @@ private function AUI_RowAction takes nothing returns nothing
     endif
 endfunction
 
+private function AUI_ModernAssignAction takes nothing returns nothing
+    local integer handleId
+    local integer rowIndex
+    local integer definitionIndex
+    local integer abilityId
+
+    if GetTriggerPlayer() != GetLocalPlayer() or not BlzIsMouseButtonPressed(MOUSE_BUTTON_TYPE_RIGHT) then
+        return
+    endif
+
+    set handleId = GetHandleId(BlzGetTriggerFrame())
+    if AUI_ButtonRow.has(handleId) then
+        set rowIndex = AUI_ButtonRow.integer[handleId]
+        if rowIndex >= 1 and rowIndex <= AUI_MAX_ROWS then
+            set definitionIndex = AUI_RowDefinitionIndex[rowIndex]
+            if definitionIndex != 0 and AUI_SelectedUnit != null and not AUI_ShouldShowNotLearned(AUI_SelectedUnit, definitionIndex) then
+                set abilityId = AUI_GetDefinitionDisplayAbilityId(definitionIndex)
+                static if LIBRARY_ModernAbilityCatalog then
+                    if abilityId != 0 and GetUnitAbilityLevel(AUI_SelectedUnit, abilityId) > 0 and ModernAbilityCatalog_IsAssignable(abilityId) then
+                        set AUI_ModernPendingAbilityId = abilityId
+                        set AUI_SelectedDefinition = definitionIndex
+                        set AUI_DetailBodyHash = 0
+                        call AUI_Update()
+                        call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0.00, 0.00, 3.00, "|cffffcc00" + AUI_GetDefinitionTitle(definitionIndex) + ":|r click an action-bar slot to assign it.")
+                    else
+                        call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0.00, 0.00, 2.00, "|cffff8080That entry cannot be placed on the action bar.|r")
+                    endif
+                else
+                    call DisplayTimedTextToPlayer(GetTriggerPlayer(), 0.00, 0.00, 2.00, "|cffff8080Modern action-bar assignment is not available.|r")
+                endif
+            endif
+        endif
+    endif
+endfunction
+
 private function AUI_ListScrollAction takes nothing returns nothing
     local integer maxStart = AUI_GetVisibleDefinitionCountForUnitType(AUI_GetActiveDefinitionKey()) - AUI_VISIBLE_ROWS
 
@@ -1760,6 +1815,7 @@ private function AUI_CreateFrames takes nothing returns nothing
         call BlzFrameSetPoint(AUI_RowButton[rowIndex], FRAMEPOINT_TOPLEFT, AUI_LeftPane, FRAMEPOINT_TOPLEFT, 0.006, rowTopOffset)
         call BlzFrameSetSize(AUI_RowButton[rowIndex], 0.156, rowHeight)
         call BlzTriggerRegisterFrameEvent(AUI_RowTrigger, AUI_RowButton[rowIndex], FRAMEEVENT_CONTROL_CLICK)
+        call BlzTriggerRegisterFrameEvent(AUI_ModernAssignTrigger, AUI_RowButton[rowIndex], FRAMEEVENT_MOUSE_DOWN)
         call BlzTriggerRegisterFrameEvent(AUI_ClearFocusTrigger, AUI_RowButton[rowIndex], FRAMEEVENT_CONTROL_CLICK)
         call BlzTriggerRegisterFrameEvent(AUI_WheelTrigger, AUI_RowButton[rowIndex], FRAMEEVENT_MOUSE_WHEEL)
         set AUI_ButtonRow.integer[GetHandleId(AUI_RowButton[rowIndex])] = rowIndex
@@ -1857,6 +1913,8 @@ public function Init takes nothing returns nothing
 
     set AUI_RowTrigger = CreateTrigger()
     call TriggerAddAction(AUI_RowTrigger, function AUI_RowAction)
+    set AUI_ModernAssignTrigger = CreateTrigger()
+    call TriggerAddAction(AUI_ModernAssignTrigger, function AUI_ModernAssignAction)
 
     set AUI_ClearFocusTrigger = CreateTrigger()
     call TriggerAddAction(AUI_ClearFocusTrigger, function AUI_ClearFocusAction)

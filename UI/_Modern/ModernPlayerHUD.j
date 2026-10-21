@@ -2,11 +2,12 @@
     ModernPlayerHUD
 
     Author: Valdemar
-    Version: 0.6.0
+    Version: 0.7.0
 
     Description:
     Creates the cached modern PotS bottom-center resource shell, twelve custom
-    action-slot mounting points, and an ability-book shortcut without moving
+    action-slot mounting points, ability-book shortcut, and optional
+    DInventory/DEquipment controls without moving
     or reparenting native HUD widgets. Its compact art/layout combines the
     reference VideoRPG HUD with Forgotten Hollow's broad centered bars.
 
@@ -33,7 +34,7 @@
     - set enabled = ModernPlayerHUD_IsEnabled()
 
 **/
-library ModernPlayerHUD initializer Init requires Events, MasterUI, AbilitiesLiteUI, FullscreenUI
+library ModernPlayerHUD initializer Init requires Events, MasterUI, AbilitiesLiteUI, FullscreenUI, optional DInventory, optional DEquipment
 
 globals
     // Configuration
@@ -100,9 +101,13 @@ globals
     private framehandle MHUD_XPText = null
     private framehandle MHUD_BookButton = null
     private framehandle MHUD_BookIcon = null
+    private framehandle MHUD_InventoryButton = null
+    private framehandle MHUD_EquipmentButton = null
+    private framehandle MHUD_InspectButton = null
     private framehandle array MHUD_SlotBackdrop
 
     private trigger MHUD_BookTrigger = null
+    private trigger MHUD_UtilityTrigger = null
     private trigger MHUD_ClearFocusTrigger = null
     private trigger MHUD_InitTrigger = null
     private trigger MHUD_UpdateTrigger = null
@@ -380,6 +385,62 @@ private function MHUD_BookAction takes nothing returns nothing
     endif
 endfunction
 
+private function MHUD_UtilityAction takes nothing returns nothing
+    local framehandle triggerFrame = BlzGetTriggerFrame()
+    local player viewer = GetTriggerPlayer()
+    local integer pid = GetPlayerId(viewer)
+    local unit target = null
+    local boolean opened = false
+
+    if viewer == GetLocalPlayer() and MHUD_IsPlayerHero(MHUD_SelectedUnit) then
+        call MasterUI_ClosePanels()
+        static if LIBRARY_DInventory then
+            if triggerFrame == MHUD_InventoryButton then
+                call DInvToggleUnitForPlayer(viewer, MHUD_SelectedUnit, false)
+            endif
+        endif
+        static if LIBRARY_DEquipment then
+            if triggerFrame == MHUD_EquipmentButton then
+                call ToggleDEqUIForUnit(pid, MHUD_SelectedUnit)
+            elseif triggerFrame == MHUD_InspectButton then
+                if DInvIsPlayerInspecting(pid) then
+                    call DInventoryEquipment_HideForPlayer(viewer)
+                else
+                    set target = DInspectResolveSelectedTarget(viewer)
+                    if target != null then
+                        static if LIBRARY_DInventory then
+                            set opened = DInvShowUnitForPlayer(viewer, target, true)
+                        endif
+                        if DEqShowUnitForPlayer(viewer, target, true) then
+                            set opened = true
+                        endif
+                    endif
+                    if not opened then
+                        call DisplayTimedTextToPlayer(viewer, 0.00, 0.00, 2.00, "|cffffcc00Select an inspectable hero or companion first.|r")
+                    endif
+                endif
+            endif
+        endif
+    endif
+
+    set target = null
+    set viewer = null
+    set triggerFrame = null
+endfunction
+
+private function MHUD_CreateUtilityButton takes string frameName, string label, real x returns framehandle
+    local framehandle utilityButton = BlzCreateFrameByType("GLUETEXTBUTTON", frameName, MHUD_Parent, "ScriptDialogButton", 0)
+
+    call BlzFrameSetAbsPoint(utilityButton, FRAMEPOINT_BOTTOMLEFT, x, MHUD_ACTION_BOTTOM)
+    call BlzFrameSetSize(utilityButton, 0.032, MHUD_ACTION_SIZE)
+    call BlzFrameSetText(utilityButton, label)
+    call BlzFrameSetScale(utilityButton, 0.78)
+    call BlzFrameSetLevel(utilityButton, 7)
+    call BlzTriggerRegisterFrameEvent(MHUD_UtilityTrigger, utilityButton, FRAMEEVENT_CONTROL_CLICK)
+    call BlzTriggerRegisterFrameEvent(MHUD_ClearFocusTrigger, utilityButton, FRAMEEVENT_CONTROL_CLICK)
+    return utilityButton
+endfunction
+
 private function MHUD_CreateFrames takes nothing returns nothing
     local integer index = 0
     local real x
@@ -544,6 +605,14 @@ private function MHUD_CreateFrames takes nothing returns nothing
     call BlzTriggerRegisterFrameEvent(MHUD_BookTrigger, MHUD_BookButton, FRAMEEVENT_CONTROL_CLICK)
     call BlzTriggerRegisterFrameEvent(MHUD_ClearFocusTrigger, MHUD_BookButton, FRAMEEVENT_CONTROL_CLICK)
 
+    static if LIBRARY_DInventory then
+        set MHUD_InventoryButton = MHUD_CreateUtilityButton("ModernPlayerHUDInventoryButton", "Bag", 0.690)
+    endif
+    static if LIBRARY_DEquipment then
+        set MHUD_EquipmentButton = MHUD_CreateUtilityButton("ModernPlayerHUDEquipmentButton", "Gear", 0.724)
+        set MHUD_InspectButton = MHUD_CreateUtilityButton("ModernPlayerHUDInspectButton", "Look", 0.758)
+    endif
+
     call BlzFrameSetVisible(MHUD_Parent, false)
 endfunction
 
@@ -662,6 +731,8 @@ private function Init takes nothing returns nothing
 
     set MHUD_BookTrigger = CreateTrigger()
     call TriggerAddAction(MHUD_BookTrigger, function MHUD_BookAction)
+    set MHUD_UtilityTrigger = CreateTrigger()
+    call TriggerAddAction(MHUD_UtilityTrigger, function MHUD_UtilityAction)
 
     set MHUD_ClearFocusTrigger = CreateTrigger()
     call TriggerAddAction(MHUD_ClearFocusTrigger, function MHUD_ClearFocusAction)

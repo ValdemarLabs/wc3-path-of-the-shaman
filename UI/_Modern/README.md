@@ -51,10 +51,24 @@ player hero after the intro. This prevents premature activation while the
 preload-mode choice is still open. The HUD then enables on a later timer tick.
 
 The Abilities button opens the existing `AbilitiesLiteUI` for Nazgrek or
-Zul'kis. Until row-to-slot assignment is added, the action bar derives a stable
-default layout from the hero's learned active abilities. Once the player makes
-an explicit assignment, that synchronized loadout becomes authoritative. The
-old spellbooks remain compatible but are no longer the modern HUD presentation.
+Zul'kis. Right-click a learned active ability in that list, then click an
+action-bar slot (or press that slot's bound key) to assign it. The action bar
+also derives a stable default layout and appends newly learned active abilities
+to the first empty slot. Once full, it never displaces an existing assignment.
+The old spellbooks remain compatible but are no longer the modern HUD
+presentation.
+
+Right-click an action slot and click another slot to swap them. Shift-right-
+click a slot and press one of `1-0`, `-`, `=`, `QWER`, `ASDF`, or
+`ZXCV` to rebind it; if that key already belongs to another slot, the two
+bindings swap. Loadout changes are synchronized. Keybindings are local
+presentation preferences and currently last for the running session only.
+
+When imported after `DInventory` and `DEquipment`, the bottom HUD also shows
+Bag, Gear, and Look controls. Look opens the existing read-only inspect
+inventory/equipment view for the selected eligible unit. Stealth and the
+currently equipped Shield Block rank have dedicated contextual slots above the
+bar, so neither ability consumes one of the twelve general slots.
 
 ## Forgotten Hollow inspiration and reuse
 
@@ -124,7 +138,10 @@ derived default layout once per hero. Static slot data (rawcode, level, icon,
 tooltip, mana cost, and readiness classification) is rebuilt only after hero
 selection, an explicit refresh/loadout change, or a hero-skill event.
 
-The shared tick now performs only cached visibility checks while idle. Mana
+The shared tick now performs only cached visibility checks while idle. A
+two-second learned-ability check appends new abilities only while gameplay is
+running; it does not rebuild slot presentation unless the loadout revision
+changes. Mana
 shading traverses the slots only when the hero's integer mana changes.
 Cooldown natives are queried for every slot once during a static rebuild, then
 only for slots marked active by a spell-effect event until their cooldown ends.
@@ -161,10 +178,15 @@ Six focused libraries establish that boundary:
 - `ModernAbilityController.j` turns local slot clicks and world coordinates
   into validated synchronized orders. Immediate/self and melee-auto abilities
   cast without a second click; unit and ground abilities enter targeting mode.
+  It reads a learned Channel ability's live `Ncl6` base order before falling
+  back to the catalog order, so Object Editor order changes do not silently
+  break melee or point-target dispatch.
 - `ModernAbilityActionBar.j` renders the PotS-owned slots and hides the native
   bottom HUD after `FullscreenUI` releases the intro presentation.
-- `ModernMinimapHUD.j` preserves the engine minimap's interaction while
-  presenting it independently of the hidden console and native hero bar.
+- `ModernMinimapHUD.j` preserves the engine minimap and its five native
+  control buttons while presenting them independently of the hidden console
+  and native hero bar. If `DynamicMinimap` is present, its enlarged layout
+  owns the map until it closes; the compact PotS placement is then restored.
 
 The targeting policies are:
 
@@ -228,8 +250,11 @@ Finally import `UI/_Modern/ModernAbilityActionBar.j` after
 `ModernPlayerHUD`, `ModernAbilityController`, and the dependencies above.
 Then import `UI/_Modern/ModernTotemTracker.j` after `Totems`,
 `ShamanCommon`, `FullscreenUI`, and `ModernPlayerHUD`.
-Import `UI/_Modern/ModernMinimapHUD.j` after `FullscreenUI` and
-`ModernPlayerHUD`; it can otherwise sit beside the other Modern HUD modules.
+Import `UI/_Modern/ModernMinimapHUD.j` after `FullscreenUI`,
+`ModernPlayerHUD`, and the production `DynamicMinimap` library when used.
+Import `ModernPlayerHUD.j` after `DInventory` and `DEquipment` to enable
+the Bag, Gear, and Look adapters; both integrations are optional at compile
+time.
 
 Import these files with the exact custom paths shown:
 
@@ -268,8 +293,11 @@ Then compile through the current World Editor/JassHelper workflow. Test:
   confirming that learned icons, cooldowns, tooltips, and Abilities render;
 - mouse clicks on action slots, Abilities, StatsLiteUI, Quest UI, MasterUI,
   world terrain, and units after the full-screen logical parents were removed;
-- `1` through `0`, minus, and equals activation for slots 1 through 12,
-  including targeted abilities and the Summon Elemental flyout;
+- default `1` through `0`, minus, and equals activation, Shift-right-click
+  rebinding, duplicate-key swapping, and session-local binding behavior;
+- right-click ability-book assignment to an empty and occupied slot,
+  right-click slot swapping, automatic first-empty-slot insertion after
+  learning, and no displacement when all twelve slots are full;
 - the upper-left native minimap inside its custom shell, minimap interaction,
   Nazgrek/Zul'kis selector buttons, and intro/fullscreen transitions;
 - native bottom bar, command card, hero bar, and portrait hiding while the
@@ -280,6 +308,10 @@ Then compile through the current World Editor/JassHelper workflow. Test:
   replacement of the active elemental, and two-client synchronization;
 - Windfury Totem point placement through its corrected `undeadbuild` Channel
   order;
+- Stormstrike and Whirlwind immediate casting plus every Channel-backed
+  point-target ability after changing its Object Editor base order;
+- Bag, Gear, and Look against the selected hero and an inspectable selected
+  unit; Stealth visibility and all three equipment-granted Shield Block ranks;
 - Earth, Fire, Water, and Air tracker badges in their inactive state, then
   enlarged active state with a decreasing whole-second label and lifetime bar
   for base and specialized totems in each element slot;
@@ -303,9 +335,14 @@ matrix. Do not import the entire Forgotten Hollow UI package without first
 removing unused definitions and resolving global frame-name collisions.
 
 The current stage hides the shared native bottom HUD without moving its command
-card or portrait. The minimap and hero selectors now have PotS-owned shells,
-and the fixed `1` through `=` labels have matching keyboard input. Native
-inventory access remains unavailable and still needs a PotS-owned replacement.
+card or portrait. The minimap, native minimap controls, and hero selectors have
+a PotS-owned shell. DInventory, DEquipment, inspect, contextual Stealth/Block,
+assignment, swapping, and session keybinding are available through custom
+buttons. The six engine-owned item buttons and animated native portrait are
+still intentionally not reparented: both belong to the same origin-frame class
+as the relocation path that previously crashed the client. Add them in
+separate, rollback-safe runtime probes rather than coupling them to this
+working functional milestone.
 
 `ModernAbilityCompileTest.j` is a compile-only harness for the complete modern
 HUD stack. Never import it into the production map.

@@ -2,7 +2,7 @@
     ModernAbilityActionBar
 
     Author: Valdemar
-    Version: 0.7.0
+    Version: 0.8.0
 
     Description:
     Renders the cached PotS-owned twelve-slot action bar with learned ability
@@ -53,6 +53,12 @@ globals
     private constant integer MAB_ELEMENTAL_WATER = 'A61L'
     private constant integer MAB_ELEMENTAL_FIRE = 'A61M'
     private constant integer MAB_ELEMENTAL_EARTH = 'A61N'
+    private constant integer MAB_CONTEXT_COUNT = 2
+    private constant integer MAB_STEALTH = 'A6CR'
+    private constant integer MAB_STEALTH_ALT = 'A6CU'
+    private constant integer MAB_BLOCK_50 = 'A6AD'
+    private constant integer MAB_BLOCK_75 = 'A6AE'
+    private constant integer MAB_BLOCK_100 = 'A6AF'
 
     private constant string MAB_SURFACE_TEXTURE = "UI\\Widgets\\EscMenu\\Human\\blank-background.blp"
     private constant string MAB_EMPTY_ICON = "ReplaceableTextures\\CommandButtons\\BTNCancel.blp"
@@ -66,6 +72,10 @@ globals
     private boolean MAB_TargetingVisible = false
     private boolean MAB_StaticDirty = true
     private boolean MAB_WasFullscreen = false
+    private integer MAB_CachedLoadoutRevision = -1
+    private integer MAB_LearnScanTick = 0
+    private integer MAB_MoveSourceSlot = 0
+    private integer MAB_RebindSlot = 0
 
     private framehandle MAB_ScreenParent = null
     private framehandle MAB_Parent = null
@@ -88,6 +98,9 @@ globals
     private framehandle array MAB_ElementalIcon
     private framehandle array MAB_ElementalLabel
     private framehandle array MAB_ElementalDisabled
+    private framehandle array MAB_ContextButton
+    private framehandle array MAB_ContextIcon
+    private framehandle array MAB_ContextLabel
 
     private framehandle array MAB_NativeFrame
     private boolean array MAB_NativeWasVisible
@@ -95,6 +108,7 @@ globals
 
     private trigger MAB_SlotTrigger = null
     private trigger MAB_ElementalTrigger = null
+    private trigger MAB_ContextTrigger = null
     private trigger MAB_ClearFocusTrigger = null
     private trigger MAB_HoverTrigger = null
     private trigger MAB_KeyTrigger = null
@@ -119,6 +133,9 @@ globals
     private string array MAB_CachedBody
     private string array MAB_CachedIcon
     private boolean array MAB_ElementalReady
+    private integer array MAB_ContextAbilityId
+    private oskeytype array MAB_SlotKey
+    private string array MAB_SlotKeyLabel
 endglobals
 
 private function MAB_IsValidUnit takes unit whichUnit returns boolean
@@ -140,6 +157,59 @@ private function MAB_GetSlotLabel takes integer slot returns string
     return "="
 endfunction
 
+private function MAB_GetKeyLabel takes oskeytype whichKey returns string
+    if whichKey == OSKEY_1 then
+        return "1"
+    elseif whichKey == OSKEY_2 then
+        return "2"
+    elseif whichKey == OSKEY_3 then
+        return "3"
+    elseif whichKey == OSKEY_4 then
+        return "4"
+    elseif whichKey == OSKEY_5 then
+        return "5"
+    elseif whichKey == OSKEY_6 then
+        return "6"
+    elseif whichKey == OSKEY_7 then
+        return "7"
+    elseif whichKey == OSKEY_8 then
+        return "8"
+    elseif whichKey == OSKEY_9 then
+        return "9"
+    elseif whichKey == OSKEY_0 then
+        return "0"
+    elseif whichKey == OSKEY_OEM_MINUS then
+        return "-"
+    elseif whichKey == OSKEY_OEM_PLUS then
+        return "="
+    elseif whichKey == OSKEY_Q then
+        return "Q"
+    elseif whichKey == OSKEY_W then
+        return "W"
+    elseif whichKey == OSKEY_E then
+        return "E"
+    elseif whichKey == OSKEY_R then
+        return "R"
+    elseif whichKey == OSKEY_A then
+        return "A"
+    elseif whichKey == OSKEY_S then
+        return "S"
+    elseif whichKey == OSKEY_D then
+        return "D"
+    elseif whichKey == OSKEY_F then
+        return "F"
+    elseif whichKey == OSKEY_Z then
+        return "Z"
+    elseif whichKey == OSKEY_X then
+        return "X"
+    elseif whichKey == OSKEY_C then
+        return "C"
+    elseif whichKey == OSKEY_V then
+        return "V"
+    endif
+    return "?"
+endfunction
+
 private function MAB_GetElementalAbilityId takes integer index returns integer
     if index == 0 then
         return MAB_ELEMENTAL_AIR
@@ -153,6 +223,48 @@ endfunction
 
 private function MAB_IsElementalChoice takes integer abilityId returns boolean
     return abilityId == MAB_ELEMENTAL_AIR or abilityId == MAB_ELEMENTAL_WATER or abilityId == MAB_ELEMENTAL_FIRE or abilityId == MAB_ELEMENTAL_EARTH
+endfunction
+
+private function MAB_GetContextAbilityId takes unit whichHero, integer index returns integer
+    if index == 0 then
+        if GetUnitAbilityLevel(whichHero, MAB_STEALTH) > 0 then
+            return MAB_STEALTH
+        elseif GetUnitAbilityLevel(whichHero, MAB_STEALTH_ALT) > 0 then
+            return MAB_STEALTH_ALT
+        endif
+    elseif GetUnitAbilityLevel(whichHero, MAB_BLOCK_100) > 0 then
+        return MAB_BLOCK_100
+    elseif GetUnitAbilityLevel(whichHero, MAB_BLOCK_75) > 0 then
+        return MAB_BLOCK_75
+    elseif GetUnitAbilityLevel(whichHero, MAB_BLOCK_50) > 0 then
+        return MAB_BLOCK_50
+    endif
+    return 0
+endfunction
+
+private function MAB_UpdateContextSlots takes unit whichHero returns nothing
+    local integer index = 0
+    local integer abilityId
+    local string iconPath
+
+    loop
+        exitwhen index >= MAB_CONTEXT_COUNT
+        set abilityId = MAB_GetContextAbilityId(whichHero, index)
+        if abilityId != MAB_ContextAbilityId[index] then
+            set MAB_ContextAbilityId[index] = abilityId
+            if abilityId != 0 then
+                set iconPath = BlzGetAbilityIcon(abilityId)
+                if iconPath == null or iconPath == "" then
+                    set iconPath = MAB_EMPTY_ICON
+                endif
+                call BlzFrameSetTexture(MAB_ContextIcon[index], iconPath, 0, true)
+            endif
+            call BlzFrameSetVisible(MAB_ContextButton[index], abilityId != 0)
+        endif
+        set index = index + 1
+    endloop
+
+    set whichHero = null
 endfunction
 
 private function MAB_GetElementalLabel takes integer index returns string
@@ -270,6 +382,10 @@ private function MAB_ResetSlotCache takes nothing returns nothing
     set MAB_StaticDirty = true
     set MAB_CachedTargetingAbility = -1
     set MAB_CachedMana = -1
+    set MAB_CachedLoadoutRevision = -1
+    set MAB_LearnScanTick = 0
+    set MAB_MoveSourceSlot = 0
+    set MAB_RebindSlot = 0
     loop
         exitwhen index >= ModernAbilityLoadout_SLOT_COUNT
         set MAB_CachedAbilityId[index] = -1
@@ -428,7 +544,8 @@ private function MAB_UpdateSlotStatic takes integer index, unit whichHero return
         call BlzFrameSetTexture(MAB_SlotIcon[index], MAB_EMPTY_ICON, 0, true)
         call BlzFrameSetVisible(MAB_SlotIcon[index], false)
         call BlzFrameSetVisible(MAB_SlotDisabled[index], false)
-        call BlzFrameSetEnable(MAB_SlotButton[index], false)
+        // Empty slots stay interactive so a player can move an ability into one.
+        call BlzFrameSetEnable(MAB_SlotButton[index], true)
         set whichHero = null
         return
     endif
@@ -495,7 +612,21 @@ private function MAB_UpdateTargetingText takes nothing returns nothing
     local integer abilityId
     local integer entryIndex
 
-    if ModernAbilityController_IsTargetingLocal(localPlayer) then
+    set abilityId = AbilitiesLiteUI_GetModernPendingAbilityId()
+    if abilityId > 0 then
+        set entryIndex = AbilitiesPlayer_GetEntryByAbilityId(abilityId)
+        call BlzFrameSetText(MAB_TargetingText, "|cffffcc00Assign " + AbilitiesPlayer_GetEntryTitle(entryIndex) + ":|r click an action-bar slot.  |cffaaaaaa(Right-click another ability to change selection)|r")
+        set MAB_TargetingVisible = true
+        call BlzFrameSetVisible(MAB_TargetingText, true)
+    elseif MAB_RebindSlot > 0 then
+        call BlzFrameSetText(MAB_TargetingText, "|cffffcc00Rebind slot " + I2S(MAB_RebindSlot) + ":|r press 1-0, -, =, QWER, ASDF, or ZXCV.  |cffaaaaaa(Right-click a slot to cancel)|r")
+        set MAB_TargetingVisible = true
+        call BlzFrameSetVisible(MAB_TargetingText, true)
+    elseif MAB_MoveSourceSlot > 0 then
+        call BlzFrameSetText(MAB_TargetingText, "|cffffcc00Move slot " + I2S(MAB_MoveSourceSlot) + ":|r click another slot to swap.  |cffaaaaaa(Right-click the source again to cancel)|r")
+        set MAB_TargetingVisible = true
+        call BlzFrameSetVisible(MAB_TargetingText, true)
+    elseif ModernAbilityController_IsTargetingLocal(localPlayer) then
         set abilityId = ModernAbilityController_GetPendingAbilityId(localPlayer)
         if abilityId != MAB_CachedTargetingAbility then
             set MAB_CachedTargetingAbility = abilityId
@@ -521,6 +652,7 @@ private function MAB_Update takes nothing returns nothing
     local string heroIcon
     local integer mana
     local boolean rebuild
+    local integer revision
 
     if not MAB_Enabled or not ModernPlayerHUD_IsEnabled() or FullscreenUI_IsEnabled() then
         if FullscreenUI_IsEnabled() then
@@ -557,6 +689,17 @@ private function MAB_Update takes nothing returns nothing
         call BlzFrameSetTexture(MAB_HeroIcon, heroIcon, 0, true)
     endif
 
+    set MAB_LearnScanTick = MAB_LearnScanTick + 1
+    if MAB_LearnScanTick >= 8 then
+        set MAB_LearnScanTick = 0
+        call ModernAbilityLoadout_AppendNewLearned(whichHero)
+    endif
+    set revision = ModernAbilityLoadout_GetRevision(whichHero)
+    if revision != MAB_CachedLoadoutRevision then
+        set MAB_CachedLoadoutRevision = revision
+        set MAB_StaticDirty = true
+    endif
+
     call MAB_SetParentVisible(true)
     set rebuild = MAB_StaticDirty
     if rebuild then
@@ -579,6 +722,7 @@ private function MAB_Update takes nothing returns nothing
         endloop
     endif
     call MAB_UpdateCooldowns(whichHero, rebuild)
+    call MAB_UpdateContextSlots(whichHero)
     if MAB_ElementalOpen then
         call MAB_UpdateElementalFlyout()
     endif
@@ -625,12 +769,44 @@ private function MAB_SlotAction takes nothing returns nothing
     local framehandle triggerFrame = BlzGetTriggerFrame()
     local player triggerPlayer = GetTriggerPlayer()
     local integer index = 0
+    local integer slot
+    local boolean rightClick
 
     if triggerPlayer == GetLocalPlayer() and MAB_IsPlayerHero(MAB_SelectedUnit) then
         loop
             exitwhen index >= ModernAbilityLoadout_SLOT_COUNT
             if triggerFrame == MAB_SlotButton[index] then
-                call MAB_ActivateSlotLocal(triggerPlayer, index)
+                set slot = index + 1
+                set rightClick = BlzIsMouseButtonPressed(MOUSE_BUTTON_TYPE_RIGHT)
+                if rightClick then
+                    call ModernAbilityController_CancelLocal(triggerPlayer)
+                    call MAB_CloseElementalFlyout()
+                    if BlzIsMetaKeyPressed(1) then
+                        set MAB_MoveSourceSlot = 0
+                        if MAB_RebindSlot == slot then
+                            set MAB_RebindSlot = 0
+                        else
+                            set MAB_RebindSlot = slot
+                        endif
+                    elseif MAB_MoveSourceSlot == slot then
+                        set MAB_MoveSourceSlot = 0
+                        set MAB_RebindSlot = 0
+                    else
+                        set MAB_MoveSourceSlot = slot
+                        set MAB_RebindSlot = 0
+                    endif
+                elseif AbilitiesLiteUI_GetModernPendingAbilityId() > 0 then
+                    call ModernAbilityController_AssignSlotLocal(triggerPlayer, MAB_SelectedUnit, slot, AbilitiesLiteUI_GetModernPendingAbilityId())
+                    call AbilitiesLiteUI_ClearModernPendingAbility()
+                    set MAB_MoveSourceSlot = 0
+                    set MAB_RebindSlot = 0
+                elseif MAB_MoveSourceSlot > 0 then
+                    call ModernAbilityController_SwapSlotsLocal(triggerPlayer, MAB_SelectedUnit, MAB_MoveSourceSlot, slot)
+                    set MAB_MoveSourceSlot = 0
+                    set MAB_RebindSlot = 0
+                elseif MAB_CachedAbilityId[index] > 0 then
+                    call MAB_ActivateSlotLocal(triggerPlayer, index)
+                endif
                 set index = ModernAbilityLoadout_SLOT_COUNT
             else
                 set index = index + 1
@@ -643,31 +819,15 @@ private function MAB_SlotAction takes nothing returns nothing
 endfunction
 
 private function MAB_GetKeySlot takes oskeytype whichKey returns integer
-    if whichKey == OSKEY_1 then
-        return 0
-    elseif whichKey == OSKEY_2 then
-        return 1
-    elseif whichKey == OSKEY_3 then
-        return 2
-    elseif whichKey == OSKEY_4 then
-        return 3
-    elseif whichKey == OSKEY_5 then
-        return 4
-    elseif whichKey == OSKEY_6 then
-        return 5
-    elseif whichKey == OSKEY_7 then
-        return 6
-    elseif whichKey == OSKEY_8 then
-        return 7
-    elseif whichKey == OSKEY_9 then
-        return 8
-    elseif whichKey == OSKEY_0 then
-        return 9
-    elseif whichKey == OSKEY_OEM_MINUS then
-        return 10
-    elseif whichKey == OSKEY_OEM_PLUS then
-        return 11
-    endif
+    local integer index = 0
+
+    loop
+        exitwhen index >= ModernAbilityLoadout_SLOT_COUNT
+        if MAB_SlotKey[index] == whichKey then
+            return index
+        endif
+        set index = index + 1
+    endloop
     return -1
 endfunction
 
@@ -675,6 +835,37 @@ private function MAB_KeyAction takes nothing returns nothing
     local player triggerPlayer = GetTriggerPlayer()
     local oskeytype triggerKey = BlzGetTriggerPlayerKey()
     local integer slot = MAB_GetKeySlot(triggerKey)
+    local integer previousSlot
+    local oskeytype previousKey
+    local string previousLabel
+
+    if triggerPlayer == GetLocalPlayer() and MAB_RebindSlot > 0 then
+        set previousSlot = slot
+        set slot = MAB_RebindSlot - 1
+        set previousKey = MAB_SlotKey[slot]
+        set previousLabel = MAB_SlotKeyLabel[slot]
+        set MAB_SlotKey[slot] = triggerKey
+        set MAB_SlotKeyLabel[slot] = MAB_GetKeyLabel(triggerKey)
+        call BlzFrameSetText(MAB_SlotKeyText[slot], MAB_SlotKeyLabel[slot])
+        if previousSlot >= 0 and previousSlot != slot then
+            set MAB_SlotKey[previousSlot] = previousKey
+            set MAB_SlotKeyLabel[previousSlot] = previousLabel
+            call BlzFrameSetText(MAB_SlotKeyText[previousSlot], previousLabel)
+        endif
+        set MAB_RebindSlot = 0
+        set previousKey = null
+        set triggerKey = null
+        set triggerPlayer = null
+        return
+    endif
+
+    if triggerPlayer == GetLocalPlayer() and AbilitiesLiteUI_GetModernPendingAbilityId() > 0 and slot >= 0 then
+        call ModernAbilityController_AssignSlotLocal(triggerPlayer, MAB_SelectedUnit, slot + 1, AbilitiesLiteUI_GetModernPendingAbilityId())
+        call AbilitiesLiteUI_ClearModernPendingAbility()
+        set triggerKey = null
+        set triggerPlayer = null
+        return
+    endif
 
     if triggerPlayer == GetLocalPlayer() and MAB_Enabled and MAB_ParentVisible and not FullscreenUI_IsEnabled() and slot >= 0 then
         call MAB_ActivateSlotLocal(triggerPlayer, slot)
@@ -704,6 +895,29 @@ private function MAB_ElementalAction takes nothing returns nothing
 
     set triggerFrame = null
     set triggerPlayer = null
+endfunction
+
+private function MAB_ContextAction takes nothing returns nothing
+    local framehandle triggerFrame = BlzGetTriggerFrame()
+    local player triggerPlayer = GetTriggerPlayer()
+    local integer index = 0
+
+    if triggerPlayer == GetLocalPlayer() and MAB_IsPlayerHero(MAB_SelectedUnit) then
+        loop
+            exitwhen index >= MAB_CONTEXT_COUNT
+            if triggerFrame == MAB_ContextButton[index] then
+                call MAB_CloseElementalFlyout()
+                call ModernAbilityController_CancelLocal(triggerPlayer)
+                call ModernAbilityController_BeginContextLocal(triggerPlayer, MAB_SelectedUnit, MAB_ContextAbilityId[index])
+                set index = MAB_CONTEXT_COUNT
+            else
+                set index = index + 1
+            endif
+        endloop
+    endif
+
+    set triggerPlayer = null
+    set triggerFrame = null
 endfunction
 
 private function MAB_HoverAction takes nothing returns nothing
@@ -797,13 +1011,13 @@ private function MAB_CreateSlot takes integer index returns nothing
     call BlzFrameSetSize(MAB_SlotKeyText[index], 0.012, 0.010)
     call BlzFrameSetTextAlignment(MAB_SlotKeyText[index], TEXT_JUSTIFY_TOP, TEXT_JUSTIFY_LEFT)
     call BlzFrameSetScale(MAB_SlotKeyText[index], 0.60)
-    call BlzFrameSetText(MAB_SlotKeyText[index], MAB_GetSlotLabel(index + 1))
+        call BlzFrameSetText(MAB_SlotKeyText[index], MAB_SlotKeyLabel[index])
     call BlzFrameSetEnable(MAB_SlotKeyText[index], false)
     call BlzFrameSetLevel(MAB_SlotKeyText[index], 9)
 
     call BlzFrameSetTooltip(MAB_SlotButton[index], MAB_Tooltip)
 
-    call BlzTriggerRegisterFrameEvent(MAB_SlotTrigger, MAB_SlotButton[index], FRAMEEVENT_CONTROL_CLICK)
+    call BlzTriggerRegisterFrameEvent(MAB_SlotTrigger, MAB_SlotButton[index], FRAMEEVENT_MOUSE_DOWN)
     call BlzTriggerRegisterFrameEvent(MAB_ClearFocusTrigger, MAB_SlotButton[index], FRAMEEVENT_CONTROL_CLICK)
     call BlzTriggerRegisterFrameEvent(MAB_HoverTrigger, MAB_SlotButton[index], FRAMEEVENT_MOUSE_ENTER)
 endfunction
@@ -876,6 +1090,32 @@ private function MAB_CreateElementalFlyout takes nothing returns nothing
     call BlzFrameSetVisible(MAB_ElementalBackdrop, false)
 endfunction
 
+private function MAB_CreateContextSlot takes integer index, real x, string label returns nothing
+    set MAB_ContextButton[index] = BlzCreateFrameByType("BUTTON", "ModernAbilityContextButton" + I2S(index), MAB_Parent, "", 0)
+    call BlzFrameSetAbsPoint(MAB_ContextButton[index], FRAMEPOINT_BOTTOMLEFT, x, 0.075)
+    call BlzFrameSetSize(MAB_ContextButton[index], 0.028, 0.028)
+    call BlzFrameSetLevel(MAB_ContextButton[index], 14)
+
+    set MAB_ContextIcon[index] = BlzCreateFrameByType("BACKDROP", "ModernAbilityContextIcon" + I2S(index), MAB_ContextButton[index], "IconButtonTemplate", 0)
+    call BlzFrameSetPoint(MAB_ContextIcon[index], FRAMEPOINT_BOTTOMLEFT, MAB_ContextButton[index], FRAMEPOINT_BOTTOMLEFT, 0.002, 0.002)
+    call BlzFrameSetPoint(MAB_ContextIcon[index], FRAMEPOINT_TOPRIGHT, MAB_ContextButton[index], FRAMEPOINT_TOPRIGHT, -0.002, -0.002)
+    call BlzFrameSetEnable(MAB_ContextIcon[index], false)
+    call BlzFrameSetLevel(MAB_ContextIcon[index], 15)
+
+    set MAB_ContextLabel[index] = BlzCreateFrameByType("TEXT", "ModernAbilityContextLabel" + I2S(index), MAB_ContextButton[index], "", 0)
+    call BlzFrameSetPoint(MAB_ContextLabel[index], FRAMEPOINT_BOTTOMRIGHT, MAB_ContextButton[index], FRAMEPOINT_BOTTOMRIGHT, -0.002, 0.001)
+    call BlzFrameSetSize(MAB_ContextLabel[index], 0.016, 0.009)
+    call BlzFrameSetTextAlignment(MAB_ContextLabel[index], TEXT_JUSTIFY_BOTTOM, TEXT_JUSTIFY_RIGHT)
+    call BlzFrameSetScale(MAB_ContextLabel[index], 0.48)
+    call BlzFrameSetText(MAB_ContextLabel[index], label)
+    call BlzFrameSetEnable(MAB_ContextLabel[index], false)
+    call BlzFrameSetLevel(MAB_ContextLabel[index], 16)
+
+    call BlzTriggerRegisterFrameEvent(MAB_ContextTrigger, MAB_ContextButton[index], FRAMEEVENT_CONTROL_CLICK)
+    call BlzTriggerRegisterFrameEvent(MAB_ClearFocusTrigger, MAB_ContextButton[index], FRAMEEVENT_CONTROL_CLICK)
+    call BlzFrameSetVisible(MAB_ContextButton[index], false)
+endfunction
+
 private function MAB_CreateFrames takes nothing returns nothing
     local integer index = 0
 
@@ -911,9 +1151,11 @@ private function MAB_CreateFrames takes nothing returns nothing
         set index = index + 1
     endloop
     call MAB_CreateElementalFlyout()
+    call MAB_CreateContextSlot(0, 0.128, "Stealth")
+    call MAB_CreateContextSlot(1, 0.158, "Block")
 
     set MAB_TargetingText = BlzCreateFrameByType("TEXT", "ModernAbilityTargetingText", MAB_Parent, "", 0)
-    call BlzFrameSetAbsPoint(MAB_TargetingText, FRAMEPOINT_BOTTOM, 0.400, 0.118)
+    call BlzFrameSetAbsPoint(MAB_TargetingText, FRAMEPOINT_BOTTOM, 0.400, 0.151)
     call BlzFrameSetSize(MAB_TargetingText, 0.420, 0.016)
     call BlzFrameSetTextAlignment(MAB_TargetingText, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_CENTER)
     call BlzFrameSetScale(MAB_TargetingText, 0.78)
@@ -1033,6 +1275,8 @@ private function Init takes nothing returns nothing
     call TriggerAddAction(MAB_SlotTrigger, function MAB_SlotAction)
     set MAB_ElementalTrigger = CreateTrigger()
     call TriggerAddAction(MAB_ElementalTrigger, function MAB_ElementalAction)
+    set MAB_ContextTrigger = CreateTrigger()
+    call TriggerAddAction(MAB_ContextTrigger, function MAB_ContextAction)
     set MAB_ClearFocusTrigger = CreateTrigger()
     call TriggerAddAction(MAB_ClearFocusTrigger, function MAB_ClearFocusAction)
     set MAB_HoverTrigger = CreateTrigger()
@@ -1052,10 +1296,24 @@ private function Init takes nothing returns nothing
     set MAB_KeyTrigger = CreateTrigger()
     loop
         exitwhen keyIndex >= ModernAbilityLoadout_SLOT_COUNT
+        set MAB_SlotKey[keyIndex] = actionKey[keyIndex]
+        set MAB_SlotKeyLabel[keyIndex] = MAB_GetSlotLabel(keyIndex + 1)
         call BlzTriggerRegisterPlayerKeyEvent(MAB_KeyTrigger, Player(0), actionKey[keyIndex], 0, true)
         set actionKey[keyIndex] = null
         set keyIndex = keyIndex + 1
     endloop
+    call BlzTriggerRegisterPlayerKeyEvent(MAB_KeyTrigger, Player(0), OSKEY_Q, 0, true)
+    call BlzTriggerRegisterPlayerKeyEvent(MAB_KeyTrigger, Player(0), OSKEY_W, 0, true)
+    call BlzTriggerRegisterPlayerKeyEvent(MAB_KeyTrigger, Player(0), OSKEY_E, 0, true)
+    call BlzTriggerRegisterPlayerKeyEvent(MAB_KeyTrigger, Player(0), OSKEY_R, 0, true)
+    call BlzTriggerRegisterPlayerKeyEvent(MAB_KeyTrigger, Player(0), OSKEY_A, 0, true)
+    call BlzTriggerRegisterPlayerKeyEvent(MAB_KeyTrigger, Player(0), OSKEY_S, 0, true)
+    call BlzTriggerRegisterPlayerKeyEvent(MAB_KeyTrigger, Player(0), OSKEY_D, 0, true)
+    call BlzTriggerRegisterPlayerKeyEvent(MAB_KeyTrigger, Player(0), OSKEY_F, 0, true)
+    call BlzTriggerRegisterPlayerKeyEvent(MAB_KeyTrigger, Player(0), OSKEY_Z, 0, true)
+    call BlzTriggerRegisterPlayerKeyEvent(MAB_KeyTrigger, Player(0), OSKEY_X, 0, true)
+    call BlzTriggerRegisterPlayerKeyEvent(MAB_KeyTrigger, Player(0), OSKEY_C, 0, true)
+    call BlzTriggerRegisterPlayerKeyEvent(MAB_KeyTrigger, Player(0), OSKEY_V, 0, true)
     call TriggerAddAction(MAB_KeyTrigger, function MAB_KeyAction)
     set MAB_InitTrigger = CreateTrigger()
     call TriggerRegisterTimerEvent(MAB_InitTrigger, 0.25, false)

@@ -102,6 +102,47 @@ library FullscreenUI
     endfunction
 endlibrary
 
+library DynamicMinimap
+    function DynamicMinimap_GetMinimapEnlarged takes nothing returns boolean
+        return false
+    endfunction
+endlibrary
+
+library DInventory
+    function DInvToggleUnitForPlayer takes player viewer, unit whichUnit, boolean inspectMode returns boolean
+        set viewer = null
+        set whichUnit = null
+        return true
+    endfunction
+    function DInvShowUnitForPlayer takes player viewer, unit whichUnit, boolean inspectMode returns boolean
+        set viewer = null
+        set whichUnit = null
+        return true
+    endfunction
+    function DInvIsPlayerInspecting takes integer playerId returns boolean
+        return false
+    endfunction
+endlibrary
+
+library DEquipment
+    function ToggleDEqUIForUnit takes integer playerId, unit whichUnit returns boolean
+        set whichUnit = null
+        return true
+    endfunction
+    function DInspectResolveSelectedTarget takes player viewer returns unit
+        set viewer = null
+        return null
+    endfunction
+    function DEqShowUnitForPlayer takes player viewer, unit whichUnit, boolean inspectMode returns boolean
+        set viewer = null
+        set whichUnit = null
+        return true
+    endfunction
+    function DInventoryEquipment_HideForPlayer takes player viewer returns nothing
+        set viewer = null
+    endfunction
+endlibrary
+
 library MasterUI
     public function ClosePanels takes nothing returns nothing
     endfunction
@@ -110,6 +151,11 @@ endlibrary
 library AbilitiesLiteUI
     public function ShowForUnit takes unit whichUnit returns nothing
         set whichUnit = null
+    endfunction
+    public function GetModernPendingAbilityId takes nothing returns integer
+        return 0
+    endfunction
+    public function ClearModernPendingAbility takes nothing returns nothing
     endfunction
 endlibrary
 
