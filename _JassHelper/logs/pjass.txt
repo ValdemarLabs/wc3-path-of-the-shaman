@@ -1,0 +1,4 @@
+Parse successful:     4494 lines: H:\Pelit\PotS_JASS\_Blizzard\common.j
+Parse successful:    11432 lines: H:\Pelit\PotS_JASS\_Blizzard\blizzard.j
+Parse successful:     4156 lines: logs\currentmapscript.j
+Parse successful:    20082 lines: <total>
