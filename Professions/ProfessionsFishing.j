@@ -63,6 +63,7 @@ globals
     private constant real PF_MOVE_TIMEOUT = 10.00
     private constant real PF_CAST_DURATION = 10.00
     private constant real PF_TICK_INTERVAL = 0.05
+    private constant real PF_UI_REFRESH_INTERVAL = 0.10
     private constant real PF_REEL_WINDOW_DURATION = 1.15
     private constant real PF_REEL_WINDOW_MIN_START = 2.00
     private constant real PF_DEFAULT_BAIT_DURATION = 600.00
@@ -172,6 +173,19 @@ globals
     private real array PF_LineWobblePhase
     private real array PF_BobberStandDelay
     private boolean array PF_BiteSoundPlayed
+    private real array PF_UIRefreshElapsed
+    private real array PF_UIWindowStartCache
+    private real array PF_UIWindowEndCache
+    private integer array PF_UIWindowVisibleState
+    private integer array PF_UIBarStepCache
+    private integer array PF_UIReelEnabledState
+    private integer array PF_UIBaitEnabledState
+    private string array PF_UITitleCache
+    private string array PF_UIPoolTextCache
+    private string array PF_UISkillTextCache
+    private string array PF_UIBaitTextCache
+    private string array PF_UIStatusTextCache
+    private string array PF_UIBarLabelCache
     private lightning array PF_FishingLine
     private effect array PF_LineHandMarker
     private effect array PF_BobberEffect
@@ -1332,6 +1346,13 @@ private function PF_UI_ClearFocusAction takes nothing returns nothing
 endfunction
 
 private function PF_UI_HideForPlayer takes player whichPlayer returns nothing
+    local integer pid
+
+    if whichPlayer == null then
+        return
+    endif
+    set pid = GetPlayerId(whichPlayer)
+    set PF_UIRefreshElapsed[pid] = 0.00
     if PF_UIParent != null and GetLocalPlayer() == whichPlayer then
         if BlzFrameIsVisible(PF_UIParent) then
             call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_CLOSE, whichPlayer)
@@ -1359,10 +1380,20 @@ private function PF_UI_UpdateWindow takes integer pid, boolean biteActive return
         set windowOffset = 0.230
     endif
 
-    call BlzFrameClearAllPoints(PF_UIWindow)
-    call BlzFrameSetPoint(PF_UIWindow, FRAMEPOINT_LEFT, PF_UIBarBackdrop, FRAMEPOINT_LEFT, windowOffset, 0.00)
-    call BlzFrameSetSize(PF_UIWindow, windowWidth, 0.018)
-    call BlzFrameSetVisible(PF_UIWindow, biteActive)
+    if PF_UIWindowStartCache[pid] != PF_WindowStart[pid] or PF_UIWindowEndCache[pid] != PF_WindowEnd[pid] then
+        set PF_UIWindowStartCache[pid] = PF_WindowStart[pid]
+        set PF_UIWindowEndCache[pid] = PF_WindowEnd[pid]
+        call BlzFrameClearAllPoints(PF_UIWindow)
+        call BlzFrameSetPoint(PF_UIWindow, FRAMEPOINT_LEFT, PF_UIBarBackdrop, FRAMEPOINT_LEFT, windowOffset, 0.00)
+        call BlzFrameSetSize(PF_UIWindow, windowWidth, 0.018)
+    endif
+    if biteActive and PF_UIWindowVisibleState[pid] != 1 then
+        set PF_UIWindowVisibleState[pid] = 1
+        call BlzFrameSetVisible(PF_UIWindow, true)
+    elseif not biteActive and PF_UIWindowVisibleState[pid] != 0 then
+        set PF_UIWindowVisibleState[pid] = 0
+        call BlzFrameSetVisible(PF_UIWindow, false)
+    endif
 endfunction
 
 private function PF_UI_UpdateForPlayer takes player whichPlayer returns nothing
@@ -1379,6 +1410,11 @@ private function PF_UI_UpdateForPlayer takes player whichPlayer returns nothing
     local boolean hasBait
     local string poolText
     local string baitText
+    local string skillText
+    local string statusText
+    local string barLabel
+    local integer barStep
+    local integer enabledState
 
     if whichPlayer == null then
         return
@@ -1402,29 +1438,70 @@ private function PF_UI_UpdateForPlayer takes player whichPlayer returns nothing
     set poolText = PF_GetPoolName(pool)
     set baitText = PF_GetBaitDisplayText(fisher)
     set hasBait = PF_BaitTypeCount > 0 and PF_FindBestAvailableBait(fisher) > 0
+    set barStep = R2I(remaining * 10.00 + 0.50)
+    set barLabel = R2SW(I2R(barStep) * 0.10, 1, 1) + "s"
+    if effectiveSkill > baseSkill then
+        set skillText = "Skill: " + I2S(effectiveSkill) + " (" + I2S(baseSkill) + " +" + I2S(effectiveSkill - baseSkill) + ") / " + I2S(requiredSkill) + " | Fail " + I2S(failChance) + "%"
+    else
+        set skillText = "Skill: " + I2S(baseSkill) + " / " + I2S(requiredSkill) + " | Fail " + I2S(failChance) + "%"
+    endif
+    if PF_JobMoving[pid] then
+        set statusText = MovingText
+    elseif biteActive then
+        set statusText = BiteText
+    elseif PF_JobStarted[pid] then
+        set statusText = WaitForBiteText
+    else
+        set statusText = FishingText
+    endif
 
     if GetLocalPlayer() == whichPlayer then
-        call BlzFrameSetText(PF_UITitle, TitleText)
-        call BlzFrameSetText(PF_UIPoolText, "Pool: " + poolText)
-        if effectiveSkill > baseSkill then
-            call BlzFrameSetText(PF_UISkillText, "Skill: " + I2S(effectiveSkill) + " (" + I2S(baseSkill) + " +" + I2S(effectiveSkill - baseSkill) + ") / " + I2S(requiredSkill) + " | Fail " + I2S(failChance) + "%")
-        else
-            call BlzFrameSetText(PF_UISkillText, "Skill: " + I2S(baseSkill) + " / " + I2S(requiredSkill) + " | Fail " + I2S(failChance) + "%")
+        if PF_UITitleCache[pid] != TitleText then
+            set PF_UITitleCache[pid] = TitleText
+            call BlzFrameSetText(PF_UITitle, TitleText)
         endif
-        call BlzFrameSetText(PF_UIBaitText, baitText)
-        if PF_JobMoving[pid] then
-            call BlzFrameSetText(PF_UIStatusText, MovingText)
-        elseif biteActive then
-            call BlzFrameSetText(PF_UIStatusText, BiteText)
-        elseif PF_JobStarted[pid] then
-            call BlzFrameSetText(PF_UIStatusText, WaitForBiteText)
-        else
-            call BlzFrameSetText(PF_UIStatusText, FishingText)
+        if PF_UIPoolTextCache[pid] != "Pool: " + poolText then
+            set PF_UIPoolTextCache[pid] = "Pool: " + poolText
+            call BlzFrameSetText(PF_UIPoolText, PF_UIPoolTextCache[pid])
         endif
-        call BlzFrameSetValue(PF_UIBar, remaining)
-        call BlzFrameSetText(PF_UIBarLabel, R2SW(remaining, 1, 1) + "s")
-        call BlzFrameSetEnable(PF_UIReelButton, biteActive)
-        call BlzFrameSetEnable(PF_UIBaitButton, hasBait)
+        if PF_UISkillTextCache[pid] != skillText then
+            set PF_UISkillTextCache[pid] = skillText
+            call BlzFrameSetText(PF_UISkillText, skillText)
+        endif
+        if PF_UIBaitTextCache[pid] != baitText then
+            set PF_UIBaitTextCache[pid] = baitText
+            call BlzFrameSetText(PF_UIBaitText, baitText)
+        endif
+        if PF_UIStatusTextCache[pid] != statusText then
+            set PF_UIStatusTextCache[pid] = statusText
+            call BlzFrameSetText(PF_UIStatusText, statusText)
+        endif
+        if PF_UIBarStepCache[pid] != barStep then
+            set PF_UIBarStepCache[pid] = barStep
+            call BlzFrameSetValue(PF_UIBar, I2R(barStep) * 0.10)
+        endif
+        if PF_UIBarLabelCache[pid] != barLabel then
+            set PF_UIBarLabelCache[pid] = barLabel
+            call BlzFrameSetText(PF_UIBarLabel, barLabel)
+        endif
+        if biteActive then
+            set enabledState = 1
+        else
+            set enabledState = 0
+        endif
+        if PF_UIReelEnabledState[pid] != enabledState then
+            set PF_UIReelEnabledState[pid] = enabledState
+            call BlzFrameSetEnable(PF_UIReelButton, biteActive)
+        endif
+        if hasBait then
+            set enabledState = 1
+        else
+            set enabledState = 0
+        endif
+        if PF_UIBaitEnabledState[pid] != enabledState then
+            set PF_UIBaitEnabledState[pid] = enabledState
+            call BlzFrameSetEnable(PF_UIBaitButton, hasBait)
+        endif
         call PF_UI_UpdateWindow(pid, biteActive)
     endif
 
@@ -1632,7 +1709,11 @@ private function PF_UpdateJob takes integer pid returns nothing
         if PF_Elapsed[pid] > PF_WindowEnd[pid] then
             call PF_StopJob(pid, FishWentAwayText, true, true)
         else
-            call PF_UI_UpdateForPlayer(Player(pid))
+            set PF_UIRefreshElapsed[pid] = PF_UIRefreshElapsed[pid] + PF_TICK_INTERVAL
+            if PF_UIRefreshElapsed[pid] >= PF_UI_REFRESH_INTERVAL then
+                set PF_UIRefreshElapsed[pid] = 0.00
+                call PF_UI_UpdateForPlayer(Player(pid))
+            endif
         endif
     endif
 
@@ -1662,6 +1743,13 @@ private function PF_ReserveJob takes integer pid, unit fisher, unit pool returns
     set PF_WindowEnd[pid] = 0.00
     set PF_AnimationElapsed[pid] = 0.00
     set PF_BiteSoundPlayed[pid] = false
+    set PF_UIRefreshElapsed[pid] = 0.00
+    set PF_UIWindowStartCache[pid] = -1.00
+    set PF_UIWindowEndCache[pid] = -1.00
+    set PF_UIWindowVisibleState[pid] = -1
+    set PF_UIBarStepCache[pid] = -1
+    set PF_UIReelEnabledState[pid] = -1
+    set PF_UIBaitEnabledState[pid] = -1
     set PF_UnitJob.integer[GetHandleId(fisher)] = pid + 1
     set PF_PoolJob.integer[GetHandleId(pool)] = pid + 1
     set PF_ActiveJobCount = PF_ActiveJobCount + 1

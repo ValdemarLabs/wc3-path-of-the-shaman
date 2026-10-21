@@ -84,12 +84,20 @@ globals
     private integer array SUI_RowStatusDead
     private integer array SUI_RowReviveRemaining
     private integer array SUI_RowXPLevel
+    private integer array SUI_DetailStatVisibleState
     private real array SUI_DetailStatCache
     private unit SUI_SelectedUnit = null
     private unit array SUI_RowUnit
     private integer array SUI_RowKind
     private integer array SUI_ListScrollValue
-    private integer SUI_DetailHeaderUnitHandle = 0
+    private integer SUI_ListScrollMaxCache = -1
+    private integer SUI_ListScrollFrameValueCache = -1
+    private integer SUI_ListScrollVisibleState = -1
+    private string SUI_PartyTextCache = ""
+    private string SUI_DetailValueCache = ""
+    private integer SUI_DetailButtonStateCache = -1
+    private integer SUI_ProfessionsAnchorStateCache = -1
+    private integer SUI_DetailHeaderUnitHandle = -1
     private integer SUI_DetailHeaderLevel = -1
     private integer SUI_DetailHeaderRested = -1
     private integer SUI_DetailStatsUnitHandle = 0
@@ -1117,8 +1125,16 @@ private function SUI_GetUnitAbilitiesText takes unit u returns string
 endfunction
 
 private function SUI_SetStatRowVisible takes integer index, boolean flag returns nothing
-    call BlzFrameSetVisible(SUI_DetailStatLabel[index], flag)
-    call BlzFrameSetVisible(SUI_DetailStatValue[index], flag)
+    local integer visibleState = 0
+
+    if flag then
+        set visibleState = 1
+    endif
+    if SUI_DetailStatVisibleState[index] != visibleState then
+        set SUI_DetailStatVisibleState[index] = visibleState
+        call BlzFrameSetVisible(SUI_DetailStatLabel[index], flag)
+        call BlzFrameSetVisible(SUI_DetailStatValue[index], flag)
+    endif
 endfunction
 
 private function SUI_ClearDetailStats takes nothing returns nothing
@@ -1357,25 +1373,41 @@ private function SUI_UpdateRows takes player whichPlayer returns nothing
         set SUI_RowKind[rowIndex] = 0
         if GetLocalPlayer() == whichPlayer then
             set SUI_RowDisplayHandle[rowIndex] = 0
-            set SUI_RowButtonVisible[rowIndex] = 0
-            set SUI_RowHighlightVisible[rowIndex] = 0
             set SUI_RowStatusHP[rowIndex] = -1
             set SUI_RowStatusMP[rowIndex] = -1
             set SUI_RowStatusDead[rowIndex] = -1
             set SUI_RowReviveRemaining[rowIndex] = -1
             set SUI_RowXPLevel[rowIndex] = -1
-            call BlzFrameSetVisible(SUI_RowButton[rowIndex], false)
-            call BlzFrameSetVisible(SUI_RowHighlight[rowIndex], false)
+            if SUI_RowButtonVisible[rowIndex] != 0 then
+                set SUI_RowButtonVisible[rowIndex] = 0
+                call BlzFrameSetVisible(SUI_RowButton[rowIndex], false)
+            endif
+            if SUI_RowHighlightVisible[rowIndex] != 0 then
+                set SUI_RowHighlightVisible[rowIndex] = 0
+                call BlzFrameSetVisible(SUI_RowHighlight[rowIndex], false)
+            endif
         endif
         set rowIndex = rowIndex + 1
     endloop
 
     if GetLocalPlayer() == whichPlayer then
-        set SUI_SyncingListScroll = true
-        call BlzFrameSetMinMaxValue(SUI_ListScroll, 0.0, I2R(maxStart))
-        call BlzFrameSetValue(SUI_ListScroll, I2R(SUI_ListScrollValue[GetPlayerId(whichPlayer)]))
-        set SUI_SyncingListScroll = false
-        call BlzFrameSetVisible(SUI_ListScroll, maxStart > 0)
+        if SUI_ListScrollMaxCache != maxStart then
+            set SUI_ListScrollMaxCache = maxStart
+            call BlzFrameSetMinMaxValue(SUI_ListScroll, 0.0, I2R(maxStart))
+        endif
+        if SUI_ListScrollFrameValueCache != SUI_ListScrollValue[GetPlayerId(whichPlayer)] then
+            set SUI_ListScrollFrameValueCache = SUI_ListScrollValue[GetPlayerId(whichPlayer)]
+            set SUI_SyncingListScroll = true
+            call BlzFrameSetValue(SUI_ListScroll, I2R(SUI_ListScrollFrameValueCache))
+            set SUI_SyncingListScroll = false
+        endif
+        if maxStart > 0 and SUI_ListScrollVisibleState != 1 then
+            set SUI_ListScrollVisibleState = 1
+            call BlzFrameSetVisible(SUI_ListScroll, true)
+        elseif maxStart <= 0 and SUI_ListScrollVisibleState != 0 then
+            set SUI_ListScrollVisibleState = 0
+            call BlzFrameSetVisible(SUI_ListScroll, false)
+        endif
     endif
 
     set petUnit = null
@@ -1383,12 +1415,18 @@ private function SUI_UpdateRows takes player whichPlayer returns nothing
 endfunction
 
 private function SUI_UpdatePartyHeader takes player whichPlayer returns nothing
+    local string partyText
+
     if GetLocalPlayer() != whichPlayer or SUI_PartyText == null then
         set whichPlayer = null
         return
     endif
 
-    call BlzFrameSetText(SUI_PartyText, "|cffffcc00Party:|r |cffbfbfbf" + I2S(udg_CompanionCount) + " / " + I2S(Companions_GetCompanionLimit()) + "|r")
+    set partyText = "|cffffcc00Party:|r |cffbfbfbf" + I2S(udg_CompanionCount) + " / " + I2S(Companions_GetCompanionLimit()) + "|r"
+    if partyText != SUI_PartyTextCache then
+        set SUI_PartyTextCache = partyText
+        call BlzFrameSetText(SUI_PartyText, partyText)
+    endif
     set whichPlayer = null
 endfunction
 
@@ -1518,20 +1556,28 @@ private function SUI_UpdateDetail takes player whichPlayer, boolean refreshStats
     local integer handleId
     local integer level
     local integer rested = 0
+    local integer buttonState = 1
+    local integer professionsAnchorState = 0
+    local string detailValue
 
     if u == null then
         if GetLocalPlayer() == whichPlayer then
-            set SUI_DetailHeaderUnitHandle = 0
-            set SUI_DetailHeaderLevel = -1
-            set SUI_DetailHeaderRested = -1
-            call BlzFrameSetTexture(SUI_DetailIcon, SUI_DefaultUnitIcon, 0, true)
-            call BlzFrameSetText(SUI_DetailTitle, "No unit")
-            call BlzFrameSetText(SUI_DetailValue, "No tracked units are currently available.")
-            call BlzFrameSetText(SUI_DetailRested, "")
-            call BlzFrameSetVisible(SUI_AbilitiesButton, false)
-            call BlzFrameSetVisible(SUI_TalentsButton, false)
-            call BlzFrameSetVisible(SUI_ProfessionsButton, false)
-            call BlzFrameSetVisible(SUI_PetRenameButton, false)
+            if SUI_DetailHeaderUnitHandle != 0 then
+                set SUI_DetailHeaderUnitHandle = 0
+                set SUI_DetailHeaderLevel = -1
+                set SUI_DetailHeaderRested = -1
+                set SUI_DetailValueCache = "No tracked units are currently available."
+                set SUI_DetailButtonStateCache = 0
+                set SUI_ProfessionsAnchorStateCache = -1
+                call BlzFrameSetTexture(SUI_DetailIcon, SUI_DefaultUnitIcon, 0, true)
+                call BlzFrameSetText(SUI_DetailTitle, "No unit")
+                call BlzFrameSetText(SUI_DetailValue, SUI_DetailValueCache)
+                call BlzFrameSetText(SUI_DetailRested, "")
+                call BlzFrameSetVisible(SUI_AbilitiesButton, false)
+                call BlzFrameSetVisible(SUI_TalentsButton, false)
+                call BlzFrameSetVisible(SUI_ProfessionsButton, false)
+                call BlzFrameSetVisible(SUI_PetRenameButton, false)
+            endif
         endif
         call SUI_UpdateDetailSummary(whichPlayer, null)
         if refreshStats then
@@ -1568,23 +1614,37 @@ private function SUI_UpdateDetail takes player whichPlayer, boolean refreshStats
                 call BlzFrameSetText(SUI_DetailRested, "")
             endif
         endif
-        call BlzFrameSetText(SUI_DetailValue, "Level " + I2S(level) + " | XP " + SUI_GetXPText(u))
-        call BlzFrameSetVisible(SUI_AbilitiesButton, true)
+        set detailValue = "Level " + I2S(level) + " | XP " + SUI_GetXPText(u)
+        if SUI_DetailValueCache != detailValue then
+            set SUI_DetailValueCache = detailValue
+            call BlzFrameSetText(SUI_DetailValue, detailValue)
+        endif
         if kind == SUI_KIND_PET then
-            call BlzFrameSetVisible(SUI_TalentsButton, false)
-            call BlzFrameSetVisible(SUI_ProfessionsButton, false)
-            call BlzFrameSetVisible(SUI_PetRenameButton, Pet_CanRename(u))
+            if Pet_CanRename(u) then
+                set buttonState = buttonState + 8
+            endif
         else
-            call BlzFrameClearAllPoints(SUI_ProfessionsButton)
             if SUI_IsTalentHero(u) then
-                call BlzFrameSetVisible(SUI_TalentsButton, true)
+                set buttonState = buttonState + 2
+                set professionsAnchorState = 1
+            endif
+            set buttonState = buttonState + 4
+        endif
+        if SUI_DetailButtonStateCache != buttonState then
+            set SUI_DetailButtonStateCache = buttonState
+            call BlzFrameSetVisible(SUI_AbilitiesButton, ModuloInteger(buttonState, 2) == 1)
+            call BlzFrameSetVisible(SUI_TalentsButton, ModuloInteger(buttonState / 2, 2) == 1)
+            call BlzFrameSetVisible(SUI_ProfessionsButton, ModuloInteger(buttonState / 4, 2) == 1)
+            call BlzFrameSetVisible(SUI_PetRenameButton, ModuloInteger(buttonState / 8, 2) == 1)
+        endif
+        if kind != SUI_KIND_PET and SUI_ProfessionsAnchorStateCache != professionsAnchorState then
+            set SUI_ProfessionsAnchorStateCache = professionsAnchorState
+            call BlzFrameClearAllPoints(SUI_ProfessionsButton)
+            if professionsAnchorState == 1 then
                 call BlzFrameSetPoint(SUI_ProfessionsButton, FRAMEPOINT_TOPLEFT, SUI_TalentsButton, FRAMEPOINT_TOPRIGHT, 0.006, 0.0)
             else
-                call BlzFrameSetVisible(SUI_TalentsButton, false)
                 call BlzFrameSetPoint(SUI_ProfessionsButton, FRAMEPOINT_TOPLEFT, SUI_AbilitiesButton, FRAMEPOINT_TOPRIGHT, 0.006, 0.0)
             endif
-            call BlzFrameSetVisible(SUI_ProfessionsButton, true)
-            call BlzFrameSetVisible(SUI_PetRenameButton, false)
         endif
     endif
     call SUI_UpdateDetailSummary(whichPlayer, u)

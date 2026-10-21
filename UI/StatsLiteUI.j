@@ -122,6 +122,13 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, I
         private boolean SLUI_AlertLowResource = true // CHANGE: configurable low mana flash alert
         private boolean SLUI_AlertFar = true // CHANGE: configurable far-away party member flash alert
         private boolean SLUI_DynamicHPColor = false // CHANGE: default false; HP bars stay green unless enabled in config
+        private boolean SLUI_LayoutDirty = true
+        private boolean SLUI_ConfigDirty = true
+        private integer SLUI_ClientWidthCache = -1
+        private integer SLUI_ClientHeightCache = -1
+        private integer SLUI_LayoutStateCache = -1
+        private string SLUI_TitleCache = ""
+        private string SLUI_FooterCache = ""
 
         private framehandle SLUI_ScreenParent = null
         private framehandle SLUI_ScreenAnchor = null
@@ -163,6 +170,9 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, I
         private integer array SLUI_RowMPValue
         private integer array SLUI_RowDeadState
         private integer array SLUI_RowReviveRemaining
+        private integer array SLUI_RowFieldVisibilityCache
+        private integer array SLUI_RowAlertRenderCache
+        private string array SLUI_RowLevelCache
         private string array SLUI_RowStateCache
         private string array SLUI_RowClassCache
         private string array SLUI_RowModeCache
@@ -796,26 +806,31 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, I
     endfunction
 
     private function SLUI_ApplyRowAlert takes integer rowIndex, integer alertLevel returns nothing
-        local integer alpha
-
-        call BlzFrameSetVertexColor(SLUI_RowHPBack[rowIndex], BlzConvertColor(95, 80, 80, 80))
-        call BlzFrameSetVertexColor(SLUI_RowMPBack[rowIndex], BlzConvertColor(95, 80, 80, 80))
+        local integer alpha = 0
+        local integer visibleState = 1
+        local integer renderState
 
         if alertLevel <= SLUI_ALERT_NONE then
-            call BlzFrameSetVisible(SLUI_RowAlert[rowIndex], false)
-            return
-        endif
-
-        if alertLevel == SLUI_ALERT_LOW_HP and not SLUI_IsLowHPAlertVisible() then
-            call BlzFrameSetVisible(SLUI_RowAlert[rowIndex], false)
-            return
+            set visibleState = 0
         elseif alertLevel == SLUI_ALERT_FAR then
             set alpha = 230
+        elseif alertLevel == SLUI_ALERT_LOW_HP and not SLUI_IsLowHPAlertVisible() then
+            set visibleState = 0
         else
             set alpha = SLUI_GetAlertPulseAlpha()
         endif
+        set renderState = alertLevel * 1000 + visibleState * 500 + alpha
+        if SLUI_RowAlertRenderCache[rowIndex] == renderState then
+            return
+        endif
+        set SLUI_RowAlertRenderCache[rowIndex] = renderState
 
-        call BlzFrameSetVisible(SLUI_RowAlert[rowIndex], true)
+        call BlzFrameSetVertexColor(SLUI_RowHPBack[rowIndex], BlzConvertColor(95, 80, 80, 80))
+        call BlzFrameSetVertexColor(SLUI_RowMPBack[rowIndex], BlzConvertColor(95, 80, 80, 80))
+        call BlzFrameSetVisible(SLUI_RowAlert[rowIndex], visibleState == 1)
+        if visibleState == 0 then
+            return
+        endif
 
         if alertLevel == SLUI_ALERT_LOW_HP then
             call BlzFrameSetVertexColor(SLUI_RowAlert[rowIndex], BlzConvertColor(alpha, 255, 40, 40))
@@ -838,6 +853,8 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, I
         local string classText = ""
         local string modeText = ""
         local integer alertLevel = SLUI_ALERT_NONE
+        local integer fieldVisibility = 0
+        local string levelText = ""
         local boolean hasResource = SLUI_HasResourceBar(u)
 
         if SLUI_RowDisplayHandle[rowIndex] != handleId then
@@ -846,6 +863,9 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, I
             set SLUI_RowMPValue[rowIndex] = -1
             set SLUI_RowDeadState[rowIndex] = -1
             set SLUI_RowReviveRemaining[rowIndex] = -1
+            set SLUI_RowFieldVisibilityCache[rowIndex] = -1
+            set SLUI_RowAlertRenderCache[rowIndex] = -1
+            set SLUI_RowLevelCache[rowIndex] = ""
             set SLUI_RowStateCache[rowIndex] = ""
             set SLUI_RowClassCache[rowIndex] = ""
             set SLUI_RowModeCache[rowIndex] = ""
@@ -874,13 +894,31 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, I
             endif
         endif
 
-        call BlzFrameSetVisible(SLUI_RowMPBack[rowIndex], SLUI_ShowMana and hasResource)
-        call BlzFrameSetVisible(SLUI_RowMPFill[rowIndex], SLUI_ShowMana and hasResource)
-        call BlzFrameSetVisible(SLUI_RowMPText[rowIndex], SLUI_ShowMana and hasResource)
-        call BlzFrameSetVisible(SLUI_RowLevel[rowIndex], SLUI_ShowLevel)
-        call BlzFrameSetVisible(SLUI_RowClass[rowIndex], SLUI_ShowClass)
-        call BlzFrameSetVisible(SLUI_RowState[rowIndex], SLUI_ShowState)
-        call BlzFrameSetVisible(SLUI_RowMode[rowIndex], SLUI_ShowMode and (kind == SLUI_KIND_PET or kind == SLUI_KIND_COMPANION) and Companions_IsControlled(u))
+        if SLUI_ShowMana and hasResource then
+            set fieldVisibility = fieldVisibility + 1
+        endif
+        if SLUI_ShowLevel then
+            set fieldVisibility = fieldVisibility + 2
+        endif
+        if SLUI_ShowClass then
+            set fieldVisibility = fieldVisibility + 4
+        endif
+        if SLUI_ShowState then
+            set fieldVisibility = fieldVisibility + 8
+        endif
+        if SLUI_ShowMode and (kind == SLUI_KIND_PET or kind == SLUI_KIND_COMPANION) and Companions_IsControlled(u) then
+            set fieldVisibility = fieldVisibility + 16
+        endif
+        if SLUI_RowFieldVisibilityCache[rowIndex] != fieldVisibility then
+            set SLUI_RowFieldVisibilityCache[rowIndex] = fieldVisibility
+            call BlzFrameSetVisible(SLUI_RowMPBack[rowIndex], ModuloInteger(fieldVisibility, 2) == 1)
+            call BlzFrameSetVisible(SLUI_RowMPFill[rowIndex], ModuloInteger(fieldVisibility, 2) == 1)
+            call BlzFrameSetVisible(SLUI_RowMPText[rowIndex], ModuloInteger(fieldVisibility, 2) == 1)
+            call BlzFrameSetVisible(SLUI_RowLevel[rowIndex], ModuloInteger(fieldVisibility / 2, 2) == 1)
+            call BlzFrameSetVisible(SLUI_RowClass[rowIndex], ModuloInteger(fieldVisibility / 4, 2) == 1)
+            call BlzFrameSetVisible(SLUI_RowState[rowIndex], ModuloInteger(fieldVisibility / 8, 2) == 1)
+            call BlzFrameSetVisible(SLUI_RowMode[rowIndex], ModuloInteger(fieldVisibility / 16, 2) == 1)
+        endif
 
         // CHANGE: Alert flash is evaluated every refresh because far-away and
         // blinking state can change even when HP/MP values do not.
@@ -888,7 +926,11 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, I
         call SLUI_ApplyRowAlert(rowIndex, alertLevel)
 
         if SLUI_ShowLevel then
-            call BlzFrameSetText(SLUI_RowLevel[rowIndex], "Lvl " + SLUI_GetLevelText(u))
+            set levelText = "Lvl " + SLUI_GetLevelText(u)
+            if SLUI_RowLevelCache[rowIndex] != levelText then
+                set SLUI_RowLevelCache[rowIndex] = levelText
+                call BlzFrameSetText(SLUI_RowLevel[rowIndex], levelText)
+            endif
         endif
         if SLUI_ShowClass then
             set classText = SLUI_TrimText(SLUI_GetUnitClassText(u), 11)
@@ -926,28 +968,37 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, I
     endfunction
 
     private function SLUI_UpdateTitle takes nothing returns nothing
+        local string titleText
+
         if SLUI_ConfigVisible then
-            call BlzFrameSetText(SLUI_Title, "|cffffe4a3Monitor|r")
-        elseif SLUI_Minimized then
-            call BlzFrameSetText(SLUI_Title, "|cffffe4a3Party Size|r |cffbfbfbf" + I2S(udg_CompanionCount) + " / " + I2S(Companions_GetCompanionLimit()) + "|r")
+            set titleText = "|cffffe4a3Monitor|r"
         else
-            call BlzFrameSetText(SLUI_Title, "|cffffe4a3Party Size|r |cffbfbfbf" + I2S(udg_CompanionCount) + " / " + I2S(Companions_GetCompanionLimit()) + "|r")
+            set titleText = "|cffffe4a3Party Size|r |cffbfbfbf" + I2S(udg_CompanionCount) + " / " + I2S(Companions_GetCompanionLimit()) + "|r"
+        endif
+        if titleText != SLUI_TitleCache then
+            set SLUI_TitleCache = titleText
+            call BlzFrameSetText(SLUI_Title, titleText)
         endif
     endfunction
 
     private function SLUI_UpdateFooter takes integer total returns nothing
         local string statusText
+        local string footerText
         if SLUI_FooterText == null then
             return
         endif
 
         if SLUI_ConfigVisible or SLUI_Minimized then
-            call BlzFrameSetText(SLUI_FooterText, "")
+            set footerText = ""
         elseif total > SLUI_MAX_ROWS then
-            call BlzFrameSetText(SLUI_FooterText, "|cffbfbfbfCompanion party: " + I2S(udg_CompanionCount) + " / " + I2S(Companions_GetCompanionLimit()) + " | +" + I2S(total - SLUI_MAX_ROWS) + " more|r")
+            set footerText = "|cffbfbfbfCompanion party: " + I2S(udg_CompanionCount) + " / " + I2S(Companions_GetCompanionLimit()) + " | +" + I2S(total - SLUI_MAX_ROWS) + " more|r"
         else
             set statusText = Companions_GetCompanionStatusText()
-            call BlzFrameSetText(SLUI_FooterText, "|cffbfbfbfCompanion party: " + statusText + " | " + I2S(total) + " tracked|r")
+            set footerText = "|cffbfbfbfCompanion party: " + statusText + " | " + I2S(total) + " tracked|r"
+        endif
+        if footerText != SLUI_FooterCache then
+            set SLUI_FooterCache = footerText
+            call BlzFrameSetText(SLUI_FooterText, footerText)
         endif
     endfunction
 
@@ -1081,6 +1132,12 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, I
         if screenWidth < 0.800 then
             set screenWidth = 0.800
         endif
+        if clientWidth == SLUI_ClientWidthCache and clientHeight == SLUI_ClientHeightCache and not SLUI_LayoutDirty then
+            return
+        endif
+        set SLUI_ClientWidthCache = clientWidth
+        set SLUI_ClientHeightCache = clientHeight
+        set SLUI_LayoutDirty = true
 
         call BlzFrameClearAllPoints(SLUI_ScreenAnchor)
         call BlzFrameSetSize(SLUI_ScreenAnchor, screenWidth, SLUI_SCREEN_HEIGHT)
@@ -1095,11 +1152,26 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, I
     endfunction
 
     private function SLUI_ApplyLayout takes player whichPlayer returns nothing
+        local integer layoutState
+
         if GetLocalPlayer() != whichPlayer or SLUI_Parent == null then
             set whichPlayer = null
             return
         endif
 
+        call SLUI_UpdateScreenAnchor()
+        set layoutState = SLUI_GetDisplayRowCount()
+        if SLUI_Minimized then
+            set layoutState = layoutState + 16
+        endif
+        if SLUI_ConfigVisible then
+            set layoutState = layoutState + 32
+        endif
+        if not SLUI_LayoutDirty and layoutState == SLUI_LayoutStateCache then
+            set whichPlayer = null
+            return
+        endif
+        set SLUI_LayoutStateCache = layoutState
         // CHANGE: Use right-anchored layout in both minimized and maximized states.
         if SLUI_Minimized then
             call SLUI_SetPanelFrame(SLUI_PANEL_WIDTH, SLUI_GetPanelHeight())
@@ -1112,7 +1184,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, I
         call BlzFrameSetVisible(SLUI_RowPane, not SLUI_Minimized and not SLUI_ConfigVisible)
         call BlzFrameSetVisible(SLUI_ConfigPane, not SLUI_Minimized and SLUI_ConfigVisible)
         call BlzFrameSetVisible(SLUI_FooterText, not SLUI_Minimized and not SLUI_ConfigVisible)
-        call SLUI_UpdateTitle()
+        set SLUI_LayoutDirty = false
         set whichPlayer = null
     endfunction
 
@@ -1125,7 +1197,10 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, I
         call SLUI_ApplyLayout(whichPlayer)
         call SLUI_UpdateTitle()
         if not SLUI_Minimized and SLUI_ConfigVisible then
-            call SLUI_UpdateConfig(whichPlayer)
+            if SLUI_ConfigDirty then
+                call SLUI_UpdateConfig(whichPlayer)
+                set SLUI_ConfigDirty = false
+            endif
         elseif not SLUI_Minimized then
             call SLUI_UpdateRows(whichPlayer)
         endif
@@ -1189,12 +1264,14 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, I
 
     public function Maximize takes nothing returns nothing
         set SLUI_Minimized = false
+        set SLUI_LayoutDirty = true
         call SLUI_ApplyLayout(GetLocalPlayer())
         call SLUI_Update(GetLocalPlayer())
     endfunction
 
     public function Minimize takes nothing returns nothing
         set SLUI_Minimized = true
+        set SLUI_LayoutDirty = true
         call SLUI_ApplyLayout(GetLocalPlayer())
         call SLUI_Update(GetLocalPlayer())
     endfunction
@@ -1208,6 +1285,9 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, I
     endfunction
 
     private function SLUI_ShowLastStateInternal takes boolean playSound returns nothing
+        if SLUI_ConfigVisible then
+            set SLUI_LayoutDirty = true
+        endif
         set SLUI_ConfigVisible = false
         call SLUI_SetRefreshActive(true)
         call SLUI_ApplyLayout(GetLocalPlayer())
@@ -1223,6 +1303,8 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, I
     private function SLUI_ShowConfigInternal takes boolean playSound returns nothing
         set SLUI_ConfigVisible = true
         set SLUI_Minimized = false
+        set SLUI_LayoutDirty = true
+        set SLUI_ConfigDirty = true
         call SLUI_SetRefreshActive(true)
         call SLUI_ApplyLayout(GetLocalPlayer())
         call SLUI_Update(GetLocalPlayer())
@@ -1286,6 +1368,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, I
 
         if SLUI_ButtonAction.has(handleId) then
             set actionId = SLUI_ButtonAction.integer[handleId]
+            set SLUI_ConfigDirty = true
             if actionId == SLUI_ACTION_MINIMIZE then
                 call SLUI_ToggleMinimized()
             elseif actionId == SLUI_ACTION_STATS then
@@ -1301,10 +1384,13 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, I
                 call Companions_ShowCompanionLimitInfo()
             elseif actionId == SLUI_ACTION_SHOW_HEROES then
                 set SLUI_ShowHeroes = not SLUI_ShowHeroes
+                set SLUI_LayoutDirty = true
             elseif actionId == SLUI_ACTION_SHOW_PET then
                 set SLUI_ShowPet = not SLUI_ShowPet
+                set SLUI_LayoutDirty = true
             elseif actionId == SLUI_ACTION_SHOW_COMPANIONS then
                 set SLUI_ShowCompanions = not SLUI_ShowCompanions
+                set SLUI_LayoutDirty = true
             elseif actionId == SLUI_ACTION_SHOW_MANA then
                 set SLUI_ShowMana = not SLUI_ShowMana
             elseif actionId == SLUI_ACTION_SHOW_LEVEL then
@@ -1507,6 +1593,7 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, I
         // CHANGE: Hide immediately after creation to prevent preload/init flicker.
         call BlzFrameSetVisible(SLUI_Parent, false)
         call BlzFrameSetLevel(SLUI_Parent, 0)
+        set SLUI_LayoutDirty = true
 
         // CHANGE: Native border/background frame. This keeps the Warcraft III EscMenu-style frame.
         set SLUI_Backdrop = BlzCreateFrame("EscMenuBackdrop", SLUI_Parent, 0, 0)

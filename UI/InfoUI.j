@@ -28,7 +28,7 @@ globals
     private constant integer INFOUI_BUTTON_COUNT = 8
     private constant integer INFOUI_FRAME_CONTEXT = 5
     private constant integer INFOUI_DAYS_PER_YEAR = 360
-    private constant real INFOUI_REFRESH_PERIOD = 0.50
+    private constant real INFOUI_REFRESH_PERIOD = 1.00
     private constant string INFOUI_TOC_PATH = "war3mapImported/TasQuestBox.toc"
     private constant string INFOUI_DEFAULT_QUEST_ICON = "ReplaceableTextures\\CommandButtons\\BTNScroll.blp"
 
@@ -38,6 +38,12 @@ globals
     private integer INFOUI_LockedQuestCount = 0
     private integer INFOUI_SliderMaxCache = -1
     private integer INFOUI_SliderValueCache = -1
+    private integer INFOUI_SliderVisibleState = -1
+    private string array INFOUI_ButtonIconCache
+    private string array INFOUI_ButtonTextCache
+    private integer array INFOUI_ButtonVisibleState
+    private integer array INFOUI_ButtonEnabledState
+    private string INFOUI_WorldTextCache = ""
 
     private integer array INFOUI_ViewOffset
     private integer array INFOUI_SelectedQuestId
@@ -241,6 +247,11 @@ private function INFOUI_UpdateUI takes nothing returns nothing
     local integer selectedQuestId
     local integer maxPage = 0
     local integer frameValue
+    local integer visibleState
+    local integer enabledState
+    local string iconPath
+    local string buttonText
+    local string worldText
     local QuestData questData
 
     if INFOUI_Parent == null or not BlzFrameIsVisible(INFOUI_Parent) then
@@ -269,40 +280,67 @@ private function INFOUI_UpdateUI takes nothing returns nothing
             call BlzFrameSetValue(INFOUI_Slider, I2R(frameValue))
         endif
         set INFOUI_SyncingSlider = false
-        call BlzFrameSetVisible(INFOUI_Slider, maxPage > 0)
+        if maxPage > 0 then
+            set visibleState = 1
+        else
+            set visibleState = 0
+        endif
+        if INFOUI_SliderVisibleState != visibleState then
+            set INFOUI_SliderVisibleState = visibleState
+            call BlzFrameSetVisible(INFOUI_Slider, visibleState == 1)
+        endif
     endif
 
     loop
         exitwhen rowIndex > INFOUI_BUTTON_COUNT
         set listIndex = INFOUI_ViewOffset[playerId] + rowIndex
+        set visibleState = 0
+        set enabledState = 0
+        set iconPath = ""
+        set buttonText = ""
         if listIndex <= INFOUI_LockedQuestCount then
             set questId = INFOUI_LockedQuestId[listIndex]
             set questData = QuestMaster_GetById(questId)
             if questData.iconPath != "" then
-                call BlzFrameSetTexture(INFOUI_ButtonIcon[rowIndex], questData.iconPath, 0, false)
+                set iconPath = questData.iconPath
             else
-                call BlzFrameSetTexture(INFOUI_ButtonIcon[rowIndex], INFOUI_DEFAULT_QUEST_ICON, 0, false)
+                set iconPath = INFOUI_DEFAULT_QUEST_ICON
             endif
-            call BlzFrameSetVisible(INFOUI_ButtonIcon[rowIndex], true)
-            call BlzFrameSetText(INFOUI_ButtonText[rowIndex], questData.title)
-            call BlzFrameSetEnable(INFOUI_Button[rowIndex], true)
-            call BlzFrameSetVisible(INFOUI_Button[rowIndex], true)
+            set buttonText = questData.title
+            set visibleState = 1
+            set enabledState = 1
         elseif rowIndex == 1 and INFOUI_LockedQuestCount <= 0 then
-            call BlzFrameSetTexture(INFOUI_ButtonIcon[rowIndex], INFOUI_DEFAULT_QUEST_ICON, 0, false)
-            call BlzFrameSetVisible(INFOUI_ButtonIcon[rowIndex], true)
-            call BlzFrameSetText(INFOUI_ButtonText[rowIndex], "No locked daily quests")
-            call BlzFrameSetEnable(INFOUI_Button[rowIndex], false)
-            call BlzFrameSetVisible(INFOUI_Button[rowIndex], true)
-        else
-            call BlzFrameSetVisible(INFOUI_Button[rowIndex], false)
+            set iconPath = INFOUI_DEFAULT_QUEST_ICON
+            set buttonText = "No locked daily quests"
+            set visibleState = 1
+        endif
+        if iconPath != "" and INFOUI_ButtonIconCache[rowIndex] != iconPath then
+            set INFOUI_ButtonIconCache[rowIndex] = iconPath
+            call BlzFrameSetTexture(INFOUI_ButtonIcon[rowIndex], iconPath, 0, false)
+        endif
+        if INFOUI_ButtonTextCache[rowIndex] != buttonText then
+            set INFOUI_ButtonTextCache[rowIndex] = buttonText
+            call BlzFrameSetText(INFOUI_ButtonText[rowIndex], buttonText)
+        endif
+        if INFOUI_ButtonEnabledState[rowIndex] != enabledState then
+            set INFOUI_ButtonEnabledState[rowIndex] = enabledState
+            call BlzFrameSetEnable(INFOUI_Button[rowIndex], enabledState == 1)
+        endif
+        if INFOUI_ButtonVisibleState[rowIndex] != visibleState then
+            set INFOUI_ButtonVisibleState[rowIndex] = visibleState
+            call BlzFrameSetVisible(INFOUI_ButtonIcon[rowIndex], visibleState == 1)
+            call BlzFrameSetVisible(INFOUI_Button[rowIndex], visibleState == 1)
         endif
         set rowIndex = rowIndex + 1
     endloop
 
     set selectedQuestId = INFOUI_GetSelectedQuestId(GetLocalPlayer())
     set INFOUI_SelectedQuestId[playerId] = selectedQuestId
-    call BlzFrameSetText(INFOUI_TitleFrame, "Information")
-    call BlzFrameSetText(INFOUI_TextArea, INFOUI_GetWorldInfoText(selectedQuestId))
+    set worldText = INFOUI_GetWorldInfoText(selectedQuestId)
+    if INFOUI_WorldTextCache != worldText then
+        set INFOUI_WorldTextCache = worldText
+        call BlzFrameSetText(INFOUI_TextArea, worldText)
+    endif
 endfunction
 
 public function ForceUpdate takes nothing returns nothing
@@ -310,6 +348,9 @@ public function ForceUpdate takes nothing returns nothing
 endfunction
 
 public function Hide takes nothing returns nothing
+    if INFOUI_RefreshTimer != null then
+        call PauseTimer(INFOUI_RefreshTimer)
+    endif
     if INFOUI_Parent != null then
         if BlzFrameIsVisible(INFOUI_Parent) then
             call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_CLOSE, Player(0))
@@ -326,6 +367,7 @@ public function Show takes nothing returns nothing
         endif
         call BlzFrameSetVisible(INFOUI_Parent, true)
         call INFOUI_UpdateUI()
+        call TimerStart(INFOUI_RefreshTimer, INFOUI_REFRESH_PERIOD, true, function INFOUI_UpdateUI)
     endif
 endfunction
 
@@ -470,6 +512,8 @@ private function INFOUI_InitFrames takes nothing returns nothing
         call BlzTriggerRegisterFrameEvent(INFOUI_ButtonTrigger, INFOUI_Button[rowIndex], FRAMEEVENT_CONTROL_CLICK)
         call BlzTriggerRegisterFrameEvent(INFOUI_ClearFocusTrigger, INFOUI_Button[rowIndex], FRAMEEVENT_CONTROL_CLICK)
         call BlzTriggerRegisterFrameEvent(INFOUI_WheelTrigger, INFOUI_Button[rowIndex], FRAMEEVENT_MOUSE_WHEEL)
+        set INFOUI_ButtonVisibleState[rowIndex] = -1
+        set INFOUI_ButtonEnabledState[rowIndex] = -1
         set rowIndex = rowIndex + 1
     endloop
     call BlzFrameSetPoint(INFOUI_Button[1], FRAMEPOINT_TOPRIGHT, INFOUI_Slider, FRAMEPOINT_TOPLEFT, -0.006, 0.0)
@@ -477,10 +521,6 @@ private function INFOUI_InitFrames takes nothing returns nothing
 
     set closeButton = null
     set wheelArea = null
-endfunction
-
-private function INFOUI_RefreshAction takes nothing returns nothing
-    call INFOUI_UpdateUI()
 endfunction
 
 public function Init takes nothing returns nothing
@@ -509,7 +549,6 @@ public function Init takes nothing returns nothing
 
     call INFOUI_InitFrames()
     set INFOUI_RefreshTimer = CreateTimer()
-    call TimerStart(INFOUI_RefreshTimer, INFOUI_REFRESH_PERIOD, true, function INFOUI_RefreshAction)
 endfunction
 
 public function AutoInit takes nothing returns nothing

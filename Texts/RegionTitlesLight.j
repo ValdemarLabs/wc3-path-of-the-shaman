@@ -57,7 +57,14 @@ globals
     private real PreloadTitleDuration = 0.70
     private real PreloadTitleFadeOut = 0.25
     private boolean PreloadTitleActive = false
+    private timer AnimationTimer = null
+    private trigger AnimationTrigger = null
+    private boolean AnimationTimerRunning = false
 endglobals
+
+private function AnimationTimerExpired takes nothing returns nothing
+    call TriggerExecute(AnimationTrigger)
+endfunction
 
 // Public function to show a region title with fade
 function ShowRegionTitle takes string smallText, string mainTitle returns nothing
@@ -76,6 +83,10 @@ function ShowRegionTitle takes string smallText, string mainTitle returns nothin
     call BlzFrameSetAlpha(Text02, 0)
     call BlzFrameSetVisible(titleFrame1, false)
     call BlzFrameSetAlpha(titleFrame1, 0)
+    if not AnimationTimerRunning then
+        set AnimationTimerRunning = true
+        call TimerStart(AnimationTimer, 0.03, true, function AnimationTimerExpired)
+    endif
 endfunction
 
 // API: ShowSingleLineText
@@ -96,6 +107,10 @@ function ShowSingleLineText takes string text, real fadeIn, real duration, real 
     call BlzFrameSetScale(SingleLineTextFrame, scale)
     call BlzFrameSetAlpha(SingleLineTextFrame, 0)
     call BlzFrameSetVisible(SingleLineTextFrame, true)
+    if not AnimationTimerRunning then
+        set AnimationTimerRunning = true
+        call TimerStart(AnimationTimer, 0.03, true, function AnimationTimerExpired)
+    endif
 endfunction
 
 function ShowPreloadTitle takes string smallText, string mainTitle, real fadeIn, real duration, real fadeOut returns nothing
@@ -111,6 +126,10 @@ function ShowPreloadTitle takes string smallText, string mainTitle, real fadeIn,
     call BlzFrameSetAlpha(PreloadTitleFrame, 0)
     call BlzFrameSetVisible(PreloadSmallTextFrame, true)
     call BlzFrameSetVisible(PreloadTitleFrame, true)
+    if not AnimationTimerRunning then
+        set AnimationTimerRunning = true
+        call TimerStart(AnimationTimer, 0.03, true, function AnimationTimerExpired)
+    endif
 endfunction
 
 function HidePreloadTitle takes nothing returns nothing
@@ -217,6 +236,10 @@ private function Periodic takes nothing returns nothing
     call FadeTitle()
     call FadeSingleLineText()
     call FadePreloadTitle()
+    if not fadeActive and not SingleLineTextActive and not PreloadTitleActive then
+        call PauseTimer(AnimationTimer)
+        set AnimationTimerRunning = false
+    endif
 endfunction
 
 // ParentFunc who you want as parent, this runs at InitBlizzard, if you need more control you need to modify the part that calls local function Init()
@@ -280,8 +303,9 @@ private function InitRegionTitles takes nothing returns nothing
     call BlzFrameSetVisible(PreloadTitleFrame, false)
     call BlzFrameSetAlpha(PreloadTitleFrame, 0)
 
-    // Periodic for fade
-    call TimerStart(CreateTimer(), 0.03, true, function Periodic)
+    set AnimationTimer = CreateTimer()
+    set AnimationTrigger = CreateTrigger()
+    call TriggerAddAction(AnimationTrigger, function Periodic)
 endfunction
 
 endlibrary

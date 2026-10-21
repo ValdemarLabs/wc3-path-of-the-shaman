@@ -108,6 +108,20 @@ globals
     private boolean TUI_OpenPlayerCombat = true
     private boolean TUI_OpenPartyCombat = true
     private boolean TUI_ShowMana = true
+    private boolean TUI_LayoutDirty = true
+    private boolean TUI_ConfigDirty = true
+    private integer TUI_ClientWidthCache = -1
+    private integer TUI_ClientHeightCache = -1
+    private integer TUI_LayoutStateCache = -1
+    private integer TUI_RenderedUnitHandle = -1
+    private integer TUI_HealthCurrentCache = -1
+    private integer TUI_HealthMaximumCache = -1
+    private integer TUI_ManaCurrentCache = -1
+    private integer TUI_ManaMaximumCache = -1
+    private integer TUI_AggroTargetHandleCache = -1
+    private string TUI_TitleCache = ""
+    private string TUI_AggroTextCache = ""
+    private string array TUI_ThreatRowCache
 endglobals
 
 private function TUI_IsAlive takes unit whichUnit returns boolean
@@ -280,6 +294,12 @@ private function TUI_UpdateScreenAnchor takes nothing returns nothing
     if screenWidth < 0.800 then
         set screenWidth = 0.800
     endif
+    if clientWidth == TUI_ClientWidthCache and clientHeight == TUI_ClientHeightCache and not TUI_LayoutDirty then
+        return
+    endif
+    set TUI_ClientWidthCache = clientWidth
+    set TUI_ClientHeightCache = clientHeight
+    set TUI_LayoutDirty = true
 
     call BlzFrameClearAllPoints(TUI_ScreenAnchor)
     call BlzFrameSetSize(TUI_ScreenAnchor, screenWidth, TUI_SCREEN_HEIGHT)
@@ -296,11 +316,26 @@ private function TUI_GetPanelHeight takes nothing returns real
 endfunction
 
 private function TUI_ApplyLayout takes nothing returns nothing
+    local integer layoutState = 0
+
     if TUI_Parent == null then
         return
     endif
 
     call TUI_UpdateScreenAnchor()
+    if TUI_Minimized then
+        set layoutState = layoutState + 1
+    endif
+    if TUI_ConfigVisible then
+        set layoutState = layoutState + 2
+    endif
+    if TUI_ShowMana then
+        set layoutState = layoutState + 4
+    endif
+    if not TUI_LayoutDirty and layoutState == TUI_LayoutStateCache then
+        return
+    endif
+    set TUI_LayoutStateCache = layoutState
     call BlzFrameClearAllPoints(TUI_Parent)
     call BlzFrameSetSize(TUI_Parent, TUI_PANEL_WIDTH, TUI_GetPanelHeight())
     call BlzFrameSetPoint(TUI_Parent, FRAMEPOINT_TOPLEFT, TUI_ScreenAnchor, FRAMEPOINT_TOPLEFT, TUI_PANEL_LEFT_OFFSET, TUI_PANEL_TOP_OFFSET)
@@ -321,6 +356,7 @@ private function TUI_ApplyLayout takes nothing returns nothing
     if TUI_ManaBack != null then
         call BlzFrameSetVisible(TUI_ManaBack, TUI_ShowMana)
     endif
+    set TUI_LayoutDirty = false
 endfunction
 
 private function TUI_UpdateConfig takes nothing returns nothing
@@ -356,14 +392,25 @@ endfunction
 
 private function TUI_ShowEmptyContent takes nothing returns nothing
     local integer row = 1
+    local string rowText
 
     call BlzFrameSetText(TUI_Title, "|cffffcc00Target / Threat|r")
+    set TUI_TitleCache = "|cffffcc00Target / Threat|r"
     call TUI_SetBar(TUI_HealthFill, TUI_HealthText, 0, "HP", 0, 0)
     call TUI_SetBar(TUI_ManaFill, TUI_ManaText, 0, "Mana", 0, 0)
     call BlzFrameSetText(TUI_CurrentTargetText, "Aggro: |cffbfbfbfNone|r")
+    set TUI_RenderedUnitHandle = 0
+    set TUI_HealthCurrentCache = 0
+    set TUI_HealthMaximumCache = 0
+    set TUI_ManaCurrentCache = 0
+    set TUI_ManaMaximumCache = 0
+    set TUI_AggroTargetHandleCache = 0
+    set TUI_AggroTextCache = "Aggro: |cffbfbfbfNone|r"
     loop
         exitwhen row > 3
-        call BlzFrameSetText(TUI_ThreatRow[row], "|cffffffff" + I2S(row) + ". -|r")
+        set rowText = "|cffffffff" + I2S(row) + ". -|r"
+        set TUI_ThreatRowCache[row] = rowText
+        call BlzFrameSetText(TUI_ThreatRow[row], rowText)
         set row = row + 1
     endloop
 endfunction
@@ -378,6 +425,15 @@ private function TUI_Update takes nothing returns nothing
     local real maximumMana
     local real topThreat
     local integer row = 1
+    local integer threatUnitHandle
+    local integer aggroTargetHandle = 0
+    local integer currentLifeInt
+    local integer maximumLifeInt
+    local integer currentManaInt
+    local integer maximumManaInt
+    local string titleText
+    local string aggroText
+    local string rowText
 
     if FullscreenUI_IsEnabled() then
         call TUI_SetVisible(false)
@@ -386,8 +442,14 @@ private function TUI_Update takes nothing returns nothing
 
     call TUI_ApplyLayout()
     if TUI_ConfigVisible then
-        call BlzFrameSetText(TUI_Title, "|cffffcc00Threat Settings|r")
-        call TUI_UpdateConfig()
+        if TUI_TitleCache != "|cffffcc00Threat Settings|r" then
+            set TUI_TitleCache = "|cffffcc00Threat Settings|r"
+            call BlzFrameSetText(TUI_Title, TUI_TitleCache)
+        endif
+        if TUI_ConfigDirty then
+            call TUI_UpdateConfig()
+            set TUI_ConfigDirty = false
+        endif
         call TUI_SetVisible(true)
         return
     endif
@@ -410,7 +472,9 @@ private function TUI_Update takes nothing returns nothing
     if not TUI_IsAlive(threatUnit) then
         set TUI_DisplayedUnit = null
         if TUI_AlwaysShow then
-            call TUI_ShowEmptyContent()
+            if TUI_RenderedUnitHandle != 0 then
+                call TUI_ShowEmptyContent()
+            endif
             call TUI_SetVisible(true)
         else
             call TUI_SetVisible(false)
@@ -426,20 +490,57 @@ private function TUI_Update takes nothing returns nothing
     set maximumMana = GetUnitState(threatUnit, UNIT_STATE_MAX_MANA)
     set aggroTarget = ThreatSystem_GetAggroTarget(threatUnit)
     set topThreat = ThreatSystem_GetRankedThreat(threatUnit, 1)
-
-    call BlzFrameSetText(TUI_Title, "|cffffcc00" + TUI_GetDisplayName(threatUnit) + "|r")
-    call TUI_SetBar(TUI_HealthFill, TUI_HealthText, TUI_ClampPercent(currentLife, maximumLife), "HP", R2I(currentLife + 0.50), R2I(maximumLife + 0.50))
-    call TUI_SetBar(TUI_ManaFill, TUI_ManaText, TUI_ClampPercent(currentMana, maximumMana), "Mana", R2I(currentMana + 0.50), R2I(maximumMana + 0.50))
-    if aggroTarget == null then
-        call BlzFrameSetText(TUI_CurrentTargetText, "Aggro: |cffbfbfbfNone|r")
-    else
-        call BlzFrameSetText(TUI_CurrentTargetText, "Aggro: |cffff8040" + TUI_GetDisplayName(aggroTarget) + "|r")
+    set threatUnitHandle = GetHandleId(threatUnit)
+    set currentLifeInt = R2I(currentLife + 0.50)
+    set maximumLifeInt = R2I(maximumLife + 0.50)
+    set currentManaInt = R2I(currentMana + 0.50)
+    set maximumManaInt = R2I(maximumMana + 0.50)
+    if TUI_RenderedUnitHandle != threatUnitHandle then
+        set TUI_RenderedUnitHandle = threatUnitHandle
+        set TUI_HealthCurrentCache = -1
+        set TUI_HealthMaximumCache = -1
+        set TUI_ManaCurrentCache = -1
+        set TUI_ManaMaximumCache = -1
+        set TUI_AggroTargetHandleCache = -1
+        set TUI_ThreatRowCache[1] = ""
+        set TUI_ThreatRowCache[2] = ""
+        set TUI_ThreatRowCache[3] = ""
+        set titleText = "|cffffcc00" + TUI_GetDisplayName(threatUnit) + "|r"
+        set TUI_TitleCache = titleText
+        call BlzFrameSetText(TUI_Title, titleText)
+    endif
+    if TUI_HealthCurrentCache != currentLifeInt or TUI_HealthMaximumCache != maximumLifeInt then
+        set TUI_HealthCurrentCache = currentLifeInt
+        set TUI_HealthMaximumCache = maximumLifeInt
+        call TUI_SetBar(TUI_HealthFill, TUI_HealthText, TUI_ClampPercent(currentLife, maximumLife), "HP", currentLifeInt, maximumLifeInt)
+    endif
+    if TUI_ManaCurrentCache != currentManaInt or TUI_ManaMaximumCache != maximumManaInt then
+        set TUI_ManaCurrentCache = currentManaInt
+        set TUI_ManaMaximumCache = maximumManaInt
+        call TUI_SetBar(TUI_ManaFill, TUI_ManaText, TUI_ClampPercent(currentMana, maximumMana), "Mana", currentManaInt, maximumManaInt)
+    endif
+    if aggroTarget != null then
+        set aggroTargetHandle = GetHandleId(aggroTarget)
+    endif
+    if TUI_AggroTargetHandleCache != aggroTargetHandle then
+        set TUI_AggroTargetHandleCache = aggroTargetHandle
+        if aggroTarget == null then
+            set aggroText = "Aggro: |cffbfbfbfNone|r"
+        else
+            set aggroText = "Aggro: |cffff8040" + TUI_GetDisplayName(aggroTarget) + "|r"
+        endif
+        set TUI_AggroTextCache = aggroText
+        call BlzFrameSetText(TUI_CurrentTargetText, aggroText)
     endif
 
     loop
         exitwhen row > 3
         set rankedUnit = ThreatSystem_GetRankedUnit(threatUnit, row)
-        call BlzFrameSetText(TUI_ThreatRow[row], TUI_FormatThreatRow(threatUnit, rankedUnit, row, topThreat))
+        set rowText = TUI_FormatThreatRow(threatUnit, rankedUnit, row, topThreat)
+        if TUI_ThreatRowCache[row] != rowText then
+            set TUI_ThreatRowCache[row] = rowText
+            call BlzFrameSetText(TUI_ThreatRow[row], rowText)
+        endif
         set row = row + 1
     endloop
 
@@ -451,6 +552,9 @@ endfunction
 
 public function Hide takes nothing returns nothing
     set TUI_Closed = true
+    if TUI_ConfigVisible then
+        set TUI_LayoutDirty = true
+    endif
     set TUI_ConfigVisible = false
     set TUI_SuppressedUnit = TUI_DisplayedUnit
     call TUI_SetVisible(false)
@@ -458,11 +562,13 @@ endfunction
 
 public function Maximize takes nothing returns nothing
     set TUI_Minimized = false
+    set TUI_LayoutDirty = true
     call TUI_Update()
 endfunction
 
 public function Minimize takes nothing returns nothing
     set TUI_Minimized = true
+    set TUI_LayoutDirty = true
     call TUI_Update()
 endfunction
 
@@ -474,10 +580,15 @@ public function ShowConfig takes nothing returns nothing
     set TUI_Closed = false
     set TUI_Minimized = false
     set TUI_ConfigVisible = true
+    set TUI_LayoutDirty = true
+    set TUI_ConfigDirty = true
     call TUI_Update()
 endfunction
 
 public function ShowForUnit takes unit whichUnit returns nothing
+    if TUI_ConfigVisible then
+        set TUI_LayoutDirty = true
+    endif
     set TUI_ConfigVisible = false
     if ThreatSystem_HasThreat(whichUnit) then
         set TUI_PinnedUnit = whichUnit
@@ -490,6 +601,9 @@ endfunction
 
 public function ShowAutomatic takes nothing returns nothing
     set TUI_PinnedUnit = null
+    if TUI_ConfigVisible then
+        set TUI_LayoutDirty = true
+    endif
     set TUI_ConfigVisible = false
     set TUI_Closed = false
     call TUI_Update()
@@ -510,6 +624,7 @@ endfunction
 private function TUI_ToggleConfig takes nothing returns nothing
     if TUI_ConfigVisible then
         set TUI_ConfigVisible = false
+        set TUI_LayoutDirty = true
         call TUI_Update()
     else
         call ShowConfig()
@@ -531,6 +646,7 @@ private function TUI_ButtonClickAction takes nothing returns nothing
 
     if triggerPlayer == GetLocalPlayer() and TUI_ButtonAction.has(handleId) then
         set actionId = TUI_ButtonAction.integer[handleId]
+        set TUI_ConfigDirty = true
         if actionId == TUI_ACTION_MINIMIZE then
             call TUI_ToggleMinimized()
         elseif actionId == TUI_ACTION_CONFIG then
@@ -557,6 +673,7 @@ private function TUI_ButtonClickAction takes nothing returns nothing
             call TUI_Update()
         elseif actionId == TUI_ACTION_SHOW_MANA then
             set TUI_ShowMana = not TUI_ShowMana
+            set TUI_LayoutDirty = true
             call TUI_Update()
         elseif actionId == TUI_ACTION_INITIAL_AGGRO_TEXT then
             call ThreatSystem_SetInitialAggroTextVisible(not ThreatSystem_IsInitialAggroTextVisible())
@@ -605,6 +722,9 @@ private function TUI_OnUnitSelected takes nothing returns nothing
         set TUI_SelectedUnit = selectedUnit
         if ThreatSystem_HasThreat(selectedUnit) or TUI_AlwaysShow or not TUI_AutoHide then
             set TUI_PinnedUnit = selectedUnit
+            if TUI_ConfigVisible then
+                set TUI_LayoutDirty = true
+            endif
             set TUI_ConfigVisible = false
             set TUI_Closed = false
         else
@@ -777,6 +897,7 @@ private function TUI_CreateFrames takes nothing returns nothing
 
     call BlzFrameSetVisible(TUI_ConfigPane, false)
     call BlzFrameSetVisible(TUI_Parent, false)
+    set TUI_LayoutDirty = true
 endfunction
 
 private function Init takes nothing returns nothing

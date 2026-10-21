@@ -115,6 +115,9 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
         private string SUI_GoldCache = ""
         private string SUI_ArenaMarksCache = ""
         private string SUI_ActionTextCache = ""
+        private string SUI_TitleCache = ""
+        private string SUI_ViewingTextCache = ""
+        private string SUI_ModeTextCache = ""
 
         private Table SUI_ButtonRow = 0
         private Table SUI_CategoryButtonIndex = 0
@@ -621,9 +624,18 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
         endif
 
         if GetLocalPlayer() == whichPlayer then
-            call BlzFrameSetText(SUI_Title, "|cffffe4a3" + vendorName + "|r")
-            call BlzFrameSetText(SUI_ViewingText, viewingText)
-            call BlzFrameSetText(SUI_ModeButton, modeLabel)
+            if SUI_TitleCache != "|cffffe4a3" + vendorName + "|r" then
+                set SUI_TitleCache = "|cffffe4a3" + vendorName + "|r"
+                call BlzFrameSetText(SUI_Title, SUI_TitleCache)
+            endif
+            if SUI_ViewingTextCache != viewingText then
+                set SUI_ViewingTextCache = viewingText
+                call BlzFrameSetText(SUI_ViewingText, viewingText)
+            endif
+            if SUI_ModeTextCache != modeLabel then
+                set SUI_ModeTextCache = modeLabel
+                call BlzFrameSetText(SUI_ModeButton, modeLabel)
+            endif
         endif
     endfunction
 
@@ -644,6 +656,21 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
         call SUI_UpdateDetail(whichPlayer, totalCount)
         call SUI_UpdateResources(whichPlayer)
         call SUI_SyncListScrollFrame(whichPlayer, totalCount)
+    endfunction
+
+    private function SUI_RefreshAction takes nothing returns nothing
+        if SUI_IsVisible() and SUI_BuyerUnit != null then
+            if VendorLines_AreRandomLinesEnabled(SUI_VendorId) then
+                set SUI_RandomVendorLineRemaining = SUI_RandomVendorLineRemaining - SUI_REFRESH_INTERVAL
+                if SUI_RandomVendorLineRemaining <= 0.00 then
+                    if SUI_VendorUnit != null and DialogInteraction_IsUnitAlive(SUI_VendorUnit) and not DialogSystem_IsFieldLineQueueActive() and not DialogSystem_IsSequenceActive() then
+                        call VendorLines_PlayRandomTradeLine(SUI_VendorUnit)
+                    endif
+                    set SUI_RandomVendorLineRemaining = VendorLines_GetRandomLineInterval(SUI_VendorId)
+                endif
+            endif
+            call SUI_Update(SUI_GetActivePlayer())
+        endif
     endfunction
 
     // Slider dragging can emit several events before frames render; keep only the final list state.
@@ -736,6 +763,7 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
         local player activePlayer = SUI_GetActivePlayer()
 
         call CameraControl_SetMouseOrbitBlockReason(activePlayer, CameraControl_MOUSE_ORBIT_BLOCK_SHOP, false)
+        call PauseTimer(SUI_RefreshTimer)
         set SUI_ScrollUpdateQueued = false
         if SUI_ScrollUpdateTimer != null then
             call PauseTimer(SUI_ScrollUpdateTimer)
@@ -1267,6 +1295,7 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
         endif
         call BlzFrameSetVisible(SUI_Parent, true)
         call SUI_Update(p)
+        call TimerStart(SUI_RefreshTimer, SUI_REFRESH_INTERVAL, true, function SUI_RefreshAction)
         // Native dialog callbacks can defer child-frame rendering until the event returns.
         set refreshTimer = CreateTimer()
         call TimerStart(refreshTimer, 0.00, false, function SUI_DeferredInitialRefresh)
@@ -1340,21 +1369,6 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
         return SUI_BuyerUnit
     endfunction
 
-    private function SUI_RefreshAction takes nothing returns nothing
-        if SUI_IsVisible() and SUI_BuyerUnit != null then
-            if VendorLines_AreRandomLinesEnabled(SUI_VendorId) then
-                set SUI_RandomVendorLineRemaining = SUI_RandomVendorLineRemaining - SUI_REFRESH_INTERVAL
-                if SUI_RandomVendorLineRemaining <= 0.00 then
-                    if SUI_VendorUnit != null and DialogInteraction_IsUnitAlive(SUI_VendorUnit) and not DialogSystem_IsFieldLineQueueActive() and not DialogSystem_IsSequenceActive() then
-                        call VendorLines_PlayRandomTradeLine(SUI_VendorUnit)
-                    endif
-                    set SUI_RandomVendorLineRemaining = VendorLines_GetRandomLineInterval(SUI_VendorId)
-                endif
-            endif
-            call SUI_Update(SUI_GetActivePlayer())
-        endif
-    endfunction
-
     public function Init takes nothing returns nothing
         if SUI_Initialized then
             return
@@ -1366,7 +1380,6 @@ library ShopUI initializer AutoInit requires Table, Shop, VendorLines, DialogCam
         set SUI_ReturnHandlerByVendor = Table.create()
         set SUI_RefreshTimer = CreateTimer()
         set SUI_ScrollUpdateTimer = CreateTimer()
-        call TimerStart(SUI_RefreshTimer, SUI_REFRESH_INTERVAL, true, function SUI_RefreshAction)
 
         set SUI_CloseTrigger = CreateTrigger()
         call TriggerAddAction(SUI_CloseTrigger, function SUI_CloseAction)

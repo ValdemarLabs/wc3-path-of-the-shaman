@@ -119,6 +119,7 @@ globals
     private unit MAB_ElementalHero = null
     private boolean MAB_ElementalOpen = false
     private integer MAB_CachedTargetingAbility = -1
+    private integer MAB_CachedTargetingMode = -1
     private integer MAB_CachedMana = -1
     private integer array MAB_CachedAbilityId
     private integer array MAB_CachedAbilityLevel
@@ -381,6 +382,7 @@ private function MAB_ResetSlotCache takes nothing returns nothing
     set MAB_CachedHero = null
     set MAB_StaticDirty = true
     set MAB_CachedTargetingAbility = -1
+    set MAB_CachedTargetingMode = -1
     set MAB_CachedMana = -1
     set MAB_CachedLoadoutRevision = -1
     set MAB_LearnScanTick = 0
@@ -609,37 +611,53 @@ endfunction
 
 private function MAB_UpdateTargetingText takes nothing returns nothing
     local player localPlayer = GetLocalPlayer()
-    local integer abilityId
-    local integer entryIndex
+    local integer abilityId = AbilitiesLiteUI_GetModernPendingAbilityId()
+    local integer mode = 0
+    local integer payload = 0
+    local integer entryIndex = 0
+    local string text = ""
 
-    set abilityId = AbilitiesLiteUI_GetModernPendingAbilityId()
     if abilityId > 0 then
-        set entryIndex = AbilitiesPlayer_GetEntryByAbilityId(abilityId)
-        call BlzFrameSetText(MAB_TargetingText, "|cffffcc00Assign " + AbilitiesPlayer_GetEntryTitle(entryIndex) + ":|r click an action-bar slot.  |cffaaaaaa(Right-click another ability to change selection)|r")
-        set MAB_TargetingVisible = true
-        call BlzFrameSetVisible(MAB_TargetingText, true)
+        set mode = 1
+        set payload = abilityId
     elseif MAB_RebindSlot > 0 then
-        call BlzFrameSetText(MAB_TargetingText, "|cffffcc00Rebind slot " + I2S(MAB_RebindSlot) + ":|r press 1-0, -, =, QWER, ASDF, or ZXCV.  |cffaaaaaa(Right-click a slot to cancel)|r")
-        set MAB_TargetingVisible = true
-        call BlzFrameSetVisible(MAB_TargetingText, true)
+        set mode = 2
+        set payload = MAB_RebindSlot
     elseif MAB_MoveSourceSlot > 0 then
-        call BlzFrameSetText(MAB_TargetingText, "|cffffcc00Move slot " + I2S(MAB_MoveSourceSlot) + ":|r click another slot to swap.  |cffaaaaaa(Right-click the source again to cancel)|r")
-        set MAB_TargetingVisible = true
-        call BlzFrameSetVisible(MAB_TargetingText, true)
+        set mode = 3
+        set payload = MAB_MoveSourceSlot
     elseif ModernAbilityController_IsTargetingLocal(localPlayer) then
+        set mode = 4
         set abilityId = ModernAbilityController_GetPendingAbilityId(localPlayer)
-        if abilityId != MAB_CachedTargetingAbility then
-            set MAB_CachedTargetingAbility = abilityId
+        set payload = abilityId
+    endif
+
+    if mode != MAB_CachedTargetingMode or payload != MAB_CachedTargetingAbility then
+        set MAB_CachedTargetingMode = mode
+        set MAB_CachedTargetingAbility = payload
+        if mode == 1 then
+            set entryIndex = AbilitiesPlayer_GetEntryByAbilityId(payload)
+            set text = "|cffffcc00Assign " + AbilitiesPlayer_GetEntryTitle(entryIndex) + ":|r click an action-bar slot.  |cffaaaaaa(Right-click another ability to change selection)|r"
+        elseif mode == 2 then
+            set text = "|cffffcc00Rebind slot " + I2S(payload) + ":|r press 1-0, -, =, QWER, ASDF, or ZXCV.  |cffaaaaaa(Right-click a slot to cancel)|r"
+        elseif mode == 3 then
+            set text = "|cffffcc00Move slot " + I2S(payload) + ":|r click another slot to swap.  |cffaaaaaa(Right-click the source again to cancel)|r"
+        elseif mode == 4 then
             set entryIndex = AbilitiesPlayer_GetEntryByAbilityId(abilityId)
-            call BlzFrameSetText(MAB_TargetingText, "|cffffcc00Choose target:|r " + AbilitiesPlayer_GetEntryTitle(entryIndex) + "  |cffaaaaaa(Right-click cancels)|r")
+            set text = "|cffffcc00Choose target:|r " + AbilitiesPlayer_GetEntryTitle(entryIndex) + "  |cffaaaaaa(Right-click cancels)|r"
         endif
+        if mode > 0 then
+            call BlzFrameSetText(MAB_TargetingText, text)
+        endif
+    endif
+
+    if mode > 0 then
         if not MAB_TargetingVisible then
             set MAB_TargetingVisible = true
             call BlzFrameSetVisible(MAB_TargetingText, true)
         endif
     elseif MAB_TargetingVisible then
         set MAB_TargetingVisible = false
-        set MAB_CachedTargetingAbility = -1
         call BlzFrameSetVisible(MAB_TargetingText, false)
     endif
 

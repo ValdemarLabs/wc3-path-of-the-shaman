@@ -26,10 +26,12 @@
 library PlayerHomeUI initializer AutoInit requires PlayerHome, MasterUI, Interface, FallenHeroState
     globals
         private constant string PHUI_JOURNAL_ICON = "ReplaceableTextures\\CommandButtons\\BTNBook_07.blp"
-        private constant real PHUI_REFRESH_PERIOD = 0.25
+        private constant real PHUI_REFRESH_PERIOD = 1.00
+        private constant real PHUI_BIND_REFRESH_PERIOD = 0.25
 
         private boolean PHUI_Initialized = false
         private boolean PHUI_BindMode = false
+        private integer PHUI_ModeVisibilityState = -1
         private framehandle PHUI_Parent = null
         private framehandle PHUI_Title = null
         private framehandle PHUI_Icon = null
@@ -123,6 +125,15 @@ library PlayerHomeUI initializer AutoInit requires PlayerHome, MasterUI, Interfa
 
     private function PHUI_ApplyModeVisibility takes nothing returns nothing
         local boolean normalMode = not PHUI_BindMode
+        local integer modeState = 0
+
+        if PHUI_BindMode then
+            set modeState = 1
+        endif
+        if PHUI_ModeVisibilityState == modeState then
+            return
+        endif
+        set PHUI_ModeVisibilityState = modeState
 
         call PHUI_SetFrameVisible(PHUI_HomeText, normalMode)
         call PHUI_SetFrameVisible(PHUI_OwnershipText, normalMode)
@@ -152,6 +163,7 @@ library PlayerHomeUI initializer AutoInit requires PlayerHome, MasterUI, Interfa
         if PHUI_BindMode and not PlayerHome_IsBinding() then
             set PHUI_BindMode = false
             call BlzFrameSetVisible(PHUI_Parent, false)
+            call PauseTimer(PHUI_RefreshTimer)
             set nazgrek = null
             set zulkis = null
             return
@@ -208,6 +220,7 @@ library PlayerHomeUI initializer AutoInit requires PlayerHome, MasterUI, Interfa
     endfunction
 
     private function PHUI_HideInternal takes nothing returns nothing
+        call PauseTimer(PHUI_RefreshTimer)
         if PHUI_Parent != null then
             if BlzFrameIsVisible(PHUI_Parent) then
                 call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_CLOSE, Player(0))
@@ -237,6 +250,7 @@ library PlayerHomeUI initializer AutoInit requires PlayerHome, MasterUI, Interfa
                 call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_OPEN, Player(0))
             endif
             call BlzFrameSetVisible(PHUI_Parent, true)
+            call TimerStart(PHUI_RefreshTimer, PHUI_REFRESH_PERIOD, true, function PHUI_Update)
             call PHUI_Update()
         endif
     endfunction
@@ -251,6 +265,7 @@ library PlayerHomeUI initializer AutoInit requires PlayerHome, MasterUI, Interfa
                     call Interface_PlayEventSoundForPlayer(Interface_EVENT_UI_OPEN, Player(0))
                 endif
                 call BlzFrameSetVisible(PHUI_Parent, true)
+                call TimerStart(PHUI_RefreshTimer, PHUI_BIND_REFRESH_PERIOD, true, function PHUI_Update)
                 call PHUI_Update()
             endif
         endif
@@ -393,13 +408,8 @@ library PlayerHomeUI initializer AutoInit requires PlayerHome, MasterUI, Interfa
         call BlzFrameSetVisible(PHUI_Parent, false)
     endfunction
 
-    private function PHUI_RefreshAction takes nothing returns nothing
-        call PHUI_Update()
-    endfunction
-
     private function PHUI_DelayedInit takes nothing returns nothing
         call PHUI_CreateFrames()
-        call TimerStart(PHUI_RefreshTimer, PHUI_REFRESH_PERIOD, true, function PHUI_RefreshAction)
     endfunction
 
     public function Init takes nothing returns nothing
