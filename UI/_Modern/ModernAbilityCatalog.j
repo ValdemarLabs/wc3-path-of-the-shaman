@@ -2,7 +2,7 @@
     ModernAbilityCatalog
 
     Author: Valdemar
-    Version: 0.3.0
+    Version: 0.4.0
 
     Description:
     Classifies player shaman abilities for the modern action bar. The catalog
@@ -22,6 +22,7 @@
     - set policy = ModernAbilityCatalog_GetTargetPolicy(abilityId)
     - set radius = ModernAbilityCatalog_GetAcquireRadius(abilityId)
     - set orderId = ModernAbilityCatalog_GetOrderId(abilityId)
+    - set channelOrder = ModernAbilityCatalog_UsesChannelOrder(abilityId)
     - set ready = ModernAbilityCatalog_IsRuntimeReady(abilityId)
     - set allowed = ModernAbilityCatalog_IsAssignable(abilityId)
     - set allowed = ModernAbilityCatalog_AllowsSelfFallback(abilityId)
@@ -54,6 +55,7 @@ globals
     private boolean array MAC_SelfFallback
     private integer array MAC_OrderId
     private boolean array MAC_RuntimeReady
+    private boolean array MAC_UsesChannelOrder
 endglobals
 
 private function MAC_Register takes integer abilityId, integer actionKind, integer targetPolicy, real acquireRadius, boolean selfFallback returns nothing
@@ -80,6 +82,15 @@ private function MAC_RegisterOrder takes integer abilityId, string orderString, 
         set MAC_OrderId[entryIndex] = OrderId(orderString)
     endif
     set MAC_RuntimeReady[entryIndex] = runtimeReady and (MAC_OrderId[entryIndex] != 0 or MAC_ActionKind[entryIndex] == ACTION_SUBMENU)
+endfunction
+
+private function MAC_RegisterChannelOrder takes integer abilityId, string orderString returns nothing
+    local integer entryIndex = AbilitiesPlayer_GetEntryByAbilityId(abilityId)
+
+    call MAC_RegisterOrder(abilityId, orderString, true)
+    if entryIndex != 0 then
+        set MAC_UsesChannelOrder[entryIndex] = true
+    endif
 endfunction
 
 private function MAC_RegisterElemental takes nothing returns nothing
@@ -142,7 +153,7 @@ private function MAC_RegisterOrders takes nothing returns nothing
     call MAC_RegisterOrder('A68H', "lightningshield", true)
     call MAC_RegisterOrder('A67Q', "", true)
 
-    call MAC_RegisterOrder('A685', "summonbear", true)
+    call MAC_RegisterOrder('A685', "summongrizzly", true)
     call MAC_RegisterOrder('A6DP', "whirlwind", true)
     call MAC_RegisterOrder('A026', "thunderbolt", true)
     call MAC_RegisterOrder('A022', "thunderbolt", true)
@@ -161,15 +172,15 @@ private function MAC_RegisterOrders takes nothing returns nothing
     call MAC_RegisterOrder('A01Z', "spiritlink", true)
     call MAC_RegisterOrder('A6AL', "innerfire", true)
 
-    call MAC_RegisterOrder('A63F', "transmute", true)
-    call MAC_RegisterOrder('A63G', "unavatar", true)
-    call MAC_RegisterOrder('A63H', "unavengerform", true)
-    call MAC_RegisterOrder('A63I', "unbearform", true)
-    call MAC_RegisterOrder('A68J', "uncoldarrows", true)
-    call MAC_RegisterOrder('A68L', "uncorporealform", true)
-    call MAC_RegisterOrder('A68F', "unholyfrenzy", true)
-    call MAC_RegisterOrder('A68T', "undeadbuild", true)
-    call MAC_RegisterOrder('A01U', "unburrow", true)
+    call MAC_RegisterChannelOrder('A63F', "undeadbuild")
+    call MAC_RegisterChannelOrder('A63G', "undeadbuild")
+    call MAC_RegisterChannelOrder('A63H', "undeadbuild")
+    call MAC_RegisterChannelOrder('A63I', "undeadbuild")
+    call MAC_RegisterChannelOrder('A68J', "undeadbuild")
+    call MAC_RegisterChannelOrder('A68L', "undeadbuild")
+    call MAC_RegisterChannelOrder('A68F', "undeadbuild")
+    call MAC_RegisterChannelOrder('A68T', "undeadbuild")
+    call MAC_RegisterChannelOrder('A01U', "undeadbuild")
 endfunction
 
 public function GetActionKind takes integer abilityId returns integer
@@ -206,6 +217,12 @@ public function GetOrderId takes integer abilityId returns integer
         return 0
     endif
     return MAC_OrderId[entryIndex]
+endfunction
+
+public function UsesChannelOrder takes integer abilityId returns boolean
+    local integer entryIndex = AbilitiesPlayer_GetEntryByAbilityId(abilityId)
+
+    return entryIndex != 0 and MAC_UsesChannelOrder[entryIndex]
 endfunction
 
 public function IsRuntimeReady takes integer abilityId returns boolean

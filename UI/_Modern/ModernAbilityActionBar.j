@@ -2,7 +2,7 @@
     ModernAbilityActionBar
 
     Author: Valdemar
-    Version: 0.8.0
+    Version: 0.9.0
 
     Description:
     Renders the cached PotS-owned twelve-slot action bar with learned ability
@@ -211,6 +211,26 @@ private function MAB_GetKeyLabel takes oskeytype whichKey returns string
     return "?"
 endfunction
 
+private function MAB_GetAbilityIconPath takes integer abilityId returns string
+    local integer entryIndex
+    local integer addAbilityId
+    local string iconPath = BlzGetAbilityIcon(abilityId)
+
+    if iconPath == null or iconPath == "" then
+        set entryIndex = AbilitiesPlayer_GetEntryByAbilityId(abilityId)
+        if entryIndex != 0 then
+            set addAbilityId = AbilitiesPlayer_GetEntryAddAbilityId(entryIndex)
+            if addAbilityId != 0 then
+                set iconPath = BlzGetAbilityIcon(addAbilityId)
+            endif
+        endif
+    endif
+    if iconPath == null or iconPath == "" then
+        set iconPath = MAB_EMPTY_ICON
+    endif
+    return iconPath
+endfunction
+
 private function MAB_GetElementalAbilityId takes integer index returns integer
     if index == 0 then
         return MAB_ELEMENTAL_AIR
@@ -254,10 +274,7 @@ private function MAB_UpdateContextSlots takes unit whichHero returns nothing
         if abilityId != MAB_ContextAbilityId[index] then
             set MAB_ContextAbilityId[index] = abilityId
             if abilityId != 0 then
-                set iconPath = BlzGetAbilityIcon(abilityId)
-                if iconPath == null or iconPath == "" then
-                    set iconPath = MAB_EMPTY_ICON
-                endif
+                set iconPath = MAB_GetAbilityIconPath(abilityId)
                 call BlzFrameSetTexture(MAB_ContextIcon[index], iconPath, 0, true)
             endif
             call BlzFrameSetVisible(MAB_ContextButton[index], abilityId != 0)
@@ -369,10 +386,19 @@ private function MAB_RestoreNativeFrames takes nothing returns nothing
     set MAB_NativeCaptured = false
 endfunction
 
+private function MAB_CloseTooltip takes nothing returns nothing
+    if MAB_Tooltip != null then
+        call BlzFrameSetVisible(MAB_Tooltip, false)
+    endif
+endfunction
+
 private function MAB_SetParentVisible takes boolean visible returns nothing
     if MAB_ParentVisible != visible then
         set MAB_ParentVisible = visible
         call BlzFrameSetVisible(MAB_Parent, visible)
+        if not visible then
+            call MAB_CloseTooltip()
+        endif
     endif
 endfunction
 
@@ -388,6 +414,7 @@ private function MAB_ResetSlotCache takes nothing returns nothing
     set MAB_LearnScanTick = 0
     set MAB_MoveSourceSlot = 0
     set MAB_RebindSlot = 0
+    call MAB_CloseTooltip()
     loop
         exitwhen index >= ModernAbilityLoadout_SLOT_COUNT
         set MAB_CachedAbilityId[index] = -1
@@ -554,10 +581,7 @@ private function MAB_UpdateSlotStatic takes integer index, unit whichHero return
 
     set entryIndex = AbilitiesPlayer_GetEntryByAbilityId(abilityId)
     set ready = abilityLevel > 0 and ModernAbilityCatalog_IsRuntimeReady(abilityId)
-    set iconPath = BlzGetAbilityIcon(abilityId)
-    if iconPath == null or iconPath == "" then
-        set iconPath = MAB_EMPTY_ICON
-    endif
+    set iconPath = MAB_GetAbilityIconPath(abilityId)
 
     set MAB_CachedIcon[index] = iconPath
     set MAB_CachedReady[index] = ready
@@ -795,7 +819,7 @@ private function MAB_SlotAction takes nothing returns nothing
             exitwhen index >= ModernAbilityLoadout_SLOT_COUNT
             if triggerFrame == MAB_SlotButton[index] then
                 set slot = index + 1
-                set rightClick = BlzIsMouseButtonPressed(MOUSE_BUTTON_TYPE_RIGHT)
+                set rightClick = BlzGetTriggerPlayerMouseButton() == MOUSE_BUTTON_TYPE_RIGHT
                 if rightClick then
                     call ModernAbilityController_CancelLocal(triggerPlayer)
                     call MAB_CloseElementalFlyout()
@@ -940,9 +964,16 @@ endfunction
 
 private function MAB_HoverAction takes nothing returns nothing
     local framehandle triggerFrame = BlzGetTriggerFrame()
+    local frameeventtype triggerEvent = BlzGetTriggerFrameEvent()
     local integer index = 0
 
     if GetTriggerPlayer() == GetLocalPlayer() then
+        if triggerEvent == FRAMEEVENT_MOUSE_LEAVE then
+            call MAB_CloseTooltip()
+            set triggerEvent = null
+            set triggerFrame = null
+            return
+        endif
         loop
             exitwhen index >= ModernAbilityLoadout_SLOT_COUNT
             if triggerFrame == MAB_SlotButton[index] then
@@ -957,6 +988,7 @@ private function MAB_HoverAction takes nothing returns nothing
                     call BlzFrameSetText(MAB_TooltipTitle, "|cffaaaaaaEmpty slot|r")
                     call BlzFrameSetText(MAB_TooltipBody, "Choose a learned ability from the Abilities book.")
                 endif
+                call BlzFrameSetVisible(MAB_Tooltip, true)
                 set index = ModernAbilityLoadout_SLOT_COUNT
             else
                 set index = index + 1
@@ -964,6 +996,7 @@ private function MAB_HoverAction takes nothing returns nothing
         endloop
     endif
 
+    set triggerEvent = null
     set triggerFrame = null
 endfunction
 
@@ -971,6 +1004,7 @@ private function MAB_CreateTooltip takes nothing returns nothing
     set MAB_Tooltip = BlzCreateFrameByType("BACKDROP", "ModernAbilityTooltip", MAB_ScreenParent, "EscMenuBackdrop", 0)
     call BlzFrameSetAbsPoint(MAB_Tooltip, FRAMEPOINT_BOTTOM, 0.400, 0.130)
     call BlzFrameSetSize(MAB_Tooltip, MAB_TOOLTIP_WIDTH, MAB_TOOLTIP_HEIGHT)
+    call BlzFrameSetEnable(MAB_Tooltip, false)
     call BlzFrameSetLevel(MAB_Tooltip, 40)
 
     set MAB_TooltipTitle = BlzCreateFrameByType("TEXT", "ModernAbilityTooltipTitle", MAB_Tooltip, "", 0)
@@ -1033,11 +1067,10 @@ private function MAB_CreateSlot takes integer index returns nothing
     call BlzFrameSetEnable(MAB_SlotKeyText[index], false)
     call BlzFrameSetLevel(MAB_SlotKeyText[index], 9)
 
-    call BlzFrameSetTooltip(MAB_SlotButton[index], MAB_Tooltip)
-
     call BlzTriggerRegisterFrameEvent(MAB_SlotTrigger, MAB_SlotButton[index], FRAMEEVENT_MOUSE_DOWN)
     call BlzTriggerRegisterFrameEvent(MAB_ClearFocusTrigger, MAB_SlotButton[index], FRAMEEVENT_CONTROL_CLICK)
     call BlzTriggerRegisterFrameEvent(MAB_HoverTrigger, MAB_SlotButton[index], FRAMEEVENT_MOUSE_ENTER)
+    call BlzTriggerRegisterFrameEvent(MAB_HoverTrigger, MAB_SlotButton[index], FRAMEEVENT_MOUSE_LEAVE)
 endfunction
 
 private function MAB_CreateElementalFlyout takes nothing returns nothing
@@ -1064,10 +1097,7 @@ private function MAB_CreateElementalFlyout takes nothing returns nothing
         exitwhen index >= MAB_ELEMENTAL_COUNT
         set abilityId = MAB_GetElementalAbilityId(index)
         set x = MAB_ELEMENTAL_START_X + I2R(index) * (MAB_ELEMENTAL_SIZE + MAB_ELEMENTAL_GAP)
-        set iconPath = BlzGetAbilityIcon(abilityId)
-        if iconPath == null or iconPath == "" then
-            set iconPath = MAB_EMPTY_ICON
-        endif
+        set iconPath = MAB_GetAbilityIconPath(abilityId)
 
         set MAB_ElementalButton[index] = BlzCreateFrameByType("GLUEBUTTON", "ModernElementalFlyoutButton" + I2S(index), MAB_ElementalBackdrop, "ScoreScreenTabButtonTemplate", 0)
         call BlzFrameSetAbsPoint(MAB_ElementalButton[index], FRAMEPOINT_BOTTOMLEFT, x, MAB_ELEMENTAL_BOTTOM)
@@ -1219,7 +1249,7 @@ private function MAB_OnUnitSelected takes nothing returns nothing
     local unit selectedUnit = GetTriggerUnit()
     local player selectingPlayer = GetTriggerPlayer()
 
-    if selectingPlayer == GetLocalPlayer() then
+    if selectingPlayer == GetLocalPlayer() and MAB_IsPlayerHero(selectedUnit) then
         if MAB_ElementalHero != null and MAB_ElementalHero != selectedUnit then
             call MAB_CloseElementalFlyout()
         endif
@@ -1234,10 +1264,8 @@ private function MAB_OnUnitDeselected takes nothing returns nothing
     local unit deselectedUnit = GetTriggerUnit()
     local player deselectingPlayer = GetTriggerPlayer()
 
-    if deselectingPlayer == GetLocalPlayer() and MAB_SelectedUnit == deselectedUnit then
-        set MAB_SelectedUnit = null
-        call MAB_ResetSlotCache()
-    endif
+    // Keep the last player hero as the HUD subject while the player selects a
+    // world target or an inspect target.
     set deselectedUnit = null
     set deselectingPlayer = null
 endfunction

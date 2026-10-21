@@ -34,6 +34,9 @@ library AbilitiesPlayer
     public function GetEntryAbilityId takes integer entryIndex returns integer
         return 0
     endfunction
+    public function GetEntryAddAbilityId takes integer entryIndex returns integer
+        return 0
+    endfunction
     public function GetEntryByAbilityId takes integer abilityId returns integer
         return 0
     endfunction

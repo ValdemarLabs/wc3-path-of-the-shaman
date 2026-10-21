@@ -178,9 +178,9 @@ Six focused libraries establish that boundary:
 - `ModernAbilityController.j` turns local slot clicks and world coordinates
   into validated synchronized orders. Immediate/self and melee-auto abilities
   cast without a second click; unit and ground abilities enter targeting mode.
-  It reads a learned Channel ability's live `Ncl6` base order before falling
-  back to the catalog order, so Object Editor order changes do not silently
-  break melee or point-target dispatch.
+  It reads live `Ncl6` only for abilities explicitly classified as Channel,
+  then falls back to the catalog order. Ordinary abilities keep their actual
+  base order instead of accidentally interpreting the Channel-only field.
 - `ModernAbilityActionBar.j` renders the PotS-owned slots and hides the native
   bottom HUD after `FullscreenUI` releases the intro presentation.
 - `ModernMinimapHUD.j` preserves the engine minimap and its five native
@@ -223,9 +223,20 @@ Summon Elemental now opens a four-button Air, Water, Fire, and Earth flyout.
 The selected child rawcode is synchronized and validated, while its current
 Channel `Ncl6` order is read from the hero's ability at runtime. Windfury Totem
 uses the corrected `undeadbuild` Channel base order and is enabled on the
-modern bar. The next implementation stage is ability-book row-to-slot
-assignment, followed by save/load persistence and custom inventory/minimap
-replacements.
+modern bar.
+
+To configure the bar, right-click a learned active row in the Abilities book.
+The book closes while retaining the pending ability; click any action slot to
+assign it. Right-click a populated slot and click another slot to swap them.
+Shift-right-click a slot and then press one of the registered action keys to
+rebind it for the current session. Learned active abilities continue to fill
+the first empty slot automatically. Save/load persistence is still a later
+stage.
+
+World targeting is armed on the next local input tick so the frame click that
+opened targeting cannot be mistaken for a terrain click. Selecting an enemy,
+ally, or inspect target no longer replaces the player hero displayed by the
+resource HUD or action bar.
 
 ## Import and validation
 
@@ -289,7 +300,7 @@ Then compile through the current World Editor/JassHelper workflow. Test:
 - non-hero and enemy selection;
 - inventory, quest, MasterUI, cinematic, and fullscreen UI transitions;
 - the intro-to-gameplay transition without a native access violation;
-- version 0.6.0 of the resource shell and version 0.7.0 of the action bar,
+- version 0.8.0 of the resource shell and version 0.9.0 of the action bar,
   confirming that learned icons, cooldowns, tooltips, and Abilities render;
 - mouse clicks on action slots, Abilities, StatsLiteUI, Quest UI, MasterUI,
   world terrain, and units after the full-screen logical parents were removed;
@@ -304,6 +315,10 @@ Then compile through the current World Editor/JassHelper workflow. Test:
   custom minimap remains visible, plus restoration after disabling the bar;
 - direct self and melee-auto casting; soft friendly/hostile targeting; exact
   totem placement; and approximate area-spell placement;
+- one-click entry into targeting, confirming that the opening frame click is
+  ignored and the following terrain/unit click is the synchronized target;
+- health and mana current/maximum plus percentage text, clean flat-ended fills,
+  ten-segment XP progress, and icon-backed Bag, Gear, and Look controls;
 - all four Summon Elemental flyout choices, including mana, cooldown, channel,
   replacement of the active elemental, and two-client synchronization;
 - Windfury Totem point placement through its corrected `undeadbuild` Channel

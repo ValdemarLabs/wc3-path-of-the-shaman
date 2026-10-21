@@ -2,7 +2,7 @@
     ModernPlayerHUD
 
     Author: Valdemar
-    Version: 0.7.0
+    Version: 0.8.0
 
     Description:
     Creates the cached modern PotS bottom-center resource shell, twelve custom
@@ -56,6 +56,7 @@ globals
     private constant real MHUD_RESOURCE_BAR_HEIGHT = 0.010
     private constant real MHUD_XP_BAR_WIDTH = 0.404
     private constant real MHUD_XP_BAR_HEIGHT = 0.006
+    private constant integer MHUD_XP_SEGMENT_COUNT = 10
     private constant integer MHUD_BAR_HEALTH = 0
     private constant integer MHUD_BAR_MANA = 1
     private constant integer MHUD_BAR_XP = 2
@@ -75,6 +76,9 @@ globals
     private constant string MHUD_MANA_TEXTURE = "UI\\_Modern\\Assets\\PotSMana.tga"
     private constant string MHUD_XP_TEXTURE = "UI\\_Modern\\Assets\\PotSXP.tga"
     private constant string MHUD_BOOK_ICON = "ReplaceableTextures\\CommandButtons\\BTNBook_07.blp"
+    private constant string MHUD_BAG_ICON = "ReplaceableTextures\\CommandButtons\\BTNChestOfGold.blp"
+    private constant string MHUD_GEAR_ICON = "ReplaceableTextures\\CommandButtons\\BTNThoriumArmor.blp"
+    private constant string MHUD_INSPECT_ICON = "ReplaceableTextures\\CommandButtons\\BTNSpy.blp"
 
     private boolean MHUD_Initialized = false
     private boolean MHUD_FramesCreated = false
@@ -105,6 +109,7 @@ globals
     private framehandle MHUD_EquipmentButton = null
     private framehandle MHUD_InspectButton = null
     private framehandle array MHUD_SlotBackdrop
+    private framehandle array MHUD_XPSegment
 
     private trigger MHUD_BookTrigger = null
     private trigger MHUD_UtilityTrigger = null
@@ -182,6 +187,20 @@ private function MHUD_ClampRatio takes real value returns real
         return 1.00
     endif
     return value
+endfunction
+
+private function MHUD_FormatResourceText takes integer current, integer maximum returns string
+    local integer percent = 0
+
+    if maximum > 0 then
+        set percent = R2I(100.00 * I2R(current) / I2R(maximum) + 0.50)
+    endif
+    if percent < 0 then
+        set percent = 0
+    elseif percent > 100 then
+        set percent = 100
+    endif
+    return I2S(current) + " / " + I2S(maximum) + "  (" + I2S(percent) + "%)"
 endfunction
 
 private function MHUD_ResetCache takes nothing returns nothing
@@ -340,7 +359,7 @@ private function MHUD_Update takes nothing returns nothing
     if life != MHUD_CachedLife or maxLife != MHUD_CachedMaxLife then
         set MHUD_CachedLife = life
         set MHUD_CachedMaxLife = maxLife
-        call BlzFrameSetText(MHUD_HealthText, I2S(life) + " / " + I2S(maxLife))
+        call BlzFrameSetText(MHUD_HealthText, MHUD_FormatResourceText(life, maxLife))
         call MHUD_SetBarFill(MHUD_HealthFill, MHUD_RESOURCE_BAR_WIDTH, MHUD_RESOURCE_BAR_HEIGHT, I2R(life), I2R(maxLife), MHUD_BAR_HEALTH)
     endif
 
@@ -349,7 +368,7 @@ private function MHUD_Update takes nothing returns nothing
         if mana != MHUD_CachedMana or maxMana != MHUD_CachedMaxMana then
             set MHUD_CachedMana = mana
             set MHUD_CachedMaxMana = maxMana
-            call BlzFrameSetText(MHUD_ManaText, I2S(mana) + " / " + I2S(maxMana))
+            call BlzFrameSetText(MHUD_ManaText, MHUD_FormatResourceText(mana, maxMana))
             call MHUD_SetBarFill(MHUD_ManaFill, MHUD_RESOURCE_BAR_WIDTH, MHUD_RESOURCE_BAR_HEIGHT, I2R(mana), I2R(maxMana), MHUD_BAR_MANA)
         endif
     else
@@ -428,16 +447,40 @@ private function MHUD_UtilityAction takes nothing returns nothing
     set triggerFrame = null
 endfunction
 
-private function MHUD_CreateUtilityButton takes string frameName, string label, real x returns framehandle
-    local framehandle utilityButton = BlzCreateFrameByType("GLUETEXTBUTTON", frameName, MHUD_Parent, "ScriptDialogButton", 0)
+private function MHUD_CreateUtilityButton takes string frameName, string label, string iconPath, real x returns framehandle
+    local framehandle utilityButton = BlzCreateFrameByType("BUTTON", frameName, MHUD_Parent, "", 0)
+    local framehandle border = BlzCreateFrameByType("BACKDROP", frameName + "Border", utilityButton, "", 0)
+    local framehandle icon = BlzCreateFrameByType("BACKDROP", frameName + "Icon", utilityButton, "", 0)
+    local framehandle labelText = BlzCreateFrameByType("TEXT", frameName + "Label", utilityButton, "", 0)
 
     call BlzFrameSetAbsPoint(utilityButton, FRAMEPOINT_BOTTOMLEFT, x, MHUD_ACTION_BOTTOM)
     call BlzFrameSetSize(utilityButton, 0.032, MHUD_ACTION_SIZE)
-    call BlzFrameSetText(utilityButton, label)
-    call BlzFrameSetScale(utilityButton, 0.78)
     call BlzFrameSetLevel(utilityButton, 7)
+
+    call BlzFrameSetAllPoints(border, utilityButton)
+    call BlzFrameSetTexture(border, MHUD_ACTION_SLOT_TEXTURE, 0, true)
+    call BlzFrameSetEnable(border, false)
+    call BlzFrameSetLevel(border, 8)
+
+    call BlzFrameSetPoint(icon, FRAMEPOINT_BOTTOMLEFT, utilityButton, FRAMEPOINT_BOTTOMLEFT, 0.003, 0.003)
+    call BlzFrameSetPoint(icon, FRAMEPOINT_TOPRIGHT, utilityButton, FRAMEPOINT_TOPRIGHT, -0.003, -0.003)
+    call BlzFrameSetTexture(icon, iconPath, 0, true)
+    call BlzFrameSetEnable(icon, false)
+    call BlzFrameSetLevel(icon, 9)
+
+    call BlzFrameSetPoint(labelText, FRAMEPOINT_BOTTOM, utilityButton, FRAMEPOINT_BOTTOM, 0.000, 0.001)
+    call BlzFrameSetSize(labelText, 0.028, 0.008)
+    call BlzFrameSetTextAlignment(labelText, TEXT_JUSTIFY_BOTTOM, TEXT_JUSTIFY_CENTER)
+    call BlzFrameSetScale(labelText, 0.48)
+    call BlzFrameSetText(labelText, "|cffffd36b" + label + "|r")
+    call BlzFrameSetEnable(labelText, false)
+    call BlzFrameSetLevel(labelText, 10)
+
     call BlzTriggerRegisterFrameEvent(MHUD_UtilityTrigger, utilityButton, FRAMEEVENT_CONTROL_CLICK)
     call BlzTriggerRegisterFrameEvent(MHUD_ClearFocusTrigger, utilityButton, FRAMEEVENT_CONTROL_CLICK)
+    set border = null
+    set icon = null
+    set labelText = null
     return utilityButton
 endfunction
 
@@ -574,8 +617,22 @@ private function MHUD_CreateFrames takes nothing returns nothing
     call BlzFrameSetTextAlignment(MHUD_XPText, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_CENTER)
     call BlzFrameSetScale(MHUD_XPText, 0.46)
     call BlzFrameSetEnable(MHUD_XPText, false)
-    call BlzFrameSetLevel(MHUD_XPText, 5)
+    call BlzFrameSetLevel(MHUD_XPText, 7)
 
+    set index = 1
+    loop
+        exitwhen index >= MHUD_XP_SEGMENT_COUNT
+        set MHUD_XPSegment[index] = BlzCreateFrameByType("BACKDROP", "ModernPlayerHUDXPSegment" + I2S(index), MHUD_XPBack, "", 0)
+        call BlzFrameSetTexture(MHUD_XPSegment[index], MHUD_SURFACE_TEXTURE, 0, false)
+        call BlzFrameSetPoint(MHUD_XPSegment[index], FRAMEPOINT_CENTER, MHUD_XPBack, FRAMEPOINT_LEFT, MHUD_XP_BAR_WIDTH * I2R(index) / I2R(MHUD_XP_SEGMENT_COUNT), 0.000)
+        call BlzFrameSetSize(MHUD_XPSegment[index], 0.0007, MHUD_XP_BAR_HEIGHT)
+        call BlzFrameSetVertexColor(MHUD_XPSegment[index], BlzConvertColor(210, 8, 6, 12))
+        call BlzFrameSetEnable(MHUD_XPSegment[index], false)
+        call BlzFrameSetLevel(MHUD_XPSegment[index], 6)
+        set index = index + 1
+    endloop
+
+    set index = 0
     loop
         exitwhen index >= MHUD_ACTION_SLOT_COUNT
         set x = MHUD_ACTION_START_X + I2R(index) * (MHUD_ACTION_SIZE + MHUD_ACTION_GAP)
@@ -606,11 +663,11 @@ private function MHUD_CreateFrames takes nothing returns nothing
     call BlzTriggerRegisterFrameEvent(MHUD_ClearFocusTrigger, MHUD_BookButton, FRAMEEVENT_CONTROL_CLICK)
 
     static if LIBRARY_DInventory then
-        set MHUD_InventoryButton = MHUD_CreateUtilityButton("ModernPlayerHUDInventoryButton", "Bag", 0.690)
+        set MHUD_InventoryButton = MHUD_CreateUtilityButton("ModernPlayerHUDInventoryButton", "Bag", MHUD_BAG_ICON, 0.690)
     endif
     static if LIBRARY_DEquipment then
-        set MHUD_EquipmentButton = MHUD_CreateUtilityButton("ModernPlayerHUDEquipmentButton", "Gear", 0.724)
-        set MHUD_InspectButton = MHUD_CreateUtilityButton("ModernPlayerHUDInspectButton", "Look", 0.758)
+        set MHUD_EquipmentButton = MHUD_CreateUtilityButton("ModernPlayerHUDEquipmentButton", "Gear", MHUD_GEAR_ICON, 0.724)
+        set MHUD_InspectButton = MHUD_CreateUtilityButton("ModernPlayerHUDInspectButton", "Look", MHUD_INSPECT_ICON, 0.758)
     endif
 
     call BlzFrameSetVisible(MHUD_Parent, false)
@@ -673,7 +730,7 @@ private function MHUD_OnUnitSelected takes nothing returns nothing
     local unit selectedUnit = GetTriggerUnit()
     local player selectingPlayer = GetTriggerPlayer()
 
-    if selectingPlayer == GetLocalPlayer() then
+    if selectingPlayer == GetLocalPlayer() and MHUD_IsPlayerHero(selectedUnit) then
         if MHUD_SelectedUnit != selectedUnit then
             set MHUD_SelectedUnit = selectedUnit
             call MHUD_ResetCache()
@@ -688,10 +745,8 @@ private function MHUD_OnUnitDeselected takes nothing returns nothing
     local unit deselectedUnit = GetTriggerUnit()
     local player deselectingPlayer = GetTriggerPlayer()
 
-    if deselectingPlayer == GetLocalPlayer() and MHUD_SelectedUnit == deselectedUnit then
-        set MHUD_SelectedUnit = null
-        call MHUD_ResetCache()
-    endif
+    // Keep the last player hero in the HUD while another world unit is
+    // selected for targeting or inspection.
 
     set deselectedUnit = null
     set deselectingPlayer = null

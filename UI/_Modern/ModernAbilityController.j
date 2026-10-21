@@ -2,7 +2,7 @@
     ModernAbilityController
 
     Author: Valdemar
-    Version: 0.3.0
+    Version: 0.4.0
 
     Description:
     Converts local custom action-slot input into validated synchronized ability
@@ -51,12 +51,22 @@ globals
     private constant integer MAC_BLOCK_100 = 'A6AF'
 
     private boolean array MAC_Targeting
+    private boolean array MAC_TargetingArmed
     private integer array MAC_PendingHeroSlot
     private integer array MAC_PendingSlot
 
     private trigger MAC_MouseTrigger = CreateTrigger()
     private trigger MAC_SyncTrigger = CreateTrigger()
+    private timer MAC_TargetingArmTimer = CreateTimer()
 endglobals
+
+private function MAC_IsElementalChoice takes integer abilityId returns boolean
+    return abilityId == MAC_ELEMENTAL_AIR or abilityId == MAC_ELEMENTAL_WATER or abilityId == MAC_ELEMENTAL_FIRE or abilityId == MAC_ELEMENTAL_EARTH
+endfunction
+
+private function MAC_IsContextAbility takes integer abilityId returns boolean
+    return abilityId == MAC_STEALTH or abilityId == MAC_STEALTH_ALT or abilityId == MAC_BLOCK_50 or abilityId == MAC_BLOCK_75 or abilityId == MAC_BLOCK_100
+endfunction
 
 private function MAC_GetRuntimeOrderId takes unit caster, integer abilityId returns integer
     local integer abilityLevel = GetUnitAbilityLevel(caster, abilityId)
@@ -64,7 +74,7 @@ private function MAC_GetRuntimeOrderId takes unit caster, integer abilityId retu
     local ability whichAbility = null
     local string baseOrder
 
-    if abilityLevel > 0 then
+    if abilityLevel > 0 and (ModernAbilityCatalog_UsesChannelOrder(abilityId) or MAC_IsContextAbility(abilityId)) then
         set whichAbility = BlzGetUnitAbility(caster, abilityId)
         if whichAbility != null then
             set baseOrder = BlzGetAbilityStringLevelField(whichAbility, ABILITY_SLF_BASE_ORDER_ID_NCL6, abilityLevel - 1)
@@ -76,14 +86,6 @@ private function MAC_GetRuntimeOrderId takes unit caster, integer abilityId retu
 
     set whichAbility = null
     return orderId
-endfunction
-
-private function MAC_IsElementalChoice takes integer abilityId returns boolean
-    return abilityId == MAC_ELEMENTAL_AIR or abilityId == MAC_ELEMENTAL_WATER or abilityId == MAC_ELEMENTAL_FIRE or abilityId == MAC_ELEMENTAL_EARTH
-endfunction
-
-private function MAC_IsContextAbility takes integer abilityId returns boolean
-    return abilityId == MAC_STEALTH or abilityId == MAC_STEALTH_ALT or abilityId == MAC_BLOCK_50 or abilityId == MAC_BLOCK_75 or abilityId == MAC_BLOCK_100
 endfunction
 
 private function MAC_FindSeparator takes string source, integer startIndex returns integer
@@ -99,6 +101,14 @@ private function MAC_FindSeparator takes string source, integer startIndex retur
     endloop
 
     return -1
+endfunction
+
+private function MAC_ArmTargetingLocal takes nothing returns nothing
+    local integer playerIndex = GetPlayerId(GetLocalPlayer())
+
+    if MAC_Targeting[playerIndex] then
+        set MAC_TargetingArmed[playerIndex] = true
+    endif
 endfunction
 
 private function MAC_SetOrderCollisionsDisabled takes unit caster, integer selectedAbilityId, boolean disabled returns nothing
@@ -308,7 +318,9 @@ public function CancelLocal takes player whichPlayer returns nothing
     endif
 
     set playerIndex = GetPlayerId(whichPlayer)
+    call PauseTimer(MAC_TargetingArmTimer)
     set MAC_Targeting[playerIndex] = false
+    set MAC_TargetingArmed[playerIndex] = false
     set MAC_PendingHeroSlot[playerIndex] = 0
     set MAC_PendingSlot[playerIndex] = 0
     set whichPlayer = null
@@ -372,8 +384,10 @@ public function BeginLocal takes player whichPlayer, unit whichHero, integer slo
     set targetPolicy = ModernAbilityCatalog_GetTargetPolicy(abilityId)
     if (actionKind == ModernAbilityCatalog_ACTION_UNIT and targetPolicy != ModernAbilityCatalog_TARGET_SELF and targetPolicy != ModernAbilityCatalog_TARGET_MELEE_AUTO) or actionKind == ModernAbilityCatalog_ACTION_POINT then
         set MAC_Targeting[playerIndex] = true
+        set MAC_TargetingArmed[playerIndex] = false
         set MAC_PendingHeroSlot[playerIndex] = heroSlot
         set MAC_PendingSlot[playerIndex] = slot
+        call TimerStart(MAC_TargetingArmTimer, 0.00, false, function MAC_ArmTargetingLocal)
         call DisplayTimedTextToPlayer(whichPlayer, 0.00, 0.00, 2.00, "|cffffcc00Choose a world target. Right-click to cancel.|r")
     else
         call MAC_SendCast(heroSlot, slot, GetUnitX(whichHero), GetUnitY(whichHero))
@@ -408,13 +422,14 @@ private function MAC_OnMouseDown takes nothing returns nothing
     local integer playerIndex = GetPlayerId(whichPlayer)
     local mousebuttontype mouseButton
 
-    if whichPlayer == GetLocalPlayer() and MAC_Targeting[playerIndex] then
+    if whichPlayer == GetLocalPlayer() and MAC_Targeting[playerIndex] and MAC_TargetingArmed[playerIndex] then
         set mouseButton = BlzGetTriggerPlayerMouseButton()
         if mouseButton == MOUSE_BUTTON_TYPE_RIGHT then
             call CancelLocal(whichPlayer)
         elseif mouseButton == MOUSE_BUTTON_TYPE_LEFT then
             call MAC_SendCast(MAC_PendingHeroSlot[playerIndex], MAC_PendingSlot[playerIndex], BlzGetTriggerPlayerMouseX(), BlzGetTriggerPlayerMouseY())
             set MAC_Targeting[playerIndex] = false
+            set MAC_TargetingArmed[playerIndex] = false
             set MAC_PendingHeroSlot[playerIndex] = 0
             set MAC_PendingSlot[playerIndex] = 0
         endif
