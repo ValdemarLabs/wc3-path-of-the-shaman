@@ -28,7 +28,7 @@ correct and performant enough for permanent use.
 | `UnitHider.j` (1.0) | Simple two-phase ownership: check owned hidden units for showing, then visible units for hiding. It was the known working fallback. | Enumerates the full map every 0.5 seconds; creates and destroys a reference group for every proximity test; uses `SquareRoot`; leaks a newly created work group on every disabled timer tick; and does not recognize current companion/pet registrations. |
 | `UnitHider2.j` | Reuses work groups, filters invalid units, compares squared distances, and keeps the reliable two-phase flow. | Still enumerates nearly every eligible map unit every 0.5 seconds and copies the full reference group for every proximity test. `Table` state duplicates the authoritative hidden group without improving behavior. The archived runtime result was slow hiding and severe lag. |
 | `UnitHider3_Optimized.j` | Caches reference positions, uses squared distances, reuses main work groups, and retains the reliable two-phase flow. The archive says it worked. | Still performs a full-world enumeration every 0.5 seconds; creates a temporary reference group each cycle; limits references to 20; aborts with zero references without restoring already hidden units; does not consume current array registrations; and can show units another system intentionally hid because visibility ownership is not transferred on foreign `ShowUnit` calls. |
-| `UnitHider4.j` | Performs one delayed UnitHider 1.0-style bootstrap snapshot, stores owned-hidden state and spatial cells in Table v6 by handle ID, and then discovers lifecycle changes through `Events`, `UnitDeathEvent`, Unit Event, and native/BJ visibility and relocation hooks. Hidden units are spatially bucketed; player-controlled heroes, configured basic AI heroes, and registered companions/pets remain automatic revealers. Cinematic begin/end reclassifies exact managed candidate sets and verifies system-owned hidden state. | Requires full-map runtime validation because hiding units changes simulation behavior by design. Version 4.11 has no recurring world, known-unit, `udg_UDexUnits`, or hidden-population inventory scan. Normal timer work updates references, drains event-fed pending units, reveals nearby hidden cells, and rechecks the currently visible candidate set every 0.50 seconds. Bootstrap verification and cinematic settlement may inspect only the UnitHider-owned hidden group. Explicit refresh, audit, and force-hide operations may intentionally enumerate the world. |
+| `UnitHider4.j` | Performs one delayed UnitHider 1.0-style bootstrap snapshot, stores owned-hidden state, prior pause state, and spatial cells in Table v6 by handle ID, and then discovers lifecycle changes through `Events`, `UnitDeathEvent`, Unit Event, and native/BJ visibility and relocation hooks. Hidden units are paused and spatially bucketed; player-controlled heroes, configured basic AI heroes, and registered companions/pets remain automatic revealers. Cinematic begin/end reclassifies exact managed candidate sets and verifies system-owned hidden state. | Requires full-map runtime validation because pausing hidden units deliberately suspends their remote simulation. Version 4.12 has no recurring world, known-unit, `udg_UDexUnits`, or hidden-population inventory scan. Normal timer work updates references, drains event-fed pending units, reveals nearby hidden cells, and rechecks the currently visible candidate set every 0.50 seconds. Bootstrap verification and cinematic settlement may inspect only the UnitHider-owned hidden group. Explicit refresh, audit, and force-hide operations may intentionally enumerate the world. |
 
 Some older UnitHider Markdown files describe an earlier proposed "smart filter"
 and quote estimated operation reductions. The final `UnitHider3_Optimized.j`
@@ -90,6 +90,14 @@ retains the established external `UnitHider_*` API names.
   2,500/2,800 simulation range, preventing several remote AI heroes from
   collectively keeping much of the world population active. Units still
   visible around revealers are kept in a smaller managed-visible group.
+- UnitHider pauses every unit whose hidden state it owns. It snapshots whether
+  that unit was already paused and restores the exact prior state when the unit
+  is revealed, UnitHider is disabled, or a foreign `ShowUnit` call transfers
+  visibility ownership. This prevents hidden patrols and combatants from
+  moving, attacking, or casting while outside simulation range without
+  unpausing units that another system already owned as paused. Trigger-driven
+  systems still need their own hidden/paused fast paths if their callbacks are
+  expensive.
 - `Events` supplies world-enter, owner-change, cargo-load, and hero-revive
   notifications; `UnitDeathEvent` supplies exact death notifications. Unit
   Event supplies fully-created, transform, cargo load/unload, full-revive, and
@@ -104,6 +112,25 @@ retains the established external `UnitHider_*` API names.
   UnitHider-owned unit without changing the enabled state. Foreign-hidden,
   ignored, Locust, loaded, and dead units retain their existing ownership or
   engine-sensitive state.
+
+## 21 October 2026 managed-hidden simulation suspension
+
+Version 4.12 pauses UnitHider-owned hidden units as well as removing them from
+rendering. This closes the gap where a remote patrol could retain an attack-move
+order, continue simulating while hidden, and reach a player unit without first
+passing through the hidden spatial cell in which UnitHider recorded it.
+
+Pause ownership follows the same boundary as visibility ownership. UnitHider
+records `IsUnitPaused` immediately before its first managed hide and restores
+that value on proximity reveal, explicit unhide, system disable, or foreign
+visibility transfer. Repeated hidden-cell repairs do not overwrite the original
+snapshot. Death restores the original pause state without revealing the corpse;
+a later hidden revival acquires a fresh snapshot and pauses again. Deindex
+cleanup discards any remaining handle-keyed pause entry.
+
+The debug audit reports `Managed pause mismatch` separately. A nonzero value
+means a living UnitHider-managed hidden unit is either no longer paused or has
+lost the pause-state snapshot required for a correct reveal.
 
 ## 12 October 2026 managed-hidden visibility correction
 
@@ -379,6 +406,16 @@ the inactive world stays hidden and ongoing work follows the active areas.
    reference group. They should remain hideable and must not reveal nearby
    populations; an intentional nonhero registered through the API should still
    reveal normally.
+10. Order an ordinary patrol toward a distant tracked hero, let UnitHider hide
+    it, and confirm that it neither moves nor attacks until revealed. Repeat
+    with a unit paused before hiding; reveal and disable UnitHider in separate
+    runs and confirm that the original paused state is preserved. Also verify
+    that an initially unpaused unit resumes its existing AI or receives its
+    normal controller's next order after reveal. Kill and revive a hidden unit,
+    and test a hidden timed-life summon, to confirm that death, decay, revival,
+    and timed-life cleanup are not stranded by pause ownership.
+    Finish with a debug audit and confirm both managed shown mismatch and
+    managed pause mismatch are zero.
 
 ## World Editor trigger migration
 

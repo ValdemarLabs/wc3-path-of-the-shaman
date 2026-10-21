@@ -2,7 +2,7 @@
     UnitHider
 
     Author: Valdemar
-    Version: 4.11.2
+    Version: 4.12.0
 
     Description:
     Hides the ordinary map population outside tracked-unit reveal ranges.
@@ -19,7 +19,9 @@
     set. Table v6 stores per-unit ownership and spatial state independently of
     recycled unit indexes. Cinematic mode temporarily narrows reveal coverage
     to the active scene and reclassifies only managed candidates. The system
-    only shows units that it hid.
+    only shows units that it hid. UnitHider-owned hidden units are paused to
+    suppress remote simulation; their prior paused state is restored when
+    UnitHider reveals them or transfers visibility ownership.
 
     Credits:
     - UnitHider 1.0 for the reliable owned-hidden-unit model
@@ -72,7 +74,7 @@ globals
     private constant real AI_HIDE_DISTANCE = 2800.00
     private constant real AI_SHOW_DISTANCE = 2500.00
 
-    // Visibility owned by UnitHider. Foreign hidden units are never added here.
+    // Visibility and pause state owned by UnitHider. Foreign hidden units are never added here.
     private group hiddenUnits = CreateGroup()
     private group array hiddenCells
     private group visibleUnits = CreateGroup()
@@ -87,6 +89,7 @@ globals
     private group cinematicVisibleUnits = CreateGroup()
     private group referenceCacheGroup = CreateGroup()
     private Table managedHidden = 0
+    private Table managedWasPaused = 0
     private Table hiddenCell = 0
     private unit cinematicSceneReference = null
     private unit array cachedReferenceUnit
@@ -460,6 +463,46 @@ private function RemoveHiddenTracking takes unit whichUnit returns nothing
     call GroupRemoveUnit(hiddenUnits, whichUnit)
 endfunction
 
+private function RestoreManagedPause takes unit whichUnit returns nothing
+    local integer handleId
+    local boolean wasPaused
+
+    if whichUnit == null or managedWasPaused == 0 then
+        return
+    endif
+    set handleId = GetHandleId(whichUnit)
+    if not managedWasPaused.boolean.has(handleId) then
+        return
+    endif
+    set wasPaused = managedWasPaused.boolean[handleId]
+    call managedWasPaused.boolean.remove(handleId)
+    if GetUnitTypeId(whichUnit) != 0 then
+        call PauseUnit(whichUnit, wasPaused)
+    endif
+endfunction
+
+private function PauseManaged takes unit whichUnit returns nothing
+    local integer handleId
+
+    if whichUnit == null or GetUnitTypeId(whichUnit) == 0 then
+        return
+    endif
+    set handleId = GetHandleId(whichUnit)
+    if not managedWasPaused.boolean.has(handleId) then
+        set managedWasPaused.boolean[handleId] = IsUnitPaused(whichUnit)
+    endif
+    call PauseUnit(whichUnit, true)
+endfunction
+
+private function ReleaseHiddenTracking takes unit whichUnit returns nothing
+    local boolean wasManaged = IsManagedHidden(whichUnit)
+
+    call RemoveHiddenTracking(whichUnit)
+    if wasManaged then
+        call RestoreManagedPause(whichUnit)
+    endif
+endfunction
+
 private function AddHiddenTracking takes unit whichUnit returns nothing
     local integer cellId
 
@@ -484,7 +527,7 @@ private function ShowOwned takes unit whichUnit, boolean show returns nothing
 endfunction
 
 private function ShowManaged takes unit whichUnit, boolean trackVisible returns nothing
-    call RemoveHiddenTracking(whichUnit)
+    call ReleaseHiddenTracking(whichUnit)
     call ShowOwned(whichUnit, true)
     if trackVisible then
         call GroupAddUnit(visibleUnits, whichUnit)
@@ -500,6 +543,7 @@ endfunction
 private function HideManaged takes unit whichUnit returns nothing
     call GroupRemoveUnit(visibleUnits, whichUnit)
     call GroupRemoveUnit(cinematicVisibleUnits, whichUnit)
+    call PauseManaged(whichUnit)
     call ShowOwned(whichUnit, false)
     call AddHiddenTracking(whichUnit)
     set sweepHiddenCount = sweepHiddenCount + 1
@@ -526,7 +570,7 @@ private function ProcessUnit takes unit whichUnit returns nothing
     // Repair ownership if an engine/script path made a managed unit visible
     // without passing through the ShowUnit hook.
     if IsManagedHidden(whichUnit) and not IsUnitHidden(whichUnit) then
-        call RemoveHiddenTracking(whichUnit)
+        call ReleaseHiddenTracking(whichUnit)
     endif
 
     if IsManagedHidden(whichUnit) then
@@ -537,6 +581,7 @@ private function ProcessUnit takes unit whichUnit returns nothing
             call ShowManaged(whichUnit, false)
         else
             // Explicit lifecycle notifications also repair a relocated cell.
+            call PauseManaged(whichUnit)
             call AddHiddenTracking(whichUnit)
         endif
         return
@@ -585,7 +630,7 @@ private function ReconcileManagedHiddenVisibility takes nothing returns nothing
         call GroupRemoveUnit(worldScanUnits, whichUnit)
         set lastManagedVisibilityChecked = lastManagedVisibilityChecked + 1
         if GetUnitTypeId(whichUnit) == 0 or not IsManagedHidden(whichUnit) then
-            call RemoveHiddenTracking(whichUnit)
+            call ReleaseHiddenTracking(whichUnit)
         elseif not IsUnitHidden(whichUnit) then
             // A BJ wrapper or engine transition showed a unit without the
             // native hook observing it. Reclassify that exact unit now.
@@ -823,7 +868,7 @@ private function UnhideAllManaged takes nothing returns nothing
     loop
         set whichUnit = FirstOfGroup(hiddenUnits)
         exitwhen whichUnit == null
-        call RemoveHiddenTracking(whichUnit)
+        call ReleaseHiddenTracking(whichUnit)
         call ShowOwned(whichUnit, true)
     endloop
     call GroupClear(visibleUnits)
@@ -886,6 +931,7 @@ public function DebugAudit takes player whichPlayer returns nothing
     local integer exemptCount = 0
     local integer eligibleHiddenCount = 0
     local integer managedShownCount = 0
+    local integer managedPauseMismatchCount = 0
     local integer foreignHiddenCount = 0
     local integer nearVisibleCount = 0
     local integer farVisibleCount = 0
@@ -914,6 +960,9 @@ public function DebugAudit takes player whichPlayer returns nothing
                 set exemptCount = exemptCount + 1
             elseif IsManagedHidden(whichUnit) then
                 set eligibleHiddenCount = eligibleHiddenCount + 1
+                if not IsUnitPaused(whichUnit) or not managedWasPaused.boolean.has(GetHandleId(whichUnit)) then
+                    set managedPauseMismatchCount = managedPauseMismatchCount + 1
+                endif
             elseif IsUnitHidden(whichUnit) then
                 set foreignHiddenCount = foreignHiddenCount + 1
             elseif IsWithinHideRange(whichUnit) then
@@ -932,7 +981,7 @@ public function DebugAudit takes player whichPlayer returns nothing
         set state = state + ", cinematic compatibility suspension"
     endif
     call DisplayTextToPlayer(whichPlayer, 0.00, 0.00, "|cffffcc00[UnitHider audit]|r " + state + " | references=" + I2S(referenceCount) + " (full=" + I2S(referenceCount - aiReferenceCount) + ", AI=" + I2S(aiReferenceCount) + ")")
-    call DisplayTextToPlayer(whichPlayer, 0.00, 0.00, "Inventory=" + I2S(totalCount) + " | known=" + I2S(BlzGroupGetSize(knownUnits)) + " | exempt=" + I2S(exemptCount) + " | managed hidden=" + I2S(eligibleHiddenCount) + " | managed shown mismatch=" + I2S(managedShownCount) + " | foreign hidden=" + I2S(foreignHiddenCount))
+    call DisplayTextToPlayer(whichPlayer, 0.00, 0.00, "Inventory=" + I2S(totalCount) + " | known=" + I2S(BlzGroupGetSize(knownUnits)) + " | exempt=" + I2S(exemptCount) + " | managed hidden=" + I2S(eligibleHiddenCount) + " | managed shown mismatch=" + I2S(managedShownCount) + " | managed pause mismatch=" + I2S(managedPauseMismatchCount) + " | foreign hidden=" + I2S(foreignHiddenCount))
     call DisplayTextToPlayer(whichPlayer, 0.00, 0.00, "Visible near references=" + I2S(nearVisibleCount) + " | visible outside hide range=" + I2S(farVisibleCount) + " | pending=" + I2S(BlzGroupGetSize(pendingUnits)))
     call DisplayTextToPlayer(whichPlayer, 0.00, 0.00, "Ranges: full=" + I2S(R2I(fullShowDistance)) + "/" + I2S(R2I(fullHideDistance)) + " | autonomous AI=" + I2S(R2I(AI_SHOW_DISTANCE)) + "/" + I2S(R2I(AI_HIDE_DISTANCE)) + " (show/hide)")
     call DisplayTextToPlayer(whichPlayer, 0.00, 0.00, "Last cinematic: begin hidden=" + I2S(lastCinematicBeginHiddenBefore) + "->" + I2S(lastCinematicBeginHiddenAfter) + " visible=" + I2S(lastCinematicBeginVisibleAfter) + " | end candidates=" + I2S(lastCinematicEndCandidates) + " hidden=" + I2S(lastCinematicEndHiddenBefore) + "->" + I2S(lastCinematicEndHiddenAfter) + " visible=" + I2S(lastCinematicEndVisibleAfter))
@@ -1197,7 +1246,7 @@ hook SetUnitPositionLoc OnSetUnitPositionLoc
 // after the original native or BJ call completes on the next active update.
 private function TrackExternalVisibilityChange takes unit whichUnit, boolean show returns nothing
     if internalShowDepth == 0 and whichUnit != null then
-        call RemoveHiddenTracking(whichUnit)
+        call ReleaseHiddenTracking(whichUnit)
         call GroupRemoveUnit(visibleUnits, whichUnit)
         if show and enabled then
             call QueueUnit(whichUnit)
@@ -1279,6 +1328,9 @@ private function OnUnitDeath takes nothing returns nothing
     local unit whichUnit = UnitDeathEvent_GetDyingUnit()
 
     if whichUnit != null then
+        if IsManagedHidden(whichUnit) then
+            call RestoreManagedPause(whichUnit)
+        endif
         call GroupAddUnit(knownUnits, whichUnit)
         call GroupRemoveUnit(visibleUnits, whichUnit)
         call GroupRemoveUnit(visibleScanUnits, whichUnit)
@@ -1304,6 +1356,7 @@ private function OnUnitDeindex takes nothing returns nothing
     call RemoveHiddenTracking(whichUnit)
     if handleId != 0 then
         call managedHidden.boolean.remove(handleId)
+        call managedWasPaused.boolean.remove(handleId)
         call hiddenCell.integer.remove(handleId)
     endif
     call GroupRemoveUnit(knownUnits, whichUnit)
@@ -1338,6 +1391,7 @@ private function Init takes nothing returns nothing
     set udg_UnitHider_SetSystem = true
     set udg_UnitHider_debug = false
     set managedHidden = Table.create()
+    set managedWasPaused = Table.create()
     set hiddenCell = Table.create()
     set mapBounds = worldBounds
     set worldMinX = GetRectMinX(worldBounds)
