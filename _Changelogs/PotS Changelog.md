@@ -17,6 +17,31 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [21.10.2026]
+
+### Player-Facing Updates
+
+- Expanded the Modern HUD into a functional loadout interface. Learned abilities automatically fill empty slots; players can right-click an ability in the Abilities book and choose a bar slot, right-click two bar slots to swap them, or Shift-right-click a slot and press a supported key to rebind it for the session.
+- Added Modern HUD Bag, Gear, and Look controls backed by the existing DInventory, DEquipment, and read-only inspect systems. Stealth and equipment-granted Shield Block now appear in dedicated contextual slots instead of consuming general action-bar space.
+- Restored the native minimap control buttons inside the compact minimap shell. Dynamic minimap enlargement now temporarily owns the minimap layout and returns it to the Modern HUD position after closing.
+
+### Technical Updates
+
+- Updated `UI/AbilitiesLiteUI.j` and `UI/_Modern/ModernAbilityLoadout.j`, `ModernAbilityController.j`, `ModernAbilityActionBar.j`, `ModernPlayerHUD.j`, `ModernMinimapHUD.j`, `ModernAbilityCompileTest.j`, and `README.md`. Channel-backed casts now read their live Object Editor base order before falling back to catalog data, fixing stale-order failures for melee and point abilities. Loadout revisions make synchronized assignment/swap refresh event-driven, while a low-frequency learned-ability scan avoids the former per-frame catalog cost.
+- Extended the Modern HUD compile harness to exercise optional DynamicMinimap, DInventory, and DEquipment integration. The focused JassHelper/pjass pass completed successfully with 19,947 total parsed lines.
+- Updated `UnitSystems/UnitHider4.j` to version 4.12.0. UnitHider-owned hidden units are now paused to suppress remote movement, attacks, casting, and related engine work, while a handle-keyed snapshot restores each unit's prior paused state on reveal, disable, explicit unhide, death, or foreign visibility transfer. This prevents hidden ambient patrols from continuing attack-move orders into active gameplay areas; trigger-driven systems retain responsibility for skipping their own expensive hidden-unit callbacks.
+
+### Known Issues
+
+- The six native quickslot item buttons and animated native portrait are not yet moved into the Modern HUD. They are intentionally isolated from this pass because origin-frame reparenting previously caused a repeatable client crash; each needs a separate rollback-safe runtime probe.
+- Modern bar assignments and custom keybindings are not yet persisted through save/load. The inventory/minimap origin-frame adapters, contextual Stealth/Block orders, right-click frame events, point targeting, and all shared Channel-order groups still require current-client and two-client runtime validation.
+
+### Actions Remaining
+
+- Reimport the Modern HUD and `UI/AbilitiesLiteUI.j`, compile the full map, then test Stormstrike, Whirlwind, approximate ground spells, every totem placement, ability-book assignment, empty/occupied slot swaps, session keybinding, newly learned auto-fill, DInventory/DEquipment/inspect toggles, all Shield Block ranks, Stealth, minimap controls, and repeated minimap enlargement in one- and two-client sessions.
+- Add save/load persistence, then test the native item-button quickslot and animated portrait as separate opt-in probes. Do not reintroduce both origin-frame relocations in the same build.
+- Reimport `UnitSystems/UnitHider4.j`, compile through World Editor/JassHelper, and runtime-test initially paused and unpaused units across proximity reveal, system disable/re-enable, foreign `ShowUnit` transfers, death/removal/revival, timed life, cinematics, and multiplayer. Specifically confirm that a hidden `HumanPatrols` Footman cannot move to or attack Shadowclaw, that visible patrol behavior resumes after reveal, and that the debug audit reports zero managed shown and managed pause mismatches.
+
 ## [20.10.2026]
 
 ### Player-Facing Updates
@@ -36,7 +61,7 @@
 - Updated `UI/_Modern/ModernAbilityLoadout.j`, `ModernAbilityActionBar.j`, `ModernTotemTracker.j`, the compile harness, and documentation to remove the modern HUD's remaining heavy idle path. Default layouts are now materialized once per hero instead of rescanning up to 42 definitions for each of twelve slots every 0.25 seconds; static slot data is event-invalidated, mana traversal runs only after integer mana changes, cooldown polling is restricted to active slots, and cooldown/totem geometry is limited to 20 visual steps.
 - Added `UI/_Modern/ModernTotemTracker.j`; updated `Abilities/Shaman/Totems.j`, `ModernPlayerHUD.j`, `ModernAbilityActionBar.j`, `StatsLiteUI.j`, `TargetUnitUI.j`, the Modern HUD compile harness, and documentation. The tracker reads the existing caster/element totem registry and stored timed-life values through the shared 0.25-second HUD tick, adding no unit scans or timer. The native `ConsoleUIBackdrop` is now hidden with the rest of the bottom HUD while the two PotS overlays that formerly depended on it use `ORIGIN_FRAME_GAME_UI`.
 - Replaced `UI/_Modern/Assets/PotSHUD.tga`, `PotSActionSlot.tga`, and `PotSBarFrame.tga` with cleaner, less ornate structural art; replaced `PotSMedallion.tga` with a clearer four-element compass; and added original `PotSTotemEarth.tga`, `PotSTotemFire.tga`, `PotSTotemWater.tga`, and `PotSTotemAir.tga` status badges.
-- Updated `UI/_Modern/ModernPlayerHUD.j` and `ModernAbilityActionBar.j` to version 0.4.0 with a cached shared presentation tick, transition-only frame writes, quantized cooldown rendering, and one hover-populated tooltip shared by all twelve slots. Added eight original PotS textures under `UI/_Modern/Assets` and updated `UI/_Modern/README.md`; the art direction combines the VideoRPG reference map's centered resource/action-bar proportions with Forgotten Hollow's compact dark-fantasy mood without copying their art, importing their gameplay scripts, or requiring a TOC/FDF.
+- Updated `UI/_Modern/ModernPlayerHUD.j` and `ModernAbilityActionBar.j` to version 0.4.0 with a cached shared presentation tick, transition-only frame writes, quantized cooldown rendering, and one hover-populated tooltip shared by all twelve slots. Added eight original PotS textures under `UI/_Modern/Assets` and updated `UI/_Modern/README.md` with the centered resource/action-bar layout and compact PotS dark-fantasy presentation.
 - Updated `UI/CameraUI.j`, `UI/SettingsUI.j`, and `UI/AbilitiesLiteUI.j` for consolidated Dynamic Far Z settings ownership and origin-aware abilities navigation.
 - Updated `UI/CommandsUI.j` with the complete active debug-command catalog and per-entry visibility configuration; updated `Debug/DebugCommands.j` to recognize and document externally handled AI, ability-point, and Void Entity debug commands without changing their owning libraries.
 - Added `UI/_Modern/ModernAbilityController.j`, `UI/_Modern/ModernAbilityActionBar.j`, and `UI/_Modern/ModernAbilityCompileTest.j`; updated `ModernAbilityCatalog.j`, `ModernAbilityLoadout.j`, `ModernPlayerHUD.j`, and `UI/_Modern/README.md`. Learned active abilities now populate the twelve custom slots with icons, cooldowns, readiness shading, and tooltips. Slot clicks use synchronized immediate, self, automatic melee, approximate unit, approximate point, or exact point orders, while the modern HUD hides the native bottom console through visibility-only frame operations.
@@ -57,11 +82,11 @@
 
 ### Technical Updates
 
-- Added `UI/_Modern/ModernPlayerHUD.j` and `UI/_Modern/README.md` as an isolated modern player-HUD prototype inspired by the Forgotten Hollow map. The bottom-center layout presents health, mana, level, experience, portrait, twelve action slots, and an Abilities book shortcut while reusing Warcraft III's native command buttons so targeting, autocast, cooldowns, tooltips, hotkeys, and order dispatch remain engine-owned. The first pass requires no custom UI package; the documentation records how compatible Forgotten Hollow TOC structure, FDF templates, and supporting art may be selectively reused after their dependencies, frame names, credits, and usage rights are verified.
+- Added `UI/_Modern/ModernPlayerHUD.j` and `UI/_Modern/README.md` as an isolated modern player-HUD prototype. The bottom-center layout presents health, mana, level, experience, portrait, twelve action slots, and an Abilities book shortcut while initially reusing Warcraft III's native command buttons so targeting, autocast, cooldowns, tooltips, hotkeys, and order dispatch remain engine-owned. The first pass requires no custom UI package.
 - Updated `UI/_Modern/ModernPlayerHUD.j` to version 0.1.2 crash-isolation mode. Native command-button and portrait relocation now have separate default-off configuration flags, while the custom resource, level, experience, and ability-book frames remain active for a baseline test that performs no engine-owned origin-frame mutations.
 - Updated `UI/_Modern/ModernPlayerHUD.j` to version 0.1.3 after the custom-only baseline completed without a crash. The custom HUD is now parented directly to `ORIGIN_FRAME_GAME_UI` at an explicit frame level so the Warcraft III 2.x bottom-console layers cannot cover it, and startup falls back to the first valid player hero when the post-intro handoff does not raise a new selection event. Both unsafe native-relocation paths remain disabled.
 - Added `UI/_Modern/ModernAbilityCatalog.j`, `UI/_Modern/ModernAbilityLoadout.j`, and `UI/_Modern/ModernAbilityTargeting.j`. The modern action-bar foundation now classifies all player shaman abilities, stores twelve synchronized slots separately for Nazgrek and Zul'kis, and deterministically resolves approximate hostile/friendly clicks, self-heals, and automatic melee targets while preserving exact point placement for totems. Existing spellbooks and ability implementations remain unchanged during the staged migration.
-- Updated `UI/_Modern/ModernPlayerHUD.j` to version 0.2.0 and `UI/_Modern/README.md` for the custom-only architecture. The crash-prone native command-button and portrait relocation code has been removed, twelve PotS-owned empty action slots are now always visible, and the documentation defines import order, synchronization boundaries, Forgotten Hollow reuse, and the next dispatcher, assignment, and save stages.
+- Updated `UI/_Modern/ModernPlayerHUD.j` to version 0.2.0 and `UI/_Modern/README.md` for the custom-only architecture. The crash-prone native command-button and portrait relocation code has been removed, twelve PotS-owned empty action slots are now always visible, and the documentation defines import order, synchronization boundaries, and the next dispatcher, assignment, and save stages.
 
 ### Known Issues
 
@@ -73,7 +98,7 @@
 
 ### Actions Remaining
 
-- Import `UI/_Modern/ModernAbilityCatalog.j`, `ModernAbilityLoadout.j`, and `ModernAbilityTargeting.j` after their documented dependencies, then import `ModernPlayerHUD.j` after `Events`, `MasterUI`, `AbilitiesLiteUI`, and `FullscreenUI`. Compile through World Editor/JassHelper and repeat the intro transition on PTR build 24368. Runtime-test catalog coverage and deterministic target resolution in two clients before connecting mouse input. Implement the validated sync/order dispatcher, custom icons and cooldowns, ability-book slot assignment, and save/load persistence before hiding the remaining native console. Audit Forgotten Hollow assets and rights before adding a minimal PotS TOC/FDF skin; verify the Summon Elemental flyout and Windfury Totem base-order special cases separately.
+- Import `UI/_Modern/ModernAbilityCatalog.j`, `ModernAbilityLoadout.j`, and `ModernAbilityTargeting.j` after their documented dependencies, then import `ModernPlayerHUD.j` after `Events`, `MasterUI`, `AbilitiesLiteUI`, and `FullscreenUI`. Compile through World Editor/JassHelper and repeat the intro transition on PTR build 24368. Runtime-test catalog coverage and deterministic target resolution in two clients before connecting mouse input. Implement the validated sync/order dispatcher, custom icons and cooldowns, ability-book slot assignment, and save/load persistence before hiding the remaining native console. Verify the Summon Elemental flyout and Windfury Totem base-order special cases separately.
 
 ## [18.10.2026]
 

@@ -10,7 +10,7 @@ Historical analysis describes a repeated three-second full-map scan. Current `Un
 
 ### UnitHider3 world-scan rewrite
 
-Current `UnitSystems/UnitHider4.j` is v4.11, performs a one-time bootstrap and then uses event-driven tracking with localized periodic work. Old UnitHider3 recommendations do not describe the active system.
+Current `UnitSystems/UnitHider4.j` is v4.12, performs a one-time bootstrap and then uses event-driven tracking with localized periodic work. UnitHider-owned hidden units are paused until their visibility ownership is released, with their prior pause state restored. Old UnitHider3 recommendations do not describe the active system.
 
 ### Allocation-heavy GetUnits BJ replacement
 
