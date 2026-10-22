@@ -2,7 +2,7 @@
     CameraControl
     
     Author: [Valdemar]
-    Version: 1.10.0
+    Version: 1.10.1
 
     Description: Keeps each player's camera behavior consistent, including modes, target tracking, selectable local mouse-orbit input, DynamicFarZ, basic movement controls, and optional DynamicMinimap safety turns. Experimental camera-type and input-ownership APIs remain disabled by default.
 
@@ -203,6 +203,7 @@ globals
     private boolean array CC_MouseOrbitDragging
     private boolean array CC_MouseOrbitButtonWasDown
     private boolean array CC_MouseOrbitReleaseWasDrag
+    private boolean array CC_MouseOrbitUserControlCaptured
     private real array CC_MouseOrbitLastFrameX
     private real array CC_MouseOrbitLastFrameY
     private integer array CC_MouseOrbitAnchorX
@@ -1009,10 +1010,18 @@ private function CC_ApplyKeyboardFields takes player whichPlayer returns nothing
     endif
 endfunction
 
+private function CC_SetMouseOrbitUserControlCaptured takes integer pid, boolean captured returns nothing
+    if pid == GetPlayerId(GetLocalPlayer()) and CC_MouseOrbitUserControlCaptured[pid] != captured then
+        set CC_MouseOrbitUserControlCaptured[pid] = captured
+        call EnableUserControl(not captured)
+    endif
+endfunction
+
 private function CC_CancelMouseOrbit takes integer pid returns nothing
     if pid == GetPlayerId(GetLocalPlayer()) and CC_MouseOrbitInputMode[pid] == MOUSE_ORBIT_INPUT_FREE_CAMERA and CC_MouseOrbitPressed[pid] then
         call BlzEnableCursor(true)
     endif
+    call CC_SetMouseOrbitUserControlCaptured(pid, false)
     if CC_MouseOrbitDragging[pid] then
         set CC_MouseOrbitReleaseWasDrag[pid] = true
     endif
@@ -1023,6 +1032,33 @@ endfunction
 
 private function CC_CanMouseOrbit takes integer pid returns boolean
     return CC_MouseOrbitEnabled[pid] and not CC_MouseOrbitBlocked[pid] and not CC_Suspended[pid] and not CC_ResumePending[pid] and CC_Mode[pid] == CAMERA_MODE_NORMAL and not CC_HasSpecialMode(pid) and BlzIsLocalClientActive()
+endfunction
+
+private function CC_BeginMouseOrbit takes integer pid, boolean freeCameraStyle returns nothing
+    local integer mouseX
+    local integer mouseY
+
+    set CC_MouseOrbitButtonWasDown[pid] = true
+    set CC_MouseOrbitReleaseWasDrag[pid] = false
+    set CC_MouseOrbitEventCount[pid] = CC_MouseOrbitEventCount[pid] + 1
+    if CC_CanMouseOrbit(pid) then
+        set CC_MouseOrbitAcceptedCount[pid] = CC_MouseOrbitAcceptedCount[pid] + 1
+        set mouseX = BlzGetMouseScreenPosX()
+        set mouseY = BlzGetMouseScreenPosY()
+        if freeCameraStyle then
+            set CC_MouseOrbitAnchorX[pid] = mouseX
+            set CC_MouseOrbitAnchorY[pid] = mouseY
+            // Disable native command input before the right-button release can
+            // turn the camera orbit into a smart movement order.
+            call CC_SetMouseOrbitUserControlCaptured(pid, true)
+        else
+            set CC_MouseOrbitLastFrameX[pid] = BlzPixelToFrameX(mouseX)
+            set CC_MouseOrbitLastFrameY[pid] = BlzPixelToFrameY(mouseY)
+        endif
+        set CC_MouseOrbitTravel[pid] = 0.00
+        set CC_MouseOrbitDragging[pid] = false
+        set CC_MouseOrbitPressed[pid] = true
+    endif
 endfunction
 
 // The shared camera tick executes on every client, but each client reads and
@@ -1059,24 +1095,7 @@ private function CC_UpdateMouseOrbit takes nothing returns nothing
     endif
 
     if not CC_MouseOrbitButtonWasDown[pid] then
-        set CC_MouseOrbitButtonWasDown[pid] = true
-        set CC_MouseOrbitReleaseWasDrag[pid] = false
-        set CC_MouseOrbitEventCount[pid] = CC_MouseOrbitEventCount[pid] + 1
-        if CC_CanMouseOrbit(pid) then
-            set CC_MouseOrbitAcceptedCount[pid] = CC_MouseOrbitAcceptedCount[pid] + 1
-            set mouseX = BlzGetMouseScreenPosX()
-            set mouseY = BlzGetMouseScreenPosY()
-            if freeCameraStyle then
-                set CC_MouseOrbitAnchorX[pid] = mouseX
-                set CC_MouseOrbitAnchorY[pid] = mouseY
-            else
-                set CC_MouseOrbitLastFrameX[pid] = BlzPixelToFrameX(mouseX)
-                set CC_MouseOrbitLastFrameY[pid] = BlzPixelToFrameY(mouseY)
-            endif
-            set CC_MouseOrbitTravel[pid] = 0.00
-            set CC_MouseOrbitDragging[pid] = false
-            set CC_MouseOrbitPressed[pid] = true
-        endif
+        call CC_BeginMouseOrbit(pid, freeCameraStyle)
         set whichPlayer = null
         return
     endif
@@ -2436,21 +2455,26 @@ endfunction
 private function CC_MouseButtonAction takes nothing returns nothing
     local player whichPlayer = GetTriggerPlayer()
     local integer pid = CC_GetPlayerIndex(whichPlayer)
+    local boolean freeCameraStyle = CC_MouseOrbitInputMode[pid] == MOUSE_ORBIT_INPUT_FREE_CAMERA
     local boolean wasDrag = CC_MouseOrbitReleaseWasDrag[pid] or CC_MouseOrbitDragging[pid]
 
     if GetLocalPlayer() != whichPlayer then
         set whichPlayer = null
         return
     endif
-    if CC_MouseOrbitInputMode[pid] == MOUSE_ORBIT_INPUT_MIDDLE and BlzGetTriggerPlayerMouseButton() != MOUSE_BUTTON_TYPE_MIDDLE then
+    if not freeCameraStyle and BlzGetTriggerPlayerMouseButton() != MOUSE_BUTTON_TYPE_MIDDLE then
         set whichPlayer = null
         return
     endif
-    if CC_MouseOrbitInputMode[pid] == MOUSE_ORBIT_INPUT_FREE_CAMERA and BlzGetTriggerPlayerMouseButton() != MOUSE_BUTTON_TYPE_RIGHT then
+    if freeCameraStyle and BlzGetTriggerPlayerMouseButton() != MOUSE_BUTTON_TYPE_RIGHT then
         set whichPlayer = null
         return
     endif
-    if GetTriggerEventId() == EVENT_PLAYER_MOUSE_UP then
+    if GetTriggerEventId() == EVENT_PLAYER_MOUSE_DOWN then
+        if not CC_MouseOrbitButtonWasDown[pid] then
+            call CC_BeginMouseOrbit(pid, freeCameraStyle)
+        endif
+    else
         // Mouse-look starts and updates through direct polling. The mouse-up
         // event preserves the legacy middle-click reset and provides an
         // immediate release path; polling remains the fallback if it is missed.
@@ -2508,6 +2532,7 @@ public function Init takes nothing returns nothing
         set CC_MouseOrbitBlockCount[i] = 0
         set CC_MouseOrbitButtonWasDown[i] = false
         set CC_MouseOrbitReleaseWasDrag[i] = false
+        set CC_MouseOrbitUserControlCaptured[i] = false
         call CC_CancelMouseOrbit(i)
         set CC_CameraTypeSnapshotValid[i] = false
         set CC_InputOwnershipEnabled[i] = false
@@ -2563,6 +2588,7 @@ public function Init takes nothing returns nothing
         call BlzTriggerRegisterPlayerKeyEvent(CC_PageResetTrigger, Player(i), OSKEY_PAGEUP, 0, false)
         call BlzTriggerRegisterPlayerKeyEvent(CC_PageResetTrigger, Player(i), OSKEY_PAGEDOWN, 0, true)
         call BlzTriggerRegisterPlayerKeyEvent(CC_PageResetTrigger, Player(i), OSKEY_PAGEDOWN, 0, false)
+        call TriggerRegisterPlayerEvent(CC_MouseButtonResetTrigger, Player(i), EVENT_PLAYER_MOUSE_DOWN)
         call TriggerRegisterPlayerEvent(CC_MouseButtonResetTrigger, Player(i), EVENT_PLAYER_MOUSE_UP)
         call BlzTriggerRegisterPlayerKeyEvent(CC_ChatResetTrigger, Player(i), OSKEY_RETURN, 0, true)
         set i = i + 1
