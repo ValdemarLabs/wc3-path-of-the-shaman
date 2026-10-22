@@ -16,27 +16,34 @@ The first prototype is `ModernPlayerHUD.j`:
        [custom action slots 1 through 12] [ability book]
 ```
 
-### Custom-only direction
+### Isolated native-frame adapters
 
-Version 0.6.0 keeps the crash-free custom-only boundary established in version
-0.2.0. Two tests on Warcraft III 3.0.1 PTR build 24368 produced the same native
-null-pointer crash when the first origin-frame layout moved engine-owned
-widgets. The current path creates PotS-owned frames under
-`ORIGIN_FRAME_GAME_UI`; it never moves, resizes, reparents, or clicks the native
-command card or portrait.
+The command card remains behind the crash-free custom-only boundary established
+in version 0.2.0. Two tests on Warcraft III 3.0.1 PTR build 24368 produced the
+same native null-pointer crash when the earlier implementation moved several
+engine-owned widgets together. Native elements are therefore integrated only
+through separate, rollback-safe adapters rather than a shared origin-frame
+layout pass.
 
 `ModernAbilityActionBar.j` fills the twelve custom slots with learned
 ability icons, cooldown shading, mana/readiness state, and custom tooltips. It
-hides `ConsoleBottomBar`, `ConsoleBottomBarOverlay`, the native hero bar,
-portrait, and `ConsoleUIBackdrop` with visibility calls only.
+hides `ConsoleBottomBar`, `ConsoleBottomBarOverlay`, the native hero bar, and
+`ConsoleUIBackdrop` with visibility calls only. The animated native portrait is
+the one deliberate portrait adapter: after the intro it is reparented into a
+small PotS-owned anchor inside the medallion. Blizzard automatic UI positioning
+is disabled while that adapter owns the portrait, then its original parent and
+automatic positioning are restored for fullscreen cinematics or HUD shutdown.
+The unit icon remains underneath as a fallback if the origin portrait is not
+available. Set `MAB_USE_NATIVE_PORTRAIT` to `false` for an immediate,
+portrait-only rollback without disabling the rest of the Modern HUD.
 `StatsLiteUI.j` and `TargetUnitUI.j` now use `ORIGIN_FRAME_GAME_UI`
 directly, so hiding the native console canvas no longer hides those PotS
 overlays. The Game UI root remains only an invisible frame parent.
 
 `ModernMinimapHUD.j` reparents only the native minimap into a compact
 upper-left PotS shell and adds separate Nazgrek and Zul'kis selection buttons.
-It does not move the native command card, portrait, or hero-bar controls that
-caused the earlier unsafe-layout crash. The native hero buttons are hidden
+It does not move the native command card or hero-bar controls involved in the
+earlier unsafe-layout crash. The native hero buttons are hidden
 individually so their status icons cannot remain over the modern bottom HUD.
 
 The large black rectangle seen behind version 0.4.0 was the visible native
@@ -361,14 +368,13 @@ matrix. Do not import the entire Forgotten Hollow UI package without first
 removing unused definitions and resolving global frame-name collisions.
 
 The current stage hides the shared native bottom HUD without moving its command
-card or portrait. The minimap, native minimap controls, and hero selectors have
-a PotS-owned shell. DInventory, DEquipment, inspect, contextual Stealth/Block,
-assignment, swapping, and session keybinding are available through custom
-buttons. The six engine-owned item buttons and animated native portrait are
-still intentionally not reparented: both belong to the same origin-frame class
-as the relocation path that previously crashed the client. Add them in
-separate, rollback-safe runtime probes rather than coupling them to this
-working functional milestone.
+card. The minimap, animated portrait, native minimap controls, and hero
+selectors each have a narrowly scoped PotS-owned adapter or shell. DInventory,
+DEquipment, inspect, contextual Stealth/Block, assignment, swapping, and
+session keybinding are available through custom buttons. The six engine-owned
+item buttons remain intentionally unmoved because PotS now supplies six custom
+quick-item buttons instead. Keep any future origin-frame adapter independent so
+it can be disabled without affecting the working HUD.
 
 `ModernAbilityCompileTest.j` is a compile-only harness for the complete modern
 HUD stack. Never import it into the production map.
