@@ -2,7 +2,7 @@
     ModernAbilityActionBar
 
     Author: Valdemar
-    Version: 0.9.0
+    Version: 1.0.0
 
     Description:
     Renders the cached PotS-owned twelve-slot action bar with learned ability
@@ -819,7 +819,7 @@ private function MAB_SlotAction takes nothing returns nothing
             exitwhen index >= ModernAbilityLoadout_SLOT_COUNT
             if triggerFrame == MAB_SlotButton[index] then
                 set slot = index + 1
-                set rightClick = BlzGetTriggerPlayerMouseButton() == MOUSE_BUTTON_TYPE_RIGHT
+                set rightClick = BlzIsMouseButtonPressed(MOUSE_BUTTON_TYPE_RIGHT)
                 if rightClick then
                     call ModernAbilityController_CancelLocal(triggerPlayer)
                     call MAB_CloseElementalFlyout()
@@ -1181,14 +1181,14 @@ private function MAB_CreateFrames takes nothing returns nothing
 
     set MAB_HeroBorder = BlzCreateFrameByType("BACKDROP", "ModernAbilityHeroBorder", MAB_Parent, "", 0)
     call BlzFrameSetTexture(MAB_HeroBorder, MAB_MEDALLION_TEXTURE, 0, true)
-    call BlzFrameSetAbsPoint(MAB_HeroBorder, FRAMEPOINT_BOTTOMLEFT, 0.132, 0.010)
-    call BlzFrameSetSize(MAB_HeroBorder, 0.056, 0.056)
+    call BlzFrameSetAbsPoint(MAB_HeroBorder, FRAMEPOINT_BOTTOMLEFT, 0.124, 0.008)
+    call BlzFrameSetSize(MAB_HeroBorder, 0.064, 0.064)
     call BlzFrameSetEnable(MAB_HeroBorder, false)
     call BlzFrameSetLevel(MAB_HeroBorder, 4)
 
     set MAB_HeroIcon = BlzCreateFrameByType("BACKDROP", "ModernAbilityHeroIcon", MAB_HeroBorder, "", 0)
-    call BlzFrameSetPoint(MAB_HeroIcon, FRAMEPOINT_BOTTOMLEFT, MAB_HeroBorder, FRAMEPOINT_BOTTOMLEFT, 0.006, 0.006)
-    call BlzFrameSetPoint(MAB_HeroIcon, FRAMEPOINT_TOPRIGHT, MAB_HeroBorder, FRAMEPOINT_TOPRIGHT, -0.006, -0.006)
+    call BlzFrameSetPoint(MAB_HeroIcon, FRAMEPOINT_BOTTOMLEFT, MAB_HeroBorder, FRAMEPOINT_BOTTOMLEFT, 0.005, 0.005)
+    call BlzFrameSetPoint(MAB_HeroIcon, FRAMEPOINT_TOPRIGHT, MAB_HeroBorder, FRAMEPOINT_TOPRIGHT, -0.005, -0.005)
     call BlzFrameSetEnable(MAB_HeroIcon, false)
     call BlzFrameSetLevel(MAB_HeroIcon, 5)
 
@@ -1352,8 +1352,6 @@ private function Init takes nothing returns nothing
     call BlzTriggerRegisterPlayerKeyEvent(MAB_KeyTrigger, Player(0), OSKEY_W, 0, true)
     call BlzTriggerRegisterPlayerKeyEvent(MAB_KeyTrigger, Player(0), OSKEY_E, 0, true)
     call BlzTriggerRegisterPlayerKeyEvent(MAB_KeyTrigger, Player(0), OSKEY_R, 0, true)
-    call BlzTriggerRegisterPlayerKeyEvent(MAB_KeyTrigger, Player(0), OSKEY_A, 0, true)
-    call BlzTriggerRegisterPlayerKeyEvent(MAB_KeyTrigger, Player(0), OSKEY_S, 0, true)
     call BlzTriggerRegisterPlayerKeyEvent(MAB_KeyTrigger, Player(0), OSKEY_D, 0, true)
     call BlzTriggerRegisterPlayerKeyEvent(MAB_KeyTrigger, Player(0), OSKEY_F, 0, true)
     call BlzTriggerRegisterPlayerKeyEvent(MAB_KeyTrigger, Player(0), OSKEY_Z, 0, true)

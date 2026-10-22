@@ -2,7 +2,7 @@
     ModernAbilityTargeting
 
     Author: Valdemar
-    Version: 0.1.0
+    Version: 0.2.0
 
     Description:
     Resolves deterministic soft unit targets for the modern action bar. A
@@ -20,6 +20,7 @@
 
     API:
     - set target = ModernAbilityTargeting_ResolveUnit(caster, abilityId, x, y)
+    - set target = ModernAbilityTargeting_ResolveUnitWithHint(caster, abilityId, x, y, hintedUnit)
     - set target = ModernAbilityTargeting_ResolveMeleeUnit(caster, abilityId)
     - set precise = ModernAbilityTargeting_UsesPrecisePoint(abilityId)
 
@@ -42,6 +43,26 @@ endfunction
 
 private function MAT_IsGeneralCandidate takes unit candidate returns boolean
     return candidate != null and ShamanCommon_IsAlive(candidate) and not IsUnitHidden(candidate) and not IsUnitType(candidate, UNIT_TYPE_STRUCTURE) and GetUnitAbilityLevel(candidate, 'Aloc') == 0
+endfunction
+
+private function MAT_IsPolicyCandidate takes unit caster, unit candidate, integer targetPolicy returns boolean
+    local player owner
+    local boolean valid = false
+
+    if caster == null or not MAT_IsGeneralCandidate(candidate) then
+        return false
+    endif
+
+    set owner = GetOwningPlayer(caster)
+    if targetPolicy == ModernAbilityCatalog_TARGET_SOFT_FRIENDLY then
+        set valid = IsUnitAlly(candidate, owner)
+    elseif targetPolicy == ModernAbilityCatalog_TARGET_SOFT_HOSTILE or targetPolicy == ModernAbilityCatalog_TARGET_MELEE_AUTO then
+        set valid = IsUnitEnemy(candidate, owner)
+    elseif targetPolicy == ModernAbilityCatalog_TARGET_SELF then
+        set valid = candidate == caster
+    endif
+    set owner = null
+    return valid
 endfunction
 
 private function MAT_IsBetterCandidate takes unit candidate, unit current, real pointX, real pointY, boolean preferWounded returns boolean
@@ -135,6 +156,20 @@ public function ResolveUnit takes unit caster, integer abilityId, real pointX, r
         set result = caster
     endif
 
+    return result
+endfunction
+
+public function ResolveUnitWithHint takes unit caster, integer abilityId, real pointX, real pointY, unit hintedUnit returns unit
+    local integer targetPolicy = ModernAbilityCatalog_GetTargetPolicy(abilityId)
+    local unit result = null
+
+    if MAT_IsPolicyCandidate(caster, hintedUnit, targetPolicy) then
+        set result = hintedUnit
+    else
+        set result = ResolveUnit(caster, abilityId, pointX, pointY)
+    endif
+
+    set hintedUnit = null
     return result
 endfunction
 

@@ -2,7 +2,7 @@
     TargetUnitUI
 
     Author: Valdemar
-    Version: 1.3.1
+    Version: 1.4.0
 
     Description:
     Compact upper-left target and threat frame for active boss encounters,
@@ -21,7 +21,7 @@
     shared Events dispatcher.
 
     API:
-    - call TargetUnitUI_ShowForUnit(whichUnit) // Shows only active threat
+    - call TargetUnitUI_ShowForUnit(whichUnit) // Pins any living target
     - call TargetUnitUI_ShowAutomatic()        // Return to automatic display
     - call TargetUnitUI_ShowConfig()
     - call TargetUnitUI_Hide()
@@ -39,11 +39,12 @@ globals
     private constant real TUI_SCREEN_CENTER_X = 0.400
     private constant real TUI_PANEL_LEFT_OFFSET = 0.052
     private constant real TUI_PANEL_TOP_OFFSET = -0.045
-    private constant real TUI_PANEL_WIDTH = 0.275
-    private constant real TUI_PANEL_HEIGHT = 0.128
+    private constant real TUI_PANEL_WIDTH = 0.195
+    private constant real TUI_PANEL_CONFIG_WIDTH = 0.275
+    private constant real TUI_PANEL_HEIGHT = 0.118
     private constant real TUI_PANEL_CONFIG_HEIGHT = 0.157
     private constant real TUI_PANEL_MINIMIZED_HEIGHT = 0.034
-    private constant real TUI_BAR_WIDTH = 0.245
+    private constant real TUI_BAR_WIDTH = 0.165
     private constant real TUI_BAR_HEIGHT = 0.009
     private constant real TUI_UPDATE_INTERVAL = 0.25
 
@@ -243,7 +244,7 @@ endfunction
 private function TUI_ResolveDisplayUnit takes nothing returns unit
     local unit automaticUnit = null
 
-    if TUI_IsAlive(TUI_PinnedUnit) and (ThreatSystem_HasThreat(TUI_PinnedUnit) or TUI_AlwaysShow or not TUI_AutoHide) then
+    if TUI_IsAlive(TUI_PinnedUnit) then
         return TUI_PinnedUnit
     endif
     set TUI_PinnedUnit = null
@@ -315,6 +316,13 @@ private function TUI_GetPanelHeight takes nothing returns real
     return TUI_PANEL_HEIGHT
 endfunction
 
+private function TUI_GetPanelWidth takes nothing returns real
+    if TUI_ConfigVisible then
+        return TUI_PANEL_CONFIG_WIDTH
+    endif
+    return TUI_PANEL_WIDTH
+endfunction
+
 private function TUI_ApplyLayout takes nothing returns nothing
     local integer layoutState = 0
 
@@ -337,7 +345,7 @@ private function TUI_ApplyLayout takes nothing returns nothing
     endif
     set TUI_LayoutStateCache = layoutState
     call BlzFrameClearAllPoints(TUI_Parent)
-    call BlzFrameSetSize(TUI_Parent, TUI_PANEL_WIDTH, TUI_GetPanelHeight())
+    call BlzFrameSetSize(TUI_Parent, TUI_GetPanelWidth(), TUI_GetPanelHeight())
     call BlzFrameSetPoint(TUI_Parent, FRAMEPOINT_TOPLEFT, TUI_ScreenAnchor, FRAMEPOINT_TOPLEFT, TUI_PANEL_LEFT_OFFSET, TUI_PANEL_TOP_OFFSET)
 
     if TUI_MinimizeButton != null then
@@ -505,7 +513,7 @@ private function TUI_Update takes nothing returns nothing
         set TUI_ThreatRowCache[1] = ""
         set TUI_ThreatRowCache[2] = ""
         set TUI_ThreatRowCache[3] = ""
-        set titleText = "|cffffcc00" + TUI_GetDisplayName(threatUnit) + "|r"
+        set titleText = "|cffffcc00" + TUI_GetDisplayName(threatUnit) + "|r  |cffbfbfbfLevel " + I2S(GetUnitLevel(threatUnit)) + "|r"
         set TUI_TitleCache = titleText
         call BlzFrameSetText(TUI_Title, titleText)
     endif
@@ -590,7 +598,7 @@ public function ShowForUnit takes unit whichUnit returns nothing
         set TUI_LayoutDirty = true
     endif
     set TUI_ConfigVisible = false
-    if ThreatSystem_HasThreat(whichUnit) then
+    if TUI_IsAlive(whichUnit) then
         set TUI_PinnedUnit = whichUnit
         set TUI_Closed = false
     else
@@ -720,7 +728,10 @@ private function TUI_OnUnitSelected takes nothing returns nothing
 
     if selectingPlayer == GetLocalPlayer() then
         set TUI_SelectedUnit = selectedUnit
-        if ThreatSystem_HasThreat(selectedUnit) or TUI_AlwaysShow or not TUI_AutoHide then
+        if selectedUnit == udg_Nazgrek or selectedUnit == udg_Zulkis then
+            // Preserve the last explicit world target when the modern
+            // controller returns command ownership to the player hero.
+        elseif TUI_IsAlive(selectedUnit) then
             set TUI_PinnedUnit = selectedUnit
             if TUI_ConfigVisible then
                 set TUI_LayoutDirty = true
@@ -744,9 +755,6 @@ private function TUI_OnUnitDeselected takes nothing returns nothing
     if deselectingPlayer == GetLocalPlayer() then
         if TUI_SelectedUnit == deselectedUnit then
             set TUI_SelectedUnit = null
-        endif
-        if TUI_PinnedUnit == deselectedUnit and TUI_AutoHide and not TUI_AlwaysShow then
-            set TUI_PinnedUnit = null
         endif
         call TUI_Update()
     endif

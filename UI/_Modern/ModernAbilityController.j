@@ -2,7 +2,7 @@
     ModernAbilityController
 
     Author: Valdemar
-    Version: 0.4.0
+    Version: 0.5.0
 
     Description:
     Converts local custom action-slot input into validated synchronized ability
@@ -58,6 +58,8 @@ globals
     private trigger MAC_MouseTrigger = CreateTrigger()
     private trigger MAC_SyncTrigger = CreateTrigger()
     private timer MAC_TargetingArmTimer = CreateTimer()
+    private timer MAC_RestoreSelectionTimer = CreateTimer()
+    private integer MAC_RestoreHeroSlot = 0
 endglobals
 
 private function MAC_IsElementalChoice takes integer abilityId returns boolean
@@ -131,9 +133,49 @@ private function MAC_SetOrderCollisionsDisabled takes unit caster, integer selec
     endloop
 endfunction
 
-private function MAC_Execute takes player sourcePlayer, integer heroSlot, integer slot, real pointX, real pointY returns nothing
+private function MAC_EnsureDirectAbility takes unit caster, integer abilityId returns boolean
+    local integer entryIndex = AbilitiesPlayer_GetEntryByAbilityId(abilityId)
+    local integer addAbilityId
+    local integer abilityLevel
+
+    if caster == null or entryIndex == 0 or AbilitiesPlayer_GetEntryKind(entryIndex) != AbilitiesPlayer_ENTRY_ABILITY then
+        return false
+    endif
+
+    set abilityLevel = GetUnitAbilityLevel(caster, abilityId)
+    if abilityLevel <= 0 then
+        return false
+    endif
+
+    set addAbilityId = AbilitiesPlayer_GetEntryAddAbilityId(entryIndex)
+    if addAbilityId != 0 and addAbilityId != abilityId and GetUnitAbilityLevel(caster, addAbilityId) > 0 then
+        call UnitMakeAbilityPermanent(caster, false, addAbilityId)
+        call UnitRemoveAbility(caster, addAbilityId)
+        if GetUnitAbilityLevel(caster, abilityId) <= 0 then
+            call UnitAddAbility(caster, abilityId)
+        endif
+        call SetUnitAbilityLevel(caster, abilityId, abilityLevel)
+        call UnitMakeAbilityPermanent(caster, true, abilityId)
+    endif
+
+    return GetUnitAbilityLevel(caster, abilityId) > 0
+endfunction
+
+private function MAC_RestoreHeroSelectionLocal takes nothing returns nothing
+    local unit caster = ShamanCommon_GetHeroBySlot(MAC_RestoreHeroSlot)
+
+    if caster != null and GetOwningPlayer(caster) == GetLocalPlayer() then
+        call ClearSelection()
+        call SelectUnit(caster, true)
+    endif
+    set MAC_RestoreHeroSlot = 0
+    set caster = null
+endfunction
+
+private function MAC_Execute takes player sourcePlayer, integer heroSlot, integer slot, real pointX, real pointY, integer targetId returns nothing
     local unit caster = ShamanCommon_GetHeroBySlot(heroSlot)
     local unit target = null
+    local unit hintedTarget = null
     local integer abilityId
     local integer actionKind
     local integer targetPolicy
@@ -154,6 +196,13 @@ private function MAC_Execute takes player sourcePlayer, integer heroSlot, intege
         return
     endif
 
+    if not MAC_EnsureDirectAbility(caster, abilityId) then
+        call DisplayTimedTextToPlayer(sourcePlayer, 0.00, 0.00, 2.00, "|cffff8080The learned ability could not be prepared for the action bar.|r")
+        set sourcePlayer = null
+        set caster = null
+        return
+    endif
+
     set actionKind = ModernAbilityCatalog_GetActionKind(abilityId)
     set targetPolicy = ModernAbilityCatalog_GetTargetPolicy(abilityId)
     set orderId = MAC_GetRuntimeOrderId(caster, abilityId)
@@ -162,7 +211,10 @@ private function MAC_Execute takes player sourcePlayer, integer heroSlot, intege
     if actionKind == ModernAbilityCatalog_ACTION_IMMEDIATE then
         set issued = IssueImmediateOrderById(caster, orderId)
     elseif actionKind == ModernAbilityCatalog_ACTION_UNIT then
-        set target = ModernAbilityTargeting_ResolveUnit(caster, abilityId, pointX, pointY)
+        if targetId > 0 then
+            set hintedTarget = udg_UDexUnits[targetId]
+        endif
+        set target = ModernAbilityTargeting_ResolveUnitWithHint(caster, abilityId, pointX, pointY, hintedTarget)
         if target != null then
             set issued = IssueTargetOrderById(caster, orderId, target)
         endif
@@ -182,6 +234,7 @@ private function MAC_Execute takes player sourcePlayer, integer heroSlot, intege
     set sourcePlayer = null
     set caster = null
     set target = null
+    set hintedTarget = null
 endfunction
 
 private function MAC_ExecuteElemental takes player sourcePlayer, integer heroSlot, integer abilityId returns nothing
@@ -247,8 +300,8 @@ private function MAC_ExecuteContext takes player sourcePlayer, integer heroSlot,
     set caster = null
 endfunction
 
-private function MAC_SendCast takes integer heroSlot, integer slot, real pointX, real pointY returns nothing
-    call BlzSendSyncData(MAC_SYNC_PREFIX, I2S(heroSlot) + "," + I2S(slot) + "," + R2S(pointX) + "," + R2S(pointY))
+private function MAC_SendCast takes integer heroSlot, integer slot, real pointX, real pointY, integer targetId returns nothing
+    call BlzSendSyncData(MAC_SYNC_PREFIX, I2S(heroSlot) + "," + I2S(slot) + "," + R2S(pointX) + "," + R2S(pointY) + "," + I2S(targetId))
 endfunction
 
 private function MAC_SendElemental takes integer heroSlot, integer abilityId returns nothing
@@ -390,7 +443,7 @@ public function BeginLocal takes player whichPlayer, unit whichHero, integer slo
         call TimerStart(MAC_TargetingArmTimer, 0.00, false, function MAC_ArmTargetingLocal)
         call DisplayTimedTextToPlayer(whichPlayer, 0.00, 0.00, 2.00, "|cffffcc00Choose a world target. Right-click to cancel.|r")
     else
-        call MAC_SendCast(heroSlot, slot, GetUnitX(whichHero), GetUnitY(whichHero))
+        call MAC_SendCast(heroSlot, slot, GetUnitX(whichHero), GetUnitY(whichHero), 0)
     endif
 
     set whichPlayer = null
@@ -420,6 +473,8 @@ endfunction
 private function MAC_OnMouseDown takes nothing returns nothing
     local player whichPlayer = GetTriggerPlayer()
     local integer playerIndex = GetPlayerId(whichPlayer)
+    local integer targetId = 0
+    local unit focusedUnit = null
     local mousebuttontype mouseButton
 
     if whichPlayer == GetLocalPlayer() and MAC_Targeting[playerIndex] and MAC_TargetingArmed[playerIndex] then
@@ -427,7 +482,13 @@ private function MAC_OnMouseDown takes nothing returns nothing
         if mouseButton == MOUSE_BUTTON_TYPE_RIGHT then
             call CancelLocal(whichPlayer)
         elseif mouseButton == MOUSE_BUTTON_TYPE_LEFT then
-            call MAC_SendCast(MAC_PendingHeroSlot[playerIndex], MAC_PendingSlot[playerIndex], BlzGetTriggerPlayerMouseX(), BlzGetTriggerPlayerMouseY())
+            set focusedUnit = BlzGetMouseFocusUnit()
+            if focusedUnit != null then
+                set targetId = GetUnitUserData(focusedUnit)
+            endif
+            call MAC_SendCast(MAC_PendingHeroSlot[playerIndex], MAC_PendingSlot[playerIndex], BlzGetTriggerPlayerMouseX(), BlzGetTriggerPlayerMouseY(), targetId)
+            set MAC_RestoreHeroSlot = MAC_PendingHeroSlot[playerIndex]
+            call TimerStart(MAC_RestoreSelectionTimer, 0.00, false, function MAC_RestoreHeroSelectionLocal)
             set MAC_Targeting[playerIndex] = false
             set MAC_TargetingArmed[playerIndex] = false
             set MAC_PendingHeroSlot[playerIndex] = 0
@@ -436,6 +497,7 @@ private function MAC_OnMouseDown takes nothing returns nothing
     endif
 
     set mouseButton = null
+    set focusedUnit = null
     set whichPlayer = null
 endfunction
 
@@ -534,10 +596,12 @@ private function MAC_OnSync takes nothing returns nothing
     local integer separator1 = MAC_FindSeparator(data, 0)
     local integer separator2
     local integer separator3
+    local integer separator4
     local integer heroSlot
     local integer slot
     local real pointX
     local real pointY
+    local integer targetId
     local player sourcePlayer = GetTriggerPlayer()
 
     if BlzGetTriggerSyncPrefix() == MAC_ELEMENTAL_SYNC_PREFIX then
@@ -575,13 +639,19 @@ private function MAC_OnSync takes nothing returns nothing
         set sourcePlayer = null
         return
     endif
+    set separator4 = MAC_FindSeparator(data, separator3 + 1)
+    if separator4 <= separator3 then
+        set sourcePlayer = null
+        return
+    endif
 
     set heroSlot = S2I(SubString(data, 0, separator1))
     set slot = S2I(SubString(data, separator1 + 1, separator2))
     set pointX = S2R(SubString(data, separator2 + 1, separator3))
-    set pointY = S2R(SubString(data, separator3 + 1, StringLength(data)))
+    set pointY = S2R(SubString(data, separator3 + 1, separator4))
+    set targetId = S2I(SubString(data, separator4 + 1, StringLength(data)))
     if slot >= 1 and slot <= ModernAbilityLoadout_SLOT_COUNT then
-        call MAC_Execute(sourcePlayer, heroSlot, slot, pointX, pointY)
+        call MAC_Execute(sourcePlayer, heroSlot, slot, pointX, pointY, targetId)
     endif
 
     set sourcePlayer = null

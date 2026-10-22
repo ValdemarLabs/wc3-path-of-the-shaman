@@ -55,18 +55,25 @@ Zul'kis. Right-click a learned active ability in that list, then click an
 action-bar slot (or press that slot's bound key) to assign it. The action bar
 also derives a stable default layout and appends newly learned active abilities
 to the first empty slot. Once full, it never displaces an existing assignment.
-The old spellbooks remain compatible but are no longer the modern HUD
-presentation.
+Newly learned active abilities are now attached directly to the hero instead
+of through their old spellbook wrapper. Existing saves migrate an ability the
+first time its modern action slot is used, preserving its learned rank. The
+spellbook definitions remain only as compatibility data for old saves.
 
 Right-click an action slot and click another slot to swap them. Shift-right-
-click a slot and press one of `1-0`, `-`, `=`, `QWER`, `ASDF`, or
+click a slot and press one of `1-0`, `-`, `=`, `QWER`, `DF`, or
 `ZXCV` to rebind it; if that key already belongs to another slot, the two
 bindings swap. Loadout changes are synchronized. Keybindings are local
 presentation preferences and currently last for the running session only.
+`A` and `S` are deliberately excluded so Warcraft's Attack and Stop commands
+continue to work.
 
-When imported after `DInventory` and `DEquipment`, the bottom HUD also shows
-Bag, Gear, and Look controls. Look opens the existing read-only inspect
-inventory/equipment view for the selected eligible unit. Stealth and the
+The bottom HUD includes six PotS-owned quick-item slots backed by the hero's
+normal inventory. Clicking a populated slot uses that item through synchronized
+gameplay code without moving the crash-prone native item frames. When imported
+after `DInventory` and `DEquipment`, it also shows Inventory and Inspect
+controls. Inventory opens the full bag and equipment views, while Inspect opens the existing read-only inventory/equipment view for the
+selected eligible unit. Stealth and the
 currently equipped Shield Block rank have dedicated contextual slots above the
 bar, so neither ability consumes one of the twelve general slots.
 
@@ -236,7 +243,10 @@ stage.
 World targeting is armed on the next local input tick so the frame click that
 opened targeting cannot be mistaken for a terrain click. Selecting an enemy,
 ally, or inspect target no longer replaces the player hero displayed by the
-resource HUD or action bar.
+resource HUD or action bar. Unit clicks synchronize the exact mouse-focus unit
+index and only fall back to the nearby-point resolver when no valid focused
+unit exists. After the target is captured, command selection returns to the
+player hero while `TargetUnitUI` retains the explicit target.
 
 ## Import and validation
 
@@ -264,7 +274,7 @@ Then import `UI/_Modern/ModernTotemTracker.j` after `Totems`,
 Import `UI/_Modern/ModernMinimapHUD.j` after `FullscreenUI`,
 `ModernPlayerHUD`, and the production `DynamicMinimap` library when used.
 Import `ModernPlayerHUD.j` after `DInventory` and `DEquipment` to enable
-the Bag, Gear, and Look adapters; both integrations are optional at compile
+the Inventory and Inspect adapters; both integrations are optional at compile
 time.
 
 Import these files with the exact custom paths shown:
@@ -300,7 +310,7 @@ Then compile through the current World Editor/JassHelper workflow. Test:
 - non-hero and enemy selection;
 - inventory, quest, MasterUI, cinematic, and fullscreen UI transitions;
 - the intro-to-gameplay transition without a native access violation;
-- version 0.8.0 of the resource shell and version 0.9.0 of the action bar,
+- version 0.9.0 of the resource shell and version 1.0.0 of the action bar,
   confirming that learned icons, cooldowns, tooltips, and Abilities render;
 - mouse clicks on action slots, Abilities, StatsLiteUI, Quest UI, MasterUI,
   world terrain, and units after the full-screen logical parents were removed;
@@ -317,15 +327,16 @@ Then compile through the current World Editor/JassHelper workflow. Test:
   totem placement; and approximate area-spell placement;
 - one-click entry into targeting, confirming that the opening frame click is
   ignored and the following terrain/unit click is the synchronized target;
-- health and mana current/maximum plus percentage text, clean flat-ended fills,
-  ten-segment XP progress, and icon-backed Bag, Gear, and Look controls;
+- health and mana current/maximum plus percentage text, complete 100% fills,
+  ten-segment XP progress, the six synchronized quick-item slots, and
+  icon-backed Inventory and Inspect controls;
 - all four Summon Elemental flyout choices, including mana, cooldown, channel,
   replacement of the active elemental, and two-client synchronization;
 - Windfury Totem point placement through its corrected `undeadbuild` Channel
   order;
 - Stormstrike and Whirlwind immediate casting plus every Channel-backed
   point-target ability after changing its Object Editor base order;
-- Bag, Gear, and Look against the selected hero and an inspectable selected
+- Inventory and Inspect against the selected hero and an inspectable selected
   unit; Stealth visibility and all three equipment-granted Shield Block ranks;
 - Earth, Fire, Water, and Air tracker badges in their inactive state, then
   enlarged active state with a decreasing whole-second label and lifetime bar

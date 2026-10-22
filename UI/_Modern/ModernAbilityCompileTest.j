@@ -17,6 +17,7 @@
 globals
     unit udg_Nazgrek = null
     unit udg_Zulkis = null
+    unit array udg_UDexUnits
 endglobals
 
 library AbilitiesPlayer

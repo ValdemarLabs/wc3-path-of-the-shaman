@@ -1637,7 +1637,7 @@ private function AUI_ModernAssignAction takes nothing returns nothing
     local integer definitionIndex
     local integer abilityId
 
-    if GetTriggerPlayer() != GetLocalPlayer() or BlzGetTriggerPlayerMouseButton() != MOUSE_BUTTON_TYPE_RIGHT then
+    if GetTriggerPlayer() != GetLocalPlayer() or not BlzIsMouseButtonPressed(MOUSE_BUTTON_TYPE_RIGHT) then
         return
     endif
 

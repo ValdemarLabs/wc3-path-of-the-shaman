@@ -255,11 +255,20 @@ library Abilities initializer Init requires ExSound, AbilitiesPlayer, AbilitiesP
         local integer addAbilityId = AbilitiesPlayer_GetEntryAddAbilityId(entryIndex)
         local integer permanentAbilityId = AbilitiesPlayer_GetEntryPermanentAbilityId(entryIndex)
 
-        if addAbilityId != 0 and GetUnitAbilityLevel(hero, addAbilityId) <= 0 then
+        // Active abilities belong directly to the hero in the modern HUD. The
+        // old add rawcodes are spellbook wrappers and cannot reliably accept
+        // synchronized orders while their page is closed.
+        if AbilitiesPlayer_GetEntryKind(entryIndex) == AbilitiesPlayer_ENTRY_ABILITY then
+            if abilityId != 0 and GetUnitAbilityLevel(hero, abilityId) <= 0 then
+                call UnitAddAbility(hero, abilityId)
+            endif
+        elseif addAbilityId != 0 and GetUnitAbilityLevel(hero, addAbilityId) <= 0 then
             call UnitAddAbility(hero, addAbilityId)
         endif
 
-        call AB_MakeAbilityPermanent(hero, addAbilityId)
+        if AbilitiesPlayer_GetEntryKind(entryIndex) != AbilitiesPlayer_ENTRY_ABILITY then
+            call AB_MakeAbilityPermanent(hero, addAbilityId)
+        endif
         call AB_MakeAbilityPermanent(hero, abilityId)
         if permanentAbilityId != addAbilityId and permanentAbilityId != abilityId then
             call AB_MakeAbilityPermanent(hero, permanentAbilityId)
