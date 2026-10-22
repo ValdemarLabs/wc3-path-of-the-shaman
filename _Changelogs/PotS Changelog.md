@@ -17,6 +17,30 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [23.10.2026]
+
+### Player-Facing Updates
+
+- Expanded the Modern HUD action bar to twenty-four abilities in two rows. The first row keeps the `1` through `=` bindings, while second-row abilities start unbound and can use the existing slot-rebinding flow.
+- Replaced rectangular cooldown shading with a Warcraft-style radial cooldown sweep and retained the numerical countdown over each cooling ability.
+- Restored click handling for Abilities, Inventory, Inspect, and the six quick-item slots. Empty quick-item slots no longer display red cancel icons, and Inspect now appears only for a selected non-player-owned friendly or neutral unit.
+- Removed the unexplained E/F/W/A placeholder squares. Element badges now appear only while the matching totem is active and continue to show its remaining duration.
+- Moved the compact minimap shell, hero selectors, and minimap controls to the real widescreen client edge. Reopening the compact minimap after enlargement now uses the same resolution-aware placement.
+- Replaced the duplicated portrait medallion with a neutral portrait frame, removed the black trim above the resource bars, and added a taller transparent HUD chassis sized for both action-bar rows.
+
+### Technical Updates
+
+- Updated `UI/_Modern/ModernPlayerHUD.j`, `ModernAbilityActionBar.j`, `ModernAbilityLoadout.j`, `ModernMinimapHUD.j`, `ModernTotemTracker.j`, and `README.md`. Clickable controls now stay inside the HUD input bounds and use control-click events; the action loadout stores 24 entries; and client-width layout uses `BlzGetLocalClientWidth`/`BlzGetLocalClientHeight`.
+- Updated `UI/_Modern/ModernAbilityActionBar.j` so transient fullscreen UI hides the relocated portrait without repeatedly restoring and reparenting it. Explicit HUD disable still restores the original native parent and automatic positioning.
+- Updated `UI/_Modern/Assets/PotSHUD.tga` to a 2048x512 BGRA texture with a transparent background and a simplified iron, bronze, leather, and restrained elemental treatment.
+- The focused Modern HUD JassHelper/pjass harness completed successfully after the 24-slot, cooldown-sprite, input, portrait-lifecycle, and widescreen changes.
+
+### Actions Remaining
+
+- Reimport the changed Modern HUD JASS files and `UI\_Modern\Assets\PotSHUD.tga`, compile the full map, and test Abilities/Inventory/Inspect/quick-item clicks, slot assignment and rebinding across both rows, radial cooldown direction, and camera orbit in 16:9 and ultrawide resolutions.
+- Repeatedly enter and exit Ability Trainer and fullscreen cinematics while the animated portrait is visible, then test HUD disable/re-enable and two-client play for client stability and portrait animation speed.
+- Test compact/enlarged minimap switching, all native minimap controls, friendly/neutral versus hostile Inspect visibility, and active totem timers in one- and two-client sessions.
+
 ## [22.10.2026]
 
 ### Player-Facing Updates
