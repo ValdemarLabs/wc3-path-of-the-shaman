@@ -2,7 +2,7 @@
     ModernAbilityActionBar
 
     Author: Valdemar
-    Version: 1.0.0
+    Version: 1.1.0
 
     Description:
     Renders the cached PotS-owned twelve-slot action bar with learned ability
@@ -33,6 +33,7 @@ library ModernAbilityActionBar initializer Init requires Events, FullscreenUI, M
 globals
     private constant boolean MAB_AUTO_ENABLE = true
     private constant boolean MAB_HIDE_NATIVE_BOTTOM_HUD = true
+    private constant boolean MAB_USE_NATIVE_PORTRAIT = true
 
     private constant real MAB_ACTION_START_X = 0.190
     private constant real MAB_ACTION_BOTTOM = 0.012
@@ -68,6 +69,9 @@ globals
     private boolean MAB_FramesCreated = false
     private boolean MAB_Enabled = false
     private boolean MAB_NativeCaptured = false
+    private boolean MAB_PortraitCaptured = false
+    private boolean MAB_PortraitRelocated = false
+    private boolean MAB_PortraitWasVisible = false
     private boolean MAB_ParentVisible = false
     private boolean MAB_TargetingVisible = false
     private boolean MAB_StaticDirty = true
@@ -80,7 +84,10 @@ globals
     private framehandle MAB_ScreenParent = null
     private framehandle MAB_Parent = null
     private framehandle MAB_HeroBorder = null
+    private framehandle MAB_PortraitAnchor = null
     private framehandle MAB_HeroIcon = null
+    private framehandle MAB_NativePortrait = null
+    private framehandle MAB_NativePortraitParent = null
     private framehandle MAB_TargetingText = null
     private framehandle MAB_Tooltip = null
     private framehandle MAB_TooltipTitle = null
@@ -323,7 +330,6 @@ private function MAB_FindNativeFrames takes nothing returns nothing
     call MAB_RegisterNativeFrame(BlzGetFrameByName("ConsoleBottomBar", 0))
     call MAB_RegisterNativeFrame(BlzGetFrameByName("ConsoleBottomBarOverlay", 0))
     call MAB_RegisterNativeFrame(BlzGetOriginFrame(ORIGIN_FRAME_HERO_BAR, 0))
-    call MAB_RegisterNativeFrame(BlzGetOriginFrame(ORIGIN_FRAME_PORTRAIT, 0))
     loop
         exitwhen index >= MAB_NATIVE_HERO_BUTTON_COUNT
         call MAB_RegisterNativeFrame(BlzGetOriginFrame(ORIGIN_FRAME_HERO_BUTTON, index))
@@ -334,6 +340,62 @@ private function MAB_FindNativeFrames takes nothing returns nothing
     endloop
     // Keep this last so child visibility is captured before the parent hides.
     call MAB_RegisterNativeFrame(BlzGetFrameByName("ConsoleUIBackdrop", 0))
+endfunction
+
+private function MAB_CaptureNativePortrait takes nothing returns nothing
+    if MAB_PortraitCaptured or MAB_PortraitAnchor == null or FullscreenUI_IsEnabled() then
+        return
+    endif
+
+    set MAB_NativePortrait = BlzGetOriginFrame(ORIGIN_FRAME_PORTRAIT, 0)
+    if MAB_NativePortrait != null then
+        set MAB_NativePortraitParent = BlzFrameGetParent(MAB_NativePortrait)
+        set MAB_PortraitWasVisible = BlzFrameIsVisible(MAB_NativePortrait)
+        set MAB_PortraitCaptured = MAB_NativePortraitParent != null
+    endif
+endfunction
+
+private function MAB_RelocateNativePortrait takes nothing returns nothing
+    if not MAB_USE_NATIVE_PORTRAIT or MAB_PortraitRelocated or FullscreenUI_IsEnabled() then
+        return
+    endif
+
+    call MAB_CaptureNativePortrait()
+    if not MAB_PortraitCaptured then
+        if MAB_HeroIcon != null then
+            call BlzFrameSetVisible(MAB_HeroIcon, true)
+        endif
+        return
+    endif
+
+    // Automatic console layout would otherwise move this origin frame back.
+    // Reparenting to the small anchor also gives the portrait a stable z-level.
+    call BlzEnableUIAutoPosition(false)
+    call BlzFrameSetVisible(MAB_NativePortrait, false)
+    call BlzFrameSetParent(MAB_NativePortrait, MAB_PortraitAnchor)
+    call BlzFrameClearAllPoints(MAB_NativePortrait)
+    call BlzFrameSetAllPoints(MAB_NativePortrait, MAB_PortraitAnchor)
+    call BlzFrameSetVisible(MAB_NativePortrait, true)
+    call BlzFrameSetVisible(MAB_HeroIcon, false)
+    set MAB_PortraitRelocated = true
+endfunction
+
+private function MAB_RestoreNativePortrait takes nothing returns nothing
+    if not MAB_PortraitRelocated then
+        return
+    endif
+
+    call BlzFrameSetVisible(MAB_NativePortrait, false)
+    call BlzFrameClearAllPoints(MAB_NativePortrait)
+    call BlzFrameSetParent(MAB_NativePortrait, MAB_NativePortraitParent)
+    call BlzEnableUIAutoPosition(true)
+    if not FullscreenUI_IsEnabled() then
+        call BlzFrameSetVisible(MAB_NativePortrait, MAB_PortraitWasVisible)
+    endif
+    if MAB_HeroIcon != null then
+        call BlzFrameSetVisible(MAB_HeroIcon, true)
+    endif
+    set MAB_PortraitRelocated = false
 endfunction
 
 private function MAB_CaptureNativeVisibility takes nothing returns nothing
@@ -370,11 +432,13 @@ private function MAB_HideNativeFrames takes nothing returns nothing
         endif
         set index = index + 1
     endloop
+    call MAB_RelocateNativePortrait()
 endfunction
 
 private function MAB_RestoreNativeFrames takes nothing returns nothing
     local integer index = 0
 
+    call MAB_RestoreNativePortrait()
     if not MAB_NativeCaptured then
         return
     endif
@@ -697,9 +761,8 @@ private function MAB_Update takes nothing returns nothing
     local integer revision
 
     if not MAB_Enabled or not ModernPlayerHUD_IsEnabled() or FullscreenUI_IsEnabled() then
-        if FullscreenUI_IsEnabled() then
-            set MAB_WasFullscreen = true
-        endif
+        set MAB_WasFullscreen = true
+        call MAB_RestoreNativePortrait()
         call MAB_SetParentVisible(false)
         call MAB_CloseElementalFlyout()
         set whichHero = null
@@ -1186,9 +1249,13 @@ private function MAB_CreateFrames takes nothing returns nothing
     call BlzFrameSetEnable(MAB_HeroBorder, false)
     call BlzFrameSetLevel(MAB_HeroBorder, 4)
 
-    set MAB_HeroIcon = BlzCreateFrameByType("BACKDROP", "ModernAbilityHeroIcon", MAB_HeroBorder, "", 0)
-    call BlzFrameSetPoint(MAB_HeroIcon, FRAMEPOINT_BOTTOMLEFT, MAB_HeroBorder, FRAMEPOINT_BOTTOMLEFT, 0.005, 0.005)
-    call BlzFrameSetPoint(MAB_HeroIcon, FRAMEPOINT_TOPRIGHT, MAB_HeroBorder, FRAMEPOINT_TOPRIGHT, -0.005, -0.005)
+    set MAB_PortraitAnchor = BlzCreateFrameByType("FRAME", "ModernAbilityPortraitAnchor", MAB_HeroBorder, "", 0)
+    call BlzFrameSetPoint(MAB_PortraitAnchor, FRAMEPOINT_BOTTOMLEFT, MAB_HeroBorder, FRAMEPOINT_BOTTOMLEFT, 0.005, 0.005)
+    call BlzFrameSetPoint(MAB_PortraitAnchor, FRAMEPOINT_TOPRIGHT, MAB_HeroBorder, FRAMEPOINT_TOPRIGHT, -0.005, -0.005)
+    call BlzFrameSetLevel(MAB_PortraitAnchor, 5)
+
+    set MAB_HeroIcon = BlzCreateFrameByType("BACKDROP", "ModernAbilityHeroIcon", MAB_PortraitAnchor, "", 0)
+    call BlzFrameSetAllPoints(MAB_HeroIcon, MAB_PortraitAnchor)
     call BlzFrameSetEnable(MAB_HeroIcon, false)
     call BlzFrameSetLevel(MAB_HeroIcon, 5)
 
