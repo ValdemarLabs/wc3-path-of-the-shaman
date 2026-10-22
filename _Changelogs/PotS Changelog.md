@@ -17,6 +17,26 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [22.10.2026]
+
+### Player-Facing Updates
+
+- Camera orbit with the Free-camera-style right mouse button now suppresses Warcraft III smart movement commands until the button is released.
+- Fixed Modern HUD casting for existing saves and newly learned abilities by moving active spells out of their spellbook wrappers. Melee, unit-target, and point-target actions can now issue their real ability orders from the custom bar.
+- Unit-target actions now capture the exact unit under the cursor before falling back to nearby target selection. After targeting, command selection returns to the player hero while the compact target display retains the chosen unit and shows its level and resources.
+- Restored Warcraft's default Attack and Stop hotkeys, repaired right-click slot assignment/swapping/rebinding, and made the Abilities, Inventory, and Inspect controls respond through their actual mouse-down events.
+- Added six synchronized quick-item slots for the player hero's normal inventory, completed the 100% health/mana fills, enlarged the hero portrait treatment, and reduced the oversized target panel.
+
+### Technical Updates
+
+- Updated `UI/CameraControl.j` to capture local user control for an accepted right-mouse orbit and restore it when orbit input ends or is cancelled.
+- Updated `Abilities/Abilities.j`, `UI/AbilitiesLiteUI.j`, `UI/TargetUnitUI.j`, and the Modern HUD controller, targeting, action-bar, player-HUD, compile-test, and README files. Old learned spellbook entries migrate to permanent direct abilities on first custom-bar use; focused-unit IDs and item-slot use travel through validated sync events; and `A`/`S` are no longer registered as action-bar keys.
+
+### Actions Remaining
+
+- Reimport `UI/CameraControl.j`, compile the full map, and verify right-mouse orbit versus click-to-move in one- and two-client sessions, including cancellation by fullscreen UI and camera-mode changes.
+- Reimport the updated ability and Modern HUD sources, compile the full map, then test old-save migration, new learning, Stormstrike, Whirlwind, hostile/friendly unit targeting, every totem point cast, Attack/Stop commands, assignment/swapping/rebinding, all six quick items, inventory/inspect controls, and retained targets in one- and two-client sessions.
+
 ## [21.10.2026]
 
 ### Player-Facing Updates
