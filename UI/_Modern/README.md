@@ -13,7 +13,8 @@ The first prototype is `ModernPlayerHUD.j`:
              [ Health ] [Level] [ Mana ]
                [Earth Fire Water Air]
                      [ XP ]
-       [custom action slots 1 through 12] [ability book]
+       [custom action slots 13 through 24]
+       [custom action slots  1 through 12] [ability book]
 ```
 
 ### Isolated native-frame adapters
@@ -25,14 +26,18 @@ engine-owned widgets together. Native elements are therefore integrated only
 through separate, rollback-safe adapters rather than a shared origin-frame
 layout pass.
 
-`ModernAbilityActionBar.j` fills the twelve custom slots with learned
-ability icons, cooldown shading, mana/readiness state, and custom tooltips. It
-hides `ConsoleBottomBar`, `ConsoleBottomBarOverlay`, the native hero bar, and
+`ModernAbilityActionBar.j` fills twenty-four custom slots in two rows with
+learned ability icons, native-style radial cooldown sweeps, numerical cooldown
+text, mana/readiness state, and custom tooltips. It hides
+`ConsoleBottomBar`, `ConsoleBottomBarOverlay`, the native hero bar, and
 `ConsoleUIBackdrop` with visibility calls only. The animated native portrait is
 the one deliberate portrait adapter: after the intro it is reparented into a
-small PotS-owned anchor inside the medallion. Blizzard automatic UI positioning
-is disabled while that adapter owns the portrait, then its original parent and
-automatic positioning are restored for fullscreen cinematics or HUD shutdown.
+small PotS-owned anchor inside a neutral portrait frame. Blizzard automatic UI
+positioning is disabled while that adapter owns the portrait. Transient
+fullscreen panels hide the custom parent without reparenting the native
+portrait again; its original parent and automatic positioning are restored
+only when the Modern HUD is explicitly disabled. This avoids restarting the
+portrait and changing its origin-frame hierarchy during Ability Trainer exits.
 The unit icon remains underneath as a fallback if the origin portrait is not
 available. Set `MAB_USE_NATIVE_PORTRAIT` to `false` for an immediate,
 portrait-only rollback without disabling the rest of the Modern HUD.
@@ -42,6 +47,9 @@ overlays. The Game UI root remains only an invisible frame parent.
 
 `ModernMinimapHUD.j` reparents only the native minimap into a compact
 upper-left PotS shell and adds separate Nazgrek and Zul'kis selection buttons.
+The compact shell uses the local client aspect ratio
+(`clientWidth / clientHeight * 0.600`) to anchor against the real widescreen
+left edge rather than the classic 4:3 boundary.
 It does not move the native command card or hero-bar controls involved in the
 earlier unsafe-layout crash. The native hero buttons are hidden
 individually so their status icons cannot remain over the modern bottom HUD.
@@ -67,7 +75,9 @@ of through their old spellbook wrapper. Existing saves migrate an ability the
 first time its modern action slot is used, preserving its learned rank. The
 spellbook definitions remain only as compatibility data for old saves.
 
-Right-click an action slot and click another slot to swap them. Shift-right-
+The first row keeps the default `1` through `=` bindings. The second row
+starts unbound so it does not steal movement or command keys. Right-click an
+action slot and click another slot to swap them. Shift-right-
 click a slot and press one of `1-0`, `-`, `=`, `QWER`, `DF`, or
 `ZXCV` to rebind it; if that key already belongs to another slot, the two
 bindings swap. Loadout changes are synchronized. Keybindings are local
@@ -79,10 +89,12 @@ The bottom HUD includes six PotS-owned quick-item slots backed by the hero's
 normal inventory. Clicking a populated slot uses that item through synchronized
 gameplay code without moving the crash-prone native item frames. When imported
 after `DInventory` and `DEquipment`, it also shows Inventory and Inspect
-controls. Inventory opens the full bag and equipment views, while Inspect opens the existing read-only inventory/equipment view for the
-selected eligible unit. Stealth and the
+controls. Inventory opens the full bag and equipment views, while Inspect
+opens the existing read-only inventory/equipment view for the
+selected non-player-owned friendly or neutral eligible unit; hostile and
+player-owned selections hide the Inspect control. Stealth and the
 currently equipped Shield Block rank have dedicated contextual slots above the
-bar, so neither ability consumes one of the twelve general slots.
+bar, so neither ability consumes one of the twenty-four general slots.
 
 ## Forgotten Hollow inspiration and reuse
 
@@ -123,11 +135,12 @@ does not import either reference map's gameplay scripts.
 Twelve original PotS texture files are staged in `UI/_Modern/Assets`. They were
 created specifically for this HUD using a shared shamanic material language:
 blackened iron, aged bronze, charcoal stone, leather bindings, and restrained
-elemental turquoise. The medallion is an empty four-element ring so the
-same asset can frame either a real hero portrait or the level text.
-The revised medallion uses four large, distinct Earth, Fire, Water, and Air
-glyphs around a clean center. Matching individual element badges support the
-active-totem tracker without borrowing art from either reference map.
+elemental turquoise. The revised medallion uses four large, distinct Earth,
+Fire, Water, and Air glyphs around a clean center and is used once for the
+central level treatment. The animated portrait uses a neutral
+slot frame instead of duplicating the medallion. Matching individual element
+badges support the active-totem tracker without borrowing art from either
+reference map.
 
 The current HUD creates its frames from vJASS, so these textures require no TOC
 or FDF. Forgotten Hollow remains a mood/compactness reference. Forgotten Hollow TOC/FDF
@@ -159,8 +172,10 @@ changes. Mana
 shading traverses the slots only when the hero's integer mana changes.
 Cooldown natives are queried for every slot once during a static rebuild, then
 only for slots marked active by a spell-effect event until their cooldown ends.
-Cooldown height is limited to 20 geometry steps. All twelve slots share one
-tooltip frame whose content is filled on hover.
+Cooldown polling remains event-limited. Cooling slots drive Warcraft's radial
+cooldown sprite in 100 steps and add a whole-second countdown; no cooldown
+rectangle is resized every tick. All twenty-four slots share one tooltip frame
+whose content is filled on hover.
 
 Custom action bars are not inherently expensive. Repeated catalog scans,
 cooldown-native polling, and frame geometry changes were the harmful work;
@@ -184,7 +199,7 @@ Six focused libraries establish that boundary:
 - `ModernAbilityCatalog.j` classifies every Elemental, Enhancement,
   Restoration, and Totemic ability as passive, immediate, unit, point, or
   submenu and assigns a targeting policy.
-- `ModernAbilityLoadout.j` stores twelve synchronized slots independently for
+- `ModernAbilityLoadout.j` stores twenty-four synchronized slots independently for
   Nazgrek and Zul'kis. It accepts only learned active abilities and does not
   add, remove, hide, or change the level of an ability.
 - `ModernAbilityTargeting.j` provides deterministic unit acquisition. It
@@ -299,14 +314,15 @@ Import these files with the exact custom paths shown:
 - `UI\_Modern\Assets\PotSTotemWater.tga`
 - `UI\_Modern\Assets\PotSTotemAir.tga`
 
-No TOC or FDF import is required for this stage.
+No TOC or FDF import is required for this stage. `PotSHUD.tga` is a
+2048x512 transparent chassis sized for both twelve-slot rows; the action-slot
+frames remain separate, so adding or reordering slots does not stretch icons
+or bake them into the background texture.
 
-The four black squares reported in the first tracker test were the inactive
-Earth, Fire, Water, and Air badge frames. Ensure all four `PotSTotem*.tga`
-files use the exact custom paths above. Version 1.2.0 also reduces the inactive
-shade and displays E/F/W/A fallback labels, so a missing or incorrect texture
-path is immediately identifiable instead of appearing as an unexplained row
-of black rectangles.
+The four black squares reported in the first tracker test were inactive Earth,
+Fire, Water, and Air badge frames. Version 1.3.0 hides inactive element slots
+entirely. An element badge appears only while that element's totem is live,
+with its whole-second countdown and lifetime bar.
 
 Then compile through the current World Editor/JassHelper workflow. Test:
 
@@ -317,7 +333,7 @@ Then compile through the current World Editor/JassHelper workflow. Test:
 - non-hero and enemy selection;
 - inventory, quest, MasterUI, cinematic, and fullscreen UI transitions;
 - the intro-to-gameplay transition without a native access violation;
-- version 0.9.0 of the resource shell and version 1.0.0 of the action bar,
+- version 1.0.0 of the resource shell and version 1.2.0 of the action bar,
   confirming that learned icons, cooldowns, tooltips, and Abilities render;
 - mouse clicks on action slots, Abilities, StatsLiteUI, Quest UI, MasterUI,
   world terrain, and units after the full-screen logical parents were removed;
@@ -325,7 +341,7 @@ Then compile through the current World Editor/JassHelper workflow. Test:
   rebinding, duplicate-key swapping, and session-local binding behavior;
 - right-click ability-book assignment to an empty and occupied slot,
   right-click slot swapping, automatic first-empty-slot insertion after
-  learning, and no displacement when all twelve slots are full;
+  learning, and no displacement when all twenty-four slots are full;
 - the upper-left native minimap inside its custom shell, minimap interaction,
   Nazgrek/Zul'kis selector buttons, and intro/fullscreen transitions;
 - native bottom bar, command card, hero bar, and portrait hiding while the
@@ -345,8 +361,8 @@ Then compile through the current World Editor/JassHelper workflow. Test:
   point-target ability after changing its Object Editor base order;
 - Inventory and Inspect against the selected hero and an inspectable selected
   unit; Stealth visibility and all three equipment-granted Shield Block ranks;
-- Earth, Fire, Water, and Air tracker badges in their inactive state, then
-  enlarged active state with a decreasing whole-second label and lifetime bar
+- Earth, Fire, Water, and Air tracker badges remaining hidden while inactive,
+  then appearing with a decreasing whole-second label and lifetime bar
   for base and specialized totems in each element slot;
 - every shared-order collision pair, verifying that the selected ability casts
   and that its siblings remain usable afterward;

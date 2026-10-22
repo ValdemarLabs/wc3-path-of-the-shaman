@@ -2,15 +2,15 @@
     ModernAbilityActionBar
 
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.2.0
 
     Description:
-    Renders the cached PotS-owned twelve-slot action bar with learned ability
-    icons, active-cooldown updates, one shared tooltip, synchronized click
+    Renders the cached PotS-owned twenty-four-slot, two-row action bar with
+    learned ability icons, radial cooldown updates, one shared tooltip, synchronized click
     activation, and the four-choice Summon Elemental flyout. Static frame data
     is rebuilt only after an invalidation, while cooldown polling is restricted
     to slots that are actually cooling down. Number-row keys 1 through 0,
-    minus, and equals activate the corresponding visible slot.
+    minus, and equals activate the first row; the second row starts unbound.
 
     Credits:
     - Blizzard Entertainment, Warcraft III frame API
@@ -39,14 +39,15 @@ globals
     private constant real MAB_ACTION_BOTTOM = 0.012
     private constant real MAB_ACTION_SIZE = 0.032
     private constant real MAB_ACTION_GAP = 0.003
+    private constant integer MAB_ACTION_COLUMN_COUNT = 12
     private constant real MAB_TOOLTIP_WIDTH = 0.240
     private constant real MAB_TOOLTIP_HEIGHT = 0.092
     private constant integer MAB_ELEMENTAL_COUNT = 4
     private constant real MAB_ELEMENTAL_START_X = 0.318
-    private constant real MAB_ELEMENTAL_BOTTOM = 0.124
+    private constant real MAB_ELEMENTAL_BOTTOM = 0.164
     private constant real MAB_ELEMENTAL_SIZE = 0.038
     private constant real MAB_ELEMENTAL_GAP = 0.004
-    private constant integer MAB_COOLDOWN_STEPS = 20
+    private constant integer MAB_COOLDOWN_STEPS = 100
     private constant integer MAB_NATIVE_HERO_BUTTON_COUNT = 7
 
     private constant integer MAB_SUMMON_ELEMENTAL = 'A67Q'
@@ -63,7 +64,8 @@ globals
 
     private constant string MAB_SURFACE_TEXTURE = "UI\\Widgets\\EscMenu\\Human\\blank-background.blp"
     private constant string MAB_EMPTY_ICON = "ReplaceableTextures\\CommandButtons\\BTNCancel.blp"
-    private constant string MAB_MEDALLION_TEXTURE = "UI\\_Modern\\Assets\\PotSMedallion.tga"
+    private constant string MAB_PORTRAIT_FRAME_TEXTURE = "UI\\_Modern\\Assets\\PotSActionSlot.tga"
+    private constant string MAB_COOLDOWN_MODEL = "UI\\Feedback\\Cooldown\\UI-Cooldown-Indicator.mdl"
 
     private boolean MAB_Initialized = false
     private boolean MAB_FramesCreated = false
@@ -161,8 +163,10 @@ private function MAB_GetSlotLabel takes integer slot returns string
         return "0"
     elseif slot == 11 then
         return "-"
+    elseif slot == 12 then
+        return "="
     endif
-    return "="
+    return ""
 endfunction
 
 private function MAB_GetKeyLabel takes oskeytype whichKey returns string
@@ -490,6 +494,10 @@ private function MAB_ResetSlotCache takes nothing returns nothing
         set MAB_CachedDisabled[index] = false
         set MAB_CachedCooldownVisible[index] = false
         set MAB_CooldownActive[index] = false
+        if MAB_FramesCreated then
+            call BlzFrameSetVisible(MAB_SlotCooldown[index], false)
+            call BlzFrameSetVisible(MAB_SlotCooldownText[index], false)
+        endif
         set MAB_CachedTitle[index] = ""
         set MAB_CachedBody[index] = ""
         set MAB_CachedIcon[index] = ""
@@ -574,7 +582,7 @@ private function MAB_SetCooldownVisual takes integer index, unit whichHero, inte
         endif
         if step != MAB_CachedCooldownStep[index] then
             set MAB_CachedCooldownStep[index] = step
-            call BlzFrameSetSize(MAB_SlotCooldown[index], MAB_ACTION_SIZE - 0.004, (MAB_ACTION_SIZE - 0.004) * I2R(step) / I2R(MAB_COOLDOWN_STEPS))
+            call BlzFrameSetSpriteAnimate(MAB_SlotCooldown[index], step, 0)
         endif
         set second = R2I(remaining + 0.99)
         if second != MAB_CachedCooldownSecond[index] then
@@ -760,9 +768,17 @@ private function MAB_Update takes nothing returns nothing
     local boolean rebuild
     local integer revision
 
-    if not MAB_Enabled or not ModernPlayerHUD_IsEnabled() or FullscreenUI_IsEnabled() then
+    if not MAB_Enabled or not ModernPlayerHUD_IsEnabled() then
+        set MAB_WasFullscreen = false
+        call MAB_RestoreNativeFrames()
+        call MAB_SetParentVisible(false)
+        call MAB_CloseElementalFlyout()
+        set whichHero = null
+        return
+    endif
+
+    if FullscreenUI_IsEnabled() then
         set MAB_WasFullscreen = true
-        call MAB_RestoreNativePortrait()
         call MAB_SetParentVisible(false)
         call MAB_CloseElementalFlyout()
         set whichHero = null
@@ -1065,7 +1081,7 @@ endfunction
 
 private function MAB_CreateTooltip takes nothing returns nothing
     set MAB_Tooltip = BlzCreateFrameByType("BACKDROP", "ModernAbilityTooltip", MAB_ScreenParent, "EscMenuBackdrop", 0)
-    call BlzFrameSetAbsPoint(MAB_Tooltip, FRAMEPOINT_BOTTOM, 0.400, 0.130)
+    call BlzFrameSetAbsPoint(MAB_Tooltip, FRAMEPOINT_BOTTOM, 0.400, 0.198)
     call BlzFrameSetSize(MAB_Tooltip, MAB_TOOLTIP_WIDTH, MAB_TOOLTIP_HEIGHT)
     call BlzFrameSetEnable(MAB_Tooltip, false)
     call BlzFrameSetLevel(MAB_Tooltip, 40)
@@ -1087,10 +1103,13 @@ private function MAB_CreateTooltip takes nothing returns nothing
 endfunction
 
 private function MAB_CreateSlot takes integer index returns nothing
-    local real x = MAB_ACTION_START_X + I2R(index) * (MAB_ACTION_SIZE + MAB_ACTION_GAP)
+    local integer column = ModuloInteger(index, MAB_ACTION_COLUMN_COUNT)
+    local integer row = index / MAB_ACTION_COLUMN_COUNT
+    local real x = MAB_ACTION_START_X + I2R(column) * (MAB_ACTION_SIZE + MAB_ACTION_GAP)
+    local real y = MAB_ACTION_BOTTOM + I2R(row) * (MAB_ACTION_SIZE + MAB_ACTION_GAP)
 
     set MAB_SlotButton[index] = BlzCreateFrameByType("BUTTON", "ModernAbilityActionButton" + I2S(index), MAB_Parent, "", 0)
-    call BlzFrameSetAbsPoint(MAB_SlotButton[index], FRAMEPOINT_BOTTOMLEFT, x, MAB_ACTION_BOTTOM)
+    call BlzFrameSetAbsPoint(MAB_SlotButton[index], FRAMEPOINT_BOTTOMLEFT, x, y)
     call BlzFrameSetSize(MAB_SlotButton[index], MAB_ACTION_SIZE, MAB_ACTION_SIZE)
     call BlzFrameSetLevel(MAB_SlotButton[index], 4)
 
@@ -1100,12 +1119,12 @@ private function MAB_CreateSlot takes integer index returns nothing
     call BlzFrameSetEnable(MAB_SlotIcon[index], false)
     call BlzFrameSetLevel(MAB_SlotIcon[index], 5)
 
-    set MAB_SlotCooldown[index] = BlzCreateFrameByType("BACKDROP", "ModernAbilityCooldown" + I2S(index), MAB_SlotButton[index], "", 0)
-    call BlzFrameSetTexture(MAB_SlotCooldown[index], MAB_SURFACE_TEXTURE, 0, false)
-    call BlzFrameSetPoint(MAB_SlotCooldown[index], FRAMEPOINT_BOTTOM, MAB_SlotIcon[index], FRAMEPOINT_BOTTOM, 0.000, 0.000)
-    call BlzFrameSetVertexColor(MAB_SlotCooldown[index], BlzConvertColor(190, 0, 0, 0))
+    set MAB_SlotCooldown[index] = BlzCreateFrameByType("SPRITE", "ModernAbilityCooldown" + I2S(index), MAB_SlotButton[index], "", 0)
+    call BlzFrameSetAllPoints(MAB_SlotCooldown[index], MAB_SlotIcon[index])
+    call BlzFrameSetModel(MAB_SlotCooldown[index], MAB_COOLDOWN_MODEL, 0)
     call BlzFrameSetEnable(MAB_SlotCooldown[index], false)
     call BlzFrameSetLevel(MAB_SlotCooldown[index], 6)
+    call BlzFrameSetVisible(MAB_SlotCooldown[index], false)
 
     set MAB_SlotDisabled[index] = BlzCreateFrameByType("BACKDROP", "ModernAbilityDisabled" + I2S(index), MAB_SlotButton[index], "", 0)
     call BlzFrameSetTexture(MAB_SlotDisabled[index], MAB_SURFACE_TEXTURE, 0, false)
@@ -1120,6 +1139,7 @@ private function MAB_CreateSlot takes integer index returns nothing
     call BlzFrameSetScale(MAB_SlotCooldownText[index], 0.82)
     call BlzFrameSetEnable(MAB_SlotCooldownText[index], false)
     call BlzFrameSetLevel(MAB_SlotCooldownText[index], 8)
+    call BlzFrameSetVisible(MAB_SlotCooldownText[index], false)
 
     set MAB_SlotKeyText[index] = BlzCreateFrameByType("TEXT", "ModernAbilityKeyText" + I2S(index), MAB_SlotButton[index], "", 0)
     call BlzFrameSetPoint(MAB_SlotKeyText[index], FRAMEPOINT_TOPLEFT, MAB_SlotButton[index], FRAMEPOINT_TOPLEFT, 0.003, -0.002)
@@ -1143,7 +1163,7 @@ private function MAB_CreateElementalFlyout takes nothing returns nothing
     local string iconPath
 
     set MAB_ElementalBackdrop = BlzCreateFrameByType("BACKDROP", "ModernElementalFlyoutBackdrop", MAB_Parent, "EscMenuBackdrop", 0)
-    call BlzFrameSetAbsPoint(MAB_ElementalBackdrop, FRAMEPOINT_BOTTOMLEFT, 0.304, 0.115)
+    call BlzFrameSetAbsPoint(MAB_ElementalBackdrop, FRAMEPOINT_BOTTOMLEFT, 0.304, 0.155)
     call BlzFrameSetSize(MAB_ElementalBackdrop, 0.192, 0.064)
     call BlzFrameSetLevel(MAB_ElementalBackdrop, 34)
 
@@ -1203,7 +1223,7 @@ endfunction
 
 private function MAB_CreateContextSlot takes integer index, real x, string label returns nothing
     set MAB_ContextButton[index] = BlzCreateFrameByType("BUTTON", "ModernAbilityContextButton" + I2S(index), MAB_Parent, "", 0)
-    call BlzFrameSetAbsPoint(MAB_ContextButton[index], FRAMEPOINT_BOTTOMLEFT, x, 0.075)
+    call BlzFrameSetAbsPoint(MAB_ContextButton[index], FRAMEPOINT_BOTTOMLEFT, x, 0.112)
     call BlzFrameSetSize(MAB_ContextButton[index], 0.028, 0.028)
     call BlzFrameSetLevel(MAB_ContextButton[index], 14)
 
@@ -1243,7 +1263,7 @@ private function MAB_CreateFrames takes nothing returns nothing
     call BlzFrameSetLevel(MAB_Parent, 30)
 
     set MAB_HeroBorder = BlzCreateFrameByType("BACKDROP", "ModernAbilityHeroBorder", MAB_Parent, "", 0)
-    call BlzFrameSetTexture(MAB_HeroBorder, MAB_MEDALLION_TEXTURE, 0, true)
+    call BlzFrameSetTexture(MAB_HeroBorder, MAB_PORTRAIT_FRAME_TEXTURE, 0, true)
     call BlzFrameSetAbsPoint(MAB_HeroBorder, FRAMEPOINT_BOTTOMLEFT, 0.124, 0.008)
     call BlzFrameSetSize(MAB_HeroBorder, 0.064, 0.064)
     call BlzFrameSetEnable(MAB_HeroBorder, false)
@@ -1270,7 +1290,7 @@ private function MAB_CreateFrames takes nothing returns nothing
     call MAB_CreateContextSlot(1, 0.158, "Block")
 
     set MAB_TargetingText = BlzCreateFrameByType("TEXT", "ModernAbilityTargetingText", MAB_Parent, "", 0)
-    call BlzFrameSetAbsPoint(MAB_TargetingText, FRAMEPOINT_BOTTOM, 0.400, 0.151)
+    call BlzFrameSetAbsPoint(MAB_TargetingText, FRAMEPOINT_BOTTOM, 0.400, 0.191)
     call BlzFrameSetSize(MAB_TargetingText, 0.420, 0.016)
     call BlzFrameSetTextAlignment(MAB_TargetingText, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_CENTER)
     call BlzFrameSetScale(MAB_TargetingText, 0.78)
@@ -1409,10 +1429,14 @@ private function Init takes nothing returns nothing
     set MAB_KeyTrigger = CreateTrigger()
     loop
         exitwhen keyIndex >= ModernAbilityLoadout_SLOT_COUNT
-        set MAB_SlotKey[keyIndex] = actionKey[keyIndex]
-        set MAB_SlotKeyLabel[keyIndex] = MAB_GetSlotLabel(keyIndex + 1)
-        call BlzTriggerRegisterPlayerKeyEvent(MAB_KeyTrigger, Player(0), actionKey[keyIndex], 0, true)
-        set actionKey[keyIndex] = null
+        set MAB_SlotKey[keyIndex] = null
+        set MAB_SlotKeyLabel[keyIndex] = ""
+        if keyIndex < MAB_ACTION_COLUMN_COUNT then
+            set MAB_SlotKey[keyIndex] = actionKey[keyIndex]
+            set MAB_SlotKeyLabel[keyIndex] = MAB_GetSlotLabel(keyIndex + 1)
+            call BlzTriggerRegisterPlayerKeyEvent(MAB_KeyTrigger, Player(0), actionKey[keyIndex], 0, true)
+            set actionKey[keyIndex] = null
+        endif
         set keyIndex = keyIndex + 1
     endloop
     call BlzTriggerRegisterPlayerKeyEvent(MAB_KeyTrigger, Player(0), OSKEY_Q, 0, true)

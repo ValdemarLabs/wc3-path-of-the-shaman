@@ -2,10 +2,10 @@
     ModernAbilityLoadout
 
     Author: Valdemar
-    Version: 0.5.0
+    Version: 0.6.0
 
     Description:
-    Stores twelve synchronized modern action-bar assignments independently for
+    Stores twenty-four synchronized modern action-bar assignments independently for
     Nazgrek and Zul'kis. Assignments reference real learned ability rawcodes;
     spellbook wrapper abilities remain untouched for compatibility during the
     staged migration. The derived default layout is materialized once per hero
@@ -37,7 +37,7 @@
 library ModernAbilityLoadout requires AbilitiesPlayer, ShamanCommon, ModernAbilityCatalog
 
 globals
-    public constant integer SLOT_COUNT = 12
+    public constant integer SLOT_COUNT = 24
 
     private integer array MAL_AbilityId
     private boolean array MAL_Explicit

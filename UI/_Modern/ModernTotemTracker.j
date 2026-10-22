@@ -2,12 +2,13 @@
     ModernTotemTracker
 
     Author: Valdemar
-    Version: 1.2.0
+    Version: 1.3.0
 
     Description:
-    Displays Earth, Fire, Water, and Air badges above the modern player HUD.
-    A live totem enlarges and brightens its element badge while a numeric
-    countdown and thin lifetime bar show the remaining duration. The tracker
+    Displays active Earth, Fire, Water, and Air badges above the modern player
+    HUD. A live totem shows its element badge while a numeric countdown and
+    thin lifetime bar show the remaining duration. Inactive placeholders stay
+    hidden. The tracker
     reads the authoritative Totems slot registry and uses the shared modern
     HUD update callback; it creates no gameplay scanner or timer.
 
@@ -29,7 +30,7 @@ library ModernTotemTracker initializer Init requires Totems, ShamanCommon, Fulls
 globals
     private constant integer MTT_ELEMENT_COUNT = 4
     private constant real MTT_START_X = 0.332
-    private constant real MTT_BOTTOM = 0.105
+    private constant real MTT_BOTTOM = 0.143
     private constant real MTT_SLOT_SIZE = 0.030
     private constant real MTT_SLOT_GAP = 0.005
     private constant real MTT_ACTIVE_SIZE = 0.030
@@ -143,15 +144,17 @@ private function MTT_UpdateElement takes integer index, unit whichHero returns n
     if MTT_CachedActive[index] != active then
         set MTT_CachedActive[index] = active
         if active == 1 then
+            call BlzFrameSetVisible(MTT_Slot[index], true)
             call BlzFrameSetSize(MTT_Icon[index], MTT_ACTIVE_SIZE, MTT_ACTIVE_SIZE)
             call BlzFrameSetVisible(MTT_InactiveShade[index], false)
             call BlzFrameSetVisible(MTT_ElementLabel[index], false)
             call BlzFrameSetVisible(MTT_ProgressBack[index], true)
             call BlzFrameSetVisible(MTT_TimerText[index], true)
         else
+            call BlzFrameSetVisible(MTT_Slot[index], false)
             call BlzFrameSetSize(MTT_Icon[index], MTT_INACTIVE_SIZE, MTT_INACTIVE_SIZE)
-            call BlzFrameSetVisible(MTT_InactiveShade[index], true)
-            call BlzFrameSetVisible(MTT_ElementLabel[index], true)
+            call BlzFrameSetVisible(MTT_InactiveShade[index], false)
+            call BlzFrameSetVisible(MTT_ElementLabel[index], false)
             call BlzFrameSetVisible(MTT_ProgressBack[index], false)
             call BlzFrameSetVisible(MTT_TimerText[index], false)
             set MTT_CachedSecond[index] = -1
@@ -277,6 +280,7 @@ private function MTT_CreateElement takes integer index returns nothing
 
     call BlzFrameSetVisible(MTT_ProgressBack[index], false)
     call BlzFrameSetVisible(MTT_TimerText[index], false)
+    call BlzFrameSetVisible(MTT_Slot[index], false)
 endfunction
 
 private function MTT_CreateFrames takes nothing returns nothing

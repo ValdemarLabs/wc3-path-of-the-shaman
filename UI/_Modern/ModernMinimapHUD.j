@@ -2,7 +2,7 @@
     ModernMinimapHUD
 
     Author: Valdemar
-    Version: 0.2.0
+    Version: 0.3.0
 
     Description:
     Places the native interactive minimap in a compact PotS-owned upper-left
@@ -40,6 +40,8 @@ globals
     private constant real MMH_HERO_SIZE = 0.034
     private constant real MMH_CONTROL_BOTTOM = 0.352
     private constant real MMH_CONTROL_SIZE = 0.018
+    private constant real MMH_SCREEN_HEIGHT = 0.600
+    private constant real MMH_SCREEN_CENTER_X = 0.400
     private constant integer MMH_CONTROL_COUNT = 5
     private constant string MMH_SLOT_TEXTURE = "UI\\_Modern\\Assets\\PotSActionSlot.tga"
     private constant string MMH_EMPTY_ICON = "ReplaceableTextures\\CommandButtons\\BTNCancel.blp"
@@ -48,6 +50,9 @@ globals
     private boolean MMH_FramesCreated = false
     private boolean MMH_Visible = false
     private boolean MMH_WasEnlarged = false
+    private integer MMH_ClientWidthCache = -1
+    private integer MMH_ClientHeightCache = -1
+    private real MMH_LeftOffset = 0.000
     private framehandle MMH_Root = null
     private framehandle MMH_Panel = null
     private framehandle MMH_Title = null
@@ -114,10 +119,54 @@ endfunction
 
 private function MMH_ApplyCompactLayout takes nothing returns nothing
     call BlzFrameClearAllPoints(MMH_Minimap)
-    call BlzFrameSetAbsPoint(MMH_Minimap, FRAMEPOINT_TOPLEFT, MMH_MINIMAP_LEFT, MMH_MINIMAP_TOP)
+    call BlzFrameSetAbsPoint(MMH_Minimap, FRAMEPOINT_TOPLEFT, MMH_LeftOffset + MMH_MINIMAP_LEFT, MMH_MINIMAP_TOP)
     call BlzFrameSetSize(MMH_Minimap, MMH_MINIMAP_SIZE, MMH_MINIMAP_SIZE)
     call BlzFrameSetScale(MMH_Minimap, 1.00)
     call BlzFrameSetLevel(MMH_Minimap, 3)
+endfunction
+
+private function MMH_UpdateScreenLayout takes nothing returns nothing
+    local integer clientWidth = BlzGetLocalClientWidth()
+    local integer clientHeight = BlzGetLocalClientHeight()
+    local integer index = 0
+    local real screenWidth = 0.800
+
+    if clientWidth == MMH_ClientWidthCache and clientHeight == MMH_ClientHeightCache then
+        return
+    endif
+    set MMH_ClientWidthCache = clientWidth
+    set MMH_ClientHeightCache = clientHeight
+    if clientHeight > 0 then
+        set screenWidth = I2R(clientWidth) / I2R(clientHeight) * MMH_SCREEN_HEIGHT
+    endif
+    if screenWidth < 0.800 then
+        set screenWidth = 0.800
+    endif
+    set MMH_LeftOffset = MMH_SCREEN_CENTER_X - screenWidth * 0.50
+
+    call BlzFrameClearAllPoints(MMH_Panel)
+    call BlzFrameSetAbsPoint(MMH_Panel, FRAMEPOINT_TOPLEFT, MMH_LeftOffset + MMH_PANEL_LEFT, MMH_PANEL_TOP)
+    call BlzFrameSetAbsPoint(MMH_Panel, FRAMEPOINT_BOTTOMRIGHT, MMH_LeftOffset + MMH_PANEL_RIGHT, MMH_PANEL_BOTTOM)
+
+    call BlzFrameClearAllPoints(MMH_Title)
+    call BlzFrameSetAbsPoint(MMH_Title, FRAMEPOINT_BOTTOM, MMH_LeftOffset + 0.070, 0.432)
+
+    call BlzFrameClearAllPoints(MMH_HeroButton[0])
+    call BlzFrameSetAbsPoint(MMH_HeroButton[0], FRAMEPOINT_BOTTOMLEFT, MMH_LeftOffset + 0.030, MMH_HERO_BOTTOM)
+    call BlzFrameClearAllPoints(MMH_HeroButton[1])
+    call BlzFrameSetAbsPoint(MMH_HeroButton[1], FRAMEPOINT_BOTTOMLEFT, MMH_LeftOffset + 0.076, MMH_HERO_BOTTOM)
+
+    loop
+        exitwhen index >= MMH_CONTROL_COUNT
+        if MMH_ControlButton[index] != null then
+            call BlzFrameClearAllPoints(MMH_ControlButton[index])
+            call BlzFrameSetAbsPoint(MMH_ControlButton[index], FRAMEPOINT_BOTTOMLEFT, MMH_LeftOffset + 0.014 + I2R(index) * 0.023, MMH_CONTROL_BOTTOM)
+        endif
+        set index = index + 1
+    endloop
+    if not MMH_WasEnlarged then
+        call MMH_ApplyCompactLayout()
+    endif
 endfunction
 
 private function MMH_UpdateHero takes integer index returns nothing
@@ -154,6 +203,7 @@ private function MMH_Update takes nothing returns nothing
     set visible = MMH_Enabled and ModernPlayerHUD_IsEnabled() and not FullscreenUI_IsEnabled()
     call MMH_SetVisible(visible)
     if visible then
+        call MMH_UpdateScreenLayout()
         static if LIBRARY_DynamicMinimap then
             set enlarged = DynamicMinimap_GetMinimapEnlarged()
         endif
@@ -285,6 +335,7 @@ private function MMH_CreateFrames takes nothing returns nothing
 
     call MMH_CreateHeroButton(0, 0.030, "N")
     call MMH_CreateHeroButton(1, 0.076, "Z")
+    call MMH_UpdateScreenLayout()
     call BlzFrameSetVisible(MMH_Root, false)
     call BlzFrameSetVisible(MMH_Minimap, false)
     set gameUI = null
