@@ -17,6 +17,24 @@
 >
 > Use ###`Actions Remaining` for follow-up work, cleanup, validation, polish, or tasks intentionally left for later.
 
+## [24.10.2026]
+
+### Player-Facing Updates
+
+- Moved the compact minimap to the upper-right widescreen corner, with player, companion, and native minimap controls grouped directly beneath it.
+- Added an icon-only right-side shortcut rail for Inventory, Abilities, Talents, Stats, StatsLiteUI, and ThreatUI. Hovering an icon identifies its action, overlay shortcuts show when active, and Inspect appears contextually for eligible friendly selections.
+- Removed the redundant text-based Abilities, Inventory, and Inspect buttons from the bottom HUD.
+
+### Technical Updates
+
+- Added `UI/_Modern/ModernShortcutRail.j` and updated `UI/WidescreenFrameRoot.j`, `UI/StatsLiteUI.j`, and `UI/TargetUnitUI.j` with the widescreen boundary and visibility APIs required by the shortcut rail.
+- Updated `DynamicMinimap/DynamicMinimap_lastWorking.j`, `UI/_Modern/ModernMinimapHUD.j`, and `UI/_Modern/ModernPlayerHUD.j` for the new upper-right layout and single-owner shortcut architecture.
+- Updated `UI/_Modern/ModernAbilityCompileTest.j` and `UI/_Modern/README.md`; the focused Modern HUD JassHelper compile succeeds with the new optional UI integrations.
+
+### Actions Remaining
+
+- Import `UI/_Modern/ModernShortcutRail.j` after its UI dependencies, compile the full map, and test every shortcut plus compact/enlarged minimap restoration at 4:3, 16:9, and ultrawide resolutions.
+
 ## [23.10.2026]
 
 ### Player-Facing Updates
@@ -25,21 +43,25 @@
 - Replaced rectangular cooldown shading with a Warcraft-style radial cooldown sweep and retained the numerical countdown over each cooling ability.
 - Restored click handling for Abilities, Inventory, Inspect, and the six quick-item slots. Empty quick-item slots no longer display red cancel icons, and Inspect now appears only for a selected non-player-owned friendly or neutral unit.
 - Removed the unexplained E/F/W/A placeholder squares. Element badges now appear only while the matching totem is active and continue to show its remaining duration.
-- Moved the compact minimap shell, hero selectors, and minimap controls to the real widescreen client edge. Reopening the compact minimap after enlargement now uses the same resolution-aware placement.
-- Replaced the duplicated portrait medallion with a neutral portrait frame, removed the black trim above the resource bars, and added a taller transparent HUD chassis sized for both action-bar rows.
+- Moved the single compact minimap, unit selectors, and minimap controls to the real widescreen client edge. Reopening the compact minimap after enlargement now uses the same resolution-aware placement, and the selector strip supports the player hero, pet, and current companions.
+- Replaced the duplicated portrait medallion with a neutral icon portrait frame, removed the unstable animated native-portrait relocation, removed the black trim above the resource bars, and added a taller transparent HUD chassis sized for both action-bar rows.
+- Escape now cancels Modern HUD targeting, assignment, slot movement, rebinding, and the elemental flyout without also enlarging the minimap.
 
 ### Technical Updates
 
-- Updated `UI/_Modern/ModernPlayerHUD.j`, `ModernAbilityActionBar.j`, `ModernAbilityLoadout.j`, `ModernMinimapHUD.j`, `ModernTotemTracker.j`, and `README.md`. Clickable controls now stay inside the HUD input bounds and use control-click events; the action loadout stores 24 entries; and client-width layout uses `BlzGetLocalClientWidth`/`BlzGetLocalClientHeight`.
-- Updated `UI/_Modern/ModernAbilityActionBar.j` so transient fullscreen UI hides the relocated portrait without repeatedly restoring and reparenting it. Explicit HUD disable still restores the original native parent and automatic positioning.
+- Added `UI/WidescreenFrameRoot.j`; updated `UI/StatsLiteUI.j`, `UI/TargetUnitUI.j`, and the Modern HUD libraries. Interactive non-simple frames now share a hidden Leaderboard-backed parent that receives frame events outside Warcraft III's classic 4:3 range, while broad decorative frames remain non-interactive.
+- Updated `UI/_Modern/ModernAbilityActionBar.j` with a one-second full-slot cooldown discovery pass and active-slot-only tick updates, allowing Stormstrike's working cast to retain its native cooldown while exposing the radial overlay and countdown.
+- Updated `DynamicMinimap/DynamicMinimap_lastWorking.j` and `UI/_Modern/ModernMinimapHUD.j` so DynamicMinimap exclusively owns compact/enlarged positioning, the native minimap is reparented to the widescreen root, and the modern adapter supplies four custom unit-control buttons without creating a duplicate layout.
+- Updated `DestroyerInventoryAndEquipmentSystem/PoTs/DEquipment.j` and `UI/_Modern/ModernPlayerHUD.j` so the original Inspect button is suppressed while the Modern HUD owns its replacement and restored when the Modern HUD is disabled.
+- Updated `UI/_Modern/ModernAbilityCatalog.j` and `ModernAbilityController.j` so Channel-backed totems apply distinct point-compatible base orders before synchronized terrain orders are issued.
 - Updated `UI/_Modern/Assets/PotSHUD.tga` to a 2048x512 BGRA texture with a transparent background and a simplified iron, bronze, leather, and restrained elemental treatment.
-- The focused Modern HUD JassHelper/pjass harness completed successfully after the 24-slot, cooldown-sprite, input, portrait-lifecycle, and widescreen changes.
+- The focused Modern HUD JassHelper/pjass harness completed successfully with 20,082 parsed lines after the widescreen-parent, cooldown-discovery, minimap-ownership, companion-control, Inspect, Escape, and point-order changes.
 
 ### Actions Remaining
 
-- Reimport the changed Modern HUD JASS files and `UI\_Modern\Assets\PotSHUD.tga`, compile the full map, and test Abilities/Inventory/Inspect/quick-item clicks, slot assignment and rebinding across both rows, radial cooldown direction, and camera orbit in 16:9 and ultrawide resolutions.
-- Repeatedly enter and exit Ability Trainer and fullscreen cinematics while the animated portrait is visible, then test HUD disable/re-enable and two-client play for client stability and portrait animation speed.
-- Test compact/enlarged minimap switching, all native minimap controls, friendly/neutral versus hostile Inspect visibility, and active totem timers in one- and two-client sessions.
+- Reimport `UI/WidescreenFrameRoot.j`, the changed Modern HUD JASS files, and `UI\_Modern\Assets\PotSHUD.tga`; compile the full map and test Abilities/Inventory/Inspect/quick-item clicks, StatsLiteUI and target/threat controls, slot assignment/rebinding, radial cooldown direction, and camera orbit in 4:3, 16:9, and ultrawide resolutions.
+- Update the nine Channel-backed totem Object Editor base orders to match `ModernAbilityCatalog.j`, then test exact terrain placement for every totem in one- and two-client sessions.
+- Test compact/enlarged minimap switching, all native minimap controls, all four unit selectors, friendly/neutral versus hostile Inspect visibility, active totem timers, Escape cancellation, and HUD disable/re-enable in one- and two-client sessions.
 
 ## [22.10.2026]
 
