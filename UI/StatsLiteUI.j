@@ -14,8 +14,9 @@
     Tasyen (TasQuestBox as frame UI inspiration)
 
     How to install:
-    Import after MasterUI, QuestGiver, Companions, and Pet. StatsUI can require
-    this library for the party monitor handoff and return flow.
+    Import after MasterUI, QuestGiver, Companions, Pet, and
+    WidescreenFrameRoot. StatsUI can require this library for the party
+    monitor handoff and return flow.
 
     API:
     call StatsLiteUI_Show()
@@ -25,13 +26,14 @@
     call StatsLiteUI_ShowAfterCinematic()
     call StatsLiteUI_ShowLastState()
     call StatsLiteUI_Toggle()
+    call StatsLiteUI_IsVisible() returns boolean
     call StatsLiteUI_Minimize()
     call StatsLiteUI_Maximize()
     call StatsLiteUI_IsMinimized() returns boolean
     call StatsLiteUI_Refresh()
 
 **/
-library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, Interface, FallenHeroState // CHANGE: use AI registry instead of legacy udg_NPC_Horde_AI_xxx globals
+library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, Interface, FallenHeroState, WidescreenFrameRoot // CHANGE: use AI registry instead of legacy udg_NPC_Horde_AI_xxx globals
     globals
         // Monitor sizing and refresh cadence.
         private constant real SLUI_REFRESH_INTERVAL = 0.25
@@ -1356,6 +1358,10 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, I
         endif
     endfunction
 
+    public function IsVisible takes nothing returns boolean
+        return SLUI_Parent != null and BlzFrameIsVisible(SLUI_Parent)
+    endfunction
+
     private function SLUI_OpenStats takes nothing returns nothing
         call Hide()
         call ExecuteFunc("StatsUI_ShowFromStatsLite")
@@ -1577,7 +1583,8 @@ library StatsLiteUI requires Table, MasterUI, QuestGiver, Companions, Pet, AI, I
 
         // Keep this PotS overlay independent from the native console backdrop.
         // The modern HUD hides that native parent while gameplay is active.
-        set SLUI_ScreenParent = BlzGetOriginFrame(ORIGIN_FRAME_GAME_UI, 0)
+        set SLUI_ScreenParent = WidescreenFrameRoot_Get()
+        call WidescreenFrameRoot_Refresh()
 
         set SLUI_ScreenAnchor = BlzCreateFrameByType("FRAME", "StatsLiteUIScreenAnchor", SLUI_ScreenParent, "", 0)
         call SLUI_UpdateScreenAnchor()

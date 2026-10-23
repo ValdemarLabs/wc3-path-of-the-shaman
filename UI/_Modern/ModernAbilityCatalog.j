@@ -2,7 +2,7 @@
     ModernAbilityCatalog
 
     Author: Valdemar
-    Version: 0.4.0
+    Version: 0.5.0
 
     Description:
     Classifies player shaman abilities for the modern action bar. The catalog
@@ -172,15 +172,17 @@ private function MAC_RegisterOrders takes nothing returns nothing
     call MAC_RegisterOrder('A01Z', "spiritlink", true)
     call MAC_RegisterOrder('A6AL', "innerfire", true)
 
-    call MAC_RegisterChannelOrder('A63F', "undeadbuild")
-    call MAC_RegisterChannelOrder('A63G', "undeadbuild")
-    call MAC_RegisterChannelOrder('A63H', "undeadbuild")
-    call MAC_RegisterChannelOrder('A63I', "undeadbuild")
-    call MAC_RegisterChannelOrder('A68J', "undeadbuild")
-    call MAC_RegisterChannelOrder('A68L', "undeadbuild")
-    call MAC_RegisterChannelOrder('A68F', "undeadbuild")
-    call MAC_RegisterChannelOrder('A68T', "undeadbuild")
-    call MAC_RegisterChannelOrder('A01U', "undeadbuild")
+    // Channel orders must match the point target type for trigger-issued casts.
+    // Distinct orders also prevent one totem button from activating another.
+    call MAC_RegisterChannelOrder('A63F', "ward")
+    call MAC_RegisterChannelOrder('A63G', "flamestrike")
+    call MAC_RegisterChannelOrder('A63H', "rainoffire")
+    call MAC_RegisterChannelOrder('A63I', "blizzard")
+    call MAC_RegisterChannelOrder('A68J', "deathanddecay")
+    call MAC_RegisterChannelOrder('A68L', "silence")
+    call MAC_RegisterChannelOrder('A68F', "clusterrockets")
+    call MAC_RegisterChannelOrder('A68T', "shockwave")
+    call MAC_RegisterChannelOrder('A01U', "carrionswarm")
 endfunction
 
 public function GetActionKind takes integer abilityId returns integer

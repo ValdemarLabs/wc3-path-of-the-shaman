@@ -2,7 +2,7 @@
     DEquipment
 
     Author: Valdemar
-    Version: 1.0.1
+    Version: 1.0.2
 
     Description:
     Equipment frames, equip/unequip behavior, character-sheet updates, and
@@ -21,6 +21,7 @@
     - call ToggleDEqUIForUnit(playerId, unit)
     - call DInventoryEquipment_Hide()
     - call DInventoryEquipment_HideForPlayer(viewer)
+    - call DInspectSetExternalButtonForPlayer(viewer, externalButton)
     - call DEquipment_HideForCinematic()
     - call DEquipment_ShowAfterCinematic()
     - call DEqItemTypeDefineShieldBlock(itemTypeId, blockAmount)
@@ -58,6 +59,7 @@ framehandle array EquipmentBackDropFrame[24]
 framehandle array DInspectButtonFrame[24]
 unit array DInspectSelectedUnit[24]
 boolean array DInspectHiddenForCinematic
+boolean array DInspectExternalButton
 real DEqBackDropTopLeftX = 0.04
 real DEqBackDropTopLeftY = 0.56
 real DEqBackDropBottomRightX = 0.3
@@ -456,7 +458,7 @@ endfunction
 function DInspectSetButtonState takes integer pid, boolean visible, string label returns nothing
 if DInspectButtonFrame[pid] != null and GetLocalPlayer() == Player(pid) then
 call BlzFrameSetText(DInspectButtonFrame[pid], label)
-call BlzFrameSetVisible(DInspectButtonFrame[pid], visible and not DInspectHiddenForCinematic[pid])
+call BlzFrameSetVisible(DInspectButtonFrame[pid], visible and not DInspectHiddenForCinematic[pid] and not DInspectExternalButton[pid])
 endif
 endfunction
 
@@ -496,6 +498,19 @@ call DInspectSetButtonState(pid, FALSE, "Inspect")
 endif
 set viewer = null
 set target = null
+endfunction
+
+
+
+function DInspectSetExternalButtonForPlayer takes player viewer, boolean externalButton returns nothing
+local integer pid = GetPlayerId(viewer)
+set DInspectExternalButton[pid] = externalButton
+if externalButton then
+call DInspectSetButtonState(pid, FALSE, "Inspect")
+else
+call DInspectRefreshButtonForPlayer(viewer)
+endif
+set viewer = null
 endfunction
 
 

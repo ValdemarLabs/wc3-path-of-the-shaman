@@ -2,22 +2,22 @@
     ModernMinimapHUD
 
     Author: Valdemar
-    Version: 0.3.0
+    Version: 0.5.0
 
     Description:
-    Places the native interactive minimap in a compact PotS-owned upper-left
-    shell, exposes the native minimap controls, and provides two custom
-    player-hero selection buttons. This replaces
-    the native minimap and hero-button access lost when the console HUD is
-    hidden, without moving the native command card or portrait.
+    Keeps the native interactive minimap and controls available under the
+    shared widescreen root while DynamicMinimap remains the sole layout owner.
+    Provides four compact player/companion control buttons and the native
+    minimap controls directly below the upper-right minimap.
 
     Credits:
     - Blizzard Entertainment, Warcraft III frame API and native minimap
     - VideoRPG reference map, isolated native-minimap parenting pattern
 
     How to install:
-    Import after FullscreenUI and ModernPlayerHUD. Import PotSActionSlot.tga at
-    the exact path documented in UI/_Modern/README.md.
+    Import after FullscreenUI, ModernPlayerHUD, and WidescreenFrameRoot.
+    DynamicMinimap and Companions are optional integrations. Import
+    PotSActionSlot.tga at the exact path documented in UI/_Modern/README.md.
 
     API:
     - call ModernMinimapHUD_Enable()
@@ -26,23 +26,22 @@
     - set enabled = ModernMinimapHUD_IsEnabled()
 
 **/
-library ModernMinimapHUD initializer Init requires FullscreenUI, ModernPlayerHUD, optional DynamicMinimap
+library ModernMinimapHUD initializer Init requires FullscreenUI, ModernPlayerHUD, WidescreenFrameRoot, optional DynamicMinimap, optional Companions
 
 globals
-    private constant real MMH_PANEL_LEFT = 0.006
-    private constant real MMH_PANEL_RIGHT = 0.134
-    private constant real MMH_PANEL_TOP = 0.558
-    private constant real MMH_PANEL_BOTTOM = 0.348
-    private constant real MMH_MINIMAP_LEFT = 0.013
-    private constant real MMH_MINIMAP_TOP = 0.550
+    private constant real MMH_PANEL_WIDTH = 0.158
+    private constant real MMH_PANEL_RIGHT_MARGIN = 0.006
+    private constant real MMH_PANEL_TOP = 0.473
+    private constant real MMH_PANEL_BOTTOM = 0.390
+    private constant real MMH_MINIMAP_MARGIN = 0.009
+    private constant real MMH_MINIMAP_TOP = 0.591
     private constant real MMH_MINIMAP_SIZE = 0.114
-    private constant real MMH_HERO_BOTTOM = 0.374
+    private constant real MMH_HERO_BOTTOM = 0.420
     private constant real MMH_HERO_SIZE = 0.034
-    private constant real MMH_CONTROL_BOTTOM = 0.352
+    private constant real MMH_CONTROL_BOTTOM = 0.394
     private constant real MMH_CONTROL_SIZE = 0.018
-    private constant real MMH_SCREEN_HEIGHT = 0.600
-    private constant real MMH_SCREEN_CENTER_X = 0.400
     private constant integer MMH_CONTROL_COUNT = 5
+    private constant integer MMH_UNIT_COUNT = 4
     private constant string MMH_SLOT_TEXTURE = "UI\\_Modern\\Assets\\PotSActionSlot.tga"
     private constant string MMH_EMPTY_ICON = "ReplaceableTextures\\CommandButtons\\BTNCancel.blp"
 
@@ -52,7 +51,7 @@ globals
     private boolean MMH_WasEnlarged = false
     private integer MMH_ClientWidthCache = -1
     private integer MMH_ClientHeightCache = -1
-    private real MMH_LeftOffset = 0.000
+    private real MMH_RightEdge = 0.800
     private framehandle MMH_Root = null
     private framehandle MMH_Panel = null
     private framehandle MMH_Title = null
@@ -74,10 +73,37 @@ private function MMH_IsValidHero takes unit whichHero returns boolean
 endfunction
 
 private function MMH_GetHero takes integer index returns unit
+    local integer companionIndex
+
     if index == 0 then
-        return udg_Nazgrek
+        return ModernPlayerHUD_GetUnit()
+    elseif index == 1 then
+        if MMH_IsValidHero(udg_Shadowclaw) then
+            return udg_Shadowclaw
+        endif
+        return udg_TamedUnit
     endif
-    return udg_Zulkis
+    static if LIBRARY_Companions then
+        set companionIndex = index - 1
+        if companionIndex <= Companions_GetControlledDisplayCount() then
+            return Companions_GetControlledDisplayUnit(companionIndex)
+        endif
+    endif
+    return null
+endfunction
+
+private function MMH_CanSelect takes player viewer, unit whichUnit returns boolean
+    local boolean selectable = false
+
+    if MMH_IsValidHero(whichUnit) then
+        set selectable = GetOwningPlayer(whichUnit) == viewer or whichUnit == udg_Shadowclaw or whichUnit == udg_TamedUnit
+        static if LIBRARY_Companions then
+            set selectable = selectable or Companions_IsControlled(whichUnit)
+        endif
+    endif
+    set viewer = null
+    set whichUnit = null
+    return selectable
 endfunction
 
 private function MMH_SetVisible takes boolean visible returns nothing
@@ -86,7 +112,11 @@ private function MMH_SetVisible takes boolean visible returns nothing
     if MMH_Visible != visible then
         set MMH_Visible = visible
         call BlzFrameSetVisible(MMH_Root, visible)
-        call BlzFrameSetVisible(MMH_Minimap, visible)
+        static if LIBRARY_DynamicMinimap then
+            call DynamicMinimap_SetVisible(visible)
+        else
+            call BlzFrameSetVisible(MMH_Minimap, visible)
+        endif
         loop
             exitwhen index >= MMH_CONTROL_COUNT
             if MMH_ControlButton[index] != null then
@@ -103,7 +133,7 @@ private function MMH_SetShellVisible takes boolean visible returns nothing
     call BlzFrameSetVisible(MMH_Panel, visible)
     call BlzFrameSetVisible(MMH_Title, visible)
     loop
-        exitwhen index >= 2
+        exitwhen index >= MMH_UNIT_COUNT
         call BlzFrameSetVisible(MMH_HeroButton[index], visible and MMH_CachedHeroType[index] != 0)
         set index = index + 1
     endloop
@@ -118,8 +148,11 @@ private function MMH_SetShellVisible takes boolean visible returns nothing
 endfunction
 
 private function MMH_ApplyCompactLayout takes nothing returns nothing
+    static if LIBRARY_DynamicMinimap then
+        return
+    endif
     call BlzFrameClearAllPoints(MMH_Minimap)
-    call BlzFrameSetAbsPoint(MMH_Minimap, FRAMEPOINT_TOPLEFT, MMH_LeftOffset + MMH_MINIMAP_LEFT, MMH_MINIMAP_TOP)
+    call BlzFrameSetAbsPoint(MMH_Minimap, FRAMEPOINT_TOPRIGHT, MMH_RightEdge - MMH_MINIMAP_MARGIN, MMH_MINIMAP_TOP)
     call BlzFrameSetSize(MMH_Minimap, MMH_MINIMAP_SIZE, MMH_MINIMAP_SIZE)
     call BlzFrameSetScale(MMH_Minimap, 1.00)
     call BlzFrameSetLevel(MMH_Minimap, 3)
@@ -129,38 +162,34 @@ private function MMH_UpdateScreenLayout takes nothing returns nothing
     local integer clientWidth = BlzGetLocalClientWidth()
     local integer clientHeight = BlzGetLocalClientHeight()
     local integer index = 0
-    local real screenWidth = 0.800
 
     if clientWidth == MMH_ClientWidthCache and clientHeight == MMH_ClientHeightCache then
         return
     endif
     set MMH_ClientWidthCache = clientWidth
     set MMH_ClientHeightCache = clientHeight
-    if clientHeight > 0 then
-        set screenWidth = I2R(clientWidth) / I2R(clientHeight) * MMH_SCREEN_HEIGHT
-    endif
-    if screenWidth < 0.800 then
-        set screenWidth = 0.800
-    endif
-    set MMH_LeftOffset = MMH_SCREEN_CENTER_X - screenWidth * 0.50
+    set MMH_RightEdge = WidescreenFrameRoot_GetClientRight()
 
     call BlzFrameClearAllPoints(MMH_Panel)
-    call BlzFrameSetAbsPoint(MMH_Panel, FRAMEPOINT_TOPLEFT, MMH_LeftOffset + MMH_PANEL_LEFT, MMH_PANEL_TOP)
-    call BlzFrameSetAbsPoint(MMH_Panel, FRAMEPOINT_BOTTOMRIGHT, MMH_LeftOffset + MMH_PANEL_RIGHT, MMH_PANEL_BOTTOM)
+    call BlzFrameSetAbsPoint(MMH_Panel, FRAMEPOINT_TOPRIGHT, MMH_RightEdge - MMH_PANEL_RIGHT_MARGIN, MMH_PANEL_TOP)
+    call BlzFrameSetAbsPoint(MMH_Panel, FRAMEPOINT_BOTTOMLEFT, MMH_RightEdge - MMH_PANEL_RIGHT_MARGIN - MMH_PANEL_WIDTH, MMH_PANEL_BOTTOM)
 
     call BlzFrameClearAllPoints(MMH_Title)
-    call BlzFrameSetAbsPoint(MMH_Title, FRAMEPOINT_BOTTOM, MMH_LeftOffset + 0.070, 0.432)
+    call BlzFrameSetAbsPoint(MMH_Title, FRAMEPOINT_BOTTOM, MMH_RightEdge - 0.085, 0.461)
 
-    call BlzFrameClearAllPoints(MMH_HeroButton[0])
-    call BlzFrameSetAbsPoint(MMH_HeroButton[0], FRAMEPOINT_BOTTOMLEFT, MMH_LeftOffset + 0.030, MMH_HERO_BOTTOM)
-    call BlzFrameClearAllPoints(MMH_HeroButton[1])
-    call BlzFrameSetAbsPoint(MMH_HeroButton[1], FRAMEPOINT_BOTTOMLEFT, MMH_LeftOffset + 0.076, MMH_HERO_BOTTOM)
+    loop
+        exitwhen index >= MMH_UNIT_COUNT
+        call BlzFrameClearAllPoints(MMH_HeroButton[index])
+        call BlzFrameSetAbsPoint(MMH_HeroButton[index], FRAMEPOINT_BOTTOMLEFT, MMH_RightEdge - 0.158 + I2R(index) * 0.038, MMH_HERO_BOTTOM)
+        set index = index + 1
+    endloop
 
+    set index = 0
     loop
         exitwhen index >= MMH_CONTROL_COUNT
         if MMH_ControlButton[index] != null then
             call BlzFrameClearAllPoints(MMH_ControlButton[index])
-            call BlzFrameSetAbsPoint(MMH_ControlButton[index], FRAMEPOINT_BOTTOMLEFT, MMH_LeftOffset + 0.014 + I2R(index) * 0.023, MMH_CONTROL_BOTTOM)
+            call BlzFrameSetAbsPoint(MMH_ControlButton[index], FRAMEPOINT_BOTTOMLEFT, MMH_RightEdge - 0.145 + I2R(index) * 0.025, MMH_CONTROL_BOTTOM)
         endif
         set index = index + 1
     endloop
@@ -196,6 +225,7 @@ endfunction
 private function MMH_Update takes nothing returns nothing
     local boolean visible
     local boolean enlarged = false
+    local integer index = 0
 
     if not MMH_FramesCreated then
         return
@@ -218,8 +248,12 @@ private function MMH_Update takes nothing returns nothing
                 call MMH_ApplyCompactLayout()
                 call MMH_SetShellVisible(true)
             endif
-            call MMH_UpdateHero(0)
-            call MMH_UpdateHero(1)
+            set index = 0
+            loop
+                exitwhen index >= MMH_UNIT_COUNT
+                call MMH_UpdateHero(index)
+                set index = index + 1
+            endloop
         endif
     endif
 endfunction
@@ -238,14 +272,17 @@ private function MMH_HeroAction takes nothing returns nothing
     local framehandle triggerFrame = BlzGetTriggerFrame()
     local player triggerPlayer = GetTriggerPlayer()
     local unit whichHero = null
+    local integer index = 0
 
     if triggerPlayer == GetLocalPlayer() then
-        if triggerFrame == MMH_HeroButton[0] then
-            set whichHero = MMH_GetHero(0)
-        elseif triggerFrame == MMH_HeroButton[1] then
-            set whichHero = MMH_GetHero(1)
-        endif
-        if MMH_IsValidHero(whichHero) and GetOwningPlayer(whichHero) == triggerPlayer then
+        loop
+            exitwhen index >= MMH_UNIT_COUNT or whichHero != null
+            if triggerFrame == MMH_HeroButton[index] then
+                set whichHero = MMH_GetHero(index)
+            endif
+            set index = index + 1
+        endloop
+        if MMH_CanSelect(triggerPlayer, whichHero) then
             call SelectUnitForPlayerSingle(whichHero, triggerPlayer)
         endif
     endif
@@ -295,24 +332,25 @@ private function MMH_CreateFrames takes nothing returns nothing
         return
     endif
     set MMH_FramesCreated = true
-    set gameUI = BlzGetOriginFrame(ORIGIN_FRAME_GAME_UI, 0)
+    set gameUI = WidescreenFrameRoot_Get()
+    call WidescreenFrameRoot_Refresh()
     set MMH_Root = BlzCreateFrameByType("FRAME", "ModernMinimapHUDRoot", gameUI, "", 0)
     call BlzFrameSetSize(MMH_Root, 0.0001, 0.0001)
     call BlzFrameSetAbsPoint(MMH_Root, FRAMEPOINT_BOTTOMLEFT, 0.000, 0.000)
     call BlzFrameSetLevel(MMH_Root, 14)
 
     set MMH_Panel = BlzCreateFrameByType("BACKDROP", "ModernMinimapHUDPanel", MMH_Root, "EscMenuBackdrop", 0)
-    call BlzFrameSetAbsPoint(MMH_Panel, FRAMEPOINT_TOPLEFT, MMH_PANEL_LEFT, MMH_PANEL_TOP)
-    call BlzFrameSetAbsPoint(MMH_Panel, FRAMEPOINT_BOTTOMRIGHT, MMH_PANEL_RIGHT, MMH_PANEL_BOTTOM)
+    call BlzFrameSetAbsPoint(MMH_Panel, FRAMEPOINT_TOPRIGHT, 0.794, MMH_PANEL_TOP)
+    call BlzFrameSetAbsPoint(MMH_Panel, FRAMEPOINT_BOTTOMLEFT, 0.636, MMH_PANEL_BOTTOM)
     call BlzFrameSetEnable(MMH_Panel, false)
     call BlzFrameSetLevel(MMH_Panel, 1)
 
     set MMH_Title = BlzCreateFrameByType("TEXT", "ModernMinimapHUDTitle", MMH_Root, "", 0)
-    call BlzFrameSetAbsPoint(MMH_Title, FRAMEPOINT_BOTTOM, 0.070, 0.432)
+    call BlzFrameSetAbsPoint(MMH_Title, FRAMEPOINT_BOTTOM, 0.715, 0.461)
     call BlzFrameSetSize(MMH_Title, 0.090, 0.010)
     call BlzFrameSetTextAlignment(MMH_Title, TEXT_JUSTIFY_MIDDLE, TEXT_JUSTIFY_CENTER)
     call BlzFrameSetScale(MMH_Title, 0.55)
-    call BlzFrameSetText(MMH_Title, "|cffffe4a3HEROES|r")
+    call BlzFrameSetText(MMH_Title, "|cffffe4a3UNITS|r")
     call BlzFrameSetEnable(MMH_Title, false)
     call BlzFrameSetLevel(MMH_Title, 5)
 
@@ -326,18 +364,22 @@ private function MMH_CreateFrames takes nothing returns nothing
         if MMH_ControlButton[index] != null then
             call BlzFrameSetParent(MMH_ControlButton[index], MMH_Root)
             call BlzFrameClearAllPoints(MMH_ControlButton[index])
-            call BlzFrameSetAbsPoint(MMH_ControlButton[index], FRAMEPOINT_BOTTOMLEFT, 0.014 + I2R(index) * 0.023, MMH_CONTROL_BOTTOM)
+            call BlzFrameSetAbsPoint(MMH_ControlButton[index], FRAMEPOINT_BOTTOMLEFT, 0.655 + I2R(index) * 0.025, MMH_CONTROL_BOTTOM)
             call BlzFrameSetSize(MMH_ControlButton[index], MMH_CONTROL_SIZE, MMH_CONTROL_SIZE)
             call BlzFrameSetLevel(MMH_ControlButton[index], 6)
         endif
         set index = index + 1
     endloop
 
-    call MMH_CreateHeroButton(0, 0.030, "N")
-    call MMH_CreateHeroButton(1, 0.076, "Z")
+    call MMH_CreateHeroButton(0, 0.642, "1")
+    call MMH_CreateHeroButton(1, 0.680, "2")
+    call MMH_CreateHeroButton(2, 0.718, "3")
+    call MMH_CreateHeroButton(3, 0.756, "4")
     call MMH_UpdateScreenLayout()
     call BlzFrameSetVisible(MMH_Root, false)
-    call BlzFrameSetVisible(MMH_Minimap, false)
+    static if not LIBRARY_DynamicMinimap then
+        call BlzFrameSetVisible(MMH_Minimap, false)
+    endif
     set gameUI = null
 endfunction
 

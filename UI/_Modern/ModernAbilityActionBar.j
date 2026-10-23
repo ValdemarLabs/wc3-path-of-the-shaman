@@ -2,7 +2,7 @@
     ModernAbilityActionBar
 
     Author: Valdemar
-    Version: 1.2.0
+    Version: 1.3.0
 
     Description:
     Renders the cached PotS-owned twenty-four-slot, two-row action bar with
@@ -17,9 +17,9 @@
     - Forgotten Hollow, compact lower-HUD and action-slot inspiration
 
     How to install:
-    Import after Events, FullscreenUI, ModernPlayerHUD, AbilitiesPlayer,
-    ShamanCommon, ModernAbilityCatalog, ModernAbilityLoadout, and
-    ModernAbilityController.
+    Import after Events, FullscreenUI, ModernPlayerHUD,
+    WidescreenFrameRoot, AbilitiesPlayer, ShamanCommon,
+    ModernAbilityCatalog, ModernAbilityLoadout, and ModernAbilityController.
 
     API:
     - call ModernAbilityActionBar_Enable()
@@ -28,12 +28,12 @@
     - set enabled = ModernAbilityActionBar_IsEnabled()
 
 **/
-library ModernAbilityActionBar initializer Init requires Events, FullscreenUI, ModernPlayerHUD, AbilitiesPlayer, ShamanCommon, ModernAbilityCatalog, ModernAbilityLoadout, ModernAbilityController
+library ModernAbilityActionBar initializer Init requires Events, FullscreenUI, ModernPlayerHUD, WidescreenFrameRoot, AbilitiesPlayer, ShamanCommon, ModernAbilityCatalog, ModernAbilityLoadout, ModernAbilityController, optional DynamicMinimap
 
 globals
     private constant boolean MAB_AUTO_ENABLE = true
     private constant boolean MAB_HIDE_NATIVE_BOTTOM_HUD = true
-    private constant boolean MAB_USE_NATIVE_PORTRAIT = true
+    private constant boolean MAB_USE_NATIVE_PORTRAIT = false
 
     private constant real MAB_ACTION_START_X = 0.190
     private constant real MAB_ACTION_BOTTOM = 0.012
@@ -80,6 +80,7 @@ globals
     private boolean MAB_WasFullscreen = false
     private integer MAB_CachedLoadoutRevision = -1
     private integer MAB_LearnScanTick = 0
+    private integer MAB_CooldownDiscoveryTick = 0
     private integer MAB_MoveSourceSlot = 0
     private integer MAB_RebindSlot = 0
 
@@ -480,6 +481,7 @@ private function MAB_ResetSlotCache takes nothing returns nothing
     set MAB_CachedMana = -1
     set MAB_CachedLoadoutRevision = -1
     set MAB_LearnScanTick = 0
+    set MAB_CooldownDiscoveryTick = 0
     set MAB_MoveSourceSlot = 0
     set MAB_RebindSlot = 0
     call MAB_CloseTooltip()
@@ -815,6 +817,10 @@ private function MAB_Update takes nothing returns nothing
         set MAB_LearnScanTick = 0
         call ModernAbilityLoadout_AppendNewLearned(whichHero)
     endif
+    set MAB_CooldownDiscoveryTick = MAB_CooldownDiscoveryTick + 1
+    if MAB_CooldownDiscoveryTick >= 4 then
+        set MAB_CooldownDiscoveryTick = 0
+    endif
     set revision = ModernAbilityLoadout_GetRevision(whichHero)
     if revision != MAB_CachedLoadoutRevision then
         set MAB_CachedLoadoutRevision = revision
@@ -842,7 +848,10 @@ private function MAB_Update takes nothing returns nothing
             set index = index + 1
         endloop
     endif
-    call MAB_UpdateCooldowns(whichHero, rebuild)
+    // Spell-effect events normally arm the cheap active-only path. A cached
+    // one-second discovery pass also catches cooldowns started or refreshed by
+    // ability scripts before their spell event becomes observable here.
+    call MAB_UpdateCooldowns(whichHero, rebuild or MAB_CooldownDiscoveryTick == 0)
     call MAB_UpdateContextSlots(whichHero)
     if MAB_ElementalOpen then
         call MAB_UpdateElementalFlyout()
@@ -959,6 +968,24 @@ private function MAB_KeyAction takes nothing returns nothing
     local integer previousSlot
     local oskeytype previousKey
     local string previousLabel
+    local boolean cancelState
+
+    if triggerPlayer == GetLocalPlayer() and triggerKey == OSKEY_ESCAPE then
+        set cancelState = ModernAbilityController_IsTargetingLocal(triggerPlayer) or AbilitiesLiteUI_GetModernPendingAbilityId() > 0 or MAB_MoveSourceSlot > 0 or MAB_RebindSlot > 0 or MAB_ElementalOpen
+        if cancelState then
+            call ModernAbilityController_CancelLocal(triggerPlayer)
+            call AbilitiesLiteUI_ClearModernPendingAbility()
+            call MAB_CloseElementalFlyout()
+            set MAB_MoveSourceSlot = 0
+            set MAB_RebindSlot = 0
+            static if LIBRARY_DynamicMinimap then
+                call DynamicMinimap_SuppressNextSizeToggle()
+            endif
+            set triggerKey = null
+            set triggerPlayer = null
+            return
+        endif
+    endif
 
     if triggerPlayer == GetLocalPlayer() and MAB_RebindSlot > 0 then
         set previousSlot = slot
@@ -1254,7 +1281,8 @@ private function MAB_CreateFrames takes nothing returns nothing
         return
     endif
     set MAB_FramesCreated = true
-    set MAB_ScreenParent = BlzGetOriginFrame(ORIGIN_FRAME_GAME_UI, 0)
+    set MAB_ScreenParent = WidescreenFrameRoot_Get()
+    call WidescreenFrameRoot_Refresh()
     set MAB_Parent = BlzCreateFrameByType("FRAME", "ModernAbilityActionBar", MAB_ScreenParent, "", 0)
     // Full-screen FRAME parents consume mouse input even without a texture.
     // Children use absolute points, so keep this logical parent effectively empty.
@@ -1427,6 +1455,7 @@ private function Init takes nothing returns nothing
     set actionKey[10] = OSKEY_OEM_MINUS
     set actionKey[11] = OSKEY_OEM_PLUS
     set MAB_KeyTrigger = CreateTrigger()
+    call BlzTriggerRegisterPlayerKeyEvent(MAB_KeyTrigger, Player(0), OSKEY_ESCAPE, 0, true)
     loop
         exitwhen keyIndex >= ModernAbilityLoadout_SLOT_COUNT
         set MAB_SlotKey[keyIndex] = null

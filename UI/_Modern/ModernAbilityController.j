@@ -2,7 +2,7 @@
     ModernAbilityController
 
     Author: Valdemar
-    Version: 0.5.0
+    Version: 0.6.0
 
     Description:
     Converts local custom action-slot input into validated synchronized ability
@@ -76,7 +76,13 @@ private function MAC_GetRuntimeOrderId takes unit caster, integer abilityId retu
     local ability whichAbility = null
     local string baseOrder
 
-    if abilityLevel > 0 and (ModernAbilityCatalog_UsesChannelOrder(abilityId) or MAC_IsContextAbility(abilityId)) then
+    if abilityLevel > 0 and ModernAbilityCatalog_UsesChannelOrder(abilityId) then
+        set whichAbility = BlzGetUnitAbility(caster, abilityId)
+        set baseOrder = OrderId2String(orderId)
+        if whichAbility != null and baseOrder != null and baseOrder != "" then
+            call BlzSetAbilityStringLevelField(whichAbility, ABILITY_SLF_BASE_ORDER_ID_NCL6, abilityLevel - 1, baseOrder)
+        endif
+    elseif abilityLevel > 0 and MAC_IsContextAbility(abilityId) then
         set whichAbility = BlzGetUnitAbility(caster, abilityId)
         if whichAbility != null then
             set baseOrder = BlzGetAbilityStringLevelField(whichAbility, ABILITY_SLF_BASE_ORDER_ID_NCL6, abilityLevel - 1)

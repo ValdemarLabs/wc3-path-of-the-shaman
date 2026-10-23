@@ -2,7 +2,7 @@
     TargetUnitUI
 
     Author: Valdemar
-    Version: 1.4.0
+    Version: 1.6.0
 
     Description:
     Compact upper-left target and threat frame for active boss encounters,
@@ -15,23 +15,25 @@
     - StatsLiteUI, header controls and configuration-pane pattern
 
     How to install:
-    Import after Table, ThreatSystem, Boss, Events, Companions, and
-    FullscreenUI. No FDF or TOC import is required. Active bosses registered
-    through Boss are found automatically. Selection and deselection use the
-    shared Events dispatcher.
+    Import after Table, ThreatSystem, Boss, Events, Companions, FullscreenUI,
+    and WidescreenFrameRoot. No FDF or TOC import is required. Active bosses
+    registered through Boss are found automatically. Selection and deselection
+    use the shared Events dispatcher.
 
     API:
     - call TargetUnitUI_ShowForUnit(whichUnit) // Pins any living target
     - call TargetUnitUI_ShowAutomatic()        // Return to automatic display
     - call TargetUnitUI_ShowConfig()
     - call TargetUnitUI_Hide()
+    - call TargetUnitUI_Toggle()
     - call TargetUnitUI_Minimize()
     - call TargetUnitUI_Maximize()
+    - set visible = TargetUnitUI_IsVisible()
     - set minimized = TargetUnitUI_IsMinimized()
     - set whichUnit = TargetUnitUI_GetDisplayedUnit()
 
 **/
-library TargetUnitUI initializer Init requires Table, ThreatSystem, Boss, Events, Companions, FullscreenUI
+library TargetUnitUI initializer Init requires Table, ThreatSystem, Boss, Events, Companions, FullscreenUI, WidescreenFrameRoot
 
 globals
     // Fullscreen-relative upper-left layout. The left offset clears hero icons.
@@ -617,6 +619,18 @@ public function ShowAutomatic takes nothing returns nothing
     call TUI_Update()
 endfunction
 
+public function Toggle takes nothing returns nothing
+    if TUI_Visible then
+        call Hide()
+    else
+        call ShowAutomatic()
+    endif
+endfunction
+
+public function IsVisible takes nothing returns boolean
+    return TUI_Visible
+endfunction
+
 public function GetDisplayedUnit takes nothing returns unit
     return TUI_DisplayedUnit
 endfunction
@@ -790,7 +804,8 @@ private function TUI_CreateFrames takes nothing returns nothing
 
     // Keep this PotS overlay independent from the native console backdrop.
     // The modern HUD hides that native parent while gameplay is active.
-    set TUI_ScreenParent = BlzGetOriginFrame(ORIGIN_FRAME_GAME_UI, 0)
+    set TUI_ScreenParent = WidescreenFrameRoot_Get()
+    call WidescreenFrameRoot_Refresh()
     set TUI_ScreenAnchor = BlzCreateFrameByType("FRAME", "TargetUnitUIScreenAnchor", TUI_ScreenParent, "", 0)
     call TUI_UpdateScreenAnchor()
     call BlzFrameSetEnable(TUI_ScreenAnchor, false)

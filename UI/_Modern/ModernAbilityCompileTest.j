@@ -17,8 +17,12 @@
 globals
     unit udg_Nazgrek = null
     unit udg_Zulkis = null
+    unit udg_Shadowclaw = null
+    unit udg_TamedUnit = null
     unit array udg_UDexUnits
 endglobals
+
+//! import "../WidescreenFrameRoot.j"
 
 library AbilitiesPlayer
     globals
@@ -110,6 +114,23 @@ library DynamicMinimap
     function DynamicMinimap_GetMinimapEnlarged takes nothing returns boolean
         return false
     endfunction
+    function DynamicMinimap_SetVisible takes boolean visible returns nothing
+    endfunction
+    function DynamicMinimap_SuppressNextSizeToggle takes nothing returns nothing
+    endfunction
+endlibrary
+
+library Companions
+    function Companions_GetControlledDisplayCount takes nothing returns integer
+        return 0
+    endfunction
+    function Companions_GetControlledDisplayUnit takes integer index returns unit
+        return null
+    endfunction
+    function Companions_IsControlled takes unit whichUnit returns boolean
+        set whichUnit = null
+        return false
+    endfunction
 endlibrary
 
 library DInventory
@@ -145,6 +166,9 @@ library DEquipment
     function DInventoryEquipment_HideForPlayer takes player viewer returns nothing
         set viewer = null
     endfunction
+    function DInspectSetExternalButtonForPlayer takes player viewer, boolean externalButton returns nothing
+        set viewer = null
+    endfunction
 endlibrary
 
 library MasterUI
@@ -163,12 +187,45 @@ library AbilitiesLiteUI
     endfunction
 endlibrary
 
+library TalentsUI
+    public function ShowForUnit takes unit whichUnit returns nothing
+        set whichUnit = null
+    endfunction
+endlibrary
+
+library StatsUI
+    public function Show takes nothing returns nothing
+    endfunction
+    public function Hide takes nothing returns nothing
+    endfunction
+    public function IsVisible takes nothing returns boolean
+        return false
+    endfunction
+endlibrary
+
+library StatsLiteUI
+    public function Toggle takes nothing returns nothing
+    endfunction
+    public function IsVisible takes nothing returns boolean
+        return false
+    endfunction
+endlibrary
+
+library TargetUnitUI
+    public function Toggle takes nothing returns nothing
+    endfunction
+    public function IsVisible takes nothing returns boolean
+        return false
+    endfunction
+endlibrary
+
 //! import "ModernAbilityCatalog.j"
 //! import "ModernAbilityLoadout.j"
 //! import "ModernAbilityTargeting.j"
 //! import "ModernAbilityController.j"
 //! import "ModernPlayerHUD.j"
 //! import "ModernMinimapHUD.j"
+//! import "ModernShortcutRail.j"
 //! import "ModernAbilityActionBar.j"
 //! import "ModernTotemTracker.j"
 

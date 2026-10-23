@@ -2,7 +2,7 @@
     DynamicMinimap
 
     Author: Valdemar
-    Version: 1.7.2
+    Version: 1.7.3
 
     Description:
         Supports imported 256-coordinate minimap chunks or Warcraft III 3.0
@@ -25,10 +25,10 @@
         Enable "generate dynamically within camera bounds" in World Editor for
         native terrain mode. Imported mode additionally requires the pre-rendered
         256x256 BLP chunks and full-map texture under war3mapImported\. Import
-        this library after Interface and configure only the minimap-art calibration
-        below when a verified source image requires it. Runtime bounds are read
-        at initialization. Import CameraControl after this library to service
-        smooth safe-rotation requests.
+        this library after Interface and optionally after WidescreenFrameRoot.
+        Configure only the minimap-art calibration below when a verified source
+        image requires it. Runtime bounds are read at initialization. Import
+        CameraControl after this library to service smooth safe-rotation requests.
 
     Uses:
     - Optional BlzChangeMinimapTerrainTex swaps for imported texture chunks
@@ -84,8 +84,9 @@
         DynamicMinimap_IsEnabled()
         DynamicMinimap_SetVisible(visible)
         DynamicMinimap_GetVisible()
+        DynamicMinimap_SuppressNextSizeToggle()
 **/
-library DynamicMinimap initializer Init requires Interface
+library DynamicMinimap initializer Init requires Interface, optional WidescreenFrameRoot
 
 globals
     constant integer DYNAMIC_MINIMAP_SOURCE_IMPORTED = 0
@@ -192,9 +193,14 @@ globals
     private real enlargedPosX_new = 0.4  // Center X (0.0 = left, 1.0 = right)
     private real enlargedPosY_new = 0.358  // Center Y (0.0 = bottom, 1.0 = top)
     private real enlargedScale_new = 2.65  // Scale multiplier
-    private real normalPosX = 0.009  // Normal minimap X position (BOTTOMLEFT)
-    private real normalPosY = 0.008  // Normal minimap Y position (BOTTOMLEFT)
+    private constant real NORMAL_MINIMAP_SIZE = 0.114
+    private constant real NORMAL_MINIMAP_MARGIN = 0.009
+    private real normalPosX = 0.677  // Compact upper-right X (BOTTOMLEFT)
+    private real normalPosY = 0.477  // Compact upper-right Y (BOTTOMLEFT)
     private real normalScale = 1.0   // Default minimap scale
+    private integer layoutClientWidth = -1
+    private integer layoutClientHeight = -1
+    private boolean suppressNextSizeToggle = false
     
     // Chat detection
     private boolean chatWindowOpen = false  // Track if chat is open
@@ -410,11 +416,39 @@ endfunction
 //===========================================================================
 // Periodic Update
 //===========================================================================
+private function RefreshCompactFrameLayout takes nothing returns nothing
+    local integer clientWidth
+    local integer clientHeight
+    local real clientRight = 0.800
+
+    if minimapFrame == null or minimapEnlarged then
+        return
+    endif
+    set clientWidth = BlzGetLocalClientWidth()
+    set clientHeight = BlzGetLocalClientHeight()
+    if clientWidth == layoutClientWidth and clientHeight == layoutClientHeight then
+        return
+    endif
+    set layoutClientWidth = clientWidth
+    set layoutClientHeight = clientHeight
+    static if LIBRARY_WidescreenFrameRoot then
+        set clientRight = WidescreenFrameRoot_GetClientRight()
+    endif
+    set normalPosX = clientRight - NORMAL_MINIMAP_MARGIN - NORMAL_MINIMAP_SIZE
+    set normalPosY = 0.600 - NORMAL_MINIMAP_MARGIN - NORMAL_MINIMAP_SIZE
+    call BlzFrameClearAllPoints(minimapFrame)
+    call BlzFrameSetAbsPoint(minimapFrame, FRAMEPOINT_BOTTOMLEFT, normalPosX, normalPosY)
+    call BlzFrameSetSize(minimapFrame, NORMAL_MINIMAP_SIZE, NORMAL_MINIMAP_SIZE)
+    call BlzFrameSetScale(minimapFrame, normalScale)
+endfunction
+
 private function PeriodicUpdate takes nothing returns nothing
     local real unitX
     local real unitY
     local integer chunkCoordX
     local integer chunkCoordY
+
+    call RefreshCompactFrameLayout()
 
     // No texture or bounds operation may occur while a cinematic owns the camera.
     if scriptedCameraSuspendDepth > 0 then
@@ -664,7 +698,7 @@ private function ToggleMinimapSize takes nothing returns nothing
     endif
     
     if minimapEnlarged then
-        // Restore to normal - clear all points first, then set back to bottom left
+        // Restore the compact upper-right placement.
         call BlzFrameClearAllPoints(minimapFrame)
         call BlzFrameSetAbsPoint(minimapFrame, FRAMEPOINT_BOTTOMLEFT, normalPosX, normalPosY)
         call BlzFrameSetScale(minimapFrame, normalScale)
@@ -740,6 +774,10 @@ endfunction
 
 private function OnSizeToggleKey takes nothing returns boolean
     if GetTriggerPlayer() == GetLocalPlayer() then
+        if suppressNextSizeToggle then
+            set suppressNextSizeToggle = false
+            return false
+        endif
         // If chat is open and this is ESC key, just close chat (don't toggle minimap)
         if chatWindowOpen then
             set chatWindowOpen = false
@@ -749,6 +787,10 @@ private function OnSizeToggleKey takes nothing returns boolean
         endif
     endif
     return false
+endfunction
+
+function DynamicMinimap_SuppressNextSizeToggle takes nothing returns nothing
+    set suppressNextSizeToggle = true
 endfunction
 
 //===========================================================================
@@ -875,8 +917,16 @@ private function InitFrames takes nothing returns nothing
         set initTimer = null
         return  // Abort initialization if minimap frame not available
     endif
+    static if LIBRARY_WidescreenFrameRoot then
+        call WidescreenFrameRoot_Refresh()
+        call BlzFrameSetParent(minimapFrame, WidescreenFrameRoot_Get())
+        set layoutClientWidth = -1
+        set layoutClientHeight = -1
+        call RefreshCompactFrameLayout()
+    endif
     
     call BlzFrameSetLevel(minimapFrame, 2)  // Minimap higher level than border
+    call BlzFrameSetVisible(minimapFrame, minimapVisible)
 
 /*
         set minimapBorderFrame = BlzCreateFrameByType("BACKDROP", "MinimapBorderBackdrop", gameUI, "", 0)

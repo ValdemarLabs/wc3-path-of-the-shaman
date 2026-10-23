@@ -10,11 +10,14 @@ workflow.
 The first prototype is `ModernPlayerHUD.j`:
 
 ```text
+       [upper-right minimap] [unit/minimap controls]
+                            [icon shortcut rail]
+
              [ Health ] [Level] [ Mana ]
                [Earth Fire Water Air]
                      [ XP ]
        [custom action slots 13 through 24]
-       [custom action slots  1 through 12] [ability book]
+       [custom action slots  1 through 12]
 ```
 
 ### Isolated native-frame adapters
@@ -30,29 +33,44 @@ layout pass.
 learned ability icons, native-style radial cooldown sweeps, numerical cooldown
 text, mana/readiness state, and custom tooltips. It hides
 `ConsoleBottomBar`, `ConsoleBottomBarOverlay`, the native hero bar, and
-`ConsoleUIBackdrop` with visibility calls only. The animated native portrait is
-the one deliberate portrait adapter: after the intro it is reparented into a
-small PotS-owned anchor inside a neutral portrait frame. Blizzard automatic UI
-positioning is disabled while that adapter owns the portrait. Transient
-fullscreen panels hide the custom parent without reparenting the native
-portrait again; its original parent and automatic positioning are restored
-only when the Modern HUD is explicitly disabled. This avoids restarting the
-portrait and changing its origin-frame hierarchy during Ability Trainer exits.
-The unit icon remains underneath as a fallback if the origin portrait is not
-available. Set `MAB_USE_NATIVE_PORTRAIT` to `false` for an immediate,
-portrait-only rollback without disabling the rest of the Modern HUD.
-`StatsLiteUI.j` and `TargetUnitUI.j` now use `ORIGIN_FRAME_GAME_UI`
-directly, so hiding the native console canvas no longer hides those PotS
-overlays. The Game UI root remains only an invisible frame parent.
+`ConsoleUIBackdrop` with visibility calls only. The native animated portrait
+adapter is disabled by default because repeated native reparenting produced
+unstable animation and panel-transition behavior. The action bar currently
+uses the selected hero's icon inside a dedicated portrait frame. The old
+adapter remains behind `MAB_USE_NATIVE_PORTRAIT` for isolated testing, but it
+is not part of the default HUD.
 
-`ModernMinimapHUD.j` reparents only the native minimap into a compact
-upper-left PotS shell and adds separate Nazgrek and Zul'kis selection buttons.
-The compact shell uses the local client aspect ratio
-(`clientWidth / clientHeight * 0.600`) to anchor against the real widescreen
-left edge rather than the classic 4:3 boundary.
-It does not move the native command card or hero-bar controls involved in the
-earlier unsafe-layout crash. The native hero buttons are hidden
-individually so their status icons cannot remain over the modern bottom HUD.
+`ModernMinimapHUD.j` does not create a second minimap layout.
+`DynamicMinimap.j` remains the sole owner of compact/enlarged map placement.
+The adapter exposes the five native minimap controls and four custom
+player/pet/companion selection buttons directly below the upper-right map.
+The native hero buttons are hidden individually so their status icons cannot
+remain over the modern bottom HUD.
+
+`ModernShortcutRail.j` places icon-only Inventory, Abilities, Talents, Stats,
+Stats overlay, and Threat overlay shortcuts below that minimap cluster. A
+contextual Inspect icon appears only for a selected eligible friendly unit.
+Every icon has a hover description; Stats and Threat overlay icons show an
+active-state marker. These shortcuts call the same existing UI libraries as
+the Game menu and do not create replacement inventory, talent, or stats
+systems.
+
+### True widescreen frame ownership
+
+Calculating positions from `BlzGetLocalClientWidth` and
+`BlzGetLocalClientHeight` is not enough. A non-simple frame parented to the
+ordinary Game UI can render beyond the classic 0.000-to-0.800 range while its
+mouse events still fail there. `UI/WidescreenFrameRoot.j` creates one hidden,
+zero-sized Leaderboard frame and uses its `Leaderboard` frame as the shared
+parent for interactive full-client UI.
+
+The modern HUD controls, minimap, minimap buttons, shortcut rail,
+`StatsLiteUI`, and `TargetUnitUI` now use this owner. Broad decorative HUD
+parents are disabled
+and clickable controls live under zero-sized sibling parents so neither the
+world nor other custom frames are covered by an invisible hit area. At 4:3,
+the calculated width clamps to 0.800; at wider aspect ratios, left/right
+positions can use the full client width and still receive frame events.
 
 The large black rectangle seen behind version 0.4.0 was the visible native
 `ConsoleUIBackdrop`, not `PotSHUD.tga`. Its bounds are the same 0.10-to-0.70
@@ -65,7 +83,7 @@ used when present; otherwise the enable timer falls back to the first valid
 player hero after the intro. This prevents premature activation while the
 preload-mode choice is still open. The HUD then enables on a later timer tick.
 
-The Abilities button opens the existing `AbilitiesLiteUI` for Nazgrek or
+The Abilities shortcut opens the existing `AbilitiesLiteUI` for Nazgrek or
 Zul'kis. Right-click a learned active ability in that list, then click an
 action-bar slot (or press that slot's bound key) to assign it. The action bar
 also derives a stable default layout and appends newly learned active abilities
@@ -87,9 +105,9 @@ continue to work.
 
 The bottom HUD includes six PotS-owned quick-item slots backed by the hero's
 normal inventory. Clicking a populated slot uses that item through synchronized
-gameplay code without moving the crash-prone native item frames. When imported
-after `DInventory` and `DEquipment`, it also shows Inventory and Inspect
-controls. Inventory opens the full bag and equipment views, while Inspect
+gameplay code without moving the crash-prone native item frames. When the
+shortcut rail is imported after `DInventory` and `DEquipment`, its Inventory
+icon opens the full bag and equipment views, while the contextual Inspect icon
 opens the existing read-only inventory/equipment view for the
 selected non-player-owned friendly or neutral eligible unit; hostile and
 player-owned selections hide the Inspect control. Stealth and the
@@ -137,8 +155,8 @@ created specifically for this HUD using a shared shamanic material language:
 blackened iron, aged bronze, charcoal stone, leather bindings, and restrained
 elemental turquoise. The revised medallion uses four large, distinct Earth,
 Fire, Water, and Air glyphs around a clean center and is used once for the
-central level treatment. The animated portrait uses a neutral
-slot frame instead of duplicating the medallion. Matching individual element
+central level treatment. The icon portrait uses a neutral slot frame instead
+of duplicating the medallion. Matching individual element
 badges support the active-totem tracker without borrowing art from either
 reference map.
 
@@ -170,12 +188,14 @@ two-second learned-ability check appends new abilities only while gameplay is
 running; it does not rebuild slot presentation unless the loadout revision
 changes. Mana
 shading traverses the slots only when the hero's integer mana changes.
-Cooldown natives are queried for every slot once during a static rebuild, then
-only for slots marked active by a spell-effect event until their cooldown ends.
-Cooldown polling remains event-limited. Cooling slots drive Warcraft's radial
-cooldown sprite in 100 steps and add a whole-second countdown; no cooldown
-rectangle is resized every tick. All twenty-four slots share one tooltip frame
-whose content is filled on hover.
+Cooldown natives are queried for every slot during a static rebuild and once
+per second for discovery, then every presentation tick only for slots with an
+active cooldown. The discovery pass catches engine or script cooldown changes
+whose spell event was not observed by the HUD, including Stormstrike, without
+returning to every-frame full-bar polling. Cooling slots drive Warcraft's
+radial cooldown sprite in 100 steps and add a whole-second countdown; no
+cooldown rectangle is resized every tick. All twenty-four slots share one
+tooltip frame whose content is filled on hover.
 
 Custom action bars are not inherently expensive. Repeated catalog scans,
 cooldown-native polling, and frame geometry changes were the harmful work;
@@ -207,15 +227,18 @@ Six focused libraries establish that boundary:
 - `ModernAbilityController.j` turns local slot clicks and world coordinates
   into validated synchronized orders. Immediate/self and melee-auto abilities
   cast without a second click; unit and ground abilities enter targeting mode.
-  It reads live `Ncl6` only for abilities explicitly classified as Channel,
-  then falls back to the catalog order. Ordinary abilities keep their actual
-  base order instead of accidentally interpreting the Channel-only field.
+  For Channel-backed point abilities, it applies the catalog's point-compatible
+  `Ncl6` order to the runtime ability before issuing the synchronized point
+  order. Ordinary abilities keep their actual base order instead of
+  accidentally interpreting the Channel-only field.
 - `ModernAbilityActionBar.j` renders the PotS-owned slots and hides the native
   bottom HUD after `FullscreenUI` releases the intro presentation.
 - `ModernMinimapHUD.j` preserves the engine minimap and its five native
   control buttons while presenting them independently of the hidden console
   and native hero bar. If `DynamicMinimap` is present, its enlarged layout
   owns the map until it closes; the compact PotS placement is then restored.
+- `ModernShortcutRail.j` supplies the upper-right icon shortcuts and hover
+  descriptions while delegating each action to its existing UI library.
 
 The targeting policies are:
 
@@ -248,11 +271,24 @@ also confirms that Channel-based abilities need unique base orders when they
 must coexist; future Object Editor cleanup should prefer unique orders over the
 temporary isolation path.
 
-Summon Elemental now opens a four-button Air, Water, Fire, and Earth flyout.
-The selected child rawcode is synchronized and validated, while its current
-Channel `Ncl6` order is read from the hero's ability at runtime. Windfury Totem
-uses the corrected `undeadbuild` Channel base order and is enabled on the
-modern bar.
+Summon Elemental opens a four-button Air, Water, Fire, and Earth flyout.
+The selected child rawcode is synchronized and validated. The nine
+Channel-backed totem abilities use distinct point-compatible catalog orders;
+this avoids issuing the non-point `undeadbuild` order from a terrain click.
+Their Object Editor base orders should be updated to the documented catalog
+values as a matching World Editor follow-up.
+
+| Ability | Channel base order |
+| --- | --- |
+| `A63F` | `ward` |
+| `A63G` | `flamestrike` |
+| `A63H` | `rainoffire` |
+| `A63I` | `blizzard` |
+| `A68J` | `deathanddecay` |
+| `A68L` | `silence` |
+| `A68F` | `clusterrockets` |
+| `A68T` | `shockwave` |
+| `A01U` | `carrionswarm` |
 
 To configure the bar, right-click a learned active row in the Abilities book.
 The book closes while retaining the pending ability; click any action slot to
@@ -274,13 +310,14 @@ player hero while `TargetUnitUI` retains the explicit target.
 
 Import the modern ability foundation in this order:
 
-1. `Abilities/AbilitiesPlayer.j`
-2. `Abilities/Shaman/ShamanCommon.j`
-3. `UI/_Modern/ModernAbilityCatalog.j`
-4. `UI/_Modern/ModernAbilityLoadout.j`
-5. `UI/_Modern/ModernAbilityTargeting.j`
-6. `UI/_Modern/ModernAbilityController.j`
-7. `Abilities/Shaman/Totems.j`
+1. `UI/WidescreenFrameRoot.j`
+2. `Abilities/AbilitiesPlayer.j`
+3. `Abilities/Shaman/ShamanCommon.j`
+4. `UI/_Modern/ModernAbilityCatalog.j`
+5. `UI/_Modern/ModernAbilityLoadout.j`
+6. `UI/_Modern/ModernAbilityTargeting.j`
+7. `UI/_Modern/ModernAbilityController.j`
+8. `Abilities/Shaman/Totems.j`
 
 `ModernPlayerHUD.j` remains after:
 
@@ -288,16 +325,20 @@ Import the modern ability foundation in this order:
 - `MasterUI`
 - `AbilitiesLiteUI`
 - `FullscreenUI`
+- `WidescreenFrameRoot`
 
 Finally import `UI/_Modern/ModernAbilityActionBar.j` after
 `ModernPlayerHUD`, `ModernAbilityController`, and the dependencies above.
 Then import `UI/_Modern/ModernTotemTracker.j` after `Totems`,
 `ShamanCommon`, `FullscreenUI`, and `ModernPlayerHUD`.
 Import `UI/_Modern/ModernMinimapHUD.j` after `FullscreenUI`,
-`ModernPlayerHUD`, and the production `DynamicMinimap` library when used.
-Import `ModernPlayerHUD.j` after `DInventory` and `DEquipment` to enable
-the Inventory and Inspect adapters; both integrations are optional at compile
-time.
+`ModernPlayerHUD`, `WidescreenFrameRoot`, and the production
+`DynamicMinimap` and `Companions` libraries when used.
+Import `UI/_Modern/ModernShortcutRail.j` after `FullscreenUI`,
+`ModernPlayerHUD`, `WidescreenFrameRoot`, `MasterUI`, and
+`AbilitiesLiteUI`. Import it after `DInventory`, `DEquipment`,
+`TalentsUI`, `StatsUI`, `StatsLiteUI`, and `TargetUnitUI` to enable
+all shortcuts; those integrations remain optional at compile time.
 
 Import these files with the exact custom paths shown:
 
@@ -333,7 +374,7 @@ Then compile through the current World Editor/JassHelper workflow. Test:
 - non-hero and enemy selection;
 - inventory, quest, MasterUI, cinematic, and fullscreen UI transitions;
 - the intro-to-gameplay transition without a native access violation;
-- version 1.0.0 of the resource shell and version 1.2.0 of the action bar,
+- version 1.1.0 of the resource shell and version 1.3.0 of the action bar,
   confirming that learned icons, cooldowns, tooltips, and Abilities render;
 - mouse clicks on action slots, Abilities, StatsLiteUI, Quest UI, MasterUI,
   world terrain, and units after the full-screen logical parents were removed;
@@ -342,8 +383,12 @@ Then compile through the current World Editor/JassHelper workflow. Test:
 - right-click ability-book assignment to an empty and occupied slot,
   right-click slot swapping, automatic first-empty-slot insertion after
   learning, and no displacement when all twenty-four slots are full;
-- the upper-left native minimap inside its custom shell, minimap interaction,
-  Nazgrek/Zul'kis selector buttons, and intro/fullscreen transitions;
+- the single upper-right native minimap, compact/enlarged return placement,
+  all five native minimap controls, four player/pet/companion selectors, and
+  intro/fullscreen transitions;
+- all upper-right shortcut icons, hover descriptions, Inventory/Abilities/
+  Talents/Stats routing, Stats and Threat overlay toggles, contextual Inspect,
+  and active-state markers;
 - native bottom bar, command card, hero bar, and portrait hiding while the
   custom minimap remains visible, plus restoration after disabling the bar;
 - direct self and melee-auto casting; soft friendly/hostile targeting; exact
@@ -352,13 +397,17 @@ Then compile through the current World Editor/JassHelper workflow. Test:
   ignored and the following terrain/unit click is the synchronized target;
 - health and mana current/maximum plus percentage text, complete 100% fills,
   ten-segment XP progress, the six synchronized quick-item slots, and
-  icon-backed Inventory and Inspect controls;
+  upper-right Inventory and contextual Inspect controls;
 - all four Summon Elemental flyout choices, including mana, cooldown, channel,
   replacement of the active elemental, and two-client synchronization;
-- Windfury Totem point placement through its corrected `undeadbuild` Channel
-  order;
-- Stormstrike and Whirlwind immediate casting plus every Channel-backed
-  point-target ability after changing its Object Editor base order;
+- all nine totem abilities through their distinct point-compatible Channel
+  orders, including exact Earth and Windfury placement;
+- Stormstrike and Whirlwind immediate casting, with Stormstrike's native
+  cooldown shown as both radial sweep and countdown text;
+- Escape cancelling an armed cast/assignment/rebind without enlarging the
+  minimap;
+- 16:9 and 21:9 clicks beyond x=0.800 for Inventory, Inspect, StatsLiteUI,
+  TargetUnitUI, minimap controls, and companion selectors, plus 4:3 fallback;
 - Inventory and Inspect against the selected hero and an inspectable selected
   unit; Stealth visibility and all three equipment-granted Shield Block ranks;
 - Earth, Fire, Water, and Air tracker badges remaining hidden while inactive,
@@ -384,13 +433,13 @@ matrix. Do not import the entire Forgotten Hollow UI package without first
 removing unused definitions and resolving global frame-name collisions.
 
 The current stage hides the shared native bottom HUD without moving its command
-card. The minimap, animated portrait, native minimap controls, and hero
-selectors each have a narrowly scoped PotS-owned adapter or shell. DInventory,
-DEquipment, inspect, contextual Stealth/Block, assignment, swapping, and
-session keybinding are available through custom buttons. The six engine-owned
-item buttons remain intentionally unmoved because PotS now supplies six custom
-quick-item buttons instead. Keep any future origin-frame adapter independent so
-it can be disabled without affecting the working HUD.
+card. DynamicMinimap owns the single native minimap layout; the modern adapter
+exposes its controls and custom unit selectors in the upper-right cluster.
+The shortcut rail delegates to DInventory, DEquipment, AbilitiesLiteUI,
+TalentsUI, StatsUI, StatsLiteUI, and TargetUnitUI while contextual
+Stealth/Block, assignment, swapping, and session keybinding remain on the
+bottom action HUD. The six engine-owned item buttons remain intentionally
+unmoved because PotS supplies six custom quick-item buttons instead.
 
 `ModernAbilityCompileTest.j` is a compile-only harness for the complete modern
 HUD stack. Never import it into the production map.

@@ -2,7 +2,7 @@
     ModernPlayerHUD
 
     Author: Valdemar
-    Version: 1.0.0
+    Version: 1.1.0
 
     Description:
     Creates the cached modern PotS bottom-center resource shell, twenty-four custom
@@ -16,9 +16,9 @@
     - Forgotten Hollow, action-bar and lower-HUD presentation reference
 
     How to install:
-    Import after Events, MasterUI, AbilitiesLiteUI, and FullscreenUI, then
-    import ModernAbilityActionBar after this library. No TOC or FDF import is
-    required for this implementation. The library creates its
+    Import after Events, MasterUI, AbilitiesLiteUI, FullscreenUI, and
+    WidescreenFrameRoot, then import ModernAbilityActionBar after this library.
+    No TOC or FDF import is required for this implementation. The library creates its
     frames after a short initialization delay and enables itself only after
     FullscreenUI has finished the intro presentation. Set MHUD_AUTO_ENABLE to
     false when an external startup flow should call ModernPlayerHUD_Enable
@@ -34,7 +34,7 @@
     - set enabled = ModernPlayerHUD_IsEnabled()
 
 **/
-library ModernPlayerHUD initializer Init requires Events, MasterUI, AbilitiesLiteUI, FullscreenUI, optional DInventory, optional DEquipment
+library ModernPlayerHUD initializer Init requires Events, MasterUI, AbilitiesLiteUI, FullscreenUI, WidescreenFrameRoot, optional DInventory, optional DEquipment
 
 globals
     // Configuration
@@ -79,10 +79,6 @@ globals
     private constant string MHUD_HEALTH_TEXTURE = "UI\\_Modern\\Assets\\PotSHealth.tga"
     private constant string MHUD_MANA_TEXTURE = "UI\\_Modern\\Assets\\PotSMana.tga"
     private constant string MHUD_XP_TEXTURE = "UI\\_Modern\\Assets\\PotSXP.tga"
-    private constant string MHUD_BOOK_ICON = "ReplaceableTextures\\CommandButtons\\BTNBook_07.blp"
-    private constant string MHUD_BAG_ICON = "ReplaceableTextures\\CommandButtons\\BTNChestOfGold.blp"
-    private constant string MHUD_GEAR_ICON = "ReplaceableTextures\\CommandButtons\\BTNThoriumArmor.blp"
-    private constant string MHUD_INSPECT_ICON = "ReplaceableTextures\\CommandButtons\\BTNSpy.blp"
 
     private boolean MHUD_Initialized = false
     private boolean MHUD_FramesCreated = false
@@ -91,6 +87,7 @@ globals
 
     private framehandle MHUD_ScreenParent = null
     private framehandle MHUD_Parent = null
+    private framehandle MHUD_ControlParent = null
     private framehandle MHUD_Backdrop = null
     private framehandle MHUD_ResourceBarBack = null
     private framehandle MHUD_ResourceBarFrame = null
@@ -106,11 +103,6 @@ globals
     private framehandle MHUD_XPBack = null
     private framehandle MHUD_XPFill = null
     private framehandle MHUD_XPText = null
-    private framehandle MHUD_BookButton = null
-    private framehandle MHUD_BookIcon = null
-    private framehandle MHUD_InventoryButton = null
-    private framehandle MHUD_EquipmentButton = null
-    private framehandle MHUD_InspectButton = null
     private framehandle array MHUD_SlotBackdrop
     private framehandle array MHUD_XPSegment
     private framehandle MHUD_QuickItemParent = null
@@ -118,8 +110,6 @@ globals
     private framehandle array MHUD_QuickItemIcon
     private framehandle array MHUD_QuickItemCharges
 
-    private trigger MHUD_BookTrigger = null
-    private trigger MHUD_UtilityTrigger = null
     private trigger MHUD_QuickItemTrigger = null
     private trigger MHUD_ItemSyncTrigger = null
     private trigger MHUD_ClearFocusTrigger = null
@@ -134,8 +124,6 @@ globals
     private boolean MHUD_ParentVisible = false
     private boolean MHUD_ManaVisible = false
     private boolean MHUD_XPVisible = false
-    private boolean MHUD_BookVisible = false
-    private boolean MHUD_InspectVisible = false
     private integer MHUD_CachedLife = -1
     private integer MHUD_CachedMaxLife = -1
     private integer MHUD_CachedMana = -1
@@ -260,7 +248,7 @@ private function MHUD_QuickItemAction takes nothing returns nothing
     local integer heroSlot = MHUD_GetHeroSlot(MHUD_SelectedUnit)
     local integer index = 0
 
-    if viewer == GetLocalPlayer() and heroSlot > 0 then
+    if viewer == GetLocalPlayer() and BlzGetTriggerPlayerMouseButton() == MOUSE_BUTTON_TYPE_LEFT and heroSlot > 0 then
         loop
             exitwhen index >= MHUD_QUICK_ITEM_COUNT
             if triggerFrame == MHUD_QuickItemButton[index] then
@@ -350,6 +338,7 @@ private function MHUD_SetParentVisible takes boolean visible returns nothing
     if MHUD_ParentVisible != visible then
         set MHUD_ParentVisible = visible
         call BlzFrameSetVisible(MHUD_Parent, visible)
+        call BlzFrameSetVisible(MHUD_ControlParent, visible)
     endif
 endfunction
 
@@ -365,35 +354,6 @@ private function MHUD_SetXPVisible takes boolean visible returns nothing
         set MHUD_XPVisible = visible
         call BlzFrameSetVisible(MHUD_XPBack, visible)
     endif
-endfunction
-
-private function MHUD_SetBookVisible takes boolean visible returns nothing
-    if MHUD_BookVisible != visible then
-        set MHUD_BookVisible = visible
-        call BlzFrameSetVisible(MHUD_BookButton, visible)
-    endif
-endfunction
-
-private function MHUD_SetInspectVisible takes boolean visible returns nothing
-    if MHUD_InspectButton != null and MHUD_InspectVisible != visible then
-        set MHUD_InspectVisible = visible
-        call BlzFrameSetVisible(MHUD_InspectButton, visible)
-    endif
-endfunction
-
-private function MHUD_UpdateInspectButton takes nothing returns nothing
-    local player viewer = GetLocalPlayer()
-    local unit target = null
-    local boolean visible = false
-
-    static if LIBRARY_DEquipment then
-        set target = DInspectResolveSelectedTarget(viewer)
-        set visible = target != null and GetOwningPlayer(target) != viewer and not IsUnitEnemy(target, viewer)
-    endif
-    call MHUD_SetInspectVisible(visible)
-
-    set target = null
-    set viewer = null
 endfunction
 
 private function MHUD_SetBarFill takes framehandle fillFrame, real width, real height, real current, real maximum, integer barIndex returns nothing
@@ -462,7 +422,6 @@ private function MHUD_Update takes nothing returns nothing
     local integer mana
     local integer maxMana
     local integer level
-    local boolean playerHero
 
     if not MHUD_Enabled or MHUD_Parent == null then
         set whichUnit = null
@@ -502,8 +461,6 @@ private function MHUD_Update takes nothing returns nothing
     set mana = R2I(GetUnitState(whichUnit, UNIT_STATE_MANA))
     set maxMana = BlzGetUnitMaxMana(whichUnit)
     set level = MHUD_GetDisplayLevel(whichUnit)
-    set playerHero = MHUD_IsPlayerHero(whichUnit)
-
     call MHUD_SetParentVisible(true)
     if level != MHUD_CachedLevel then
         set MHUD_CachedLevel = level
@@ -531,9 +488,6 @@ private function MHUD_Update takes nothing returns nothing
 
     call MHUD_UpdateXP(whichUnit)
     call MHUD_UpdateQuickItems(whichUnit)
-    call MHUD_SetBookVisible(playerHero)
-    call MHUD_UpdateInspectButton()
-
     set whichUnit = null
 endfunction
 
@@ -553,88 +507,12 @@ private function MHUD_ClearFocusAction takes nothing returns nothing
     set triggerFrame = null
 endfunction
 
-private function MHUD_BookAction takes nothing returns nothing
-    if GetTriggerPlayer() == GetLocalPlayer() and MHUD_IsPlayerHero(MHUD_SelectedUnit) then
-        call MasterUI_ClosePanels()
-        call AbilitiesLiteUI_ShowForUnit(MHUD_SelectedUnit)
-    endif
-endfunction
-
-private function MHUD_UtilityAction takes nothing returns nothing
-    local framehandle triggerFrame = BlzGetTriggerFrame()
-    local player viewer = GetTriggerPlayer()
-    local integer pid = GetPlayerId(viewer)
-    local unit target = null
-    local boolean opened = false
-
-    if viewer == GetLocalPlayer() and MHUD_IsPlayerHero(MHUD_SelectedUnit) then
-        call MasterUI_ClosePanels()
-        static if LIBRARY_DInventory then
-            if triggerFrame == MHUD_InventoryButton then
-                set opened = DInvShowUnitForPlayer(viewer, MHUD_SelectedUnit, false)
-                static if LIBRARY_DEquipment then
-                    if DEqShowUnitForPlayer(viewer, MHUD_SelectedUnit, false) then
-                        set opened = true
-                    endif
-                endif
-            endif
-        endif
-        static if LIBRARY_DEquipment then
-            if triggerFrame == MHUD_EquipmentButton then
-                call ToggleDEqUIForUnit(pid, MHUD_SelectedUnit)
-            elseif triggerFrame == MHUD_InspectButton then
-                if DInvIsPlayerInspecting(pid) then
-                    call DInventoryEquipment_HideForPlayer(viewer)
-                else
-                    set target = DInspectResolveSelectedTarget(viewer)
-                    if target != null then
-                        static if LIBRARY_DInventory then
-                            set opened = DInvShowUnitForPlayer(viewer, target, true)
-                        endif
-                        if DEqShowUnitForPlayer(viewer, target, true) then
-                            set opened = true
-                        endif
-                    endif
-                    if not opened then
-                        call DisplayTimedTextToPlayer(viewer, 0.00, 0.00, 2.00, "|cffffcc00Select an inspectable hero or companion first.|r")
-                    endif
-                endif
-            endif
-        endif
-    endif
-
-    set target = null
-    set viewer = null
-    set triggerFrame = null
-endfunction
-
-private function MHUD_CreateUtilityButton takes string frameName, string label, string iconPath, real x returns framehandle
-    local framehandle utilityButton = BlzCreateFrameByType("GLUETEXTBUTTON", frameName, MHUD_Parent, "ScriptDialogButton", 0)
-    local framehandle icon = BlzCreateFrameByType("BACKDROP", frameName + "Icon", utilityButton, "", 0)
-
-    call BlzFrameSetAbsPoint(utilityButton, FRAMEPOINT_BOTTOMLEFT, x, MHUD_ACTION_BOTTOM)
-    call BlzFrameSetSize(utilityButton, 0.064, MHUD_ACTION_SIZE)
-    call BlzFrameSetText(utilityButton, "      " + label)
-    call BlzFrameSetLevel(utilityButton, 7)
-
-    call BlzFrameSetPoint(icon, FRAMEPOINT_LEFT, utilityButton, FRAMEPOINT_LEFT, 0.006, 0.000)
-    call BlzFrameSetSize(icon, 0.018, 0.018)
-    call BlzFrameSetTexture(icon, iconPath, 0, true)
-    call BlzFrameSetEnable(icon, false)
-    call BlzFrameSetLevel(icon, 8)
-
-    call BlzTriggerRegisterFrameEvent(MHUD_UtilityTrigger, utilityButton, FRAMEEVENT_CONTROL_CLICK)
-    call BlzTriggerRegisterFrameEvent(MHUD_ClearFocusTrigger, utilityButton, FRAMEEVENT_CONTROL_CLICK)
-    set icon = null
-    return utilityButton
-endfunction
-
 private function MHUD_CreateQuickItems takes nothing returns nothing
     local framehandle border
     local integer index = 0
     local real x
 
-    set MHUD_QuickItemParent = BlzCreateFrameByType("FRAME", "ModernPlayerHUDQuickItems", MHUD_Parent, "", 0)
+    set MHUD_QuickItemParent = BlzCreateFrameByType("FRAME", "ModernPlayerHUDQuickItems", MHUD_ControlParent, "", 0)
     call BlzFrameSetAbsPoint(MHUD_QuickItemParent, FRAMEPOINT_BOTTOMLEFT, 0.621, 0.049)
     call BlzFrameSetSize(MHUD_QuickItemParent, 0.169, 0.026)
     call BlzFrameSetLevel(MHUD_QuickItemParent, 7)
@@ -668,7 +546,7 @@ private function MHUD_CreateQuickItems takes nothing returns nothing
         call BlzFrameSetEnable(MHUD_QuickItemCharges[index], false)
         call BlzFrameSetLevel(MHUD_QuickItemCharges[index], 11)
 
-        call BlzTriggerRegisterFrameEvent(MHUD_QuickItemTrigger, MHUD_QuickItemButton[index], FRAMEEVENT_CONTROL_CLICK)
+        call BlzTriggerRegisterFrameEvent(MHUD_QuickItemTrigger, MHUD_QuickItemButton[index], FRAMEEVENT_MOUSE_DOWN)
         call BlzTriggerRegisterFrameEvent(MHUD_ClearFocusTrigger, MHUD_QuickItemButton[index], FRAMEEVENT_CONTROL_CLICK)
         set index = index + 1
     endloop
@@ -688,15 +566,23 @@ private function MHUD_CreateFrames takes nothing returns nothing
     endif
     set MHUD_FramesCreated = true
 
-    // ConsoleUIBackdrop is below the Warcraft III 2.x bottom-console layers.
-    // Own custom frames directly under GameUI so the restored native HUD does
-    // not cover them after FullscreenUI ends.
-    set MHUD_ScreenParent = BlzGetOriginFrame(ORIGIN_FRAME_GAME_UI, 0)
+    // The shared Leaderboard-backed owner preserves interaction outside the
+    // classic 4:3 bounds without depending on the hidden native console.
+    set MHUD_ScreenParent = WidescreenFrameRoot_Get()
+    call WidescreenFrameRoot_Refresh()
 
     set MHUD_Parent = BlzCreateFrameByType("FRAME", "ModernPlayerHUDPanel", MHUD_ScreenParent, "", 0)
     call BlzFrameSetAbsPoint(MHUD_Parent, FRAMEPOINT_TOPLEFT, MHUD_PANEL_LEFT, MHUD_PANEL_TOP)
     call BlzFrameSetAbsPoint(MHUD_Parent, FRAMEPOINT_BOTTOMRIGHT, MHUD_PANEL_RIGHT, MHUD_PANEL_BOTTOM)
     call BlzFrameSetLevel(MHUD_Parent, 20)
+    call BlzFrameSetEnable(MHUD_Parent, false)
+
+    // Clickable controls live under a zero-sized sibling so the broad visual
+    // panel cannot intercept world or frame mouse input.
+    set MHUD_ControlParent = BlzCreateFrameByType("FRAME", "ModernPlayerHUDControls", MHUD_ScreenParent, "", 0)
+    call BlzFrameSetSize(MHUD_ControlParent, 0.0001, 0.0001)
+    call BlzFrameSetAbsPoint(MHUD_ControlParent, FRAMEPOINT_BOTTOMLEFT, 0.000, 0.000)
+    call BlzFrameSetLevel(MHUD_ControlParent, 26)
 
     set MHUD_Backdrop = BlzCreateFrameByType("BACKDROP", "ModernPlayerHUDBackdrop", MHUD_Parent, "", 0)
     call BlzFrameSetPoint(MHUD_Backdrop, FRAMEPOINT_BOTTOM, MHUD_Parent, FRAMEPOINT_BOTTOM, 0.000, 0.000)
@@ -836,33 +722,10 @@ private function MHUD_CreateFrames takes nothing returns nothing
         set index = index + 1
     endloop
 
-    set MHUD_BookButton = BlzCreateFrameByType("GLUETEXTBUTTON", "ModernPlayerHUDBookButton", MHUD_Parent, "ScriptDialogButton", 0)
-    call BlzFrameSetAbsPoint(MHUD_BookButton, FRAMEPOINT_BOTTOMLEFT, 0.610, MHUD_ACTION_BOTTOM)
-    call BlzFrameSetSize(MHUD_BookButton, 0.076, MHUD_ACTION_SIZE)
-    call BlzFrameSetText(MHUD_BookButton, "    Abilities")
-    call BlzFrameSetLevel(MHUD_BookButton, 7)
-
-    set MHUD_BookIcon = BlzCreateFrameByType("BACKDROP", "ModernPlayerHUDBookIcon", MHUD_BookButton, "IconButtonTemplate", 0)
-    call BlzFrameSetPoint(MHUD_BookIcon, FRAMEPOINT_LEFT, MHUD_BookButton, FRAMEPOINT_LEFT, 0.006, 0.000)
-    call BlzFrameSetSize(MHUD_BookIcon, 0.014, 0.014)
-    call BlzFrameSetTexture(MHUD_BookIcon, MHUD_BOOK_ICON, 0, true)
-    call BlzFrameSetEnable(MHUD_BookIcon, false)
-    call BlzFrameSetLevel(MHUD_BookIcon, 8)
-
-    call BlzTriggerRegisterFrameEvent(MHUD_BookTrigger, MHUD_BookButton, FRAMEEVENT_CONTROL_CLICK)
-    call BlzTriggerRegisterFrameEvent(MHUD_ClearFocusTrigger, MHUD_BookButton, FRAMEEVENT_CONTROL_CLICK)
-
-    static if LIBRARY_DInventory then
-        set MHUD_InventoryButton = MHUD_CreateUtilityButton("ModernPlayerHUDInventoryButton", "Inventory", MHUD_GEAR_ICON, 0.690)
-    endif
-    static if LIBRARY_DEquipment then
-        set MHUD_InspectButton = MHUD_CreateUtilityButton("ModernPlayerHUDInspectButton", "Inspect", MHUD_INSPECT_ICON, 0.758)
-        call BlzFrameSetVisible(MHUD_InspectButton, false)
-    endif
-
     call MHUD_CreateQuickItems()
 
     call BlzFrameSetVisible(MHUD_Parent, false)
+    call BlzFrameSetVisible(MHUD_ControlParent, false)
 endfunction
 
 public function SetUnit takes unit whichUnit returns nothing
@@ -899,6 +762,9 @@ public function Enable takes nothing returns nothing
     set MHUD_Enabled = true
     set MHUD_WasFullscreen = false
     call MHUD_ResetCache()
+    static if LIBRARY_DEquipment then
+        call DInspectSetExternalButtonForPlayer(Player(0), true)
+    endif
     call TimerStart(MHUD_UpdateTimer, MHUD_UPDATE_INTERVAL, true, function MHUD_Tick)
     call MHUD_Tick()
 endfunction
@@ -910,6 +776,9 @@ public function Disable takes nothing returns nothing
     call PauseTimer(MHUD_UpdateTimer)
     if MHUD_Parent != null then
         call MHUD_SetParentVisible(false)
+    endif
+    static if LIBRARY_DEquipment then
+        call DInspectSetExternalButtonForPlayer(Player(0), false)
     endif
     call MHUD_ResetCache()
 endfunction
@@ -976,10 +845,6 @@ private function Init takes nothing returns nothing
     endif
     set MHUD_Initialized = true
 
-    set MHUD_BookTrigger = CreateTrigger()
-    call TriggerAddAction(MHUD_BookTrigger, function MHUD_BookAction)
-    set MHUD_UtilityTrigger = CreateTrigger()
-    call TriggerAddAction(MHUD_UtilityTrigger, function MHUD_UtilityAction)
     set MHUD_QuickItemTrigger = CreateTrigger()
     call TriggerAddAction(MHUD_QuickItemTrigger, function MHUD_QuickItemAction)
     set MHUD_ItemSyncTrigger = CreateTrigger()
