@@ -6,7 +6,9 @@ then cropped, resized, and converted to RGBA TGA files for Warcraft III.
 The shared art direction uses blackened iron, aged bronze, charcoal stone,
 leather bindings, and restrained elemental turquoise:
 
-- `PotSHUD.tga`: simplified wide bottom action-bar shell, 2048x256.
+- `PotSHUD.tga`: wide transparent bottom action-bar chassis with symmetrical
+  outward-facing wolf-head endcaps and a quiet runtime-frame interior,
+  2048x512.
 - `PotSActionSlot.tga`: simplified transparent ability-slot bezel, 128x128.
 - `PotSBarBack.tga`: dark resource-bar trough, 1024x64.
 - `PotSBarFrame.tga`: restrained transparent split-bar overlay, 1024x64.
