@@ -2,7 +2,7 @@
     ModernPlayerHUD
 
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.1.1
 
     Description:
     Creates the cached modern PotS bottom-center resource shell, twenty-four custom
@@ -437,6 +437,8 @@ private function MHUD_Update takes nothing returns nothing
 
     if MHUD_WasFullscreen then
         set MHUD_WasFullscreen = false
+        call WidescreenFrameRoot_Refresh()
+        set MHUD_ParentVisible = false
     endif
 
     if not MHUD_IsValidUnit(whichUnit) and GetLocalPlayer() == Player(0) and MHUD_IsValidUnit(udg_Nazgrek) then
@@ -759,6 +761,8 @@ public function Enable takes nothing returns nothing
         call MHUD_CreateFrames()
     endif
 
+    call WidescreenFrameRoot_Refresh()
+    set MHUD_ParentVisible = false
     set MHUD_Enabled = true
     set MHUD_WasFullscreen = false
     call MHUD_ResetCache()

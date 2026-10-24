@@ -2,7 +2,7 @@
     ModernAbilityActionBar
 
     Author: Valdemar
-    Version: 1.3.0
+    Version: 1.3.1
 
     Description:
     Renders the cached PotS-owned twenty-four-slot, two-row action bar with
@@ -787,8 +787,12 @@ private function MAB_Update takes nothing returns nothing
         return
     endif
 
-    if MAB_WasFullscreen or not MAB_NativeCaptured then
+    if MAB_WasFullscreen then
         set MAB_WasFullscreen = false
+        call WidescreenFrameRoot_Refresh()
+        set MAB_ParentVisible = false
+        call MAB_HideNativeFrames()
+    elseif not MAB_NativeCaptured then
         call MAB_HideNativeFrames()
     endif
     if not MAB_IsValidUnit(whichHero) and GetLocalPlayer() == Player(0) and MAB_IsValidUnit(udg_Nazgrek) then
@@ -1341,6 +1345,8 @@ public function Enable takes nothing returns nothing
     if not MAB_FramesCreated then
         call MAB_CreateFrames()
     endif
+    call WidescreenFrameRoot_Refresh()
+    set MAB_ParentVisible = false
     set MAB_Enabled = true
     set MAB_WasFullscreen = false
     call MAB_ResetSlotCache()

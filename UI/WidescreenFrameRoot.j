@@ -2,7 +2,7 @@
     WidescreenFrameRoot
 
     Author: Valdemar
-    Version: 1.1.0
+    Version: 1.1.1
 
     Description:
     Creates one zero-sized Leaderboard frame that can parent interactive
@@ -68,6 +68,11 @@ endfunction
 
 public function Refresh takes nothing returns nothing
     call WFR_Ensure()
+    // ShowInterface can hide the Leaderboard owner after custom children have
+    // already been created. Reassert both owner and frame before child UIs
+    // restore themselves after a fullscreen transition.
+    call LeaderboardDisplay(WFR_Owner, true)
+    call BlzFrameSetSize(WFR_Root, 0.0001, 0.0001)
     call BlzFrameSetVisible(WFR_Root, true)
     if WFR_Backdrop != null then
         call BlzFrameSetVisible(WFR_Backdrop, false)
