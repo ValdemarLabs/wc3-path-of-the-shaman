@@ -2,7 +2,7 @@
     ModernAbilityActionBar
 
     Author: Valdemar
-    Version: 1.3.1
+    Version: 1.3.2
 
     Description:
     Renders the cached PotS-owned twenty-four-slot, two-row action bar with
@@ -438,6 +438,9 @@ private function MAB_HideNativeFrames takes nothing returns nothing
         set index = index + 1
     endloop
     call MAB_RelocateNativePortrait()
+    // Native console suppression can also hide an already-created Leaderboard parent.
+    // Reclaim the custom widescreen root only after every native frame is hidden.
+    call WidescreenFrameRoot_Refresh()
 endfunction
 
 private function MAB_RestoreNativeFrames takes nothing returns nothing
@@ -789,7 +792,6 @@ private function MAB_Update takes nothing returns nothing
 
     if MAB_WasFullscreen then
         set MAB_WasFullscreen = false
-        call WidescreenFrameRoot_Refresh()
         set MAB_ParentVisible = false
         call MAB_HideNativeFrames()
     elseif not MAB_NativeCaptured then

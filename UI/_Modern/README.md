@@ -84,7 +84,9 @@ player hero after the intro. This prevents premature activation while the
 preload-mode choice is still open. The HUD then enables on a later timer tick
 and explicitly restores its shared Leaderboard-backed widescreen parent,
 because Warcraft hides that parent when `ShowInterface(false)` starts the
-intro presentation.
+intro presentation. The action bar performs the same restoration only after
+native bottom-console suppression is complete; otherwise that later native
+hide pass can immediately hide the freshly restored custom HUD again.
 
 The Abilities shortcut opens the existing `AbilitiesLiteUI` for Nazgrek or
 Zul'kis. Right-click a learned active ability in that list, then click an
