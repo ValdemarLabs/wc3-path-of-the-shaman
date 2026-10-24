@@ -21,6 +21,7 @@
 
 ### Player-Facing Updates
 
+- Fixed the Modern HUD disappearing after its initial startup flash; the HUD chassis, resource bars, action bar, minimap cluster, and shortcut rail now restore their shared widescreen parent when gameplay starts after the intro.
 - Moved the compact minimap to the upper-right widescreen corner, with player, companion, and native minimap controls grouped directly beneath it.
 - Added an icon-only right-side shortcut rail for Inventory, Abilities, Talents, Stats, StatsLiteUI, and ThreatUI. Hovering an icon identifies its action, overlay shortcuts show when active, and Inspect appears contextually for eligible friendly selections.
 - Removed the redundant text-based Abilities, Inventory, and Inspect buttons from the bottom HUD.
@@ -28,6 +29,7 @@
 
 ### Technical Updates
 
+- Updated `UI/WidescreenFrameRoot.j`, `UI/_Modern/ModernPlayerHUD.j`, and `UI/_Modern/ModernAbilityActionBar.j` to reclaim the Leaderboard-backed frame root after `ShowInterface` fullscreen transitions and invalidate cached child visibility before restoring the gameplay HUD.
 - Added `UI/_Modern/ModernShortcutRail.j` and updated `UI/WidescreenFrameRoot.j`, `UI/StatsLiteUI.j`, and `UI/TargetUnitUI.j` with the widescreen boundary and visibility APIs required by the shortcut rail.
 - Updated `DynamicMinimap/DynamicMinimap_lastWorking.j`, `UI/_Modern/ModernMinimapHUD.j`, and `UI/_Modern/ModernPlayerHUD.j` for the new upper-right layout and single-owner shortcut architecture.
 - Updated `UI/_Modern/ModernAbilityCompileTest.j` and `UI/_Modern/README.md`; the focused Modern HUD JassHelper compile succeeds with the new optional UI integrations.
