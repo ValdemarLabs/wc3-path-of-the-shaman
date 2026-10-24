@@ -829,7 +829,6 @@ library qKribugs initializer Init requires QuestGiver, QuestMaster, DialogIntera
             return
         endif
         set SelectedHero = hero
-        call EnableUserControl(false)
         call PauseUnit(hero, true)
         call BuildDialog()
         call DialogSystem_SetContext(vendor, GetOwningPlayer(hero))
