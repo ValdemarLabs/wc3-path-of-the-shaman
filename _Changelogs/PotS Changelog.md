@@ -21,6 +21,7 @@
 
 ### Player-Facing Updates
 
+- Restored the preplaced Spirit Healers' reveal after graveyard revival: they remain visible for 60 seconds, stay visible while their recovery dialogue is open, and then fade back into Ghost form.
 - Fixed the Modern HUD disappearing immediately after its startup flash by restoring the shared widescreen parent after the native bottom-console suppression completes.
 - Moved the compact minimap to the upper-right widescreen corner, with player, companion, and native minimap controls grouped directly beneath it.
 - Added an icon-only right-side shortcut rail for Inventory, Abilities, Talents, Stats, StatsLiteUI, and ThreatUI. Hovering an icon identifies its action, overlay shortcuts show when active, and Inspect appears contextually for eligible friendly selections.
@@ -30,6 +31,7 @@
 
 ### Technical Updates
 
+- Updated `Death/Revival.j` to restore the old GUI Spirit Healer reveal timer, animations, Ghost ability removal/restoration, and dialogue pause/resume behavior.
 - Updated `UI/WidescreenFrameRoot.j`, `UI/_Modern/ModernPlayerHUD.j`, and `UI/_Modern/ModernAbilityActionBar.j` to reclaim the Leaderboard-backed frame root after both `ShowInterface` fullscreen transitions and ModernAbilityActionBar native-frame hiding; cached child visibility is invalidated only on those transitions.
 - Added `UI/_Modern/ModernShortcutRail.j` and updated `UI/WidescreenFrameRoot.j`, `UI/StatsLiteUI.j`, and `UI/TargetUnitUI.j` with the widescreen boundary and visibility APIs required by the shortcut rail.
 - Updated `DynamicMinimap/DynamicMinimap_lastWorking.j`, `UI/_Modern/ModernMinimapHUD.j`, and `UI/_Modern/ModernPlayerHUD.j` for the new upper-right layout and single-owner shortcut architecture.
@@ -41,6 +43,7 @@
 
 ### Actions Remaining
 
+- Compile the full map with World Editor/JassHelper and runtime-test consecutive Nazgrek/Zulkis graveyard revivals; confirm all preplaced Spirit Healers reveal for 60 seconds, remain visible during item recovery dialogue, and regain Ghost after the two-second closing animation.
 - Import `UI/_Modern/ModernShortcutRail.j` after its UI dependencies, compile the full map, and test every shortcut plus compact/enlarged minimap restoration at 4:3, 16:9, and ultrawide resolutions.
 
 ## [23.10.2026]
