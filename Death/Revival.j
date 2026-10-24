@@ -46,6 +46,7 @@ globals
     private constant real REVIVAL_ITEM_REGION_RADIUS = 150.00
     private constant real REVIVAL_HEALER_INTERACT_RANGE = 500.00
     private constant real REVIVAL_HEALER_DURATION = 60.00
+    private constant real REVIVAL_HEALER_HIDE_DELAY = 2.00
     private constant real REVIVAL_DEATH_CAMERA_CHECK_INTERVAL = 0.10
     private constant real REVIVAL_DEATH_CAMERA_INITIAL_DISTANCE = 1400.00
     private constant real REVIVAL_DEATH_CAMERA_INITIAL_ANGLE = 280.00
@@ -59,6 +60,7 @@ globals
     private constant integer REVIVAL_SPIRIT_HEALER_ID = 'u605'
     private constant integer REVIVAL_SPIRIT_WALKER_ID = 'u607'
     private constant integer REVIVAL_TIMED_LIFE_BUFF_ID = 'BTLF'
+    private constant integer REVIVAL_GHOST_ABILITY_ID = 'Agho'
     private constant integer REVIVAL_INITIAL_GRAVEYARD_ID = 4
     private constant string REVIVAL_GRAVEYARD_EFFECT = "Abilities\\Spells\\Items\\HealingSalve\\HealingSalveTarget.mdl"
 
@@ -78,6 +80,7 @@ globals
     private unit Revival_SelectedHealer = null
     private real Revival_ItemTargetX = 0.00
     private real Revival_ItemTargetY = 0.00
+    private timer Revival_HealerHideTimer = null
     private timer Revival_DeathCameraTimer = null
     private unit Revival_DeathCameraHero = null
     private boolean Revival_DeathCameraActive = false
@@ -441,6 +444,44 @@ private function Revival_CreateSpiritHealer takes integer graveyardId returns un
     return Revival_Healer[graveyardId]
 endfunction
 
+private function Revival_RevealSpiritHealerEnum takes nothing returns nothing
+    local unit healer = GetEnumUnit()
+
+    call UnitRemoveAbility(healer, REVIVAL_GHOST_ABILITY_ID)
+    call QueueUnitAnimation(healer, "spell throw")
+    call QueueUnitAnimation(healer, "stand")
+    set healer = null
+endfunction
+
+private function Revival_HideSpiritHealerEnum takes nothing returns nothing
+    local unit healer = GetEnumUnit()
+
+    call UnitAddAbility(healer, REVIVAL_GHOST_ABILITY_ID)
+    set healer = null
+endfunction
+
+private function Revival_FinishHidingSpiritHealers takes nothing returns nothing
+    call ForGroup(udg_SpiritHealers, function Revival_HideSpiritHealerEnum)
+endfunction
+
+private function Revival_StartHidingSpiritHealerEnum takes nothing returns nothing
+    local unit healer = GetEnumUnit()
+
+    call QueueUnitAnimation(healer, "spell throw")
+    set healer = null
+endfunction
+
+private function Revival_StartHidingSpiritHealers takes nothing returns nothing
+    call ForGroup(udg_SpiritHealers, function Revival_StartHidingSpiritHealerEnum)
+    call TimerStart(Revival_HealerHideTimer, REVIVAL_HEALER_HIDE_DELAY, false, function Revival_FinishHidingSpiritHealers)
+endfunction
+
+private function Revival_RevealSpiritHealers takes nothing returns nothing
+    call PauseTimer(Revival_HealerHideTimer)
+    call ForGroup(udg_SpiritHealers, function Revival_RevealSpiritHealerEnum)
+    call TimerStart(udg_SpiritHealerRevealTimer, REVIVAL_HEALER_DURATION, false, function Revival_StartHidingSpiritHealers)
+endfunction
+
 private function Revival_OnDeathRevived takes nothing returns nothing
     local unit whichHero = Death_EventHero
 
@@ -489,6 +530,7 @@ private function Revival_ReviveTimerExpired takes nothing returns nothing
         if hasDroppedItems then
             call Revival_CreateSpiritHealer(graveyardId)
         endif
+        call Revival_RevealSpiritHealers()
         call PingMinimapEx(x, y, 1.00, 255, 255, 255, true)
         call DisplayTimedTextToForce(bj_FORCE_ALL_PLAYERS, 5.00, "|cffffff00" + GetHeroProperName(whichHero) + "|r |cff00ff00has been revived at the graveyard.|r")
     endif
@@ -660,6 +702,7 @@ endfunction
 private function Revival_EndSpiritHealerDialog takes nothing returns nothing
     call DialogSystem_HideDialog(Revival_RestoreDialog, Player(0))
     call DialogInteraction_EndCinematicSequence(true)
+    call ResumeTimer(udg_SpiritHealerRevealTimer)
     set Revival_SelectedHealer = null
 endfunction
 
@@ -700,6 +743,7 @@ private function Revival_OnSpiritHealerSelected takes nothing returns nothing
 
     set Revival_SelectedHealer = healer
     set udg_SpiritHealer = healer
+    call PauseTimer(udg_SpiritHealerRevealTimer)
     call DialogSystem_ClearDialog(Revival_RestoreDialog)
     call DialogSystem_SetTitle(Revival_RestoreDialog, GetUnitName(healer))
     if nazgrekAvailable then
@@ -746,6 +790,10 @@ private function Init takes nothing returns nothing
     set Revival_GeneratedHealer = Table.create()
     set Revival_OwnerTimerHealer = Table.create()
     set Revival_RestoreDialog = DialogSystem_CreateDialog("Spirit Healer")
+    if udg_SpiritHealerRevealTimer == null then
+        set udg_SpiritHealerRevealTimer = CreateTimer()
+    endif
+    set Revival_HealerHideTimer = CreateTimer()
     set Revival_DeathCameraTimer = CreateTimer()
 
     set Revival_HealerType[1] = REVIVAL_SPIRIT_HEALER_ID
