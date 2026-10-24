@@ -24,12 +24,17 @@
 - Moved the compact minimap to the upper-right widescreen corner, with player, companion, and native minimap controls grouped directly beneath it.
 - Added an icon-only right-side shortcut rail for Inventory, Abilities, Talents, Stats, StatsLiteUI, and ThreatUI. Hovering an icon identifies its action, overlay shortcuts show when active, and Inspect appears contextually for eligible friendly selections.
 - Removed the redundant text-based Abilities, Inventory, and Inspect buttons from the bottom HUD.
+- Redesigned the Modern HUD art set with retained wolf-head endcaps, blackened Horde iron, rawhide lashings, tusk fittings, muted red cloth, angular runes, and storm-blue shamanic accents. The elemental medallion and totem badges now use clearer matching symbols, and the chassis center remains transparent for runtime bars and action slots.
 
 ### Technical Updates
 
 - Added `UI/_Modern/ModernShortcutRail.j` and updated `UI/WidescreenFrameRoot.j`, `UI/StatsLiteUI.j`, and `UI/TargetUnitUI.j` with the widescreen boundary and visibility APIs required by the shortcut rail.
 - Updated `DynamicMinimap/DynamicMinimap_lastWorking.j`, `UI/_Modern/ModernMinimapHUD.j`, and `UI/_Modern/ModernPlayerHUD.j` for the new upper-right layout and single-owner shortcut architecture.
 - Updated `UI/_Modern/ModernAbilityCompileTest.j` and `UI/_Modern/README.md`; the focused Modern HUD JassHelper compile succeeds with the new optional UI integrations.
+
+### Imports
+
+- Updated the twelve `UI/_Modern/Assets/*.tga` HUD textures as 32-bit BGRA RLE assets with their existing import names, dimensions, transparent openings, and clean alpha edges.
 
 ### Actions Remaining
 
