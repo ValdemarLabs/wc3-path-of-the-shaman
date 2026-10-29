@@ -1,0 +1,201 @@
+> Upcoming preview: this documentation does not announce an available release.
+
+# WC3 - Path of the Shaman
+## CREDITS
+*Last updated: 2026-07-25*
+
+> This credits list is being maintained as resources and authors are identified. Please contact Valdemar if your name is missing for a resource used by the project.
+
+
+## Externally provided
+### [Core Systems]
+- `DamageEngine` - by Bribe
+- `Table` - by Bribe
+- `GUI Unit Event` - by Bribe
+- `UnitMoving` - by Bribe
+- `Alloc` - by Sevion
+- `Math` (credits masterninja13579, Tristronic, Bribe https://www.hiveworkshop.com/threads/simple-math-functions.339165/)
+- `TimerUtils` - by Vexorian
+- `DestructibleHider` - by Zwiebelchen
+- `DestructibleRevival` - by Bannar
+- `Arcing Text Tag` - by Maker; API by Bribe; additional features by Ugabunda and Kusanagi Kuro; modified by Valdemar for PotS
+- `FixedCameraLock` - by Antar
+- `Hero Wound Sounds` - by Antares
+- `Storm` - by OVOgenez
+- `WithinRange` - by Tasyen
+- `ShowUnitLevel` - by Tasyen
+- `Combat State Manager` - by Guhun
+- `Inventory and equipment systems` - by emperor_d3st (Modified by Valdemar to suit PotS and its internal systems)
+- `RegionTitlesLight` (Credits Antares, converted to JASS by Valdemar with some modifications)
+- `Spellweaver's Talent Kitchen` (Credits The_Spellweaver of talent tree as inpiration for PotS talent tree system)
+- `Ascii` - by TheDamian / Nestharus
+- `GroupTools` - by Magtheridon96; original version by Rising_Dusk
+- `List<T>` - by Bannar
+- `SetUnitMaxState` - by Earth-Fury; based on work by Blade.dk
+- `UnitAttachment` - by Wietlol
+
+### Abilities
+- `Stealth` by The_Witcher
+- `Lightning Strike` (Credits Paladon, converted to JASS by Valdemar with some modifications)
+- `Fire Shock` (Credits kola, converted to JASS by Valdemar with some modifications)
+- `Frost Shock` (Credits kola, converted to JASS by Valdemar with some modifications)
+- `Nature Shock` (Credits kola, converted to JASS by Valdemar with some modifications)
+
+### [Models, skins & textures]
+(incomplete list)
+- `WC3 Rebirth models and textures` - by YourArthas (Massive thanks!)
+- `WC3 Rebirth tilesets` - by Kantarion (Massive thanks!)
+- Many `models from WoW` - by Blizzard Entertainment, some exported by Valdemar Talavaj
+
+### [Icons]
+(incomplete list)
+- ...
+
+### [Sounds]
+(incomplete list)
+- Created in Elevenlabs and Fish Audio by Valdemar
+.- ..
+
+### [Music]
+(incomplete list)
+- MelNefys
+- Blizzard Entertainment
+- ...
+
+### [Other]
+
+## Internally created
+The following production systems are original Path of the Shaman systems developed by Valdemar unless otherwise noted. Legacy, test, backup, and unused implementations are omitted.
+- `AI systems`
+- `Abilities`
+    - AbilitiesPlayer, AbilityPoints, AbilityTrainerDialogs, AbilityTrainerLines, Talents, Elemental/Enhancement/Restoration/Totemic talent systems
+- `Arena`
+    - Arena, ArenaModes, CTF, Duel, Team Deathmatch, Waves
+- `Bridges and gates`
+    - `BridgeSystem` (Credits FeelsGoodMan for inspiration)
+- `Camera`
+    - `DialogCamera`
+- `CastingBar` (Credits maddeemon for initial inspiration from "CastingBar")
+- `CinematicMove`
+- `Companions`
+    - `Companions`
+    - `Pet`
+    - `PetDefinitions`
+- `CreepRespawn`
+- `Death & Revival`
+    - `Death`
+    - `Revival`
+- `DestructibleDeathEngine`
+- `DynamicMinimap`
+- `Environment Systems`
+    - `Clouds`
+    - `DNC control`
+    - `FogSystem`
+    - `Frostbite System`
+    - `LureSystem`
+    - `Snow system`
+    - `SteamBreath`
+    - `TerrainDamage`
+    - `WeatherSystem`
+- `Events`
+    - `Events`
+    - `UnitDeathEvent`
+- `Gather Systems`
+    - `GatherNodes`
+    - `GatherNodeItems`
+    - `GatherNodeUnits`
+    - `GatherNodeSkills`
+- `Item Loot Systems`
+    - `ItemLootSystem`
+    - `ItemLootDestructibles`
+- `Item Systems`
+    - `ItemCleanup`
+    - `ItemHook` (Credits Tasyen, greatly based on Tasyen's Lua ItemHook and converter to JASS by Valdemar)
+    - `ItemUnstack`
+- `Leveling`
+    - `BaseCamp`
+    - `CampFire`
+    - `Experience`
+- `Patrol and Follow Systems`
+    - `FollowSystem`
+    - `PatrolGroupSystem`
+    - `PatrolSystem`
+- `Player Home`
+    - `PlayerHome`
+- `Preload / Initialization`
+    - `PreloadAbilities`
+    - `Preloader`
+    - `Start`
+- `Professions`
+    - `Professions`
+    - `ProfessionsAlchemy`
+    - `ProfessionsBlacksmithing`
+    - `ProfessionsCooking`
+    - `ProfessionsEnchanting`
+    - `ProfessionsFishing`
+    - `ProfessionsLeatherworking`
+    - `ProfessionsMining`
+    - `ProfessionsSkinning`
+- `Quests and Dialogs`
+    - `DialogSystem`
+    - `DialogInteraction`
+    - `DialogSystemNPCs`
+    - `DialogSystemPlayer`
+    - `QuestItemSpawner`
+    - `QuestsGeneric`
+    - `QuestsVendor`
+    - `QuestGiver`
+    - `QuestMaster`
+    - `qXXX (questgiver) sublibraries`
+- `RangeCheck`
+- `Reputation`
+- `Resources`
+    - `ResourceEnergy`
+    - `ResourceRage`
+- `Sound and Music`
+    - `ExMusic`
+    - `ExSound`
+- `Special Effects`
+    - `SpeciFX`
+- `Texts`
+    - `FloatingTextHider`
+    - `FloatingTT`
+- `UI`
+    - `AbilitiesLiteUI`
+    - `AchievementsUI`
+    - `CameraControl`
+    - `CameraUI`
+    - `CommandsUI`
+    - `CraftingUI`
+    - `Difficulty`
+    - `HintsUI`
+    - `IconQuery`
+    - `Interface`
+    - `MasterUI`
+    - `PlayerHomeUI`
+    - `ProfessionsUI`
+    - `ReputationUI`
+    - `SecretsUI`
+    - `SettingsUI`
+    - `StatsLiteUI` (Party monitor)
+    - `StatsUI`
+    - `ShopUI`  (Credits Elprede, for RpgMerchantShop as feature inspiration)
+    - `AbilitiesUI`
+    - `FullscreenUI`
+    - `GameMode`
+    - `ImagesUI `
+    - `TalentsUI`
+- `UnitSystems`
+    - `UnitExperience` (used by pets mostly)
+    - `UnitHider`
+    - `UnitSpawn`
+    - `UnitStats`
+- `Vendors`
+    - Shop, VendorCatalogs, VendorDialogs, VendorFloatingText, VendorLines, VendorVoiceProfiles, vendor faction/type systems
+- `Voicelines`
+- `Zones`
+    - `ZoneEvent`
+    - `ZonesCore`
+
+
+Attribution does not grant permission to redistribute Warcraft III or third-party resources.
