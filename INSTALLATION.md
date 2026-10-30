@@ -1,5 +1,3 @@
-> Upcoming preview: this documentation does not announce an available release.
-
 # WC3 - Path of the Shaman
 ## INSTALLATION
 *Source guide last updated: 2026-08-07*

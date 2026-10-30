@@ -1,5 +1,3 @@
-> Upcoming preview: this documentation does not announce an available release.
-
 # WC3 - Path of the Shaman
 ## CREDITS
 *Last updated: 2026-07-25*
