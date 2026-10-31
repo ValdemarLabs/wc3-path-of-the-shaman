@@ -4,9 +4,29 @@
 
 > **Unreleased development history:** These are dated development notes, not release dates or a list of features guaranteed to be in the current download. Later entries may replace earlier behavior. Check the officially distributed version for what is available to play.
 
-This history covers player-visible development from 21 June 2025 through 27 October 2026. It retains gameplay changes, fixes, presentation work, and relevant unfinished work from the original notes. Tooling-only entries, repeated archive snapshots, private implementation details, and story outcomes are omitted. Older notes are condensed and rewritten for players.
+This history covers player-visible development from 21 June 2025 through 31 October 2026. It retains gameplay changes, fixes, presentation work, and relevant unfinished work from the original notes. Tooling-only entries, repeated archive snapshots, private implementation details, and story outcomes are omitted. Older notes are condensed and rewritten for players.
 
 [Project overview](README.md) | [Installation](INSTALLATION.md) | [FAQ](FAQ.md) | [Save and load](SAVELOAD.md) | [Credits](CREDITS.md)
+
+## [31.10.2026]
+
+- Tightened the Modern HUD action bar to twenty slots in two aligned rows of ten. Ability assignment now follows the controlled hero after target selection, instructional tooltips no longer obscure action-bar guidance, and cooldown sweeps fit the ability icons more precisely.
+- Pressing `A` now immediately attacks the living target retained by the Modern HUD; without one, it still enters normal attack-target or attack-move mode. Clearing the target with Escape also clears the retained attack recipient.
+- Refined the compact target card and lower-left status display, restored native item and status tooltips above the hidden console, and made quick-item placement recover after native HUD scaling changes.
+- Enlarged active totem indicators and timers around the elemental medallion. Hovering an active indicator now shows the live totem's name and remaining lifetime.
+- Redesigned the upper-left party display as a compact stack of Horde-styled unit plates. Up to three status-effect icons now appear beside each displayed party member or pet with hover descriptions, while party command controls take less space, Escape closes the party-command panel, and Equipment no longer overlaps the display.
+- Fixed the Ability Trainer's Learn transition leaving mouse and frame input unavailable, while later dialogue still returns to fullscreen presentation normally.
+- Fixed fullscreen dialogue portraits so later speakers can replace the first speaker while retaining Warcraft III's native talking animation.
+- **Validation note:** These changes passed focused compilation, but full-map compilation and in-game validation are still required for HUD scaling, item interactions, trainer transitions, multi-speaker dialogue, party controls, and target routing.
+
+## [30.10.2026]
+
+- Fixed merchant Trade panels showing empty text and bright-green placeholder icons. Stock names, icons, descriptions, prices, and buyback details now render correctly, and Escape can leave a broken trade panel instead of trapping the player in cinematic mode.
+- Restored a compact PotS-styled target card with hoverable buffs and debuffs beneath its mana bar. The controlled hero's status row now appears above the lower-left HUD with normal Warcraft tooltips.
+- Replaced the temporary six-slot quick inventory with Warcraft III's native item buttons, restoring engine-managed item use, targeting, drag and drop, giving, charge display, and tooltips.
+- Added a visible `Add to action bar` control to the Abilities window. Players can select a populated slot for moving, swap it with another slot, or remove it from the bar without unlearning the ability.
+- Kept the inspected Modern HUD target as the item-give recipient after command selection returns to the controlled hero.
+- Restored several crypt, chapel, and cave scenery models that stopped loading after Warcraft III patch 3.0.1.24371; the corrected models were verified in both DE and SD graphics.
 
 ## [27.10.2026]
 
